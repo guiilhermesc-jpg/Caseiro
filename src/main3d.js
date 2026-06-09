@@ -35,6 +35,7 @@ function colide(x, z) {
 const avatar = criaAvatar();
 avatar.position.set(8, 0, 12); // spawn na praça de Venor (longe da fonte)
 scene.add(avatar);
+let vy = 0, noChao = true; // física de pulo
 
 const controles = criaControles(renderer.domElement);
 const relogio = new THREE.Clock();
@@ -46,6 +47,8 @@ function loop() {
 
   const inp = controles.vetorMov();
   const cam = controles.cam;
+  const correndo = controles.correndo();
+  const abaixado = controles.abaixado();
   const movendo = (inp.x !== 0 || inp.z !== 0);
   if (movendo) {
     // movimento relativo à câmera (anda pra onde você está olhando)
@@ -55,7 +58,10 @@ function loop() {
     let mz = frenteZ * (-inp.z) + direitaZ * inp.x;
     const len = Math.hypot(mx, mz);
     if (len > 0) { mx /= len; mz /= len; }
-    const passo = CONFIG3D.velocidade * dt;
+    let vel = CONFIG3D.velocidade;
+    if (correndo) vel *= 1.8;
+    if (abaixado) vel *= 0.55;
+    const passo = vel * dt;
     const lim = CONFIG3D.limiteMundo;
     const nx = Math.max(-lim, Math.min(lim, avatar.position.x + mx * passo));
     if (!colide(nx, avatar.position.z)) avatar.position.x = nx;
@@ -63,7 +69,15 @@ function loop() {
     if (!colide(avatar.position.x, nz)) avatar.position.z = nz;
     avatar.rotation.y = Math.atan2(mx, mz);
   }
-  animaAvatar(avatar, movendo, tempo);
+  // pulo (gravidade)
+  if (controles.querPular() && noChao) { vy = 9; noChao = false; }
+  vy -= 25 * dt;
+  avatar.position.y += vy * dt;
+  if (avatar.position.y <= 0) { avatar.position.y = 0; vy = 0; noChao = true; }
+  // abaixar (agacha suave)
+  const escalaY = abaixado ? 0.6 : 1;
+  avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
+  animaAvatar(avatar, movendo && noChao, tempo, correndo);
   // água da fonte (efeito sutil: ondula e gira)
   for (const ag of aguas) {
     ag.position.y = ag.userData.baseY + Math.sin(tempo * 2 + ag.userData.fase) * 0.07;

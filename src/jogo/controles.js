@@ -1,23 +1,26 @@
 // =============================================================
-//  CONTROLES  ·  mover (teclado/joystick) + câmera orbital (arrasto).
+//  CONTROLES  ·  mover + câmera orbital + pular/correr/abaixar.
 //
-//  Desktop: WASD/setas movem; arrastar o mouse gira a câmera.
-//  Mobile:  metade ESQUERDA da tela = joystick (mover);
-//           metade DIREITA = arrastar pra girar a câmera.
-//  Expõe: vetorMov() -> {x,z} (input bruto) e cam {yaw, pitch}.
+//  PC:    WASD/setas mover · arrastar mouse gira câmera ·
+//         Espaço pular · Shift correr · C abaixar.
+//  Mobile: metade ESQUERDA = joystick (mover); metade DIREITA =
+//          arrastar pra girar câmera; botões PULAR/CORRER/ABAIXAR.
+//  Expõe: vetorMov(), cam{yaw,pitch}, querPular(), correndo(), abaixado().
 // =============================================================
 export function criaControles(dom) {
   const teclas = {};
-  window.addEventListener('keydown', (e) => { teclas[e.code] = true; });
-  window.addEventListener('keyup', (e) => { teclas[e.code] = false; });
-
   const cam = { yaw: 0, pitch: 0.55 };
-  const PITCH_MIN = 0.08, PITCH_MAX = 1.30; // até onde dá pra subir/baixar a visão
+  const PITCH_MIN = 0.08, PITCH_MAX = 1.30;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   const joy = { ativo: false, id: null, baseX: 0, baseY: 0, dx: 0, dz: 0 };
   const look = { ativo: false, id: null, lastX: 0, lastY: 0 };
+  let correrToggle = false, abaixarToggle = false, pularFlag = false;
 
+  window.addEventListener('keydown', (e) => { teclas[e.code] = true; if (e.code === 'Space') pularFlag = true; });
+  window.addEventListener('keyup', (e) => { teclas[e.code] = false; });
+
+  // joystick visual
   let base, thumb;
   function garante() {
     if (base) return;
@@ -64,6 +67,25 @@ export function criaControles(dom) {
   dom.addEventListener('pointerup', up);
   dom.addEventListener('pointercancel', up);
 
+  // botões de ação (funcionam no PC e no mobile)
+  function botao(txt, css, onTap) {
+    const b = document.createElement('div');
+    b.textContent = txt;
+    b.style.cssText = 'position:fixed;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.34);color:#fff;font:bold 13px Arial;display:flex;align-items:center;justify-content:center;z-index:12;user-select:none;touch-action:none;' + css;
+    b.addEventListener('pointerdown', (e) => { e.stopPropagation(); onTap(b); });
+    document.body.appendChild(b);
+    return b;
+  }
+  botao('PULAR', 'right:28px;bottom:120px;width:84px;height:84px;', () => { pularFlag = true; });
+  botao('CORRER', 'right:122px;bottom:172px;width:70px;height:70px;', (b) => {
+    correrToggle = !correrToggle;
+    b.style.background = correrToggle ? 'rgba(120,220,120,.42)' : 'rgba(255,255,255,.16)';
+  });
+  botao('ABAIXAR', 'right:28px;bottom:218px;width:70px;height:70px;', (b) => {
+    abaixarToggle = !abaixarToggle;
+    b.style.background = abaixarToggle ? 'rgba(120,180,255,.42)' : 'rgba(255,255,255,.16)';
+  });
+
   function vetorMov() {
     let x = 0, z = 0;
     if (teclas['KeyA'] || teclas['ArrowLeft']) x -= 1;
@@ -76,5 +98,11 @@ export function criaControles(dom) {
     return { x, z };
   }
 
-  return { vetorMov, cam };
+  return {
+    vetorMov,
+    cam,
+    querPular: () => { if (pularFlag) { pularFlag = false; return true; } return false; },
+    correndo: () => !!(teclas['ShiftLeft'] || teclas['ShiftRight'] || correrToggle),
+    abaixado: () => !!(teclas['KeyC'] || abaixarToggle),
+  };
 }
