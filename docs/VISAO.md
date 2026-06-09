@@ -160,3 +160,8 @@ errado da história.
   ângulo reto** (colisão correta); **anti-afundamento** (pés no chão, ruas finas);
   **pet gatinho** que segue o avatar. 90 objetos, sem erros. Deploy via **Wrangler**
   (CLI) — aguardando token Cloudflare no `.env`.
+- **09/06/2026** — v1.7: 🎉 **PUBLICADO!** Deploy por comando (Wrangler) no Cloudflare
+  Pages → **https://caseiro.pages.dev** (HTTP 200, abre em qualquer aparelho). Projeto
+  `caseiro` criado. Re-deploy = `build` + `wrangler pages deploy` (eu rodo a cada
+  melhoria). PENDENTE de segurança: **rotacionar o token** (apareceu no chat). Próximo
+  grande: **multiplayer** (servidor no Railway) p/ as pessoas se verem.
