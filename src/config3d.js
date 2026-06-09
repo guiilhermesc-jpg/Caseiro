@@ -8,8 +8,7 @@ export const CONFIG3D = {
     ceu: 0x1a2230,    // céu/atmosfera sombria de guerra
     chao: 0x39424f,   // asfalto/concreto
   },
-  // URL do servidor multiplayer (Railway). Preencher após o deploy:
-  // ex.: 'wss://venor-servidor-production.up.railway.app'
+  // URL do servidor multiplayer (Railway).
   // Em localhost o jogo ignora isto e usa ws://localhost:8080.
-  servidorMP: '',
+  servidorMP: 'wss://venor-servidor-production.up.railway.app',
 };
