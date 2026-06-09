@@ -82,8 +82,8 @@ sozinho, formar família, juntar-se a grupos; várias formas de "vencer").
   usar `npm run build` (checa o código) + testar no **site publicado** (navegador real).
 
 ## 8. ROADMAP (coordenação — em ordem)
-1. **MULTIPLAYER** ← *fase atual desejada*. Todos logados se veem e interagem. (plano §9)
-2. **Interiores**: entrar nos prédios (paredes ocas + porta), **andares e subsolos** (escadas).
+1. **MULTIPLAYER** ← *🚧 EM ANDAMENTO* (frente paralela / outra conversa). (estado §11, plano §9)
+2. **Interiores**: entrar nos prédios (paredes ocas + porta), **andares e subsolos**. (plano técnico §12)
 3. **Polish de qualidade**: proporções, padrões de rua, mais detalhe/vida (NPCs, animais),
    texturas dos ambientes.
 4. **Sistemas sandbox (Tibia-like)**: profissões, família/grupo, economia, objetivos múltiplos.
@@ -113,6 +113,33 @@ v1.4 grade+adereços · v1.5 rosto+pular/correr/abaixar · v1.6 fixes (telhado/f
 v1.7 **publicado** (caseiro.pages.dev) · v1.8 **tela de seleção** de personagem.
 *(Detalhe completo em `docs/VISAO.md` › Diário de bordo.)*
 
+## 11. ESTADO DO MULTIPLAYER (🚧 em andamento — frente paralela)
+Já no working dir (09/06, ainda **NÃO commitado**):
+- `server/` — servidor Node + **WebSocket** (`ws`): `index.js`, `package.json`,
+  `smoke-test.mjs`, `fake-player.mjs`. `node_modules` instalado.
+- `src/jogo/rede.js` — cliente: `conectarRede({url, scene, getEstadoLocal})`, renderiza os
+  outros jogadores e interpola posições.
+- `src/main3d.js` — importa `conectarRede`, conecta ao "ENTRAR", chama `rede.atualiza(dt)`.
+- `src/config3d.js` — `servidorMP` (URL `wss` do Railway; vazio → usa `ws://localhost:8080`).
+- **Falta:** rodar/testar o servidor; **deploy no Railway**; preencher `CONFIG3D.servidorMP`
+  com a URL do Railway; redeploy do cliente no Cloudflare.
+
+## 12. PLANO TÉCNICO DOS INTERIORES (pronto pra executar — não conflita c/ multiplayer)
+Mexe SÓ em `construcoes.js` + `cidade.js` (+ 1 linha no `main3d.js`). Fazer em **branch própria
+ou commit seletivo**.
+- **`criaPredio` OCO:** trocar a caixa sólida por **piso + 4 paredes finas** (esp. ~0.4); a
+  parede do lado `portaPara` ('n'|'s'|'l'|'o') tem **vão de porta** (2 segmentos + verga).
+  **Sem rotação do grupo** (mantém AABB exato). Colisores = 1 AABB por parede (lado do vão = 2).
+  Retornar também `{ telhado, areaInterna }`. Pôr 1 móvel simples (mesa) dentro.
+- **`criaMarco`:** trocar `rot` por `portaPara` (igreja 's', hospital 'o', delegacia 'l', escola 'n').
+- **`cidade.js`:** casas → `portaPara = Math.abs(x)>=Math.abs(z) ? (x>0?'o':'l') : (z>0?'n':'s')`
+  (porta pro centro); coletar `predios:[{telhado,areaInterna}]` e adicionar ao `return`.
+- **`main3d.js` (1 trecho no loop):** telhado some ao entrar →
+  `for (p of predios) p.telhado.visible = !(avatar dentro de p.areaInterna);`
+  ⚠️ **coordenar** — multiplayer também edita main3d.
+- Depois: andares / escadas / subsolos.
+
 ---
-**Para retomar:** leia este arquivo + `docs/VISAO.md`. Estado do código está no GitHub
-(`Caseiro`, branch `main`). Próxima tarefa: **multiplayer** (§9).
+**Para retomar:** leia este arquivo + `docs/VISAO.md`. Código no GitHub (`Caseiro`, `main`).
+⚠️ **Duas frentes ativas no mesmo disco** (multiplayer + interiores) → usar **commit seletivo**
+(`git add <arquivos>`, nunca `-A`) ou **branches/worktrees separados**, pra não misturar.
