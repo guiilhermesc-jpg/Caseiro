@@ -151,3 +151,12 @@ errado da história.
   **flores nos arbustos**, **pinheiros**; **céu mais claro** + **nuvens** que andam. 89
   objetos, 49 colisores, sem erros. Próximo: dia/noite, controles (pular/abaixar/correr),
   rosto do avatar, texturas; e MULTIPLAYER (servidor no Railway).
+- **09/06/2026** — v1.5: avatar com **rosto** (olhos, sobrancelhas, boca, mãos, botas) +
+  controles **pular/correr/abaixar** (botões no mobile + teclas no PC). Código publicado no
+  **GitHub** (`guiilhermesc-jpg/Caseiro`). Deploy: conectando ao **Cloudflare Pages**
+  (build `npm run build`, saída `dist`) p/ atualização automática.
+- **09/06/2026** — v1.6: correções de qualidade + pet. **Telhado de duas águas** (beiral,
+  bordas coerentes); **fonte** com 2 taças + **jatos animados**; casas **alinhadas em
+  ângulo reto** (colisão correta); **anti-afundamento** (pés no chão, ruas finas);
+  **pet gatinho** que segue o avatar. 90 objetos, sem erros. Deploy via **Wrangler**
+  (CLI) — aguardando token Cloudflare no `.env`.

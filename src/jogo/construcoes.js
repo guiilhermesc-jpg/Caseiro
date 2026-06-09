@@ -12,6 +12,21 @@ export function mat(cor, rough = 0.9) {
   return matCache[k];
 }
 
+// telhado de DUAS ÁGUAS com beiral (cobre o retângulo certinho -> bordas coerentes)
+function telhadoDuasAguas(larg, prof, hTelh, cor, baseY) {
+  const ov = 0.5; // beiral (overhang)
+  const shape = new THREE.Shape();
+  shape.moveTo(-larg / 2 - ov, 0);
+  shape.lineTo(larg / 2 + ov, 0);
+  shape.lineTo(0, hTelh);
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: prof + ov * 2, bevelEnabled: false });
+  geo.translate(0, 0, -(prof + ov * 2) / 2);
+  const m = new THREE.Mesh(geo, mat(cor));
+  m.position.y = baseY; m.castShadow = true;
+  return m;
+}
+
 // prédio de vilarejo: corpo + telhado piramidal + porta + janelas
 export function criaPredio(opts) {
   const {
@@ -25,8 +40,7 @@ export function criaPredio(opts) {
   const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), mat(cor));
   corpo.position.y = alt / 2; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
 
-  const telhado = new THREE.Mesh(new THREE.ConeGeometry(Math.max(larg, prof) * 0.82, alt * 0.5, 4), mat(corTelhado));
-  telhado.position.y = alt + alt * 0.25; telhado.rotation.y = Math.PI / 4; telhado.castShadow = true; g.add(telhado);
+  g.add(telhadoDuasAguas(larg, prof, Math.max(2.4, alt * 0.42), corTelhado, alt));
 
   const porta = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.2, 0.25), mat(0x3a2a1a));
   porta.position.set(0, 1.6, prof / 2 + 0.02); g.add(porta);
@@ -117,19 +131,33 @@ export function criaArbusto(x = 0, z = 0) {
   return { grupo: g, colisores: [] };
 }
 
-// fonte com água animável
+// fonte com 2 taças + jatos de água animados (gotas)
 export function criaFonte(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(3, 3.4, 1.2, 16), mat(0x9a9488));
+  const pedra = mat(0x9a9488);
+  const aguaMat = new THREE.MeshStandardMaterial({ color: 0x3f8fd0, roughness: 0.12, metalness: 0.25, transparent: true, opacity: 0.85 });
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.8, 1.2, 20), pedra);
   base.position.y = 0.6; base.castShadow = true; base.receiveShadow = true; g.add(base);
-  const aguaMat = new THREE.MeshStandardMaterial({ color: 0x3f8fd0, roughness: 0.15, metalness: 0.2, transparent: true, opacity: 0.85 });
-  const agua = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.4, 16), aguaMat);
-  agua.position.y = 1.15; agua.userData.baseY = 1.15; agua.userData.fase = Math.random() * 6.28; g.add(agua);
-  const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, 2.4, 8), mat(0x9a9488));
-  pilar.position.y = 2; g.add(pilar);
-  const jato = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 8), aguaMat);
-  jato.position.y = 3.2; g.add(jato);
-  return { grupo: g, colisores: [{ minX: x - 3.4, maxX: x + 3.4, minZ: z - 3.4, maxZ: z + 3.4 }], agua };
+  const agua1 = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 0.4, 20), aguaMat);
+  agua1.position.y = 1.15; agua1.userData.baseY = 1.15; agua1.userData.fase = 0; g.add(agua1);
+
+  const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, 2.2, 10), pedra);
+  pilar.position.y = 2.1; g.add(pilar);
+  const taca = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.0, 0.5, 16), pedra);
+  taca.position.y = 3.1; taca.castShadow = true; g.add(taca);
+  const agua2 = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 0.25, 16), aguaMat);
+  agua2.position.y = 3.4; agua2.userData.baseY = 3.4; agua2.userData.fase = 1.5; g.add(agua2);
+
+  // gotas dos jatos (animadas no loop: sobem do topo e caem na taça)
+  const gotas = [];
+  for (let i = 0; i < 16; i++) {
+    const d = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), aguaMat);
+    d.userData = { t: i / 16, ang: Math.random() * Math.PI * 2, vel: 0.7 + Math.random() * 0.5 };
+    g.add(d); gotas.push(d);
+  }
+
+  return { grupo: g, colisores: [{ minX: x - 3.8, maxX: x + 3.8, minZ: z - 3.8, maxZ: z + 3.8 }], aguas: [agua1, agua2], gotas };
 }
 
 // banco de praça

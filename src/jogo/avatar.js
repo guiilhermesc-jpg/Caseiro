@@ -62,7 +62,7 @@ export function criaAvatar() {
   const pernaDir = membro(0.34, 0.9, mat(COR.calca)); pernaDir.position.set(0.26, 0.9, 0);
   [pernaEsq, pernaDir].forEach((p) => {
     const bota = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.22, 0.52), mat(COR.bota));
-    bota.position.set(0, -0.9, 0.08); bota.castShadow = true; p.add(bota);
+    bota.position.set(0, -0.79, 0.08); bota.castShadow = true; p.add(bota); // base no chão (não afunda)
   });
 
   g.add(bracoEsq, bracoDir, pernaEsq, pernaDir);

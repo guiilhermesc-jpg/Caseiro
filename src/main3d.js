@@ -7,6 +7,7 @@ import { CONFIG3D } from './config3d.js';
 import { criaCidade } from './jogo/cidade.js';
 import { criaAvatar, animaAvatar } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
+import { criaGato, atualizaGato } from './jogo/pet.js';
 
 const container = document.getElementById('game');
 
@@ -19,7 +20,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
 
-const { scene, obstaculos, solidos, aguas, nuvens } = criaCidade();
+const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 
@@ -36,6 +37,10 @@ const avatar = criaAvatar();
 avatar.position.set(8, 0, 12); // spawn na praça de Venor (longe da fonte)
 scene.add(avatar);
 let vy = 0, noChao = true; // física de pulo
+
+const gato = criaGato();
+gato.position.set(6, 0, 10);
+scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
 const relogio = new THREE.Clock();
@@ -88,6 +93,18 @@ function loop() {
     nv.position.x += dt * 2.2;
     if (nv.position.x > 190) nv.position.x = -190;
   }
+  // jatos da fonte (parábola: sobem do topo e caem na taça)
+  for (const gt of fonteGotas) {
+    gt.userData.t += dt * gt.userData.vel;
+    if (gt.userData.t > 1) gt.userData.t -= 1;
+    const t = gt.userData.t;
+    const r = 0.2 + t * 2.6;
+    gt.position.x = Math.cos(gt.userData.ang) * r;
+    gt.position.z = Math.sin(gt.userData.ang) * r;
+    gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
+  }
+  // pet (gato) segue o avatar
+  atualizaGato(gato, avatar, dt, tempo);
 
   // câmera orbital (yaw/pitch do arrasto) + anti-oclusão (raycast)
   const alvo = avatar.position;
