@@ -165,3 +165,8 @@ errado da história.
   `caseiro` criado. Re-deploy = `build` + `wrangler pages deploy` (eu rodo a cada
   melhoria). PENDENTE de segurança: **rotacionar o token** (apareceu no chat). Próximo
   grande: **multiplayer** (servidor no Railway) p/ as pessoas se verem.
+- **09/06/2026** — v1.8: **tela de seleção de personagem** (overlay VENOR: nome + cores de
+  roupa/pele/cabelo, boneco girando em preview, botão ENTRAR) — prepara o multiplayer.
+  Avatar com cores parametrizáveis; modos preview/jogo; **bancos maiores**. Build OK,
+  publicado. (Preview local ficou sem contextos WebGL após muitos reloads — não afeta o
+  publicado.) Próximo: **MULTIPLAYER** (servidor Railway).

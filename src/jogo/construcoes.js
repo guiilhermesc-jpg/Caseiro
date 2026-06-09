@@ -164,9 +164,9 @@ export function criaFonte(x = 0, z = 0) {
 export function criaBanco(x = 0, z = 0, rot = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
   const mad = mat(0x7a5230), ferro = mat(0x3a3a3a);
-  const assento = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.18, 0.8), mad); assento.position.y = 0.6; assento.castShadow = true; g.add(assento);
-  const encosto = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.8, 0.16), mad); encosto.position.set(0, 1.05, -0.32); encosto.castShadow = true; g.add(encosto);
-  [-1.05, 1.05].forEach((s) => { const pe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.6, 0.7), ferro); pe.position.set(s, 0.3, 0); g.add(pe); });
+  const assento = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.24, 1.1), mad); assento.position.y = 0.78; assento.castShadow = true; g.add(assento);
+  const encosto = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.0, 0.2), mad); encosto.position.set(0, 1.4, -0.45); encosto.castShadow = true; g.add(encosto);
+  [-1.5, 1.5].forEach((s) => { const pe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.78, 1.0), ferro); pe.position.set(s, 0.39, 0); g.add(pe); });
   return { grupo: g, colisores: [] };
 }
 
