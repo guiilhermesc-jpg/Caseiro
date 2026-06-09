@@ -145,4 +145,9 @@ errado da história.
   **hemisphere light**. **Água** da fonte animada (ondula/gira, translúcida). **Plantas
   variadas** (árvore/pinheiro/arbusto). **Proporções** corrigidas (portas cabem o avatar;
   marcos mais altos). Mobile: joystick à esquerda + arrasto à direita = câmera. Carrega sem
-  erros (41 objetos). **Próximo: entrar nos lugares (interiores).**
+  erros (41 objetos).
+- **09/06/2026** — v1.4: Venor detalhada. **Grade de ruas padrão** + casas **diversas**
+  (tamanho/cor/altura); **bancos**, **postes de luz**, **sino na torre da igreja**,
+  **flores nos arbustos**, **pinheiros**; **céu mais claro** + **nuvens** que andam. 89
+  objetos, 49 colisores, sem erros. Próximo: dia/noite, controles (pular/abaixar/correr),
+  rosto do avatar, texturas; e MULTIPLAYER (servidor no Railway).

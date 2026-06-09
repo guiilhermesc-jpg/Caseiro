@@ -19,7 +19,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
 
-const { scene, obstaculos, solidos, aguas } = criaCidade();
+const { scene, obstaculos, solidos, aguas, nuvens } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 
@@ -68,6 +68,11 @@ function loop() {
   for (const ag of aguas) {
     ag.position.y = ag.userData.baseY + Math.sin(tempo * 2 + ag.userData.fase) * 0.07;
     ag.rotation.y += dt * 0.4;
+  }
+  // nuvens andam com o vento
+  for (const nv of nuvens) {
+    nv.position.x += dt * 2.2;
+    if (nv.position.x > 190) nv.position.x = -190;
   }
 
   // câmera orbital (yaw/pitch do arrasto) + anti-oclusão (raycast)
