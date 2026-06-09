@@ -10,6 +10,8 @@ import { criaAvatar, animaAvatar } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
 import { criaGato, atualizaGato } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
+import { conectarRede } from './jogo/rede.js';
+import { criaMinimapa } from './jogo/minimapa.js';
 
 const container = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -21,7 +23,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
 
-const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas } = criaCidade();
+const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 function colide(x, z) {
@@ -47,16 +49,36 @@ let vy = 0, noChao = true;
 let jogoIniciado = false;
 let nomeJogador = '';
 
+// --- multiplayer ---
+let rede = null;
+let ultimoAnim = { mov: false, corr: false, abx: false };
+const ehLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+const urlMP = ehLocal ? `ws://${location.hostname}:8080` : CONFIG3D.servidorMP;
+function estadoLocal() {
+  return {
+    nome: nomeJogador,
+    cores: { ...coresJogador },
+    x: avatar.position.x, y: avatar.position.y, z: avatar.position.z,
+    rotY: avatar.rotation.y,
+    anim: ultimoAnim,
+  };
+}
+
 const gato = criaGato();
 gato.position.set(6, 0, 10);
 scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
+const minimapa = criaMinimapa({ obstaculos, ruas, marcos, limite: CONFIG3D.limiteMundo });
 
 criaSelecao({
   cores: coresJogador,
   aoMudarCor: () => montaAvatar(),
-  aoEntrar: (nome) => { nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI; },
+  aoEntrar: (nome) => {
+    nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI;
+    minimapa.mostra();
+    if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
+  },
 });
 
 const relogio = new THREE.Clock();
@@ -105,6 +127,7 @@ function loop() {
     const escalaY = abaixado ? 0.6 : 1;
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
     animaAvatar(avatar, movendo && noChao, tempo, correndo);
+    ultimoAnim = { mov: movendo && noChao, corr: correndo, abx: abaixado };
 
     // câmera orbital + anti-oclusão
     const alvo = avatar.position;
@@ -136,6 +159,8 @@ function loop() {
     gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
   }
   atualizaGato(gato, avatar, dt, tempo);
+  if (rede) rede.atualiza(dt);
+  if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
 
   renderer.render(scene, camera);
   requestAnimationFrame(loop);

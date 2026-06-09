@@ -38,7 +38,8 @@ export function criaCidade() {
   const ruaMat = mat(0x595f66, 1);
   const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMat); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); };
   const faixaV = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 180), ruaMat); m.position.set(x, 0.02, 0); m.receiveShadow = true; scene.add(m); };
-  [-48, -16, 16, 48].forEach((c) => { faixaH(c); faixaV(c); });
+  const ruas = [-48, -16, 16, 48];
+  ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), mat(0x9a9082, 1));
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
@@ -61,10 +62,13 @@ export function criaCidade() {
   add(criaBanco(-8, 0, Math.PI / 2));
 
   // marcos (virados PARA a praça)
-  add(criaMarco('igreja', { x: 0, z: -32, rot: 0 }));
-  add(criaMarco('hospital', { x: 32, z: 0, rot: -Math.PI / 2 }));
-  add(criaMarco('delegacia', { x: -32, z: 0, rot: Math.PI / 2 }));
-  add(criaMarco('escola', { x: 0, z: 32, rot: Math.PI }));
+  const marcos = [
+    { tipo: 'igreja', x: 0, z: -32, rot: 0 },
+    { tipo: 'hospital', x: 32, z: 0, rot: -Math.PI / 2 },
+    { tipo: 'delegacia', x: -32, z: 0, rot: Math.PI / 2 },
+    { tipo: 'escola', x: 0, z: 32, rot: Math.PI },
+  ];
+  marcos.forEach((m) => add(criaMarco(m.tipo, { x: m.x, z: m.z, rot: m.rot })));
 
   // casas diversas, ALINHADAS em ângulo reto (colisão correta) e viradas pro centro
   const cores = [0xd8c4a0, 0xc8a86a, 0xa8bcae, 0xd0a0a0, 0xb0b8c0, 0xe0d0a0, 0x9ab0a4, 0xcaa890];
@@ -108,5 +112,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas };
+  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos };
 }
