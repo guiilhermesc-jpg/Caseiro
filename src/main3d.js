@@ -14,7 +14,27 @@ import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 
 const container = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+// Se o navegador não conseguir iniciar o 3D (WebGL desligado / sem aceleração
+// de hardware), mostra um aviso claro em vez de tela preta e muda.
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  container.innerHTML = '<div style="position:fixed;inset:0;display:flex;align-items:center;'
+    + 'justify-content:center;padding:24px;font-family:Arial,sans-serif;color:#e6edf5;text-align:center;">'
+    + '<div style="max-width:440px;background:rgba(16,22,32,.92);border:1px solid #3a4654;'
+    + 'border-radius:16px;padding:28px;">'
+    + '<h2 style="margin:0 0 10px;font-size:22px;">Não foi possível iniciar o 3D 😕</h2>'
+    + '<p style="margin:0 0 14px;color:#9fb0c0;font-size:15px;line-height:1.5;">'
+    + 'Seu navegador não conseguiu ligar o <b>WebGL</b> (o gráfico 3D do jogo).</p>'
+    + '<p style="margin:0;color:#9fb0c0;font-size:14px;line-height:1.6;text-align:left;">Tente:<br>'
+    + '• Ativar <b>Aceleração de hardware</b> em Configurações do Chrome → Sistema, e reabrir;<br>'
+    + '• Atualizar a página (F5);<br>'
+    + '• Abrir em <b>outro navegador</b> ou no <b>celular</b>.</p>'
+    + '</div></div>';
+  throw e; // interrompe o resto da inicialização
+}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
