@@ -2,6 +2,8 @@
 //  TELA DE SELEÇÃO  ·  nome + aparência do personagem (overlay).
 //  Prepara o multiplayer: cada jogador terá nome e cores próprios.
 // =============================================================
+import { MODELOS, MODELO_NOME } from './avatar.js';
+
 export const PALETAS = {
   casaco: [0x556b2f, 0x3a5a8a, 0x7a4632, 0x6a2a3a, 0x445162, 0x2a2a30],
   pele:   [0xf2d6b8, 0xe0b088, 0xc89060, 0x9c6a42, 0x6e4628],
@@ -25,6 +27,23 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   inp.maxLength = 16;
   inp.style.cssText = 'width:100%;box-sizing:border-box;padding:12px 14px;margin-bottom:16px;border-radius:10px;border:1px solid #3a4654;background:#0e141c;color:#fff;font-size:16px;outline:none;';
   painel.appendChild(inp);
+
+  // Sexo + Modelo (estilo Tibia): atualiza o preview ao escolher
+  function escolha(label, opcoes, chave) {
+    const wrap = document.createElement('div'); wrap.style.cssText = 'margin-bottom:14px;';
+    const t = document.createElement('div'); t.textContent = label; t.style.cssText = 'font-size:13px;color:#9fb0c0;margin-bottom:6px;'; wrap.appendChild(t);
+    const linha = document.createElement('div'); linha.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+    opcoes.forEach(([val, txt]) => {
+      const b = document.createElement('button'); b.textContent = txt;
+      const sel = () => cores[chave] === val;
+      b.style.cssText = `flex:1;min-width:70px;padding:9px 6px;border-radius:9px;border:2px solid ${sel() ? '#fff' : '#3a4654'};background:#0e141c;color:#fff;font-size:13px;cursor:pointer;`;
+      b.onclick = () => { cores[chave] = val; [...linha.children].forEach((el, j) => { el.style.borderColor = (opcoes[j][0] === val ? '#fff' : '#3a4654'); }); aoMudarCor(chave, val); };
+      linha.appendChild(b);
+    });
+    wrap.appendChild(linha); return wrap;
+  }
+  painel.appendChild(escolha('Sexo', [['homem', '♂ Homem'], ['mulher', '♀ Mulher']], 'sexo'));
+  painel.appendChild(escolha('Modelo', MODELOS.map((m) => [m, MODELO_NOME[m]]), 'tipo'));
 
   function grupo(label, tipo) {
     const wrap = document.createElement('div'); wrap.style.cssText = 'margin-bottom:14px;';

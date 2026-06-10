@@ -85,7 +85,7 @@ const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); 
 let tochaOn = false;
 
 // avatar (recriado quando muda a aparência na tela de seleção)
-const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20 };
+const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20, sexo: 'homem', tipo: 'aldeao' };
 let avatar;
 function montaAvatar() {
   // preserva posição/rotação ao recriar (troca de cor in-game não teleporta)

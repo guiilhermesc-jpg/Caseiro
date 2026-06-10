@@ -52,6 +52,8 @@ export function conectarRede({ url, scene, getEstadoLocal }) {
       alvo: { x: grupo.position.x, y: grupo.position.y, z: grupo.position.z, rotY: grupo.rotation.y },
       anim: e.anim || {},
       cor: e.cores?.casaco ?? 0x888888, // cor do ponto no minimapa
+      nome: e.nome || '???',
+      coresSig: JSON.stringify(e.cores || {}),
       tempoAnim: 0,
       escalaAlvo: 1,
     });
@@ -60,6 +62,17 @@ export function conectarRede({ url, scene, getEstadoLocal }) {
   function atualizaOutro(e) {
     let o = outros.get(e.id);
     if (!o) { adicionaOutro(e); o = outros.get(e.id); if (!o) return; }
+    // mudou de aparência (cor/modelo/sexo)? recria o boneco mantendo posição
+    const sig = JSON.stringify(e.cores || {});
+    if (sig !== o.coresSig) {
+      const pos = o.grupo.position.clone(), rotY = o.grupo.rotation.y, sy = o.grupo.scale.y;
+      scene.remove(o.grupo);
+      const novo = criaAvatar(e.cores || {});
+      novo.position.copy(pos); novo.rotation.y = rotY; novo.scale.y = sy;
+      novo.add(criaNomeSprite(o.nome));
+      scene.add(novo);
+      o.grupo = novo; o.coresSig = sig; o.cor = e.cores?.casaco ?? o.cor;
+    }
     o.alvo.x = e.x ?? o.alvo.x;
     o.alvo.y = e.y ?? o.alvo.y;
     o.alvo.z = e.z ?? o.alvo.z;

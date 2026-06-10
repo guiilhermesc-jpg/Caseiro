@@ -3,6 +3,7 @@
 //  ou no PET (trocar de bicho). Pode mudar quando quiser, in-game.
 // =============================================================
 import { PALETAS } from './selecao.js';
+import { MODELOS, MODELO_NOME } from './avatar.js';
 
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 const PETS_LISTA = [
@@ -46,6 +47,21 @@ export function criaCustomizar({ cores, aoMudarCor, aoMudarPet, getPet }) {
   ov.appendChild(grupoCor('Roupa', 'casaco'));
   ov.appendChild(grupoCor('Pele', 'pele'));
   ov.appendChild(grupoCor('Cabelo', 'cabelo'));
+
+  function escolha(label, opcoes, chave) {
+    const wrap = document.createElement('div'); wrap.style.cssText = 'margin-bottom:14px;';
+    const t = document.createElement('div'); t.textContent = label; t.style.cssText = 'font-size:13px;color:#9fb0c0;margin-bottom:6px;'; wrap.appendChild(t);
+    const linha = document.createElement('div'); linha.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+    opcoes.forEach(([val, txt]) => {
+      const b = document.createElement('button'); b.textContent = txt;
+      b.style.cssText = `flex:1;min-width:64px;padding:8px 5px;border-radius:9px;border:2px solid ${cores[chave] === val ? '#fff' : '#3a4654'};background:#0e141c;color:#fff;font-size:12px;cursor:pointer;`;
+      b.onclick = () => { cores[chave] = val; [...linha.children].forEach((el, j) => { el.style.borderColor = (opcoes[j][0] === val ? '#fff' : '#3a4654'); }); aoMudarCor(chave, val); };
+      linha.appendChild(b);
+    });
+    wrap.appendChild(linha); return wrap;
+  }
+  ov.appendChild(escolha('Sexo', [['homem', '♂ Homem'], ['mulher', '♀ Mulher']], 'sexo'));
+  ov.appendChild(escolha('Modelo', MODELOS.map((m) => [m, MODELO_NOME[m]]), 'tipo'));
 
   const petTit = document.createElement('div');
   petTit.textContent = 'Pet'; petTit.style.cssText = 'font-size:13px;color:#9fb0c0;margin:4px 0 6px;';
