@@ -25,6 +25,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const container = document.getElementById('game');
 // celular/tablet → modo leve (sem sombras, menos luz, menos pixels) p/ fluidez
@@ -57,7 +58,7 @@ renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa mu
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 0.92; // sem estourar o horizonte/céu de branco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
@@ -70,9 +71,9 @@ let composer = null;
 if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(null, camera)); // a cena entra logo abaixo (criaCidade)
-  // bloom SUTIL: só o que é realmente brilhante irradia (lava/chamas/olhos);
-  // calibrado pra não "estourar" rostos e paredes claras
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.22, 0.4, 0.92));
+  // bloom SÓ para emissores de verdade (lava/chamas/olhos/lampiões):
+  // threshold 1.0 = nada de céu, flor ou parede clara brilhando
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.3, 0.4, 1.0));
 }
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
@@ -203,6 +204,25 @@ const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22
 dragao.g.position.y = DRY;
 ratos.push(dragao);
 const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1º voo logo no começo (pra você ver!)
+// DRAGÃO 3D PROFISSIONAL (opcional): se existir o arquivo
+// public/modelos/dragao.glb (ex.: "Dragon Evolved" do Quaternius, CC0,
+// baixável em poly.pizza/m/LlwD0QNUPj), ele SUBSTITUI o dragão de blocos
+// automaticamente — com animação esquelética de verdade.
+let mixerDragao = null;
+new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
+  const modelo = gltf.scene;
+  modelo.scale.setScalar(3.4);
+  modelo.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  while (dragao.g.children.length) dragao.g.remove(dragao.g.children[0]); // tira as peças blocky
+  dragao.g.add(modelo);
+  dragao.g.userData = { tipo: 'boss' }; // sem corpoMat (os guards cuidam do "piscar")
+  if (gltf.animations && gltf.animations.length) {
+    mixerDragao = new THREE.AnimationMixer(modelo);
+    const anim = gltf.animations.find((a) => /idle|fly/i.test(a.name)) || gltf.animations[0];
+    mixerDragao.clipAction(anim).play();
+  }
+  mostraMensagem('🐲 Dragão 3D profissional carregado!');
+}, undefined, () => { /* sem arquivo: segue o dragão padrão */ });
 // FAUNA DO CAMINHO (cada região com seus bichos, estilo Tibia)
 // matilha de lobos rondando a ponte do rio + lobos na floresta oeste
 [[170, 14], [191, 16], [188, -18], [-96, 26]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
@@ -703,7 +723,7 @@ function aoEquipar(item) {
       if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
       const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
       if (d > 5) continue;
-      r.hp -= 30; r.piscar = 0.2; r.g.userData.corpoMat.emissive.setHex(0xa03010);
+      r.hp -= 30; r.piscar = 0.2; if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0xa03010);
       if (r.hp <= 0) mataBicho(r);
       acertou++;
     }
@@ -844,21 +864,21 @@ function atacar() {
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
     if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (Venore) ou Yara (Thais). ➹'); return; }
     disparaFlecha(melhor);
-    melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+    melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
     if (melhor.hp <= 0) mataBicho(melhor);
     else mostraMensagem(`🏹 Flechada! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
     return;
   }
   const melhor = alvoRato();
   if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
-  melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+  melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
   if (melhor.hp <= 0) mataBicho(melhor);
   else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
 }
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
-  r.g.userData.corpoMat.emissive.setHex(0x000000);
+  if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0x000000);
   r.loot = rollLoot(r.boss || r.forte);
   if (r.lootEspecial && Math.random() < 0.7) r.loot.push({ ...r.lootEspecial }); // drop único (ex.: Olho do Beholder)
   r.despawnAt = tempo + 30;          // some em 30s se não saquear
@@ -1493,6 +1513,7 @@ function passo() {
     if (r.corpse && tempo > r.despawnAt) { r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25); }
     if (!r.vivo && !r.corpse && r.respawnAt && tempo > r.respawnAt) reviveBicho(r);
   }
+  if (mixerDragao) mixerDragao.update(dt); // animação esquelética do dragão 3D (se o .glb existir)
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
   ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)

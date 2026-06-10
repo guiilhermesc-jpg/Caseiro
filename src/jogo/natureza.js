@@ -162,9 +162,16 @@ export function criaCogumelo(x, z) {
 }
 
 // --- montanha (emoldura o mundo; bloqueia passagem) ---
+// materiais COM TEXTURA DE ROCHA compartilhados por todas as montanhas
+const MAT_ROCHA = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1 });
+const MAT_ROCHA_ESC = new THREE.MeshStandardMaterial({ color: 0x4a473f, roughness: 1 });
+const MAT_ROCHA_CLARA = new THREE.MeshStandardMaterial({ color: 0x827d72, roughness: 1 });
+aplicaTexturaReal(MAT_ROCHA, 'rocha', 3, 2, true);
+aplicaTexturaReal(MAT_ROCHA_ESC, 'rocha', 2.5, 1.8, true);
+aplicaTexturaReal(MAT_ROCHA_CLARA, 'rocha', 3.5, 2.2, true);
 export function criaMontanha(x, z, esc = 1) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const rocha = mat(0x6e6a62, 1), rochaEsc = mat(0x4a473f, 1), rochaClara = mat(0x827d72, 1), neve = mat(0xeef2f5, 1);
+  const rocha = MAT_ROCHA, rochaEsc = MAT_ROCHA_ESC, rochaClara = MAT_ROCHA_CLARA, neve = mat(0xeef2f5, 1);
   const h = 28 * esc, r = 18 * esc;
   const base = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), rocha);
   base.position.y = h / 2; base.rotation.y = Math.random(); base.scale.x = 1.12; base.castShadow = true; base.receiveShadow = true; g.add(base);

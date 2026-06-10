@@ -59,10 +59,9 @@ export function atualizaRatos(ratos, dt, jog, podeAndar) {
   for (const r of ratos) {
     if (!r.vivo || r.voando) continue; // voando = controlado pelo voo do dragão
     const g = r.g, b = r.bounds; r.tempo += dt;
-    if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0) g.userData.corpoMat.emissive.setHex(0x000000); }
+    if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0 && g.userData.corpoMat) g.userData.corpoMat.emissive.setHex(0x000000); }
     // asas (dragão) batem de leve mesmo parado
-    if (g.userData.asas) { const w = 0.18 + Math.abs(Math.sin(r.tempo * 3)) * 0.3; g.userData.asas[0].rotation.z = w; g.userData.asas[1].rotation.z = -w; }
-    if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; } // dragão bate as asas
+    if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; }
     // PERSEGUIÇÃO: se o jogador está perto e no mesmo "andar", caça-o
     r.contato = false;
     if (jog && Math.abs(r.y0 - jog.y) < 6) {
@@ -402,53 +401,80 @@ export function criaCaranguejo(x, z) {
 // pupila em fenda, bocarra cheia de presas, 8 tentáculos-olho e espinhos.
 // ATIRA rajadas mágicas no jogador (campo `atira` no main3d).
 export function criaBeholder(x, z) {
+  // v3 — estilo LIVRO de D&D: pele escura e verrugosa, bocarra TORTA com
+  // dentes irregulares, olhão vermelho raivoso sob placas de quitina,
+  // 10 tentáculos retorcidos. Sombrio e ameaçador (nada de "fofo").
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x6a2a7a, roughness: 0.55 });
-  const escuro = mat(0x2a1030);
-  const Y0 = 3.6; // paira ALTO
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x4a3340, roughness: 0.9 });   // pele parda-arroxeada ESCURA
+  const quitina = mat(0x261a22, 0.95);                                                     // placas quase pretas
+  const dente = mat(0xcfc4a8, 0.7);                                                        // marfim sujo
+  const Y0 = 3.6;
   const corpo = new THREE.Mesh(new THREE.SphereGeometry(2.1, 18, 16), corpoMat);
-  corpo.position.y = Y0; corpo.scale.set(1, 0.94, 1); corpo.castShadow = true; g.add(corpo);
-  // BOCARRA: arco escuro com 2 fileiras de presas
-  const boca = new THREE.Mesh(new THREE.SphereGeometry(1.35, 14, 8, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.22), mat(0x140510));
-  boca.position.set(0, Y0 + 0.12, 0.86); g.add(boca);
-  for (let i = 0; i < 7; i++) {
-    const px = -0.9 + i * 0.3;
-    const dCima = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.34, 4), mat(0xe8e0d0));
-    dCima.position.set(px, Y0 - 0.62, 1.78 - Math.abs(px) * 0.35); dCima.rotation.x = Math.PI - 0.3; g.add(dCima);
-    const dBaixo = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.26, 4), mat(0xd8d0c0));
-    dBaixo.position.set(px + 0.12, Y0 - 1.05, 1.7 - Math.abs(px) * 0.35); dBaixo.rotation.x = 0.3; g.add(dBaixo);
+  corpo.position.y = Y0; corpo.scale.set(1.05, 0.92, 1); corpo.castShadow = true; g.add(corpo);
+  // VERRUGAS/CALOMBOS espalhados (pele doente)
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2, b = Math.random() * Math.PI - Math.PI / 2;
+    const v = new THREE.Mesh(new THREE.SphereGeometry(0.14 + Math.random() * 0.16, 6, 5), quitina);
+    v.position.set(Math.cos(a) * Math.cos(b) * 2.05, Y0 + Math.sin(b) * 1.85, Math.sin(a) * Math.cos(b) * 2.0 - 0.2);
+    g.add(v);
   }
-  // OLHO CENTRAL gigante com pupila em FENDA (brilha)
-  const escl = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 14), mat(0xf0ece0, 0.4));
-  escl.position.set(0, Y0 + 0.55, 1.25); g.add(escl);
-  const iris = new THREE.Mesh(new THREE.SphereGeometry(0.58, 14, 12),
-    new THREE.MeshStandardMaterial({ color: 0xc02020, emissive: 0x801010, emissiveIntensity: 0.6 }));
-  iris.position.set(0, Y0 + 0.55, 1.85); g.add(iris);
-  const fenda = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.62, 0.1), mat(0x050505));
-  fenda.position.set(0, Y0 + 0.55, 2.3); g.add(fenda);
-  // sobrancelha brava (placa angulada sobre o olho)
-  const browL = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.22, 0.5), escuro);
-  browL.position.set(-0.55, Y0 + 1.35, 1.35); browL.rotation.z = -0.35; g.add(browL);
-  const browR = browL.clone(); browR.position.x = 0.55; browR.rotation.z = 0.35; g.add(browR);
-  // ESPINHOS na parte de baixo (queixo de pedra)
+  // BOCARRA TORTA: rasgo escuro irregular + dentes de tamanhos DIFERENTES
+  for (let i = 0; i < 6; i++) {
+    const px = -1.05 + i * 0.42;
+    const rasgo = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34 + Math.sin(i * 2.1) * 0.14, 0.3), quitina);
+    rasgo.position.set(px, Y0 - 0.72 + Math.sin(i * 1.7) * 0.1, 1.78 - Math.abs(px) * 0.42);
+    rasgo.rotation.z = (Math.sin(i * 3.1)) * 0.25; g.add(rasgo);
+  }
+  for (let i = 0; i < 8; i++) {
+    const px = -1.0 + i * 0.28;
+    const tam = 0.18 + Math.abs(Math.sin(i * 2.3)) * 0.22; // dentes desiguais
+    const dCima = new THREE.Mesh(new THREE.ConeGeometry(0.07 + tam * 0.18, tam, 4), dente);
+    dCima.position.set(px, Y0 - 0.52, 1.86 - Math.abs(px) * 0.4); dCima.rotation.x = Math.PI - 0.25; g.add(dCima);
+    if (i % 2) {
+      const dBaixo = new THREE.Mesh(new THREE.ConeGeometry(0.06, tam * 0.7, 4), dente);
+      dBaixo.position.set(px + 0.1, Y0 - 1.02, 1.76 - Math.abs(px) * 0.4); dBaixo.rotation.x = 0.25; g.add(dBaixo);
+    }
+  }
+  // OLHÃO central raivoso: esclera amarelada com VEIAS, íris vermelha, fenda
+  const escl = new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 14), mat(0xd8cfa8, 0.5));
+  escl.position.set(0, Y0 + 0.5, 1.3); g.add(escl);
+  for (let i = 0; i < 5; i++) { // veias
+    const veia = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.04), mat(0x8a2a1a, 0.8));
+    const a = (i / 5) * Math.PI * 2;
+    veia.position.set(Math.cos(a) * 0.6, Y0 + 0.5 + Math.sin(a) * 0.55, 2.05);
+    veia.rotation.z = a + Math.PI / 2; g.add(veia);
+  }
+  const iris = new THREE.Mesh(new THREE.SphereGeometry(0.52, 14, 12),
+    new THREE.MeshStandardMaterial({ color: 0xa01515, emissive: 0x6a0a0a, emissiveIntensity: 0.7 }));
+  iris.position.set(0, Y0 + 0.5, 1.92); g.add(iris);
+  const fenda = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.58, 0.1), mat(0x050505));
+  fenda.position.set(0, Y0 + 0.5, 2.32); g.add(fenda);
+  // SOBRANCELHA pesada de quitina (raiva permanente)
+  const browL = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.3, 0.55), quitina);
+  browL.position.set(-0.55, Y0 + 1.3, 1.4); browL.rotation.z = -0.42; g.add(browL);
+  const browR = browL.clone(); browR.position.x = 0.55; browR.rotation.z = 0.42; g.add(browR);
+  // ESPINHOS no queixo
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2;
-    const esp = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.6, 5), escuro);
-    esp.position.set(Math.cos(a) * 1.2, Y0 - 1.85, Math.sin(a) * 1.2); esp.rotation.x = Math.PI; g.add(esp);
+    const esp = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.55 + (i % 2) * 0.2, 5), quitina);
+    esp.position.set(Math.cos(a) * 1.2, Y0 - 1.8, Math.sin(a) * 1.1); esp.rotation.x = Math.PI; g.add(esp);
   }
-  // 8 TENTÁCULOS-OLHO longos (animados como "patas")
+  // 10 TENTÁCULOS retorcidos (segmento + cotovelo + olhinho raivoso)
   const patas = [];
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + 0.3;
     const stalk = new THREE.Group();
-    stalk.position.set(Math.cos(a) * 1.5, Y0 + 1.5, Math.sin(a) * 1.5);
-    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.7, 6), corpoMat);
-    haste.position.y = 0.85; haste.rotation.z = Math.cos(a) * 0.35; haste.rotation.x = -Math.sin(a) * 0.35; stalk.add(haste);
-    const bulbo = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 10), corpoMat);
-    bulbo.position.set(Math.cos(a) * 0.5, 1.75, Math.sin(a) * 0.5); stalk.add(bulbo);
-    const olhinho = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8),
-      new THREE.MeshStandardMaterial({ color: 0xe0d040, emissive: 0xa08000, emissiveIntensity: 0.5 }));
-    olhinho.position.set(Math.cos(a) * 0.62, 1.8, Math.sin(a) * 0.62); stalk.add(olhinho);
+    stalk.position.set(Math.cos(a) * 1.45, Y0 + 1.35 + Math.sin(i * 2.7) * 0.3, Math.sin(a) * 1.4);
+    const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 1.1, 6), corpoMat);
+    seg1.position.y = 0.55; seg1.rotation.z = Math.cos(a) * 0.5; seg1.rotation.x = -Math.sin(a) * 0.5; stalk.add(seg1);
+    const cotovelo = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 6), quitina);
+    cotovelo.position.set(Math.cos(a) * 0.45, 1.05, Math.sin(a) * 0.42); stalk.add(cotovelo);
+    const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.9, 5), corpoMat);
+    seg2.position.set(Math.cos(a) * 0.7, 1.4, Math.sin(a) * 0.66);
+    seg2.rotation.z = -Math.cos(a) * 0.7; seg2.rotation.x = Math.sin(a) * 0.7; stalk.add(seg2);
+    const olhinho = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xb03020, emissive: 0x701510, emissiveIntensity: 0.6 }));
+    olhinho.position.set(Math.cos(a) * 0.95, 1.72, Math.sin(a) * 0.9); stalk.add(olhinho);
     stalk.castShadow = true; g.add(stalk); patas.push(stalk);
   }
   g.userData = { patas, corpoMat, tipo: 'monstro' };

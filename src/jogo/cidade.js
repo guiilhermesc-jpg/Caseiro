@@ -100,6 +100,49 @@ export function criaCidade() {
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), gramaMat);
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
 
+  // MATO 3D (padrão Tibia): tufos de capim espalhados pelo campo inteiro —
+  // instanciados em 2 draw calls (320 moitas quase de graça)
+  function texturaMato() {
+    const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+    const x = c.getContext('2d');
+    const verdes = ['#4e7c3a', '#5d8f46', '#6fa052', '#447034'];
+    for (let i = 0; i < 16; i++) {
+      x.strokeStyle = verdes[i % verdes.length];
+      x.lineWidth = 2 + Math.random() * 1.6;
+      x.beginPath();
+      const bx = 20 + Math.random() * 24;
+      x.moveTo(bx, 64);
+      x.quadraticCurveTo(bx + (Math.random() - 0.5) * 26, 34, 8 + Math.random() * 48, 4 + Math.random() * 26);
+      x.stroke();
+    }
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+  }
+  const matoMat = new THREE.MeshStandardMaterial({ map: texturaMato(), transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 1 });
+  const matoGeo = new THREE.PlaneGeometry(1.7, 1.25); matoGeo.translate(0, 0.55, 0);
+  const N_MATO = 320, dummyM = new THREE.Object3D();
+  const mato1 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
+  const mato2 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
+  let mi = 0;
+  for (let tent = 0; tent < 5000 && mi < N_MATO; tent++) {
+    const px = (Math.random() - 0.5) * 760, pz = (Math.random() - 0.5) * 560;
+    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;     // fora da cidade
+    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;   // fora da estrada
+    if (pz < -178) continue;                                  // fora da praia/mar
+    if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
+    if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
+    if (px > 498) continue;                                   // fora de Thais
+    dummyM.position.set(px, 0, pz);
+    dummyM.rotation.y = Math.random() * Math.PI;
+    dummyM.scale.setScalar(0.7 + Math.random() * 0.9);
+    dummyM.updateMatrix();
+    mato1.setMatrixAt(mi, dummyM.matrix);
+    dummyM.rotation.y += Math.PI / 2; dummyM.updateMatrix();
+    mato2.setMatrixAt(mi, dummyM.matrix);
+    mi++;
+  }
+  mato1.count = mi; mato2.count = mi;
+  scene.add(mato1); scene.add(mato2);
+
   // ruas em GRADE — agora CALÇADAS de pedra (textura), quase no nível do chão
   function matRua(rx, rz) {
     const t = texturaPedra(1); t.repeat.set(rx, rz);
