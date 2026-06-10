@@ -110,7 +110,7 @@ export function criaPinheiro(x = 0, z = 0) {
     const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), mat(corFolha));
     c.position.y = y; c.castShadow = true; g.add(c);
   });
-  return { grupo: g, colisores: [{ minX: x - 0.7, maxX: x + 0.7, minZ: z - 0.7, maxZ: z + 0.7 }] };
+  return { grupo: g, colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }] };
 }
 
 export function criaArbusto(x = 0, z = 0) {
@@ -128,7 +128,7 @@ export function criaArbusto(x = 0, z = 0) {
     f.position.set(Math.cos(ang) * r, 1.0 + Math.random() * 0.5, Math.sin(ang) * r);
     g.add(f);
   }
-  return { grupo: g, colisores: [] };
+  return { grupo: g, colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }] };
 }
 
 // fonte com 2 taças + jatos de água animados (gotas)
@@ -167,7 +167,10 @@ export function criaBanco(x = 0, z = 0, rot = 0) {
   const assento = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.24, 1.1), mad); assento.position.y = 0.78; assento.castShadow = true; g.add(assento);
   const encosto = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.0, 0.2), mad); encosto.position.set(0, 1.4, -0.45); encosto.castShadow = true; g.add(encosto);
   [-1.5, 1.5].forEach((s) => { const pe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.78, 1.0), ferro); pe.position.set(s, 0.39, 0); g.add(pe); });
-  return { grupo: g, colisores: [] };
+  // colisão do banco (respeita a rotação: 3.6 de largura x 1.1 de profundidade)
+  const girado = Math.abs(Math.sin(rot)) > 0.5;
+  const wA = girado ? 1.1 : 3.6, dA = girado ? 3.6 : 1.1;
+  return { grupo: g, colisores: [{ minX: x - wA / 2, maxX: x + wA / 2, minZ: z - dA / 2, maxZ: z + dA / 2 }] };
 }
 
 // poste de luz (luminária emissiva + PointLight controlada pelo ciclo dia/noite)

@@ -96,6 +96,12 @@ criaSelecao({
   aoMudarCor: () => montaAvatar(),
   aoEntrar: (nome) => {
     nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI;
+    // espalha o nascimento pela praça (evita dois jogadores no mesmo ponto)
+    for (let i = 0; i < 16; i++) {
+      const a = Math.random() * Math.PI * 2, r = 7 + Math.random() * 6;
+      const tx = Math.cos(a) * r, tz = Math.sin(a) * r;
+      if (!colide(tx, tz)) { avatar.position.set(tx, 0, tz); break; }
+    }
     minimapa.mostra();
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
