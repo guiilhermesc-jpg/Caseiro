@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta } from './natureza.js';
+import { criaCasaInterior } from './interiores.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
 function texturaGrama() {
@@ -61,7 +62,7 @@ export function criaCidade() {
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), mat(0x9a9082, 1));
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
-  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [];
+  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [];
   const add = (res) => {
     scene.add(res.grupo); solidos.push(res.grupo);
     if (res.colisores) res.colisores.forEach((c) => obstaculos.push(c));
@@ -71,6 +72,7 @@ export function criaCidade() {
     if (res.luz) postes.push({ luz: res.luz, lumMat: res.lumMat });
     if (res.animados) res.animados.forEach((a) => animados.push(a));
     if (res.interativo) interativos.push(res.interativo);
+    if (res.casa) casas.push(res.casa);
   };
 
   // praça: fonte central + bancos + postes nas esquinas
@@ -138,6 +140,10 @@ export function criaCidade() {
   add(criaBau(0, -26, 0.2));         // tesouro perto da igreja
   add(criaCristal(0, 26));           // cristal arcano perto da escola
 
+  // CASAS ENTRÁVEIS (porta abre na AÇÃO, telhado some ao entrar) — perto da praça
+  add(criaCasaInterior(38, 0, { frente: 'oeste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
+  add(criaCasaInterior(-38, 0, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
+
   // === NATUREZA / BIOMAS (mundo expandido) ===
   // lago ao norte + riacho com ponte na rua x=16
   add(criaLago(45, 80, 15));
@@ -176,5 +182,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos };
+  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas };
 }

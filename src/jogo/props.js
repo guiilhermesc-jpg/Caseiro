@@ -181,5 +181,6 @@ export function animaProps(animados, dt, tempo) {
     if (a.flutua) a.mesh.position.y = a.baseY + Math.sin(tempo * 2 + a.fase) * 0.12;
     if (a.pulsa) a.pulsa.emissiveIntensity = 0.55 + Math.sin(tempo * 3 + a.fase) * 0.35;
     if (a.balanca) a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.25;
+    if (a.porta) a.mesh.rotation.y += (a.alvo - a.mesh.rotation.y) * Math.min(1, dt * 8); // abre/fecha suave
   }
 }

@@ -52,7 +52,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
 
-const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos } = criaCidade();
+const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 function colide(x, z) {
@@ -256,7 +256,7 @@ function loop() {
     if (controles.querAgir()) {
       gesto = 1;
       const alvo = achaInterativo();
-      if (alvo) mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+      if (alvo) { if (alvo.onAcao) alvo.onAcao(); else mostraMensagem(alvo.titulo + ' — ' + alvo.msg); }
     }
     if (gesto > 0) {
       gesto = Math.max(0, gesto - dt * 3);
@@ -264,10 +264,19 @@ function loop() {
       if (p) p.bracoDir.rotation.x = -Math.sin((1 - gesto) * Math.PI) * 1.6;
     }
 
+    // INTERIORES: esconde o telhado da casa em que você está + aproxima a câmera
+    let dentroCasa = false;
+    for (const c of casas) {
+      const d = avatar.position.x > c.box.minX && avatar.position.x < c.box.maxX
+             && avatar.position.z > c.box.minZ && avatar.position.z < c.box.maxZ;
+      c.roof.visible = !d;
+      if (d) dentroCasa = true;
+    }
+
     // câmera orbital + anti-oclusão
     const alvo = avatar.position;
     const foco = new THREE.Vector3(alvo.x, alvo.y + 2.4, alvo.z);
-    const DIST = 13;
+    const DIST = dentroCasa ? 6.5 : 13;
     const cosP = Math.cos(cam.pitch);
     const desejada = new THREE.Vector3(
       foco.x + Math.sin(cam.yaw) * cosP * DIST,
