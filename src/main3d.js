@@ -20,7 +20,7 @@ import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
-import { aplicaTexturaReal } from './jogo/construcoes.js';
+import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -65,6 +65,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.74; // premium sem "lavar" o céu/roupas/grama de branco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 renderer.domElement.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   mostraMensagem('⚠️ O 3D perdeu o contexto no aparelho. Recarregue a página; reduzi a carga mobile nesta versão.');
@@ -101,6 +102,7 @@ function alturaTerreno(x, z) {
   return montanhaDragao.h * (1 - (r - montanhaDragao.topo) / (montanhaDragao.r - montanhaDragao.topo));
 }
 const raycaster = new THREE.Raycaster();
+const occTmp = []; // buffer reutilizado da anti-oclusão (zero alocação por frame)
 const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
 let limiteMundo = CONFIG3D.limiteMundo;
@@ -215,14 +217,35 @@ const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1
 // public/modelos/dragao.glb (ex.: "Dragon Evolved" do Quaternius, CC0,
 // baixável em poly.pizza/m/LlwD0QNUPj), ele SUBSTITUI o dragão de blocos
 // automaticamente — com animação esquelética de verdade.
-let mixerDragao = null;
+let mixerDragao = null, modeloDragaoGLB = null;
+// veste o modelo GLB no grupo do dragão (também usado no RESPAWN/Dragon Lord)
+function aplicaModeloDragao() {
+  if (!modeloDragaoGLB) return;
+  while (dragao.g.children.length) dragao.g.remove(dragao.g.children[0]); // tira as peças blocky
+  dragao.g.add(modeloDragaoGLB);
+  dragao.g.userData = { tipo: 'boss' }; // sem corpoMat (os guards cuidam do "piscar")
+  // Dragon LORD = brasas na pele; verde = normal
+  modeloDragaoGLB.traverse((o) => {
+    if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(dragao.lord ? 0x6a1408 : 0x000000);
+  });
+}
 new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   const modelo = gltf.scene;
-  modelo.scale.setScalar(3.4);
-  modelo.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  while (dragao.g.children.length) dragao.g.remove(dragao.g.children[0]); // tira as peças blocky
-  dragao.g.add(modelo);
-  dragao.g.userData = { tipo: 'boss' }; // sem corpoMat (os guards cuidam do "piscar")
+  // AUTO-ESCALA: mede o modelo (cada GLB vem num tamanho) e escala pra
+  // porte de CHEFE (~12u), assentado no chão e centralizado
+  const cx1 = new THREE.Box3().setFromObject(modelo);
+  const tam = new THREE.Vector3(); cx1.getSize(tam);
+  const s = 12 / (Math.max(tam.x, tam.y, tam.z) || 1);
+  modelo.scale.setScalar(s);
+  const cx2 = new THREE.Box3().setFromObject(modelo);
+  const centro = new THREE.Vector3(); cx2.getCenter(centro);
+  modelo.position.x -= centro.x; modelo.position.z -= centro.z;
+  modelo.position.y -= cx2.min.y;
+  modelo.traverse((o) => {
+    if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } // skinned some com culling errado
+  });
+  modeloDragaoGLB = modelo;
+  aplicaModeloDragao();
   if (gltf.animations && gltf.animations.length) {
     mixerDragao = new THREE.AnimationMixer(modelo);
     const anim = gltf.animations.find((a) => /idle|fly/i.test(a.name)) || gltf.animations[0];
@@ -941,6 +964,34 @@ function derrubaMochila(pos, itens) {
   interativos.push(it);
   corposCaidos.push({ mesh: g, it, expiraAt: tempo + 600 }); // o corpo dura 10 MINUTOS
 }
+// TELA DE MORTE (estilo Tibia): escurece tudo, mostra o que se perdeu e o
+// botão de renascer — o jogador entende o que aconteceu em vez de "teleportar".
+let telaMorte = null;
+function mostraTelaMorte(xpPerdido, perdeuItens) {
+  if (!telaMorte) {
+    telaMorte = document.createElement('div');
+    telaMorte.style.cssText = 'position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;'
+      + 'background:radial-gradient(ellipse at center, rgba(70,0,0,.8), rgba(8,0,0,.94));';
+    document.body.appendChild(telaMorte);
+  }
+  telaMorte.innerHTML = `<div style="text-align:center;font-family:Arial;color:#f2e6e6;max-width:82vw;">
+    <div style="font-size:52px;margin-bottom:4px;">💀</div>
+    <div style="font-size:32px;font-weight:bold;letter-spacing:4px;color:#ff6a5a;text-shadow:0 2px 12px #500;">VOCÊ MORREU</div>
+    <div style="margin:14px 0 20px;font-size:15px;color:#d8b8b8;line-height:1.8;">
+      Perdeu <b style="color:#ffd23f;">${xpPerdido} XP</b>${perdeuItens
+        ? '<br>Sua <b>mochila caiu onde você morreu</b> 🎒 — você tem <b>10 minutos</b> pra voltar e recuperar!'
+        : ''}
+    </div>
+    <div id="btnRenascer" style="display:inline-block;background:#7a1f14;border:2px solid #ff8a6a;border-radius:14px;
+      padding:13px 30px;font-size:17px;font-weight:bold;color:#ffe9e2;cursor:pointer;user-select:none;
+      box-shadow:0 6px 24px rgba(0,0,0,.6);">🙏 Renascer no Templo Sagrado</div>
+  </div>`;
+  telaMorte.style.display = 'flex';
+  telaMorte.querySelector('#btnRenascer').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    telaMorte.style.display = 'none';
+  });
+}
 // MORTE estilo Tibia: perde XP (pode descer de nível), derruba a mochila onde
 // caiu (dá pra voltar e recuperar) e RENASCE no Templo Sagrado de Venore.
 function morre() {
@@ -951,7 +1002,7 @@ function morre() {
   if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX);
-  mostraMensagem(`💀 Você caiu! Os deuses te trazem ao Templo Sagrado. (-${xpPerdido} XP${perdidos.length ? ' · sua mochila ficou onde você morreu 🎒' : ''})`);
+  mostraTelaMorte(xpPerdido, perdidos.length > 0); // tela de morte (botão renasce)
   salvaJogo(); // grava o estado pós-morte na conta
 }
 function reviveBicho(r) {
@@ -973,6 +1024,7 @@ function reviveBicho(r) {
       mostraMensagem('🐲 Um dragão voltou ao pico da montanha.');
     }
     r.hp = r.hpMax; r.vivo = true; r.respawnAt = null; r.alvo = { x: DRX, z: DRZ };
+    aplicaModeloDragao(); // respawn continua com o modelo 3D (Lord ganha brasas na pele)
     return;
   }
   if (r.boss && r.forma) { // só o boss do esgoto troca de forma (cobra↔croc)
@@ -1358,7 +1410,12 @@ function passo() {
     const distMax = dir.length(); dir.normalize();
     raycaster.set(foco, dir); raycaster.far = distMax;
     // anti-oclusão só contra o que está PERTO (no esgoto, só a sala) — evita raycast no mundo todo
-    const occ = noEsgoto ? [esgoto.grupo] : solidos.filter((s) => s.position.distanceToSquared(avatar.position) < 500);
+    // sem alocar array novo a cada frame (o .filter criava lixo pro GC 60×/s
+    // → picos de pausa = "imagem trava mas o boneco continua andando")
+    occTmp.length = 0;
+    if (noEsgoto) occTmp.push(esgoto.grupo);
+    else for (const s of solidos) { if (s.position.distanceToSquared(avatar.position) < 500) occTmp.push(s); }
+    const occ = occTmp;
     const hits = raycaster.intersectObjects(occ, true);
     let dist = distMax;
     if (hits.length && hits[0].distance < distMax) dist = Math.max(3, hits[0].distance - 0.6);
@@ -1477,7 +1534,8 @@ function passo() {
     }
     // CAMPOS DE CHÃO (Tibia): lava queima na hora; lodo do pântano envenena
     if (!gmImortal && noChao && !noEsgoto) {
-      for (const c of CAMPOS.concat(camposTemp)) { // fixos + lava do dragão
+      for (let ci = 0; ci < CAMPOS.length + camposTemp.length; ci++) { // fixos + lava do dragão (sem concat/alocação)
+        const c = ci < CAMPOS.length ? CAMPOS[ci] : camposTemp[ci - CAMPOS.length];
         if (Math.abs(avatar.position.y - c.y) > 2.5) continue;
         if (Math.hypot(avatar.position.x - c.x, avatar.position.z - c.z) > c.r) continue;
         if (c.tipo === 'lava') {

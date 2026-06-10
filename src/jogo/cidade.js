@@ -216,7 +216,8 @@ export function criaCidade() {
   })));
 
   // postes de luz nas esquinas das ruas
-  [[16, 16], [-16, 16], [16, -16], [-16, -16], [48, 16], [-48, 16], [48, -16], [-48, -16], [16, 48], [-16, 48], [16, -48], [-16, -48]]
+  // (4 postes deslocados: ficavam EXATAMENTE em cima dos bueiros do esgoto)
+  [[16, 16], [-16, 22], [16, -22], [-16, -16], [48, 22], [-48, 16], [48, -16], [-48, -22], [16, 48], [-16, 48], [16, -48], [-16, -48]]
     .forEach(([x, z]) => add(criaPoste(x, z)));
 
   // pinheiros + arbustos (com flores) — LONGE das portas das casas (frentes livres)
@@ -239,8 +240,8 @@ export function criaCidade() {
   add(criaBandeira(-20, 20, 0x2a5a9c));
   add(criaBandeira(20, -20, 0x2a8a4a));
   add(criaBandeira(-20, -20, 0xb8902a));
-  // barris e caixas (depósitos nos cantos de rua)
-  [[16, 40], [24, 48], [40, 24], [-16, 40], [-24, 48], [-40, 24], [40, -24], [-40, -24]]
+  // barris e caixas (depósitos AO LADO das ruas — 4 pares estavam NO MEIO da pista)
+  [[22, 40], [24, 54], [40, 24], [-22, 40], [-24, 54], [-40, 24], [40, -24], [-40, -24]]
     .forEach(([x, z]) => { add(criaBarril(x, z)); add(criaCaixa(x + 1.3, z + 0.2)); });
   // ITENS VALIOSOS (ganchos de quest futura)
   add(criaBau(12, -18, 0.4));        // tesouro ao LADO do templo (corredor central livre)

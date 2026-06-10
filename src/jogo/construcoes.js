@@ -14,6 +14,11 @@ export function mat(cor, rough = 0.9) {
 
 // TEXTURA REAL (gerada por IA em public/texturas/): troca o mapa do material
 // quando o arquivo carrega; se faltar, fica a procedural (fallback seguro).
+// O renderer é registrado pra SUBIR a textura pra GPU JÁ no carregamento —
+// sem isso o upload acontecia no 1º uso em cena e dava a "travadinha de
+// imagem" andando pelo mapa.
+let _rendererTex = null;
+export function defineRendererTexturas(r) { _rendererTex = r; }
 const _loaderTex = new THREE.TextureLoader();
 export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) {
   _loaderTex.load('texturas/' + arquivo + '.png', (t) => {
@@ -21,6 +26,7 @@ export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) 
     t.repeat.set(rx, rz);
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 8; // NITIDEZ em ângulo raso (o chão não borra mais ao longe)
+    if (_rendererTex) _rendererTex.initTexture(t); // GPU agora, não no 1º uso
     material.map = t;
     if (!manterCor) material.color.set(0xffffff);
     material.needsUpdate = true;

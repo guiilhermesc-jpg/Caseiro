@@ -321,9 +321,10 @@ export function criaPonteDePedra(x, z, comp = 12) {
   const pedra = mat(0x8a8276, 1), pedraEsc = mat(0x6a6258, 1);
   const deck = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.22, 7.4), pedra);
   deck.position.y = 0.11; deck.castShadow = deck.receiveShadow = true; g.add(deck);
-  // arco por baixo (vão da água)
+  // arco por baixo (vão da água) — AFUNDADO: antes a meia-lua atravessava o
+  // tablado e virava uma "corcova de pedra" no meio da ponte
   const arco = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 6.6, 12, 1, false, 0, Math.PI), pedraEsc);
-  arco.rotation.z = Math.PI / 2; arco.rotation.y = Math.PI / 2; arco.position.y = 0.1; g.add(arco);
+  arco.rotation.z = Math.PI / 2; arco.rotation.y = Math.PI / 2; arco.position.y = -1.95; g.add(arco);
   const colisores = [];
   [-3.55, 3.55].forEach((oz) => { // parapeitos finos na BORDA (não cai na água)
     const par = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.85, 0.3), pedraEsc);
