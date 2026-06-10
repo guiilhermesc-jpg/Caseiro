@@ -73,19 +73,24 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
   (PC) e no **celular/iPad** (link caseiro.pages.dev). Se aparecer "Não foi possível iniciar o 3D", ligar
   Aceleração de Hardware no Chrome (o Edge funciona). Sempre que publico, no PC dar **Ctrl+Shift+R**.
 
-## 8. FILA DE PEDIDOS
-**FEITO recentemente:** 🎣 pesca · 🏠 casas compráveis+personalizar · ❤️ vida+bichos atacam+morte ·
-🛡️ armaduras dropáveis (equipam clicando na mochila, aparecem no corpo, defesa) · 🪙 ouro ·
-🔦 tocha clicável na mochila (item usável) · 🌙 NPCs voltam pra casa à noite (lojistas/guarda ficam) ·
-🚪 entrada nas casas conserta da (porta abre sozinha ao chegar + marcador 🏠) · sexo/raça só na criação ·
-📍 nomes de lugares (Praça/Rua/Caminho de Thais/Esgoto) · 🐉 bichos novos (ladrão, escorpião) ·
+## 8. FILA DE PEDIDOS (continuidade — RETOMAR DAQUI)
+**JÁ FEITO:** 🎣 pesca · 🏠 casas compráveis+personalizar telhado · ❤️ vida+bichos atacam+morte/respawn ·
+🛡️ armaduras + ⚔️ armas (adaga/espada/machado) dropáveis (clicar na mochila p/ equipar, aparecem no corpo, defesa/dano) ·
+🪙 ouro · 🔦 tocha clicável na mochila · 🌙 NPCs voltam pra casa à noite (lojistas/guarda ficam) ·
+🚪 **entrada nas casas à prova de falha** (frente passável + porta auto-abre + marcadores 🏠/🚪) ·
+🔒 sexo/raça só na criação · 📍 nomes de lugares + 🪧 placas de rua (Mercado/Ferreiro/Igreja/Escola) ·
+🐉 bichos: rato, boss cobra/croc, troll, ciclope, aranha+filhotes, ladrão, escorpião ·
 ⛰️ montanhas com relevo · ⚡ otimização **mobile** (sem sombras/luzes) e **PC** (anti-oclusão só perto).
-**PRÓXIMOS:**
-1. 🏰 **Thais (cidade distante) entrável** + mais conteúdo no caminho.
-2. 🏙️ **Crescer a cidade** + detalhes únicos/personalidade + **nomes de rua no minimapa**.
-3. 🐉 Mais bichos (beholder) + variedade de loot/armas (espadas etc.).
-4. 🚪 Porta que **bloqueia** quando fechada; túneis sob cada rua.
-5. ⚡ Mais otimização se pesar (instancing/merge de geometrias) · 🔒 rotacionar token Cloudflare.
+
+**PRÓXIMOS (nesta ordem — pedidos do maestro):**
+1. 🏰 **Thais (cidade distante, a leste pelo Caminho de Thais) ENTRÁVEL** + conteúdo no caminho.
+2. 🏙️ **Crescer Venore** + detalhes únicos/personalidade + nomes de rua **no minimapa**.
+3. 🐉 Mais bichos (beholder) + mais variedade de loot.
+4. 🎨 **Qualidade sempre** — melhorar proporções/materiais/detalhes (o maestro repete muito: capricho).
+5. 🚪 Porta que **bloqueia** quando fechada; 🕳️ túneis sob cada rua do esgoto.
+6. ⚡ Otimização contínua (instancing/merge de geometrias se pesar) · 🔒 rotacionar token Cloudflare.
+
+**Modo de trabalho do maestro:** quer que eu **execute em sequência sem ficar parando pra perguntar** ("só para quando eu mandar"); valida no **Edge (PC)** e **iPhone**; foco em **qualidade + fluidez** (mobile não pode travar). A cada mudança: `npm run build` → deploy (wrangler) → `git commit` + `git push`.
 
 ## 9. DIÁRIO (marcos recentes)
 Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
