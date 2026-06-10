@@ -22,12 +22,15 @@ import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCycl
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
+// celular/tablet → modo leve (sem sombras, menos luz, menos pixels) p/ fluidez
+const ehMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  || (matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024);
 
 // Se o navegador não conseguir iniciar o 3D (WebGL desligado / sem aceleração
 // de hardware), mostra um aviso claro em vez de tela preta e muda.
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: !ehMobile, powerPreference: 'high-performance' });
 } catch (e) {
   container.innerHTML = '<div style="position:fixed;inset:0;display:flex;align-items:center;'
     + 'justify-content:center;padding:24px;font-family:Arial,sans-serif;color:#e6edf5;text-align:center;">'
@@ -43,9 +46,9 @@ try {
     + '</div></div>';
   throw e; // interrompe o resto da inicialização
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, ehMobile ? 1.4 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa muito)
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -320,7 +323,7 @@ function aplicaDiaNoite(dt) {
   if (scene.fog) scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
   const noite = 1 - d;
   for (const p of postes) {
-    p.luz.intensity = noite > 0.45 ? (noite - 0.45) * 3.4 : 0;
+    p.luz.intensity = (!ehMobile && noite > 0.45) ? (noite - 0.45) * 3.4 : 0; // sem point-lights no mobile
     if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9;
   }
 }
