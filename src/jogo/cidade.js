@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta } from './natureza.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
 function texturaGrama() {
@@ -47,7 +48,7 @@ export function criaCidade() {
   scene.add(sun);
 
   // grama
-  const grama = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ map: texturaGrama(), roughness: 1 }));
+  const grama = new THREE.Mesh(new THREE.PlaneGeometry(540, 540), new THREE.MeshStandardMaterial({ map: texturaGrama(), roughness: 1 }));
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
 
   // ruas em GRADE — finas e quase no nível do chão (evita o avatar "afundar")
@@ -136,6 +137,30 @@ export function criaCidade() {
   // ITENS VALIOSOS (ganchos de quest futura)
   add(criaBau(0, -26, 0.2));         // tesouro perto da igreja
   add(criaCristal(0, 26));           // cristal arcano perto da escola
+
+  // === NATUREZA / BIOMAS (mundo expandido) ===
+  // lago ao norte + riacho com ponte na rua x=16
+  add(criaLago(45, 80, 15));
+  add(criaRiacho({ xIni: -55, xFim: 30, z: 80, larg: 5, gapX: 16, gapW: 7 }));
+  add(criaPonte(16, 80, 8));
+  // BIOMA beira-d'água: salgueiros, juncos, vitórias-régias, flores azuis, pedras
+  add(criaSalgueiro(24, 72));
+  add(criaSalgueiro(54, 64));
+  [[-40, 76], [-20, 84], [0, 76], [-50, 83], [33, 70], [40, 92], [52, 90]].forEach(([x, z]) => add(criaJunco(x, z)));
+  [[42, 78], [48, 84], [38, 86], [50, 74], [44, 88]].forEach(([x, z]) => add(criaNenufar(x, z)));
+  [[-45, 74], [10, 75], [-15, 86], [58, 72]].forEach(([x, z]) => add(criaFlorAlta(x, z, 0x6ab0ff)));
+  [[30, 73, 1.2], [60, 88, 1.0], [-52, 76, 0.9]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  // BIOMA floresta (oeste): pinheiros + árvores de copa + cogumelos + pedras
+  [[-82, 0], [-92, 18], [-78, -22], [-95, -8], [-86, 34], [-80, -40], [-93, 42], [-88, -28]]
+    .forEach(([x, z]) => add(criaPinheiro(x, z)));
+  [[-86, 10], [-90, -16], [-80, 26], [-94, 6], [-84, -34], [-90, 50]]
+    .forEach(([x, z]) => add(criaArvore(x, z)));
+  [[-83, 4], [-88, 22], [-85, -12], [-91, 30]].forEach(([x, z]) => add(criaCogumelo(x, z)));
+  [[-80, 14, 1.4], [-94, -2, 1.1], [-86, -46, 1.2]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  // BIOMA campo florido (leste/sul): flores variadas + pedras
+  [[80, 20], [88, -10], [76, 40], [84, 8], [70, -30], [82, -44], [-30, -80], [20, -84]]
+    .forEach(([x, z], i) => add(criaFlorAlta(x, z, [0xf2c14e, 0xe85d75, 0xd06ad0, 0xff8a4c][i % 4])));
+  [[78, 0, 1.3], [86, 28, 1.0], [72, -16, 1.5]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
 
   // nuvens
   const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 });
