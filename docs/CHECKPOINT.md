@@ -134,6 +134,15 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 29. ✅ 🗺️ **Zoom do minimapa de verdade** (🔍+/− colados no mapa, teclas +/−); botões antigos de "tamanho do mundo" removidos.
 30. ✅ 🐲 **Montanha do Dragão ESCALÁVEL** (alturaTerreno: rampa cônica até platô em y=34, em 110,300): dragão agora **VERDE** (Tibia) no topo; **voa sobre Venore** a cada ~1-2 min (visível da cidade, asas batendo); ao morrer **20% de chance de Dragon Lord vermelho 5× mais forte** (1100hp, dropa Coração de Dragão = 400🪙); Lord morto → volta o verde.
 
+**JÁ FEITO (7ª rodada — "50x": praia, Thais Tibia, coletáveis, GM, rotações):**
+31. ✅ 🏖️ **Praia do Sul + Mar**: areia 380u, mar com barreira, 10 coqueiros (`criaCoqueiro`), trilha do Bairro Sul, pesca no mar, **caranguejos** (bicho novo).
+32. ✅ 🏙️ **Thais proporção Tibia** (maior que Venore): muralha 56×50, fileiras duplas N/S + coluna leste (portas eixo X) + flanco oeste ≈ 40 construções; portão x=504; marcos recalculados.
+33. ✅ 🕳️ **Bueiros validados**: em cima das escadas, todos na rua + **2 bueiros em Thais** (esgoto conecta as cidades; 7 acessos no total).
+34. ✅ 🌿 **Coletáveis**: Erva/Cogumelo/Concha/Coco pelo mapa (colher → vender → renascem 90s).
+35. ✅ 🛡️ **CONTA DEV/GM**: nome **"gm"/"adm"/"dev"** na criação ativa; tecla **G** = painel (teleportes, curar, +ouro, +XP, exterminar, invocar rato/troll/dragão, imortal, velocidade ×3).
+36. ✅ 🔄 **Rotações suaves** (`giraSuave` em avatar.js) no jogador/NPCs/monstros + 🎨 **textura de telha** em todos os telhados duas-águas.
+37. ℹ️ **Versão instalável (launcher tipo Rubinot)**: decisão = ficar no navegador durante o desenvolvimento; empacotar depois com **Electron/Tauri** (zero perda de código; o app embute o mesmo jogo + auto-update). Documentado pro maestro.
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
