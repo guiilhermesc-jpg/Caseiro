@@ -4,7 +4,33 @@
 
 ---
 
-## 🤝 HANDOFF PARA O PRÓXIMO AGENTE (Codex) — COMECE AQUI
+## 🚨 PRÓXIMA SESSÃO — COMECE AQUI (atualizado 10/06 noite, v18 no ar)
+**Estado:** jogo em produção (caseiro.pages.dev, selo de versão `v18` no canto inferior esquerdo — bump `VERSAO` no main3d.js a cada deploy). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
+
+### 🔴 BUGS RELATADOS PELO MAESTRO (prioridade máxima)
+1. **"No PC travou" + "teleportar para Thais (GM) trava"** — investigar: teleporte GM pra Thais (560,-2) provavelmente engasga ao renderizar a região inteira pela 1ª vez (casario+muralha = muitos draw calls; shaders pré-compilados e texturas já sobem no load — suspeitar de volume de geometria ou exceção). Loop é blindado: se travar DE VEZ deve aparecer toast "⚠️ Erro interno: ..." — **pedir print do toast/console (F12)**. Fixes candidatos: merge de geometria do casario de Thais (BufferGeometryUtils.mergeGeometries por material), reduzir ameias, instancing.
+2. **Marcador 🐾 dos domáveis grande/feio** (print: "patas roxas" gigantes na praça) — reduzir escala (1.1→0.7), subir y, ou sprite com fundo.
+
+### 🎨 MISSÃO PRINCIPAL: REESTRUTURAR A QUALIDADE VISUAL
+Maestro comparou com o Low Poly Big Environment Pack (Unity) e avaliou: **"ficou bem abaixo ainda"**. Flat-shading/cachoeira/espuma (17ª) melhorou a natureza mas NÃO alcança o pack. O que falta (ordem de impacto):
+1. **MODELOS PROFISSIONAIS no lugar de primitivas** — pack usa árvores/rochas ESCULPIDAS. Pipeline GLB pronto (slots dragao.glb/dragao2.glb + MODELOS_MONSTROS em main3d). FAZER O MESMO PRA VEGETAÇÃO: maestro baixa Quaternius Ultimate Nature/Stylized Nature (poly.pizza, CC0, GLB) → slots arvore1.glb/pinheiro.glb/pedra.glb substituindo criaArvoreGrande/criaPinheiro/criaPedra via **InstancedMesh** (~200 instâncias — instancing OBRIGATÓRIO).
+2. **RELEVO no terreno** — pack tem colinas; nosso chão é plano. Estender alturaTerreno() com colinas procedurais (senos/ruído, amp 2-4u, PLANO em cidades/estrada/praia) + grama com segments deslocados casando com alturaTerreno.
+3. **Praça/prédios de Venore** (primeira tela que o maestro vê): variação de silhueta, sacadas, 2 andares.
+4. **Color grading** leve no composer (PC).
+⚠️ Regras: NUNCA estourar branco (exposure 0.84, bloom th 1.0); validar por npm run build (agente sem WebGL); maestro testa Edge/iPhone; responder SEMPRE em português.
+
+### 📋 BACKLOG COMBINADO
+- 🐾 Pets: MONTARIA (velocidade montado) + pets LUTANDO junto (decisivo por raça) — domar pronto (DOMAVEIS/main3d, save ok: pets/pet).
+- 🧸 GLBs a baixar pelo maestro: Quirky Pet Animals $16 (GLTF) + monstros poly.pizza (slots prontos: aranha/lobo/urso/esqueleto/orc/ciclope/troll/beholder/rato/caranguejo/escorpiao/ladrao/cobra.glb).
+- 🏪 Lojas com interior em Thais · quests · conta online (Railway DB).
+- 💳 Billing API: platform.openai.com/settings/organization/billing · texturas: scripts/gera-texturas*.mjs.
+
+### 🚀 PUBLICAR (sempre ao final)
+npm run build → commit+push (main) → .env + npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true → conferir curl caseiro.pages.dev = dist (~15s CDN) → **bump VERSAO** e avisar o número.
+
+---
+
+## 🤝 HANDOFF ANTERIOR (Codex) — histórico
 **Missão dada pelo maestro:** corrigir bugs críticos, melhorar qualidade visual/performance e PUBLICAR para teste.
 
 ### ✅ REVISÃO PÓS-CODEX (Claude, 10/06 noite) — estado ATUAL
