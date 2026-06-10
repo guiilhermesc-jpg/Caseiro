@@ -13,7 +13,10 @@
 export function criaControles(dom) {
   const teclas = {};
   const cam = { yaw: 0, pitch: 0.55 };
-  const PITCH_MIN = 0.08, PITCH_MAX = 1.30;
+  // pitch NEGATIVO libera olhar PRO CÉU (estilo Roblox/Minecraft): a câmera
+  // desce até quase rente ao chão e aponta pra cima (main3d desliza ela pelo
+  // raio pra não afundar no terreno). Máximo segue sendo a vista de cima.
+  const PITCH_MIN = -1.35, PITCH_MAX = 1.30;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   const joy = { ativo: false, id: null, baseX: 0, baseY: 0, dx: 0, dz: 0 };

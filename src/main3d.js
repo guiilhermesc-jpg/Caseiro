@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'v20';
+const VERSAO = 'v21';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -1916,7 +1916,18 @@ function passo() {
     const hits = raycaster.intersectObjects(occ, true);
     let dist = distMax;
     if (hits.length && hits[0].distance < distMax) dist = Math.max(3, hits[0].distance - 0.6);
+    // OLHAR PRO CÉU (Roblox/Minecraft): com pitch negativo a câmera desceria
+    // pro subsolo — em vez disso ela DESLIZA pelo raio e para rente ao chão,
+    // apontando pra cima (o personagem fica na base da tela e o céu aparece).
+    if (dir.y < 0) {
+      const chaoFoco = (noEsgoto ? chaoY : alturaTerreno(foco.x, foco.z)) + 0.45;
+      const tChao = (foco.y - chaoFoco) / -dir.y;
+      if (tChao < dist) dist = Math.max(1.1, tChao);
+    }
     const posCam = foco.clone().add(dir.multiplyScalar(dist));
+    // segurança extra nas encostas: nunca deixa a câmera abaixo do chão local
+    const chaoCam = (noEsgoto ? chaoY : alturaTerreno(posCam.x, posCam.z)) + 0.35;
+    if (posCam.y < chaoCam) posCam.y = chaoCam;
     camera.position.lerp(posCam, 0.2);
     camera.lookAt(foco.x, foco.y, foco.z);
   }
