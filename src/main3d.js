@@ -70,7 +70,9 @@ let composer = null;
 if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(null, camera)); // a cena entra logo abaixo (criaCidade)
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.38, 0.55, 0.82));
+  // bloom SUTIL: só o que é realmente brilhante irradia (lava/chamas/olhos);
+  // calibrado pra não "estourar" rostos e paredes claras
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.22, 0.4, 0.92));
 }
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
@@ -80,7 +82,7 @@ if (composer) {
   composer.passes[0].scene = scene;
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.55;
+  scene.environmentIntensity = 0.3; // reflexo sutil (0.55 clareava demais os rostos)
 }
 // ALTURA DO TERRENO: plano em todo o mapa, exceto a Montanha do Dragão (rampa
 // cônica escalável até o platô). O avatar "gruda" nessa altura ao andar.
@@ -1224,7 +1226,7 @@ esgoto.grupo.visible = false;
 const relogio = new THREE.Clock();
 let tempo = 0;
 
-function loop() {
+function passo() {
   const dt = Math.min(relogio.getDelta(), 0.05);
   tempo += dt;
 
@@ -1495,9 +1497,27 @@ function loop() {
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
   ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)
 
-  if (composer) composer.render(); else renderer.render(scene, camera);
+}
+
+// LOOP BLINDADO: uma exceção em qualquer sistema NÃO congela mais o jogo —
+// o frame com problema é pulado, a RENDERIZAÇÃO continua sempre, e o erro
+// aparece na tela pra gente saber exatamente o que corrigir.
+let erroAvisado = false;
+function loop() {
+  try { passo(); } catch (e) {
+    console.error('Erro no frame:', e);
+    if (!erroAvisado) {
+      erroAvisado = true;
+      mostraMensagem('⚠️ Erro interno: ' + (e && e.message ? e.message : e) + ' — me mande um print disto!');
+    }
+  }
+  try { if (composer) composer.render(); else renderer.render(scene, camera); } catch (e2) { /* nunca para de desenhar */ }
   requestAnimationFrame(loop);
 }
+window.addEventListener('error', (ev) => {
+  console.error('Erro global:', ev.message);
+  if (!erroAvisado) { erroAvisado = true; mostraMensagem('⚠️ Erro: ' + ev.message + ' — me mande um print!'); }
+});
 loop();
 
 window.addEventListener('resize', () => {
