@@ -88,34 +88,71 @@ export function criaCasaInterior(x, z, opts = {}) {
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
   const animPorta = { mesh: dobr, porta: true, alvo: angAberto }; // porta começa ABERTA (entrada livre)
 
-  // MOBÍLIA (decorativa; interior fica livre pra andar)
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
-  // cama
-  const cama = new THREE.Group();
-  cama.add(meshBox(1.8, 0.5, 2.4, mad, 0, 0.25, 0));
-  cama.add(meshBox(1.7, 0.18, 2.2, tecido, 0, 0.55, 0));
-  cama.add(meshBox(1.6, 0.22, 0.5, mat(0xeae0d0), 0, 0.62, -0.85)); // travesseiro
-  cama.position.set(-(hx - 1.3), 0, -(hz - 1.6)); g.add(cama);
-  // mesa + 2 cadeiras
-  const mesa = new THREE.Group();
-  mesa.add(meshBox(1.6, 0.15, 1.0, mad, 0, 0.95, 0));
-  [[-0.7, -0.4], [0.7, -0.4], [-0.7, 0.4], [0.7, 0.4]].forEach(([px, pz]) => mesa.add(meshBox(0.12, 0.95, 0.12, mad, px, 0.47, pz)));
-  mesa.position.set(hx - 2.6, 0, 0.4); g.add(mesa);
-  [[-0.9], [0.9]].forEach(([oz]) => {
-    const cad = new THREE.Group();
-    cad.add(meshBox(0.6, 0.1, 0.6, mad, 0, 0.55, 0));
-    cad.add(meshBox(0.6, 0.7, 0.1, mad, 0, 0.85, -0.25));
-    cad.position.set(hx - 2.6, 0, 0.4 + oz); g.add(cad);
-  });
-  // lareira (parede oposta à porta, num canto)
-  const lar = new THREE.Group();
-  lar.add(meshBox(1.6, 1.6, 0.6, mat(0x8a8276), 0, 0.8, 0));
-  lar.add(meshBox(1.0, 0.9, 0.3, mat(0x201510), 0, 0.55, 0.2));
-  lar.add(meshBox(0.6, 0.4, 0.2, mat(0xff7a2a), 0, 0.4, 0.3)); // fogo
-  lar.position.set(hx - 1.0, 0, hz - 0.6); g.add(lar);
-  // tapete
-  const tapete = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 1.8), mat(0x7a3a3a));
-  tapete.position.set(0, 0.11, 0); g.add(tapete);
+  if (opts.loja) {
+    // === LOJA (estilo Tibia): balcão, prateleiras de poções e barris ===
+    const eixoZ = frente === 'norte' || frente === 'sul';
+    const dirFundo = (frente === 'norte' || frente === 'leste') ? -1 : 1; // fundo = oposto da porta
+    const bw = (eixoZ ? larg : prof) - 3.6;
+    const balcao = new THREE.Group();
+    balcao.add(meshBox(eixoZ ? bw : 0.9, 1.05, eixoZ ? 0.9 : bw, mad, 0, 0.52, 0));
+    balcao.add(meshBox(eixoZ ? bw + 0.2 : 1.1, 0.12, eixoZ ? 1.1 : bw + 0.2, mat(0x8a6a44), 0, 1.12, 0)); // tampo
+    const bx = eixoZ ? 0 : dirFundo * (hx - 2.2), bz = eixoZ ? dirFundo * (hz - 2.2) : 0;
+    balcao.position.set(bx, 0, bz); g.add(balcao);
+    colisores.push({
+      minX: x + bx - (eixoZ ? bw / 2 : 0.55), maxX: x + bx + (eixoZ ? bw / 2 : 0.55),
+      minZ: z + bz - (eixoZ ? 0.55 : bw / 2), maxZ: z + bz + (eixoZ ? 0.55 : bw / 2),
+    });
+    // prateleiras na parede do fundo com fileiras de poções coloridas
+    const coresPocao = [0xd64545, 0x4587d6, 0x45d68a, 0xd6a945, 0xb145d6];
+    [1.6, 2.3].forEach((py, fi) => {
+      const pw = (eixoZ ? larg : prof) - 2.6;
+      g.add(meshBox(eixoZ ? pw : 0.34, 0.08, eixoZ ? 0.34 : pw, mad,
+        eixoZ ? 0 : dirFundo * (hx - 0.4), py, eixoZ ? dirFundo * (hz - 0.4) : 0));
+      for (let k = 0; k < 6; k++) {
+        const corF = coresPocao[(k + fi) % coresPocao.length];
+        const fr = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.26, 8),
+          new THREE.MeshStandardMaterial({ color: corF, roughness: 0.3, emissive: corF, emissiveIntensity: 0.12 }));
+        const t = -pw / 2 + 0.5 + k * ((pw - 1) / 5);
+        fr.position.set(eixoZ ? t : dirFundo * (hx - 0.4), py + 0.17, eixoZ ? dirFundo * (hz - 0.4) : t);
+        g.add(fr);
+      }
+    });
+    // barril de estoque + tapete da entrada
+    const barr = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.9, 10), mad);
+    barr.position.set(eixoZ ? hx - 1.1 : dirFundo * (hx - 1.1), 0.45, eixoZ ? dirFundo * (hz - 1.1) : hz - 1.1);
+    g.add(barr);
+    const tapL = new THREE.Mesh(new THREE.BoxGeometry(eixoZ ? 2.6 : 1.8, 0.04, eixoZ ? 1.8 : 2.6), mat(0x7a3a3a));
+    tapL.position.set(0, 0.11, 0); g.add(tapL);
+  } else {
+    // MOBÍLIA (decorativa; interior fica livre pra andar)
+    // cama
+    const cama = new THREE.Group();
+    cama.add(meshBox(1.8, 0.5, 2.4, mad, 0, 0.25, 0));
+    cama.add(meshBox(1.7, 0.18, 2.2, tecido, 0, 0.55, 0));
+    cama.add(meshBox(1.6, 0.22, 0.5, mat(0xeae0d0), 0, 0.62, -0.85)); // travesseiro
+    cama.position.set(-(hx - 1.3), 0, -(hz - 1.6)); g.add(cama);
+    // mesa + 2 cadeiras
+    const mesa = new THREE.Group();
+    mesa.add(meshBox(1.6, 0.15, 1.0, mad, 0, 0.95, 0));
+    [[-0.7, -0.4], [0.7, -0.4], [-0.7, 0.4], [0.7, 0.4]].forEach(([px, pz]) => mesa.add(meshBox(0.12, 0.95, 0.12, mad, px, 0.47, pz)));
+    mesa.position.set(hx - 2.6, 0, 0.4); g.add(mesa);
+    [[-0.9], [0.9]].forEach(([oz]) => {
+      const cad = new THREE.Group();
+      cad.add(meshBox(0.6, 0.1, 0.6, mad, 0, 0.55, 0));
+      cad.add(meshBox(0.6, 0.7, 0.1, mad, 0, 0.85, -0.25));
+      cad.position.set(hx - 2.6, 0, 0.4 + oz); g.add(cad);
+    });
+    // lareira (parede oposta à porta, num canto)
+    const lar = new THREE.Group();
+    lar.add(meshBox(1.6, 1.6, 0.6, mat(0x8a8276), 0, 0.8, 0));
+    lar.add(meshBox(1.0, 0.9, 0.3, mat(0x201510), 0, 0.55, 0.2));
+    lar.add(meshBox(0.6, 0.4, 0.2, mat(0xff7a2a), 0, 0.4, 0.3)); // fogo
+    lar.position.set(hx - 1.0, 0, hz - 0.6); g.add(lar);
+    // tapete
+    const tapete = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 1.8), mat(0x7a3a3a));
+    tapete.position.set(0, 0.11, 0); g.add(tapete);
+  }
 
   // telhado piramidal (SOME quando o jogador entra)
   const hTelh = alt * 0.55 + 1.2;

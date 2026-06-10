@@ -485,7 +485,9 @@ export function criaCidade() {
   add(criaPlaca(506, -7, 'Bem-vindo a Thais'));   // logo após o portão
   // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
-  add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
+  // LOJA DE POÇÕES da Yara — primeira loja com INTERIOR de verdade em Thais
+  add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80, loja: true }));
+  add(criaPlaca(576, -12, 'Poções — Yara', Math.PI));
   // (528,0 bloqueava a rota portão→chafariz; ao lado colide com o casario —
   // posição calculada livre: sul da via, porta pro norte voltada pra rua)
   add(criaCasaInterior(524, -14, { frente: 'norte', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));

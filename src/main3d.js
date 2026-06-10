@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'v19';
+const VERSAO = 'v20';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -95,6 +95,7 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 let composer = null;
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
+scene.add(sun.target); // o alvo da sombra do sol acompanha o jogador (ver loop)
 // liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
 // passam a refletir o entorno — o salto de "protótipo" pra "premium"
 if (!ehMobile) {
@@ -616,6 +617,48 @@ function tentaDomar(d) {
     mostraMensagem(`💨 O ${d.nome} comeu ${d.item} e escapuliu... tente de novo!`);
   }
 }
+
+// === MONTARIA + PET DE COMBATE (estilo Tibia: cada raça tem seu papel) ===
+// Montar: clique no SEU pet ou tecla M — velocidade por raça; o pet vira a
+// "sela" embaixo do avatar. Lutar: o pet corre pro bicho que VOCÊ atacou e
+// morde junto (dano por raça). Desmonta ao descer no esgoto e ao morrer.
+const MONTARIA_VEL = { gato: 1.25, coelho: 1.35, cachorro: 1.45, lobo: 1.7, burro: 1.85, dragaozinho: 2.0 };
+const MONTARIA_SELA = { gato: 0.5, coelho: 0.45, cachorro: 0.6, lobo: 0.8, burro: 1.25, dragaozinho: 0.9 };
+const PET_DANO = { gato: 2, coelho: 1, cachorro: 3, lobo: 5, burro: 4, dragaozinho: 8 };
+const PET_NOMES = { gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', lobo: 'Lobo', burro: 'Burro', dragaozinho: 'Filhote de Dragão' };
+let montado = false;
+let petAlvo = null, petProxMordida = 0;
+function montaOuDesmonta() {
+  if (!gato) { mostraMensagem('🐾 Você precisa DOMAR um bicho primeiro (procure os crachás 🐾 pelo mundo).'); return; }
+  if (noEsgoto) { mostraMensagem('Aqui embaixo não dá pra montar. 🪢'); return; }
+  montado = !montado;
+  if (montado) {
+    petAlvo = null;
+    const fator = MONTARIA_VEL[petTipo] || 1.3;
+    mostraMensagem(`🏇 Montou no ${PET_NOMES[petTipo] || petTipo}! Velocidade ×${fator} — clique nele (ou tecla M) pra descer.`);
+  } else {
+    mostraMensagem('Você desmontou. 🐾');
+  }
+}
+window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && jogoIniciado && !morto && !dialogo.aberto) montaOuDesmonta(); });
+
+// === QUESTS (estilo Tibia: fale com o NPC, cumpra, volte pra recompensa) ===
+const QUESTS = [
+  { id: 'lobosPonte', npc: 'Bruno', tipo: 'matar', especie: 'lobo', meta: 4,
+    titulo: 'Lobos da Ponte', pede: 'Os lobos rondam a Ponte de Pedra e ninguém cruza em paz. Cace 4 lobos e a estrada agradece.',
+    fala: 'E aí, deu conta dos lobos?', recompensa: { ouro: 40, xp: 30 } },
+  { id: 'cenourasGil', npc: 'Gil', tipo: 'coletar', item: 'Cenoura', meta: 3,
+    titulo: 'Colheita do Gil', pede: 'O burro comeu metade da minha colheita! Me traga 3 Cenouras que eu pago bem.',
+    fala: 'Trouxe minhas cenouras?', recompensa: { ouro: 25, xp: 15, item: { nome: 'Poção de Vida', icone: '🧪', usavel: 'pocao' } } },
+  { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
+    titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
+    fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+];
+const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
+const contaItem = (nome) => (inventario.estado() || []).reduce((s, it) => s + (it && it.nome === nome ? (it.qtd || 1) : 0), 0);
+function progressoQuest(q, e) { return q.tipo === 'matar' ? e.prog : Math.min(q.meta, contaItem(q.item)); }
+function questDe(npc) { return QUESTS.find((qq) => qq.npc === npc.nome && !(questEstado[qq.id] || {}).feita); }
+
 const customizar = criaCustomizar({
   cores: coresJogador,
   aoMudarCor: () => montaAvatar(),
@@ -668,6 +711,28 @@ function abreDialogo(npc) {
     { texto: 'Novidades?', onClick: () => dialogo.abre(npc.nome, npc.falas.dica, opcoes) },
     { texto: 'Tchau', onClick: () => dialogo.fecha() },
   ];
+  // QUEST do NPC (estilo Tibia: aceitar → cumprir → voltar pra recompensa)
+  const q = questDe(npc);
+  if (q) {
+    const e = questEstado[q.id] || (questEstado[q.id] = { aceita: false, prog: 0, feita: false });
+    const rotulo = !e.aceita ? `📜 Missão: ${q.titulo}` : `📜 ${q.titulo} (${progressoQuest(q, e)}/${q.meta})`;
+    opcoes.splice(opcoes.length - 1, 0, { texto: rotulo, onClick: () => {
+      if (!e.aceita) {
+        e.aceita = true; salvaJogo();
+        dialogo.abre(npc.nome, `${q.pede} (são ${q.meta} no total — eu anoto aqui)`, opcoes);
+        return;
+      }
+      const pr = progressoQuest(q, e);
+      if (pr < q.meta) { dialogo.abre(npc.nome, `${q.fala} Ainda falta${q.meta - pr > 1 ? 'm' : ''} ${q.meta - pr}.`, opcoes); return; }
+      if (q.tipo === 'coletar') for (let i = 0; i < q.meta; i++) inventario.consomeItem(q.item);
+      e.feita = true;
+      ouro += q.recompensa.ouro; hud.ouro(ouro); hud.ganhaXP(q.recompensa.xp);
+      if (q.recompensa.item) inventario.addItem({ ...q.recompensa.item });
+      salvaJogo();
+      dialogo.abre(npc.nome, `Excelente trabalho! 🏅 +${q.recompensa.ouro}🪙 e +${q.recompensa.xp} XP`
+        + (q.recompensa.item ? ` + ${q.recompensa.item.icone} ${q.recompensa.item.nome}` : '') + '.', opcoes);
+    } });
+  }
   // ECONOMIA CIRCULAR (estilo Tibia): mercadores compram TUDO; lojistas
   // compram a CATEGORIA deles (couro→ferreiro, erva→curandeira, seda→runas)
   // e o que você vende ABASTECE o NPC → destrava OFERTAS RARAS na loja dele!
@@ -735,7 +800,8 @@ renderer.domElement.addEventListener('pointerup', (e) => {
       if (d < 7) abreDialogo(npc); else mostraMensagem('Chegue mais perto pra conversar. 💬');
       return;
     }
-    if (tipo === 'jogador' || tipo === 'pet') { customizar.abre(); return; }
+    if (tipo === 'pet') { montaOuDesmonta(); return; } // clicar no SEU pet = montar/desmontar
+    if (tipo === 'jogador') { customizar.abre(); return; }
     if (tipo === 'rato' || tipo === 'monstro' || tipo === 'boss') { // clicou no bicho
       const r = ratos.find((m) => m.g === alvo);
       if (r) {
@@ -869,6 +935,7 @@ const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
 
 let acessoAtual = 0;
 function desce(i = 0) {
+  if (montado) { montado = false; mostraMensagem('Você desmontou pra descer. 🐾'); }
   acessoAtual = i;
   esgoto.grupo.visible = true;
   chaoY = -40; areaAtiva = esgoto.bounds; noEsgoto = true;
@@ -1173,6 +1240,7 @@ function atacar() {
     const melhor = alvoRato(alcanceAtaque());
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
     if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (Venore) ou Yara (Thais). ➹'); return; }
+    petAlvo = melhor; // o pet entra na briga junto
     disparaFlecha(melhor);
     melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
     if (melhor.hp <= 0) mataBicho(melhor);
@@ -1181,6 +1249,7 @@ function atacar() {
   }
   const melhor = alvoRato();
   if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
+  petAlvo = melhor; // o pet entra na briga junto
   melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
   if (melhor.hp <= 0) mataBicho(melhor);
   else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
@@ -1195,6 +1264,14 @@ function mataBicho(r) {
   const xp = r.xp || 5;
   hud.ganhaXP(xp);
   mostraMensagem(`${r.boss || r.forte ? 'Criatura poderosa derrotada!' : 'Derrotado!'} +${xp} XP — AÇÃO no corpo p/ saquear`);
+  // progresso de QUEST de caça (conta também as mordidas do pet)
+  for (const q of QUESTS) {
+    const e = questEstado[q.id];
+    if (e && e.aceita && !e.feita && q.tipo === 'matar' && r.especie === q.especie && e.prog < q.meta) {
+      e.prog++;
+      mostraMensagem(`📜 ${q.titulo}: ${e.prog}/${q.meta}${e.prog >= q.meta ? ' — volte ao ' + q.npc + '! ✅' : ''}`);
+    }
+  }
 }
 function corpseProximo() {
   let melhor = null, melhorD = 2.4;
@@ -1279,6 +1356,7 @@ function mostraTelaMorte(xpPerdido, perdeuItens) {
 function renasce() {
   if (!morto) return;
   morto = false;
+  montado = false; petAlvo = null; // a morte desmonta e chama o pet de volta
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
@@ -1351,6 +1429,7 @@ function salvaJogo() {
       equip: Object.values(equipados).filter(Boolean),
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
       pet: petTipo, pets: petsDomados, // companheiros domados
+      quests: questEstado, // missões aceitas/cumpridas
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1370,6 +1449,7 @@ function carregaJogo(nome) {
     (d.equip || []).forEach((it) => inventario.addItem({ ...it })); // equipamento volta pra mochila (re-equipe com 1 clique)
     Object.assign(economia, d.economia || {});
     restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
+    Object.assign(questEstado, d.quests || {}); // missões continuam de onde pararam
     (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
@@ -1755,6 +1835,7 @@ function passo() {
       let vel = CONFIG3D.velocidade;
       if (correndo) vel *= 1.8;
       if (abaixado) vel *= 0.55;
+      if (montado && !noEsgoto) vel *= MONTARIA_VEL[petTipo] || 1.3; // MONTARIA: velocidade por raça
       if (gmVel) vel *= 3; // GM: velocidade ×3
       const passo = vel * dt;
       const nx = Math.max(areaAtiva.minX, Math.min(areaAtiva.maxX, avatar.position.x + mx * passo));
@@ -1766,7 +1847,8 @@ function passo() {
     if (controles.querPular() && noChao) { vy = 9; noChao = false; }
     vy -= 25 * dt;
     avatar.position.y += vy * dt;
-    const solo = noEsgoto ? chaoY : alturaTerreno(avatar.position.x, avatar.position.z);
+    let solo = noEsgoto ? chaoY : alturaTerreno(avatar.position.x, avatar.position.z);
+    if (montado && !noEsgoto) solo += MONTARIA_SELA[petTipo] || 0.6; // sela: avatar sobe na garupa
     if (avatar.position.y <= solo) { avatar.position.y = solo; vy = 0; noChao = true; }
     const escalaY = abaixado ? 0.6 : 1;
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
@@ -1849,8 +1931,48 @@ function passo() {
     gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
   }
   if (gato && !noEsgoto) {
-    atualizaGato(gato, avatar, dt, tempo); // pet (se domado) espera na superfície
-    gato.position.y = alturaTerreno(gato.position.x, gato.position.z); // gruda no relevo
+    const uG = gato.userData;
+    if (montado) {
+      // MONTADO: o pet vira a "sela" — fica exatamente embaixo do avatar
+      gato.position.set(avatar.position.x, alturaTerreno(avatar.position.x, avatar.position.z), avatar.position.z);
+      gato.rotation.y = avatar.rotation.y;
+      const dxm = gato.position.x - (uG._px ?? gato.position.x), dzm = gato.position.z - (uG._pz ?? gato.position.z);
+      const trotando = Math.hypot(dxm, dzm) > 0.01;
+      uG._px = gato.position.x; uG._pz = gato.position.z;
+      if (uG.patas) { const sp = trotando ? Math.sin(tempo * 14) * 0.7 : 0; uG.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
+    } else if (petAlvo && petAlvo.vivo && !petAlvo.corpse) {
+      // PET DE COMBATE: corre pro bicho que você atacou e morde junto
+      const pg = petAlvo.g;
+      // desiste se o alvo ficou longe OU está noutro "andar" (ex.: rato do esgoto)
+      if (Math.hypot(pg.position.x - avatar.position.x, pg.position.z - avatar.position.z) > 16
+        || Math.abs(pg.position.y - gato.position.y) > 6) petAlvo = null;
+      else {
+        const dxp = pg.position.x - gato.position.x, dzp = pg.position.z - gato.position.z, dp = Math.hypot(dxp, dzp);
+        if (dp > 1.5) {
+          const vP = Math.min(dp - 1.2, 6.5 * dt);
+          gato.position.x += (dxp / dp) * vP; gato.position.z += (dzp / dp) * vP;
+          gato.rotation.y = Math.atan2(dxp, dzp);
+          if (uG.patas) { const sp = Math.sin(tempo * 16) * 0.6; uG.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
+        } else if (tempo > petProxMordida) {
+          petProxMordida = tempo + 1.2;
+          const dnP = PET_DANO[petTipo] || 2;
+          petAlvo.hp -= dnP; petAlvo.piscar = 0.15;
+          if (pg.userData.corpoMat) pg.userData.corpoMat.emissive.setHex(0x882020);
+          if (petAlvo.hp <= 0) { mataBicho(petAlvo); petAlvo = null; }
+        }
+      }
+      gato.position.y = alturaTerreno(gato.position.x, gato.position.z);
+    } else {
+      if (petAlvo && (!petAlvo.vivo || petAlvo.corpse)) petAlvo = null;
+      atualizaGato(gato, avatar, dt, tempo); // pet (se domado) espera na superfície
+      gato.position.y = alturaTerreno(gato.position.x, gato.position.z); // gruda no relevo
+    }
+  }
+  // SOMBRAS NO MUNDO TODO: a câmera de sombra do sol acompanha o jogador
+  // (antes ficava presa na origem — Thais, praia e colinas ficavam sem sombra)
+  if (!ehMobile) {
+    sun.position.set(avatar.position.x + 70, 100, avatar.position.z + 50);
+    sun.target.position.set(avatar.position.x, 0, avatar.position.z);
   }
   // pets selvagens perambulam perto do ponto deles (esperando um domador)
   for (const d of domaveisVivos) {

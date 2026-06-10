@@ -4,16 +4,21 @@
 
 ---
 
-## 🚨 19ª RODADA (EM ABERTO) — PRÓXIMA SESSÃO, COMECE AQUI (atualizado 10/06 noite, v19)
-> A **18ª rodada FOI EXECUTADA** (resumo no diário, no fim do arquivo). Código no main; selo de versão agora é `v19`.
+## 🚨 20ª RODADA (EM ABERTO) — PRÓXIMA SESSÃO, COMECE AQUI (atualizado 10/06 noite, v20)
+> A **18ª e a 19ª rodadas FORAM EXECUTADAS** (resumos no diário, no fim do arquivo). Código no main; selo de versão agora é `v20`.
 **Estado:** jogo em produção (caseiro.pages.dev). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
 
-### 🧪 TESTAR PRIMEIRO (entregas da 18ª — Edge no PC + iPhone, Ctrl+Shift+R)
+### 🧪 TESTAR PRIMEIRO (entregas da 18ª+19ª — Edge no PC + iPhone, Ctrl+Shift+R)
 1. **Teleporte GM→Thais**: a cidade foi MESCLADA por material (~300 meshes → ~12 draw calls em thais.js) — conferir se a trava/engasgo sumiu. Se travar, toast "⚠️ Erro interno" → mandar print/console (F12).
 2. **Marcador 🐾**: virou crachá pequeno com fundo escuro (praça) — conferir o tamanho.
 3. **RELEVO**: colinas suaves no campo (cidades/estrada/praia/água continuam PLANAS) — andar pra fora de Venore e olhar o horizonte; bichos/pets/coletáveis acompanham a altura (terreno.js = fonte única).
 4. **Praça de Venore**: prédios altos com 2º andar de janelas + sacada com guarda-corpo; alguns com torrinha de canto.
 5. **Color grading** (PC): saturação +6%, sombras um tico frias, vinheta leve — conferir que NADA estourou branco.
+6. **🏇 MONTARIA**: dome um bicho, clique nele (ou tecla M) → monta (velocidade por raça: gato ×1.25 … burro ×1.85, filhote de dragão ×2.0); clicar de novo desce; descer no esgoto/morrer desmonta.
+7. **⚔️ PET DE COMBATE**: ataque um bicho — o pet corre junto e morde (dano por raça, dragãozinho = 8); o abate do pet conta XP/loot normal.
+8. **📜 QUESTS**: Bruno (Torre de Vigia) = 4 lobos; Gil (fazenda) = 3 cenouras; Tobias (templo) = 3 esqueletos — aceitar no diálogo, progresso aparece nas mensagens, recompensa ao voltar. Salvas no save.
+9. **🏪 LOJA DA YARA em Thais**: casa entrável (572,-18) virou loja com balcão/prateleiras de poções; a Yara atende lá dentro (placa "Poções — Yara").
+10. **☀️ SOMBRAS no mundo todo** (PC): a sombra acompanha o jogador — conferir sombra em Thais/colinas/praia.
 
 ### 🎨 MISSÃO QUE CONTINUA: MODELOS PROFISSIONAIS (GLB)
 A vegetação inteira virou **InstancedMesh** (~900 meshes → ~9 draw calls, vegetacao.js) com **slots GLB prontos**: o maestro baixa Quaternius Ultimate Nature/Stylized Nature (poly.pizza, CC0, GLB) e solta em `public/modelos/`:
@@ -22,9 +27,9 @@ A vegetação inteira virou **InstancedMesh** (~900 meshes → ~9 draw calls, ve
 ⚠️ Regras: NUNCA estourar branco (exposure 0.84, bloom th 1.0); validar por npm run build (agente sem WebGL); maestro testa Edge/iPhone; responder SEMPRE em português.
 
 ### 📋 BACKLOG COMBINADO
-- 🐾 Pets: MONTARIA (velocidade montado) + pets LUTANDO junto (decisivo por raça) — domar pronto (DOMAVEIS/main3d, save ok: pets/pet).
 - 🧸 GLBs a baixar pelo maestro: vegetação (acima) + Quirky Pet Animals $16 (GLTF) + monstros poly.pizza (slots prontos: aranha/lobo/urso/esqueleto/orc/ciclope/troll/beholder/rato/caranguejo/escorpiao/ladrao/cobra.glb).
-- 🏪 Lojas com interior em Thais · quests · conta online (Railway DB).
+- 🌐 **Conta online (Railway DB)** — adiado de propósito: precisa de decisão do maestro (banco no projeto venor-servidor = custo/manutenção; save local funciona). Quando ele topar: tabela contas + sync do save via WebSocket já existente.
+- 🗒️ Mais quests (cadeia com recompensa única) · 🏪 mais interiores (forja do Bram?) · 🤾 arremessar itens.
 - 💳 Billing API: platform.openai.com/settings/organization/billing · texturas: scripts/gera-texturas*.mjs.
 
 ### 🚀 PUBLICAR (sempre ao final)
@@ -273,3 +278,5 @@ bichos da superfície (troll/ciclope/aranha) + tocha inicial →
 **17ª rodada (VISUAL PREMIUM + PETS DOMÁVEIS):** 💎 Receita do "pack premium" feita em casa: `matFlat`/`desloca` em construcoes.js (flat shading facetado + vértices orgânicos) aplicados em árvores (4 paletas)/pedras (musgo)/montanhas/pinheiros/arbustos; **CACHOEIRA** (`criaCachoeira`, no lago norte 45,96); **espuma** nas margens dos lagos + praia; 12 manchas de cor no campo; fog 260-720, sol dourado, exposure 0.84 · 🐾 **PETS DOMÁVEIS Tibia**: sem pet inicial; 6 selvagens com 🐾 (gato/cachorro/coelho/lobo/BURRO novo/FILHOTE DE DRAGÃO no platô); item de domar por raridade (Lambari/Osso/**Cenoura** coletável nova na fazenda/Carne/Escama de Dragão) com chance 70%→30%; falha consome item (Tibia); domado segue+salva (`pets`/`pet` no save), selvagem some; trocar pet = clicar em si (só domados). FUTURO: montaria (velocidade) + pets no combate. Publicado ✓.
 
 **18ª rodada (RELEVO + INSTANCING + THAIS MESCLADA + VENORE PREMIUM — v19):** 🏰 **Bug do teleporte GM→Thais atacado**: thais.js reescrito com `BufferGeometryUtils.mergeGeometries` POR MATERIAL (muralha+ameias+torres+templo+~30 prédios: ~300 meshes → **~12 draw calls**, colisores idênticos) · 🐾 **Marcador dos domáveis** virou crachá pequeno (fundo escuro translúcido + borda, escala 1.1→0.62, y 2.3) · ⛰️ **RELEVO procedural**: novo `terreno.js` com `alturaColinas(x,z)` (2 oitavas de seno, amp até 3.6u, smoothstep) — zonas PLANAS em cidades/estrada/praia/água/POIs; malha de chão segmentada (180×140) usa a MESMA função da física; bichos de superfície (atualizaRatos), pets domáveis, pet que segue, coletáveis, mato instanciado e manchas de cor TODOS acompanham a altura; Montanha do Dragão mantém o perfil próprio · 🌲 **Vegetação INSTANCIADA**: novo `vegetacao.js` — árvores grandes (4 paletas)/pinheiros (3 tons)/pedras (c/ e s/ musgo) com cores por vértice em InstancedMesh (~900 meshes → **~9 draw calls**) + **SLOTS GLB** arvore1/pinheiro/pedra.glb (espécie inteira troca, auto-escala, mesmas matrizes) · 🏘️ **Venore premium** (criaPredio): prédios altos ganham 2º andar de janelas, SACADA com guarda-corpo + porta-janela, ou torrinha de canto com chapéu de telha · 🎨 **Color grading** leve no composer (PC): saturação +6%, lift frio nas sombras, vinheta 0.12 — com clamp (NUNCA estoura branco) · Selo **v19**. Build ✓.
+
+**19ª rodada (MONTARIA + PET DE COMBATE + QUESTS + LOJA DE THAIS — v20):** 🏇 **MONTARIA estilo Tibia**: clicar no SEU pet (ou tecla M) monta/desmonta; velocidade por raça (`MONTARIA_VEL`: gato 1.25 → dragãozinho 2.0); o pet vira a "sela" embaixo do avatar (`MONTARIA_SELA` ergue o jogador, patas trotam ao andar); desmonta ao descer no esgoto e na morte · ⚔️ **PET DE COMBATE**: ao atacar um bicho o pet entra na briga (`petAlvo`): corre até 16u, morde a cada 1.2s com dano por raça (`PET_DANO`, dragãozinho 8), abate passa pelo `mataBicho` normal (XP/loot/quest contam); guarda de "andar" impede morder bicho do esgoto pela superfície · 📜 **QUESTS com save** (`QUESTS`/`questEstado` no main3d): Lobos da Ponte (Bruno, 4 lobos, 40🪙+30xp) · Colheita do Gil (3 cenouras, 25🪙+poção) · Descanso dos Mortos (Tobias, 3 esqueletos, 60🪙+50xp); opção 📜 no diálogo, progresso de caça no `mataBicho`, coleta conta pela mochila, recompensa na entrega; salvas em `quests` no save · 🏪 **LOJA DA YARA** (1ª loja com interior em Thais): `criaCasaInterior({ loja: true })` = balcão com colisor, 2 prateleiras de poções coloridas (emissivas), barril; Yara mudou o posto pra trás do balcão (572,-21) + placa "Poções — Yara" · ☀️ **Sombras dinâmicas** (PC): `sun.position`/`sun.target` acompanham o jogador — sombra de verdade em Thais, colinas e praia (antes só perto da origem) · Selo **v20**. Build ✓.

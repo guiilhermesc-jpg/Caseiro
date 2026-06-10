@@ -71,8 +71,9 @@ const ROSTER = [
   // --- moradores de THAIS (cidade distante, agora em x≈560) ---
   { nome: 'Dorian', prof: 'Guardião do Portão', post: { x: 520, z: 6 }, home: { x: 548, z: -12 }, cor: 0x6a5a3a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
     falas: { trabalho: 'Guardo o portão de Thais dia e noite. Não passa quem não deve.', dica: 'A estrada que te trouxe é infestada de trolls e bandidos. Sorte sua.' } },
-  { nome: 'Yara', prof: 'Mercadora', post: { x: 552, z: 10 }, home: { x: 572, z: -12 }, cor: 0xb8902a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
-    falas: { trabalho: 'Trago especiarias de terras distantes. Thais vive do comércio.', dica: 'Em Venore o pão é melhor, mas aqui o ouro corre solto.' },
+  // Yara agora atende DENTRO da loja de poções (interior de verdade, atrás do balcão)
+  { nome: 'Yara', prof: 'Mercadora', post: { x: 572, z: -21.2 }, home: { x: 572, z: -12 }, cor: 0xb8902a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Esta loja é minha: poções e especiarias de terras distantes. Thais vive do comércio.', dica: 'Em Venore o pão é melhor, mas aqui o ouro corre solto.' },
     loja: [
       { nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' },
       { nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } },
