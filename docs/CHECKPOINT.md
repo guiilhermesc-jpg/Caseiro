@@ -231,3 +231,5 @@ bichos da superfície (troll/ciclope/aranha) + tocha inicial →
 
 ---
 **Para retomar:** leia este arquivo. Estado no GitHub (`Caseiro`/main). Publicar = build + wrangler (cliente) / `railway up` (servidor).
+
+**12ª rodada (pós-Codex, Claude):** 🐲 Dragão 3D REAL instalado (`public/modelos/dragao.glb` = "Dragon Rigged" CC0 baixado pelo maestro; loader com auto-escala p/ ~12u + frustumCulled off + respawn mantém GLB, Lord ganha brasas) · 💀 Tela de morte estilo Tibia (overlay + botão renascer) · ⚡ anti-engasgo: `initTexture` no load (upload de textura no 1º uso causava "imagem trava andando") + zero alocação/frame (occTmp reutilizado, campos sem concat) · 🧹 auditoria: 4 postes em cima de bueiros, 4 barris no meio da rua, corcova do arco na ponte — corrigidos. Publicado ✓.
