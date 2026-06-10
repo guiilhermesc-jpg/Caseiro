@@ -3,7 +3,7 @@
 // =============================================================
 export const CONFIG3D = {
   velocidade: 12,     // velocidade de caminhada (unidades/seg)
-  limiteMundo: 100,   // até onde o avatar pode andar (raio) — mundo expandido c/ lago/floresta
+  limiteMundo: 500,   // raio inicial do mundo (ajustável no jogo: botões +/- ou teclas + e -)
   cores: {
     ceu: 0x1a2230,    // céu/atmosfera sombria de guerra
     chao: 0x39424f,   // asfalto/concreto

@@ -22,13 +22,13 @@ const HISTORIAS = [
   'Já fui pescador no lago. Hoje só cuido das minhas flores.',
   'Venore já foi maior. As ruas guardam muitas histórias.',
 ];
-// POSTOS: pontos de trabalho/convívio (perto de mercado, praça, poço, marcos, lago)
+// POSTOS: pontos abertos de trabalho/convívio (validados fora de colisores)
 const POSTOS = [
-  { x: 13, z: 11 }, { x: 13, z: -11 }, { x: -13, z: 11 },   // mercado (barracas)
-  { x: 6, z: 6 }, { x: -6, z: -6 },                          // praça
-  { x: 13, z: -16 }, { x: -13, z: -16 },                     // poço / estátua
-  { x: 6, z: -27 }, { x: -6, z: 27 },                        // igreja / escola
-  { x: 16, z: 73 },                                          // junto da ponte/lago
+  { x: 12, z: 9 }, { x: 12, z: -9 }, { x: -12, z: 9 },   // frente das barracas (mercado)
+  { x: 7, z: 7 }, { x: -7, z: 7 },                        // praça
+  { x: 13, z: -17 }, { x: -13, z: -17 },                  // perto do poço / estátua
+  { x: 4, z: -19 }, { x: 4, z: 22 },                      // frente da igreja / escola (fora do colisor)
+  { x: 20, z: -30 },                                      // vigia perto do bueiro
 ];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 

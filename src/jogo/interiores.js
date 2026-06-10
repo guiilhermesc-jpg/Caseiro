@@ -86,7 +86,12 @@ export function criaCasaInterior(x, z, opts = {}) {
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
   const animPorta = { mesh: dobr, porta: true, alvo: 0 };
   const estado = { aberta: false };
-  const onAcao = () => { estado.aberta = !estado.aberta; animPorta.alvo = estado.aberta ? angAberto : 0; };
+  const inter = { x: dpx, z: dpz, raio: 2.8, titulo: 'Porta' };
+  inter.onAcao = () => {
+    estado.aberta = !estado.aberta;
+    animPorta.alvo = estado.aberta ? angAberto : 0;
+    inter.msgAcao = estado.aberta ? '🚪 Porta aberta' : '🚪 Porta fechada';
+  };
 
   // MOBÍLIA (decorativa; interior fica livre pra andar)
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
@@ -125,7 +130,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
   return {
     grupo: g, colisores,
-    interativo: { x: dpx, z: dpz, raio: 2.8, titulo: 'Porta', msg: 'Uma porta de madeira.', onAcao },
+    interativo: inter,
     animados: [animPorta],
     casa: { roof: telhado, box },
   };

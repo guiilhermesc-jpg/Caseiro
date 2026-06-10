@@ -53,17 +53,19 @@ renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
-const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
+const { scene, ceu, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
-const LIM = CONFIG3D.limiteMundo;
-// colisão/altura/limite ATIVOS (mudam ao descer pro esgoto)
+// tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
+let limiteMundo = CONFIG3D.limiteMundo;
+function areaSuperficie() { return { minX: -limiteMundo, maxX: limiteMundo, minZ: -limiteMundo, maxZ: limiteMundo }; }
 let colisoresAtivos = obstaculos;
-let areaAtiva = { minX: -LIM, maxX: LIM, minZ: -LIM, maxZ: LIM };
+let areaAtiva = areaSuperficie();
 let chaoY = 0;
 let noEsgoto = false;
+let zoomDist = 13; // distância da câmera (scroll do mouse)
 function colide(x, z) {
   for (const o of colisoresAtivos) {
     if (x > o.minX - RAIO_AVATAR && x < o.maxX + RAIO_AVATAR &&
@@ -120,7 +122,7 @@ gato.userData.tipo = 'pet'; // clicável (trocar de pet)
 scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
-const minimapa = criaMinimapa({ obstaculos, ruas, marcos, limite: CONFIG3D.limiteMundo });
+const minimapa = criaMinimapa({ obstaculos, ruas, marcos, alcance: 90 });
 const npcs = criaNPCs(scene, colide, 6);
 const inventario = criaInventario();
 
@@ -232,7 +234,7 @@ function desce() {
   minimapa.esconde(); mostraMensagem('Você desce ao esgoto... cuidado com os ratos! 🐀');
 }
 function sobe() {
-  chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = { minX: -LIM, maxX: LIM, minZ: -LIM, maxZ: LIM }; noEsgoto = false;
+  chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false;
   avatar.position.set(BUEIRO.x, 0, BUEIRO.z + 2.5); vy = 0; noChao = true;
   minimapa.mostra(); mostraMensagem('Você volta à superfície.');
 }
@@ -282,6 +284,34 @@ function mataRato(r) {
   hud.ganhaXP(5); dropaLoot(r.g.position.x, r.g.position.z);
   mostraMensagem('Rato derrotado! +5 XP 🎉');
 }
+
+// scroll do mouse = zoom da câmera
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zoomDist = Math.max(5, Math.min(45, zoomDist + e.deltaY * 0.02));
+}, { passive: false });
+
+// ajustar tamanho do mundo (ampliar/reduzir) — botões 🗺️ e teclas + / -
+function ajustaMapa(fator) {
+  limiteMundo = Math.max(80, Math.min(2000, Math.round(limiteMundo * fator)));
+  if (!noEsgoto) areaAtiva = areaSuperficie();
+  mostraMensagem('🗺️ Mapa: raio ' + limiteMundo);
+}
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Equal' || e.code === 'NumpadAdd') ajustaMapa(1.25);
+  if (e.code === 'Minus' || e.code === 'NumpadSubtract') ajustaMapa(0.8);
+});
+function botaoMapa(txt, bottom, fator) {
+  const b = document.createElement('div');
+  b.textContent = txt;
+  b.style.cssText = `position:fixed;left:14px;bottom:${bottom}px;width:46px;height:46px;z-index:30;`
+    + 'display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;user-select:none;'
+    + 'background:rgba(16,22,32,.8);border:1px solid #3a4654;border-radius:10px;color:#fff;';
+  b.addEventListener('pointerdown', (e) => { e.stopPropagation(); ajustaMapa(fator); });
+  document.body.appendChild(b);
+}
+botaoMapa('🗺️+', 72, 1.25);
+botaoMapa('🗺️−', 20, 0.8);
 
 criaSelecao({
   cores: coresJogador,
@@ -356,7 +386,10 @@ function loop() {
         else atacar();
       } else {
         const alvo = achaInterativo();
-        if (alvo) { if (alvo.onAcao) alvo.onAcao(); else mostraMensagem(alvo.titulo + ' — ' + alvo.msg); }
+        if (alvo) {
+          if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
+          else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+        }
       }
     }
     if (gesto > 0) {
@@ -377,7 +410,7 @@ function loop() {
     // câmera orbital + anti-oclusão
     const alvo = avatar.position;
     const foco = new THREE.Vector3(alvo.x, alvo.y + 2.4, alvo.z);
-    const DIST = dentroCasa ? 6.5 : 13;
+    const DIST = dentroCasa ? Math.min(6.5, zoomDist) : zoomDist;
     const cosP = Math.cos(cam.pitch);
     const desejada = new THREE.Vector3(
       foco.x + Math.sin(cam.yaw) * cosP * DIST,
@@ -417,6 +450,7 @@ function loop() {
   }
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
+  ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)
 
   renderer.render(scene, camera);
   requestAnimationFrame(loop);

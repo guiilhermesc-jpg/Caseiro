@@ -9,7 +9,7 @@ import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, 
 import { criaCasaInterior } from './interiores.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
-function texturaGrama() {
+function texturaGrama(rep = 60) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
   const x = c.getContext('2d');
   x.fillStyle = '#66924c'; x.fillRect(0, 0, 128, 128);
@@ -19,13 +19,13 @@ function texturaGrama() {
     x.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
   }
   const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(60, 60);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep);
   return t;
 }
 
 export function criaCidade() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xcfe0ee, 160, 380);
+  scene.fog = new THREE.Fog(0xcfe0ee, 320, 780);
 
   // céu em gradiente (claro)
   const skyMat = new THREE.ShaderMaterial({
@@ -34,7 +34,8 @@ export function criaCidade() {
     vertexShader: 'varying vec3 vPos; void main(){ vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: 'varying vec3 vPos; uniform vec3 corTopo; uniform vec3 corBase; void main(){ float h = clamp(normalize(vPos).y,0.0,1.0); gl_FragColor = vec4(mix(corBase, corTopo, pow(h,0.5)),1.0); }',
   });
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(600, 24, 16), skyMat));
+  const ceu = new THREE.Mesh(new THREE.SphereGeometry(600, 24, 16), skyMat);
+  scene.add(ceu);
 
   const hemi = new THREE.HemisphereLight(0xcfe2f5, 0x6f6a52, 0.95);
   scene.add(hemi);
@@ -49,7 +50,7 @@ export function criaCidade() {
   scene.add(sun);
 
   // grama
-  const grama = new THREE.Mesh(new THREE.PlaneGeometry(540, 540), new THREE.MeshStandardMaterial({ map: texturaGrama(), roughness: 1 }));
+  const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 }));
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
 
   // ruas em GRADE — finas e quase no nível do chão (evita o avatar "afundar")
@@ -182,5 +183,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas };
+  return { scene, sun, hemi, skyMat, ceu, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas };
 }
