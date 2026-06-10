@@ -6,6 +6,11 @@
 //  Mantém userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir }.
 // =============================================================
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// RV3.0: caixa de cantos ARREDONDADOS — tira o look "caixote" do boneco
+// (usada nas peças grandes; detalhes pequenos seguem em Box, mais barato)
+const RBox = (w, h, d) => new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d) * 0.18);
 
 // GIRO SUAVE: interpola a rotação pelo arco mais curto (sem "teleportar" o
 // ângulo) — usado pelo jogador, NPCs e monstros pra um andar de qualidade.
@@ -22,7 +27,7 @@ function mat(c, r = 0.85) { return new THREE.MeshStandardMaterial({ color: c, ro
 function metal(c) { return new THREE.MeshStandardMaterial({ color: c, metalness: 0.7, roughness: 0.35 }); }
 
 function membro(larg, alt, material) {
-  const geo = new THREE.BoxGeometry(larg, alt, larg);
+  const geo = RBox(larg, alt, larg);
   geo.translate(0, -alt / 2, 0);
   const m = new THREE.Mesh(geo, material); m.castShadow = true; return m;
 }
@@ -40,19 +45,19 @@ export function criaAvatar(cores = {}) {
   const fem = sexo === 'mulher';
   const g = new THREE.Group();
 
-  // TRONCO (proporção por sexo)
+  // TRONCO (proporção por sexo) — RV3.0: cantos arredondados
   const torsoW = fem ? 0.82 : 1.0, torsoD = fem ? 0.48 : 0.55;
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(torsoW, 1.2, torsoD), mat(C.casaco));
+  const torso = new THREE.Mesh(RBox(torsoW, 1.2, torsoD), mat(C.casaco));
   torso.position.y = 1.5; torso.castShadow = true; g.add(torso);
   if (fem) {
-    const cintura = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.32, 0.46), mat(C.casaco));
+    const cintura = new THREE.Mesh(RBox(0.7, 0.32, 0.46), mat(C.casaco));
     cintura.position.y = 0.96; g.add(cintura);
   }
 
   // PESCOÇO + CABEÇA
   const pescoco = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 0.32), mat(C.pele));
   pescoco.position.y = 2.2; g.add(pescoco);
-  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.78), mat(C.pele));
+  const cabeca = new THREE.Mesh(RBox(0.8, 0.8, 0.78), mat(C.pele));
   cabeca.position.y = 2.6; cabeca.castShadow = true; g.add(cabeca);
 
   // ROSTO (olhos + pupila + sobrancelha + nariz + boca)
@@ -80,7 +85,7 @@ export function criaAvatar(cores = {}) {
   const bracoEsq = membro(bracoW, 0.95, mat(C.casaco)); bracoEsq.position.set(-ombroX, 2.05, 0);
   const bracoDir = membro(bracoW, 0.95, mat(C.casaco)); bracoDir.position.set(ombroX, 2.05, 0);
   [bracoEsq, bracoDir].forEach((b) => {
-    const mao = new THREE.Mesh(new THREE.BoxGeometry(bracoW + 0.04, 0.28, bracoW + 0.06), mat(C.pele));
+    const mao = new THREE.Mesh(RBox(bracoW + 0.04, 0.28, bracoW + 0.06), mat(C.pele));
     mao.position.y = -0.95; mao.castShadow = true; b.add(mao);
   });
 
@@ -88,21 +93,35 @@ export function criaAvatar(cores = {}) {
   const pernaEsq = membro(0.34, 0.9, mat(C.calca)); pernaEsq.position.set(-0.22, 0.9, 0);
   const pernaDir = membro(0.34, 0.9, mat(C.calca)); pernaDir.position.set(0.22, 0.9, 0);
   [pernaEsq, pernaDir].forEach((p) => {
-    const bota = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.26, 0.56), mat(C.bota));
+    const bota = new THREE.Mesh(RBox(0.38, 0.26, 0.56), mat(C.bota));
     bota.position.set(0, -0.82, 0.08); bota.castShadow = true; p.add(bota);
     const solado = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08, 0.6), mat(0x14100c));
     solado.position.set(0, -0.94, 0.09); p.add(solado);
   });
   g.add(bracoEsq, bracoDir, pernaEsq, pernaDir);
 
-  aplicaOutfit(g, tipo, C);
+  const capa = aplicaOutfit(g, tipo, C);
 
-  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir };
+  // tronco e capa entram nas partes: respiração no idle + capa que balança
+  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, capa };
   return g;
 }
 
-// OUTFIT por modelo — aparece no corpo (Tibia-like)
+// CAPA com pivô no OMBRO (gira de cima, como pano de verdade) — RV3.0
+function criaCapa(cor, h = 1.7) {
+  const geo = RBox(1.0, h, 0.08);
+  geo.translate(0, -h / 2, 0); // pivô em cima → balança como capa
+  const capa = new THREE.Mesh(geo, mat(cor));
+  capa.position.set(0, 2.32, -0.34);
+  capa.rotation.x = 0.07;
+  capa.castShadow = true;
+  return capa;
+}
+
+// OUTFIT por modelo — aparece no corpo (Tibia-like). Devolve a CAPA (ou null)
+// pra animaAvatar dar o balanço de pano. RV3.0: detalhes de DRAGÃO por classe.
 function aplicaOutfit(g, tipo, C) {
+  let capa = null;
   // CINTO + fivela (todos os modelos) — quebra o "bloco" do torso
   const cinto = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.18, 0.6), mat(0x3a2a1a));
   cinto.position.y = 0.98; g.add(cinto);
@@ -119,23 +138,47 @@ function aplicaOutfit(g, tipo, C) {
     const colete = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.95, 0.64), mat(0x6e4a2a)); colete.position.y = 1.6; g.add(colete);
     [-0.5, 0.5].forEach((s) => { const tira = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.66), mat(0x4a3018)); tira.position.y = 1.6; tira.rotation.z = s * 0.5; g.add(tira); });
     const aljava = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 8), mat(0x5a3a1a)); aljava.position.set(0.35, 2.0, -0.42); aljava.rotation.x = 0.3; g.add(aljava);
+    // RV3.0: COLAR COM PRESA DE DRAGÃO (troféu de caçador)
+    const cordao = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 6, 14), mat(0x4a3018));
+    cordao.position.set(0, 2.06, 0.18); cordao.rotation.x = 1.25; g.add(cordao);
+    const presa = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.26, 6), mat(0xf0e8d6, 0.5));
+    presa.position.set(0, 1.82, 0.34); presa.rotation.x = Math.PI; g.add(presa);
+    capa = criaCapa(0x2f3d28, 1.5); g.add(capa); // capa de mata do caçador
   } else if (tipo === 'mago') {
     const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.74, 0.08, 14), mat(0x342a66)); aba.position.y = 3.12; g.add(aba);
     const cone = new THREE.Mesh(new THREE.ConeGeometry(0.48, 1.2, 14), mat(0x342a66)); cone.position.y = 3.74; cone.castShadow = true; g.add(cone);
     const estrela = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(0xffe27a, 0.3)); estrela.position.set(0, 3.5, 0.42); g.add(estrela);
     const manto = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.0, 1.7, 12), mat(C.casaco)); manto.position.y = 0.85; manto.castShadow = true; g.add(manto);
-    const capa = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.8, 0.1), mat(0x241a4a)); capa.position.set(0, 1.6, -0.34); g.add(capa);
+    capa = criaCapa(0x241a4a, 1.8); g.add(capa);
+    // RV3.0: runa de dragão brilhando na capa do mago
+    const runa = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0x9a6aff, emissive: 0x6a3aff, emissiveIntensity: 0.7, roughness: 0.3 }));
+    runa.position.set(0, -0.7, -0.08); capa.add(runa); // filha da capa → balança junto
     const gola = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.32, 0.62), mat(0x241a4a)); gola.position.y = 2.06; g.add(gola);
   } else if (tipo === 'cavaleiro') {
-    const capa = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.7, 0.1), mat(0x8a1a1a)); capa.position.set(0, 1.55, -0.36); g.add(capa);
-    const peito = new THREE.Mesh(new THREE.BoxGeometry(1.16, 1.04, 0.66), metal(0xb8bcc4)); peito.position.y = 1.55; peito.castShadow = true; g.add(peito);
+    capa = criaCapa(0x8a1a1a, 1.7); g.add(capa);
+    // RV3.0: emblema DOURADO do dragão costurado na capa (balança junto)
+    const emblema = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.4, 0.04), mat(0xd9a522, 0.35));
+    emblema.position.set(0, -0.6, -0.07); capa.add(emblema);
+    const peito = new THREE.Mesh(RBox(1.16, 1.04, 0.66), metal(0xb8bcc4)); peito.position.y = 1.55; peito.castShadow = true; g.add(peito);
     const placa = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.68), metal(0xa0a4ac)); placa.position.y = 1.2; g.add(placa);
-    [-0.68, 0.68].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.66), metal(0xc8ccd4)); om.position.set(ox, 2.05, 0); om.castShadow = true; g.add(om); });
+    [-0.68, 0.68].forEach((ox) => {
+      const om = new THREE.Mesh(RBox(0.46, 0.34, 0.66), metal(0xc8ccd4)); om.position.set(ox, 2.05, 0); om.castShadow = true; g.add(om);
+      // RV3.0: ESPINHO DE DRAGÃO nas ombreiras
+      const esp = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.3, 6), metal(0xc8ccd4));
+      esp.position.set(ox, 2.3, 0); g.add(esp);
+    });
     const gorja = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.6), metal(0x9a9ea6)); gorja.position.y = 2.12; g.add(gorja);
-    const elmo = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.92, 0.9), metal(0xb0b4bc)); elmo.position.y = 2.6; elmo.castShadow = true; g.add(elmo);
+    const elmo = new THREE.Mesh(RBox(0.92, 0.92, 0.9), metal(0xb0b4bc)); elmo.position.y = 2.6; elmo.castShadow = true; g.add(elmo);
     const visor = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.12, 0.05), mat(0x101010)); visor.position.set(0, 2.62, 0.45); g.add(visor);
+    // RV3.0: CHIFRES DE DRAGÃO no elmo + crista
+    [-0.34, 0.34].forEach((ox) => {
+      const chifre = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.42, 6), mat(0xf0e8d6, 0.5));
+      chifre.position.set(ox, 3.12, 0.1); chifre.rotation.z = ox > 0 ? -0.4 : 0.4; g.add(chifre);
+    });
     const crista = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.36, 0.5), mat(0xc0202a)); crista.position.set(0, 3.2, 0); g.add(crista);
   }
+  return capa;
 }
 
 export function animaAvatar(avatar, movendo, tempo, correndo = false) {
@@ -146,7 +189,12 @@ export function animaAvatar(avatar, movendo, tempo, correndo = false) {
     const s = Math.sin(tempo * vel) * amp;
     p.pernaEsq.rotation.x = s; p.pernaDir.rotation.x = -s;
     p.bracoEsq.rotation.x = -s; p.bracoDir.rotation.x = s;
+    // RV3.0: capa VOA atrás ao andar/correr (pano de verdade)
+    if (p.capa) p.capa.rotation.x = (correndo ? 0.5 : 0.28) + Math.sin(tempo * vel * 0.5) * 0.08;
   } else {
     ['pernaEsq', 'pernaDir', 'bracoEsq', 'bracoDir'].forEach((k) => { p[k].rotation.x *= 0.8; });
+    // RV3.0: parado o boneco RESPIRA (tronco sobe/desce sutil) e a capa assenta
+    if (p.capa) p.capa.rotation.x += (0.07 + Math.sin(tempo * 1.6) * 0.03 - p.capa.rotation.x) * 0.1;
   }
+  if (p.tronco) p.tronco.position.y = 1.5 + (movendo ? 0 : Math.sin(tempo * 2.2) * 0.022);
 }

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira, criaCranioDragao } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 import { alturaColinas, REGIAO } from './terreno.js';
@@ -95,6 +95,21 @@ export function criaCidade() {
   const estrelasGeo = new THREE.BufferGeometry(); estrelasGeo.setAttribute('position', new THREE.BufferAttribute(posE, 3));
   const estrelas = new THREE.Points(estrelasGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
   ceu.add(estrelas);
+
+  // VAGALUMES (RV3.0): pontinhos verdes que acordam à noite no campo/floresta
+  // (opacidade controlada pelo ciclo dia/noite no main3d; flutuam de leve)
+  const NVAGA = 110, posV = new Float32Array(NVAGA * 3);
+  for (let i = 0; i < NVAGA; i++) {
+    let vx = 0, vz = 0;
+    for (let tent = 0; tent < 40; tent++) {
+      vx = (Math.random() - 0.5) * 380; vz = (Math.random() - 0.5) * 330;
+      if (!(Math.abs(vx) < 26 && Math.abs(vz) < 26)) break; // fora da praça
+    }
+    posV[i * 3] = vx; posV[i * 3 + 1] = alturaColinas(vx, vz) + 0.8 + Math.random() * 1.8; posV[i * 3 + 2] = vz;
+  }
+  const geoV = new THREE.BufferGeometry(); geoV.setAttribute('position', new THREE.BufferAttribute(posV, 3));
+  const vagalumes = new THREE.Points(geoV, new THREE.PointsMaterial({ color: 0xb8ffa0, size: 2.8, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false }));
+  scene.add(vagalumes);
 
   // grama (procedural já; troca pela textura REAL gerada por IA quando carregar)
   const gramaMat = new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 });
@@ -602,6 +617,22 @@ export function criaCidade() {
   add(criaRuinas(-180, -90));                      // ruínas perdidas no sudoeste
   add(criaPlaca(150, 240, 'Ruinas Antigas'));
 
+  // === OSSADA DO DRAGÃO (RV3.0) — crânio gigante meio enterrado no campo,
+  // troféu de uma era em que os dragões dominavam estas terras
+  add(criaCranioDragao(250, 120));
+  add(criaPlaca(243, 112, 'Ossada do Dragao', 0.5));
+
+  // === NINHO DO DRAGÃO no platô do Pico (RV3.0): ovos que prometem futuro...
+  {
+    const ninho = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.5, 8, 16), mat(0x5a4326, 1));
+    ninho.rotation.x = -Math.PI / 2; ninho.position.set(116, 34.45, 305); scene.add(ninho);
+    const matOvo = new THREE.MeshStandardMaterial({ color: 0xe9e0c6, roughness: 0.55 });
+    [[115.2, 304.4, 0.55], [116.8, 305.4, 0.62], [116.1, 304.0, 0.5]].forEach(([ox, oz, r]) => {
+      const ovo = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 10), matOvo);
+      ovo.scale.y = 1.35; ovo.position.set(ox, 34.4 + r * 0.8, oz); ovo.castShadow = true; scene.add(ovo);
+    });
+  }
+
   // MOITAS espalhadas pelo campo (refs premium: sub-bosque denso) — sem
   // colisor (atravessável, estilo capim alto do Tibia), 2 draw calls
   VEG.moitas = [];
@@ -634,5 +665,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, ceu, lua, luaLuz, luaMat, estrelas, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao: MD };
+  return { scene, sun, hemi, skyMat, ceu, lua, luaLuz, luaMat, estrelas, vagalumes, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao: MD };
 }

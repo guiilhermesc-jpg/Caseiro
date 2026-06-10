@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'v22';
+const VERSAO = 'RV3.0 (v23)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -94,7 +94,7 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 // No mobile fica o caminho direto (fluidez primeiro).
 let composer = null;
 
-const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
+const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, vagalumes, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
 scene.add(sun.target); // o alvo da sombra do sol acompanha o jogador (ver loop)
 // liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
 // passam a refletir o entorno — o salto de "protótipo" pra "premium"
@@ -254,7 +254,7 @@ const aranhaMae = addMonstro(criaAranhaGigante(aX, aZ), 300, 150, 20, 3.2, true,
 // DRAGÃO VERDE (estilo Tibia) no TOPO da Montanha do Dragão — suba a rampa pra
 // enfrentá-lo. De tempos em tempos ele VOA sobre Venore atrás de comida.
 const DRX = montanhaDragao.x, DRZ = montanhaDragao.z, DRY = montanhaDragao.h;
-const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 16, danoTiro: 18, cadencia: 4, tiroAltura: 10.5 };
+const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, especie: 'dragao', bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 16, danoTiro: 18, cadencia: 4, tiroAltura: 10.5 };
 dragao.g.position.y = DRY;
 ratos.push(dragao);
 const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1º voo logo no começo (pra você ver!)
@@ -347,7 +347,7 @@ new GLTFLoader().load('modelos/dragao2.glb', (gltf) => {
     });
     const g = new THREE.Group(); g.position.set(x, 0, z); g.add(inst);
     g.userData = { tipo: 'boss' };
-    ratos.push({ g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 });
+    ratos.push({ g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, especie: 'dragao', bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 });
     scene.add(g);
     registraDragaoVivo(inst); // idle vivo também nos regionais
   });
@@ -665,6 +665,10 @@ const QUESTS = [
   { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+  // RV3.0: a QUEST ÉPICA do tema — derrote um DRAGÃO de verdade
+  { id: 'cacaDragao', npc: 'Dorian', tipo: 'matar', especie: 'dragao', meta: 1,
+    titulo: 'A Caça ao Dragão', pede: 'Os dragões voltaram a dominar estas terras — o do Pico cospe fogo até sobre Venore. Derrote UM dragão e Thais te honrará com o ELMO DO DRAGÃO.',
+    fala: 'O dragão ainda voa?', recompensa: { ouro: 150, xp: 100, item: { nome: 'Elmo do Dragão', icone: '🐲', slot: 'cabeca', defesa: 6 } } },
 ];
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 const contaItem = (nome) => (inventario.estado() || []).reduce((s, it) => s + (it && it.nome === nome ? (it.qtd || 1) : 0), 0);
@@ -989,6 +993,10 @@ function aplicaDiaNoite(dt) {
   luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
   if (luaMat) luaMat.emissiveIntensity = 0.35 + noite * 0.85;
   if (estrelas) estrelas.material.opacity = Math.min(1, Math.max(0, noite - 0.3) * 1.4);
+  if (vagalumes) { // RV3.0: vagalumes acordam à noite e flutuam de leve
+    vagalumes.material.opacity = Math.min(0.95, Math.max(0, noite - 0.45) * 1.8);
+    vagalumes.position.y = Math.sin(tempo * 0.7) * 0.5;
+  }
   for (const p of postes) {
     // só acende a PointLight dos postes PERTO do jogador (limita luzes dinâmicas → perf no PC)
     const pp = p.luz.parent ? p.luz.parent.position : null;
@@ -2024,7 +2032,7 @@ function passo() {
   if (dragao.vivo && !dragao.corpse) {
     if (!vooDragao.ativo) {
       vooDragao.proximo -= dt;
-      if (vooDragao.proximo <= 0) { vooDragao.ativo = true; vooDragao.t = 0; dragao.voando = true; mostraMensagem('🐉 O dragão levantou voo da montanha...'); }
+      if (vooDragao.proximo <= 0) { vooDragao.ativo = true; vooDragao.t = 0; vooDragao.avisou = false; dragao.voando = true; mostraMensagem('🐉 O dragão levantou voo da montanha...'); }
     } else {
       vooDragao.t += dt / 28; // ~28s de voo (ida até a praça e volta)
       const t = vooDragao.t;
@@ -2041,6 +2049,12 @@ function passo() {
         const antX = dragao.g.position.x, antZ = dragao.g.position.z;
         dragao.g.position.set(px, py, pz);
         dragao.g.rotation.y = Math.atan2(px - antX, pz - antZ);
+        // RV3.0: o voo virou PERIGO de verdade — sobre a cidade ele cospe
+        // fogo que vira LAVA no chão (campos temporários queimam ao pisar)
+        if (t > 0.42 && t < 0.78) {
+          if (!vooDragao.avisou) { vooDragao.avisou = true; mostraMensagem('🔥 O dragão mergulha CUSPINDO FOGO sobre Venore — saia do caminho!'); }
+          if (Math.random() < 0.008) criaLavaTemp(px + (Math.random() - 0.5) * 12, pz + (Math.random() - 0.5) * 12, alturaTerreno(px, pz));
+        }
         const asas = dragao.g.userData.asas;
         if (asas) { const w = 0.45 + Math.sin(tempo * 9) * 0.5; asas[0].rotation.z = w; asas[1].rotation.z = -w; }
       }

@@ -611,3 +611,41 @@ export function criaCachoeira(x, z) {
   }
   return { grupo: g, colisores: [{ minX: x - 3.4, maxX: x + 3.4, minZ: z - 1.2, maxZ: z + 2.6 }], animados };
 }
+
+// --- CRÂNIO DE DRAGÃO (RV3.0) — marco-troféu nas terras selvagens:
+// uma ossada GIGANTE meio enterrada conta a história do mundo ---
+export function criaCranioDragao(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const osso = matFlat(0xe8e0cc, 0.6), ossoEsc = matFlat(0xcfc4a8, 0.7);
+  // calota do crânio (icosaedro orgânico achatado)
+  const calota = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(2.6, 1), 0.5), osso);
+  calota.scale.set(1.15, 0.85, 1.35); calota.position.set(0, 2.0, 0); calota.rotation.y = 0.3;
+  calota.castShadow = calota.receiveShadow = true; g.add(calota);
+  // focinho/maxila
+  const focinho = new THREE.Mesh(desloca(new THREE.BoxGeometry(2.2, 1.3, 2.8), 0.3), osso);
+  focinho.position.set(0, 1.45, 2.6); focinho.castShadow = true; g.add(focinho);
+  // mandíbula caída no chão (entreaberta)
+  const mandibula = new THREE.Mesh(desloca(new THREE.BoxGeometry(1.9, 0.55, 3.0), 0.25), ossoEsc);
+  mandibula.position.set(0.2, 0.35, 2.9); mandibula.rotation.x = 0.18; mandibula.receiveShadow = true; g.add(mandibula);
+  // órbitas vazias (escuras)
+  [-0.95, 0.95].forEach((ox) => {
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 10), mat(0x14110c, 1));
+    orb.position.set(ox, 2.1, 1.3); g.add(orb);
+  });
+  // presas na maxila + chifres curvados pra trás
+  [-0.8, -0.3, 0.3, 0.8].forEach((ox) => {
+    const presa = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.7, 6), osso);
+    presa.position.set(ox, 0.85, 3.6); presa.rotation.x = Math.PI; g.add(presa);
+  });
+  [-1, 1].forEach((s) => {
+    const chifre = new THREE.Mesh(new THREE.ConeGeometry(0.3, 2.2, 7), ossoEsc);
+    chifre.position.set(s * 1.9, 3.0, -0.8); chifre.rotation.z = s * 0.9; chifre.rotation.x = -0.5;
+    chifre.castShadow = true; g.add(chifre);
+  });
+  // costelas gigantes meio enterradas atrás (a espinha segue pro horizonte)
+  for (let i = 0; i < 4; i++) {
+    const costela = new THREE.Mesh(new THREE.TorusGeometry(2.2 - i * 0.25, 0.16, 6, 14, Math.PI), ossoEsc);
+    costela.position.set(0, 0.2, -3.4 - i * 1.5); costela.castShadow = true; g.add(costela);
+  }
+  return { grupo: g, colisores: [{ minX: x - 2.6, maxX: x + 2.6, minZ: z - 1.8, maxZ: z + 3.4 }] };
+}

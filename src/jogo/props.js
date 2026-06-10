@@ -119,7 +119,14 @@ export function criaBandeira(x, z, cor = 0x9c2a2a) {
   mastro.position.y = 2.5; mastro.castShadow = true; g.add(mastro);
   const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), mat(0xd9a522, 0.3));
   ponta.position.y = 5.05; g.add(ponta);
-  const panoMat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.85, side: THREE.DoubleSide });
+  // RV3.0: EMBLEMA DO DRAGÃO costurado no pano (estandarte do reino)
+  const cnvB = document.createElement('canvas'); cnvB.width = 128; cnvB.height = 96;
+  const cb = cnvB.getContext('2d');
+  cb.fillStyle = '#' + cor.toString(16).padStart(6, '0'); cb.fillRect(0, 0, 128, 96);
+  cb.strokeStyle = 'rgba(255,235,180,.4)'; cb.lineWidth = 5; cb.strokeRect(5, 5, 118, 86);
+  cb.font = '50px Arial'; cb.textAlign = 'center'; cb.textBaseline = 'middle'; cb.fillText('🐉', 64, 50);
+  const texB = new THREE.CanvasTexture(cnvB); texB.colorSpace = THREE.SRGBColorSpace;
+  const panoMat = new THREE.MeshStandardMaterial({ map: texB, roughness: 0.85, side: THREE.DoubleSide });
   const pano = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.0), panoMat);
   pano.position.set(0.78, 4.1, 0); pano.castShadow = true; g.add(pano);
   return {
