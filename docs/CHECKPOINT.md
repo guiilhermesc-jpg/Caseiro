@@ -127,6 +127,13 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 24. ✅ 🏘️ **Thais com casario** (muralha 48×42, +16 casas, 4 entráveis) + **frentes de casa livres** (pinheiros/placas/poço/canteiros reposicionados). Portão agora em x=512; marcos de distância recalculados.
 25. ✅ 🚀 **Deploy feito direto pelo Claude** (autorizado pelo maestro) + `publicar.bat` (2 cliques) criado pra publicar manualmente.
 
+**JÁ FEITO (6ª rodada — lojas, tocha, IA, zoom do mapa, Montanha do Dragão):**
+26. ✅ 🏪 **Lojas estilo Tibia** (`npc.loja` genérico): Bram=armas (25/60/100🪙), **Eldra**=runas (Cura +50 / Fogo = AoE 30 raio 5), **Falk**=arco+flechas (tiro a 14u, gasta 1 flecha, projétil visual, arco desenhado na mão), Sira=poções, Yara (Thais)=poções+flechas. Mochila cheia devolve o ouro.
+27. ✅ 🔦 **Tocha que queima**: raio até 34 nova, encolhe em ~4 min acesa, recupera apagada (`tochaCarga`); **bueiros com feixe de luz + PointLight** nas 5 entradas do esgoto.
+28. ✅ 🚶 **IA afinada**: HOMES caíam dentro dos prédios (NPC andava na parede a noite toda — corrigido), anti-preso 2.5s, re-mira certa (posto/casa), **monstros colidem com cenário** (padrão Tibia/Albion).
+29. ✅ 🗺️ **Zoom do minimapa de verdade** (🔍+/− colados no mapa, teclas +/−); botões antigos de "tamanho do mundo" removidos.
+30. ✅ 🐲 **Montanha do Dragão ESCALÁVEL** (alturaTerreno: rampa cônica até platô em y=34, em 110,300): dragão agora **VERDE** (Tibia) no topo; **voa sobre Venore** a cada ~1-2 min (visível da cidade, asas batendo); ao morrer **20% de chance de Dragon Lord vermelho 5× mais forte** (1100hp, dropa Coração de Dragão = 400🪙); Lord morto → volta o verde.
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
