@@ -12,6 +12,31 @@ export function mat(cor, rough = 0.9) {
   return matCache[k];
 }
 
+// VIDRO de janela compartilhado (leve reflexo + brilho fraco → "vidro" de verdade)
+export const VIDRO = new THREE.MeshStandardMaterial({ color: 0x9fd0e0, roughness: 0.18, metalness: 0.18, emissive: 0x24506a, emissiveIntensity: 0.3 });
+
+// textura procedural de PEDRA/calçamento (paralelepípedos com junta) p/ praças e pisos
+let _texPedra = null;
+export function texturaPedra(rep = 6) {
+  if (!_texPedra) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d');
+    x.fillStyle = '#6f675c'; x.fillRect(0, 0, 128, 128); // junta escura
+    const cell = 32, tons = ['#9a9183', '#8a8175', '#a39a8a', '#857c70', '#938a7c'];
+    for (let gy = 0; gy < 128; gy += cell) {
+      const off = (gy / cell) % 2 ? cell / 2 : 0; // fiada deslocada (alvenaria)
+      for (let gx = -cell; gx < 128; gx += cell) {
+        x.fillStyle = tons[Math.floor(Math.random() * tons.length)];
+        x.fillRect(gx + off + 2, gy + 2, cell - 4, cell - 4);
+      }
+    }
+    for (let i = 0; i < 500; i++) { x.fillStyle = 'rgba(0,0,0,.05)'; x.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
+    _texPedra = new THREE.CanvasTexture(c);
+    _texPedra.wrapS = _texPedra.wrapT = THREE.RepeatWrapping;
+  }
+  const t = _texPedra.clone(); t.needsUpdate = true; t.repeat.set(rep, rep); return t;
+}
+
 function _jbox(w, h, d, material, x, y, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   m.position.set(x, y, z); return m;
@@ -22,7 +47,7 @@ function _jbox(w, h, d, material, x, y, z) {
 export function criaJanela(opts = {}) {
   const { w = 1.3, h = 1.3, cruz = true, shutters = false, floreira = false, cor = 0x9fd0e0 } = opts;
   const g = new THREE.Group();
-  const moldura = mat(0xede6d2), vidro = mat(cor, 0.35), fr = 0.1;
+  const moldura = mat(0xede6d2), vidro = VIDRO, fr = 0.1;
   g.add(_jbox(w, h, 0.06, vidro, 0, 0, 0));
   g.add(_jbox(w + fr, fr, 0.12, moldura, 0, h / 2, 0));
   g.add(_jbox(w + fr, fr, 0.12, moldura, 0, -h / 2, 0));
@@ -222,7 +247,7 @@ export function criaMoinho(x = 0, z = 0) {
   const porta = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.2), mat(0x5a3a22));
   porta.position.set(0, 1.2, 2.85); g.add(porta);
   [[1.7, 3.0], [-1.7, 3.0]].forEach(([jx, jy]) => { // janelinhas
-    const j = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.1), mat(0x9fd0e0, 0.35));
+    const j = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.1), VIDRO);
     j.position.set(jx * 0.8, jy + 2.4, 2.4); g.add(j);
   });
   const teto = new THREE.Mesh(new THREE.ConeGeometry(2.95, 3, 16), mat(0x7a3a2a));

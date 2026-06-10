@@ -7,7 +7,7 @@
 //  parte (cidade.js / npcs.js). Devolve { grupo, colisores }.
 // =============================================================
 import * as THREE from 'three';
-import { mat } from './construcoes.js';
+import { mat, texturaPedra, VIDRO } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
   const { HX = 34, HZ = 30, ALT = 9, ESP = 2, gw = 8 } = opts;
@@ -19,8 +19,9 @@ export function criaThais(cx, cz, opts = {}) {
   const pedra = mat(0xcfc09a, 1), pedraEsc = mat(0xa9966f, 1), pedraClara = mat(0xe0d3b0, 1);
   const telha = mat(0xc0653a, 1), telhaT = mat(0x2f8d80, 1), madeira = mat(0x6e4a2a);
 
-  // piso de pedra (dentro das muralhas)
-  const piso = new THREE.Mesh(new THREE.BoxGeometry(HX * 2 - 2, 0.12, HZ * 2 - 2), mat(0xbcb08f, 1));
+  // piso de pedra calçada (dentro das muralhas)
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(HX * 2 - 2, 0.12, HZ * 2 - 2),
+    new THREE.MeshStandardMaterial({ map: texturaPedra(11), roughness: 1 }));
   piso.position.y = 0.06; piso.receiveShadow = true; g.add(piso);
 
   // --- MURALHA com ameias ---
@@ -103,7 +104,7 @@ export function criaThais(cx, cz, opts = {}) {
     const porta = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.8, 0.2), madeira);
     porta.position.set(0, 1.4, faceZ * (d / 2 + 0.02)); p.add(porta);
     [-w * 0.28, w * 0.28].forEach((jx) => {
-      const j = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.08), mat(0x9fd0e0, 0.35));
+      const j = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.08), VIDRO);
       j.position.set(jx, h * 0.62, faceZ * (d / 2 + 0.05)); p.add(j);
     });
     col(lx, lz, w, d);

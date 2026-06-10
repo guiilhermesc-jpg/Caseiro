@@ -3,7 +3,7 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
@@ -61,7 +61,8 @@ export function criaCidade() {
   const ruas = [-48, -16, 16, 48];
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
-  const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), mat(0x9a9082, 1));
+  const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), roughness: 1 }); // calçamento das praças
+  const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
   const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [], lagos = [];
@@ -158,7 +159,7 @@ export function criaCidade() {
   viaConector.position.set(0, 0.02, -85); viaConector.receiveShadow = true; scene.add(viaConector);
   const viaBairro = new THREE.Mesh(new THREE.BoxGeometry(60, 0.1, 8), ruaMat);
   viaBairro.position.set(0, 0.02, -95); viaBairro.receiveShadow = true; scene.add(viaBairro);
-  const pracaSul = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 22), mat(0x9a9082, 1));
+  const pracaSul = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 22), pisoMat);
   pracaSul.position.set(0, 0.03, -95); pracaSul.receiveShadow = true; scene.add(pracaSul);
   // poço central + bancos do bairro
   add(criaPoco(0, -95));
