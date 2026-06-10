@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado } from './interiores.js';
 import { criaThais } from './thais.js';
 
@@ -251,8 +251,8 @@ export function criaCidade() {
   // === MAPA AMPLIADO (estilo Tibia: Venore cercada por água, estrada p/ outra cidade, montanhas) ===
   // MONTANHAS emoldurando o mundo (norte/oeste/sul, ao longe)
   [[-70, 200, 1.3], [10, 220, 1.5], [90, 205, 1.2], [160, 215, 1.4], [-150, 185, 1.3],
-   [-210, 40, 1.4], [-220, 130, 1.2], [-200, -60, 1.3], [-180, -150, 1.4], [60, -205, 1.3], [-30, -215, 1.2]]
-    .forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
+   [-210, 40, 1.4], [-220, 130, 1.2], [-200, -60, 1.3], [-180, -150, 1.4], [205, -200, 1.3], [-205, -205, 1.2]]
+    .forEach(([x, z, s]) => add(criaMontanha(x, z, s))); // sul abriu espaço pra PRAIA (montanhas viraram flancos)
   // LAGOS ao redor da cidade (Venore cercada por água) + beira d'água
   [[-95, -55, 16], [100, 95, 18], [-105, 70, 14], [-75, -110, 15]].forEach(([x, z, r]) => {
     add(criaLago(x, z, r));
@@ -260,8 +260,8 @@ export function criaCidade() {
     [[x - r, z + 2], [x + 2, z - r], [x - 4, z + r]].forEach(([jx, jz]) => add(criaJunco(jx, jz)));
     add(criaFlorAlta(x + 3, z + r * 0.7, 0x6ab0ff));
   });
-  // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=512)
-  add(criaEstrada(72, 512, 0, 8));               // estrada até o portão de Thais
+  // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=504)
+  add(criaEstrada(72, 504, 0, 8));               // estrada até o portão de Thais
   add(criaPlaca(74, -7, '→ THAIS'));
   add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));
   add(criaPlaca(230, -7, '→ THAIS'));
@@ -328,18 +328,36 @@ export function criaCidade() {
   add(criaCaixa(466, -12));
 
   // === MARCOS DE DISTÂNCIA na estrada (metragem REAL calculada do mapa)
-  // praça de Venore fica em (0,0); portão de Thais em (512,0)
-  add(criaMarcoDistancia(110, -6, 'THAIS 402\nVENORE 110'));
-  add(criaMarcoDistancia(192, 6, 'THAIS 320\nVENORE 192'));
-  add(criaMarcoDistancia(240, 6, 'THAIS 272\nVENORE 240'));
-  add(criaMarcoDistancia(320, -6, 'THAIS 192\nVENORE 320'));
-  add(criaMarcoDistancia(420, 6, 'THAIS 92\nVENORE 420'));
-  add(criaMarcoDistancia(490, -6, 'THAIS 22\nVENORE 490'));
+  // praça de Venore fica em (0,0); portão de Thais em (504,0)
+  add(criaMarcoDistancia(110, -6, 'THAIS 394\nVENORE 110'));
+  add(criaMarcoDistancia(192, 6, 'THAIS 312\nVENORE 192'));
+  add(criaMarcoDistancia(240, 6, 'THAIS 264\nVENORE 240'));
+  add(criaMarcoDistancia(320, -6, 'THAIS 184\nVENORE 320'));
+  add(criaMarcoDistancia(420, 6, 'THAIS 84\nVENORE 420'));
+  add(criaMarcoDistancia(490, -6, 'THAIS 14\nVENORE 490'));
+
+  // === PRAIA DO SUL + MAR (novo bioma: areia, coqueiros, conchas e caranguejos)
+  const areia = new THREE.Mesh(new THREE.BoxGeometry(380, 0.08, 75), mat(0xd9c692, 1));
+  areia.position.set(0, 0.04, -222); areia.receiveShadow = true; scene.add(areia);
+  const mar = new THREE.Mesh(new THREE.BoxGeometry(460, 0.06, 160),
+    new THREE.MeshStandardMaterial({ color: 0x2e6fa8, roughness: 0.12, metalness: 0.35, transparent: true, opacity: 0.88 }));
+  mar.position.set(0, 0.09, -330); scene.add(mar);
+  obstaculos.push({ minX: -230, maxX: 230, minZ: -410, maxZ: -258 }); // mar fundo: não entra
+  lagos.push({ x: 0, z: -300, r: 95 }); // pescaria na beira do mar!
+  // caminho de terra do Bairro do Comércio até a praia
+  const trilha = new THREE.Mesh(new THREE.BoxGeometry(6, 0.07, 85), mat(0x9a7e54, 1));
+  trilha.position.set(0, 0.04, -152); trilha.receiveShadow = true; scene.add(trilha);
+  add(criaPlaca(6, -190, 'Praia de Venore'));
+  // coqueiral
+  [[-60, -210, 1.1], [-25, -222, 1.0], [15, -214, 1.2], [55, -226, 0.95], [95, -212, 1.1],
+   [-100, -220, 1.0], [130, -224, 1.05], [-140, -212, 1.1], [35, -238, 1.0], [-70, -236, 0.95]]
+    .forEach(([x, z, s]) => add(criaCoqueiro(x, z, s)));
+  [[-45, -240, 1.1], [80, -242, 0.9], [-115, -238, 1.0]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
 
   // === THAIS (cidade distante ENTRÁVEL) — agora BEM longe (centro x=560) ===
   add(criaThais(560, 0));
   add(criaFonte(560, 0));                         // praça central com fonte
-  add(criaPlaca(522, -7, 'Bem-vindo a Thais'));   // logo após o portão
+  add(criaPlaca(510, -7, 'Bem-vindo a Thais'));   // logo após o portão
   // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
   add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));

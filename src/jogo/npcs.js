@@ -5,7 +5,7 @@
 //  Clicáveis: userData.tipo='npc', .ref = dados (nome/prof/falas...).
 // =============================================================
 import * as THREE from 'three';
-import { criaAvatar, animaAvatar } from './avatar.js';
+import { criaAvatar, animaAvatar, giraSuave } from './avatar.js';
 
 const TAU = Math.PI * 2;
 const PELE = [0xf2d6b8, 0xe0b088, 0xc89060, 0x9c6a42, 0x6e4628];
@@ -165,7 +165,7 @@ export function atualizaNPCs(npcs, dt, colide, noite = false) {
       if (livreX || livreZ) {
         if (livreX) g.position.x = nx;
         if (livreZ) g.position.z = nz;
-        g.rotation.y = Math.atan2(mx, mz);
+        giraSuave(g, Math.atan2(mx, mz), dt * 9); // vira macio
         andou = true; break;
       }
     }

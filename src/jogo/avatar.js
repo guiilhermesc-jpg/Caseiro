@@ -7,6 +7,13 @@
 // =============================================================
 import * as THREE from 'three';
 
+// GIRO SUAVE: interpola a rotação pelo arco mais curto (sem "teleportar" o
+// ângulo) — usado pelo jogador, NPCs e monstros pra um andar de qualidade.
+export function giraSuave(obj, alvo, f) {
+  const d = Math.atan2(Math.sin(alvo - obj.rotation.y), Math.cos(alvo - obj.rotation.y));
+  obj.rotation.y += d * Math.min(1, f);
+}
+
 export const MODELOS = ['aldeao', 'cacador', 'mago', 'cavaleiro'];
 export const MODELO_NOME = { aldeao: 'Aldeão', cacador: 'Caçador', mago: 'Mago', cavaleiro: 'Cavaleiro' };
 

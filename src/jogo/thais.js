@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { mat, texturaPedra, VIDRO } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
-  const { HX = 48, HZ = 42, ALT = 9, ESP = 2, gw = 8 } = opts; // cidade GRANDE (casario do porte de Venore)
+  const { HX = 56, HZ = 50, ALT = 9, ESP = 2, gw = 8 } = opts; // proporção TIBIA: Thais é MAIOR que Venore
   const g = new THREE.Group(); g.position.set(cx, 0, cz);
   const colisores = [];
   // colisor em coords do MUNDO (o grupo está transladado p/ cx,cz)
@@ -93,20 +93,29 @@ export function criaThais(cx, cz, opts = {}) {
     new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.7, roughness: 0.3 }));
   pina.position.set(0, 14.8, 1); templo.add(pina); // pináculo dourado
 
-  // --- PRÉDIOS decorativos (cantos internos; fachada vira pro miolo) ---
-  function predio(lx, lz, w, d, h, cor, corT) {
+  // --- PRÉDIOS decorativos (fachada vira pro miolo; eixo 'x' p/ colunas leste/oeste) ---
+  function predio(lx, lz, w, d, h, cor, corT, eixo = 'z') {
     const p = new THREE.Group(); p.position.set(lx, 0, lz); g.add(p);
     const corpoP = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(cor, 1));
     corpoP.position.y = h / 2; corpoP.castShadow = corpoP.receiveShadow = true; p.add(corpoP);
     const tel = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.72, h * 0.5 + 1.4, 4), mat(corT, 1));
     tel.position.y = h + (h * 0.5 + 1.4) / 2 - 0.1; tel.rotation.y = Math.PI / 4; tel.castShadow = true; p.add(tel);
-    const faceZ = lz >= 0 ? -1 : 1; // porta/janelas viram pro centro
-    const porta = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.8, 0.2), madeira);
-    porta.position.set(0, 1.4, faceZ * (d / 2 + 0.02)); p.add(porta);
-    [-w * 0.28, w * 0.28].forEach((jx) => {
-      const j = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.08), VIDRO);
-      j.position.set(jx, h * 0.62, faceZ * (d / 2 + 0.05)); p.add(j);
-    });
+    const porta = new THREE.Mesh(new THREE.BoxGeometry(eixo === 'z' ? 1.4 : 0.2, 2.8, eixo === 'z' ? 0.2 : 1.4), madeira);
+    if (eixo === 'z') {
+      const faceZ = lz >= 0 ? -1 : 1; // porta/janelas viram pro centro
+      porta.position.set(0, 1.4, faceZ * (d / 2 + 0.02)); p.add(porta);
+      [-w * 0.28, w * 0.28].forEach((jx) => {
+        const j = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.08), VIDRO);
+        j.position.set(jx, h * 0.62, faceZ * (d / 2 + 0.05)); p.add(j);
+      });
+    } else {
+      const faceX = lx >= 0 ? -1 : 1;
+      porta.position.set(faceX * (w / 2 + 0.02), 1.4, 0); p.add(porta);
+      [-d * 0.28, d * 0.28].forEach((jz) => {
+        const j = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.1, 1.1), VIDRO);
+        j.position.set(faceX * (w / 2 + 0.05), h * 0.62, jz); p.add(j);
+      });
+    }
     col(lx, lz, w, d);
   }
   predio(-23, 17, 9, 9, 7, 0xd8c8a4, 0xc0653a);
@@ -114,14 +123,16 @@ export function criaThais(cx, cz, opts = {}) {
   predio(-23, -17, 9, 9, 8, 0xd2c19a, 0x9a4a3a);
   predio(23, -17, 9, 9, 7, 0xcab98e, 0xc0653a);
 
-  // CASARIO de Thais (tantas casas quanto Venore): fileiras norte/sul + flanco oeste
+  // CASARIO de Thais (proporção Tibia: MAIOR que Venore) — fileiras duplas
+  // norte/sul, flanco oeste e coluna leste; vielas de 2.6u entre as fileiras
   const coresT = [0xd8c8a4, 0xcdb892, 0xd2c19a, 0xcab98e, 0xdccfae];
   const telhT = [0xc0653a, 0x2f8d80, 0x9a4a3a, 0xb8742a];
   let ci = 0;
-  for (const lz of [32, -32]) for (let lx = -36; lx <= 36; lx += 12) {
+  for (const lz of [32, -32, 44, -44]) for (let lx = -36; lx <= 36; lx += 12) {
     predio(lx, lz, 9, 8, 6 + (ci % 3), coresT[ci % coresT.length], telhT[ci % telhT.length]); ci++;
   }
-  [[-38, -16], [-38, 16]].forEach(([lx, lz]) => { predio(lx, lz, 8, 8, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
+  [[-46, -16], [-46, 16]].forEach(([lx, lz]) => { predio(lx, lz, 8, 8, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
+  [[44, -24], [44, -8], [44, 8], [44, 24]].forEach(([lx, lz]) => { predio(lx, lz, 9, 8, 6 + (ci % 3), coresT[ci % 5], telhT[ci % 4], 'x'); ci++; });
 
   return { grupo: g, colisores };
 }

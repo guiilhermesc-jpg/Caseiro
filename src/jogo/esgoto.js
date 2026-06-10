@@ -52,8 +52,9 @@ export function criaEsgoto() {
     colisores.push({ minX: cx - 0.6, maxX: cx + 0.6, minZ: cz - 0.6, maxZ: cz + 0.6 });
   }
 
-  // ACESSOS (escadas) em cruzamentos de túnel — voltam à superfície (bueiros)
-  const acessos = [{ x: 16, z: -16 }, { x: -16, z: 16 }, { x: 48, z: 16 }, { x: -48, z: -16 }, { x: 16, z: 16 }];
+  // ACESSOS (escadas) em cruzamentos de túnel — voltam à superfície (bueiros).
+  // Os 2 últimos sobem nos bueiros de THAIS (a rede de esgoto liga as cidades!)
+  const acessos = [{ x: 16, z: -16 }, { x: -16, z: 16 }, { x: 48, z: 16 }, { x: -48, z: -16 }, { x: 16, z: 16 }, { x: -16, z: -16 }, { x: -48, z: 16 }];
   acessos.forEach((a) => {
     const esc = new THREE.Group(); esc.position.set(a.x, Y, a.z);
     for (let i = 0; i < 5; i++) {

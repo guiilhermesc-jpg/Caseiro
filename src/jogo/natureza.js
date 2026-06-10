@@ -525,6 +525,33 @@ export function criaCovilDragao(x, z) {
   };
 }
 
+// --- COQUEIRO (praia): tronco curvado, folhas longas e cocos ---
+export function criaCoqueiro(x, z, s = 1) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const casca = mat(0x8a7048), folha = mat(0x3f8a3e);
+  const curva = (Math.random() - 0.5) * 1.6; // cada coqueiro pende pra um lado
+  let px = 0;
+  for (let i = 0; i < 6; i++) { // tronco em segmentos (curva suave)
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry((0.22 - i * 0.02) * s, (0.26 - i * 0.02) * s, 1.5 * s, 7), casca);
+    px += curva * (i / 6) * 0.35 * s;
+    seg.position.set(px, (0.7 + i * 1.4) * s, 0);
+    seg.rotation.z = -curva * 0.12; seg.castShadow = true; g.add(seg);
+  }
+  const topoY = 9.2 * s, topoX = px;
+  for (let i = 0; i < 7; i++) { // folhas longas caídas em leque
+    const a = (i / 7) * Math.PI * 2;
+    const f = new THREE.Mesh(new THREE.BoxGeometry(0.5 * s, 0.06, 3.2 * s), folha);
+    f.position.set(topoX + Math.cos(a) * 1.3 * s, topoY, Math.sin(a) * 1.3 * s);
+    f.rotation.y = -a + Math.PI / 2; f.rotation.x = 0.45; f.castShadow = true; g.add(f);
+  }
+  for (let i = 0; i < 3; i++) { // cocos
+    const a = i * 2.1;
+    const coco = new THREE.Mesh(new THREE.SphereGeometry(0.22 * s, 8, 8), mat(0x5a4226));
+    coco.position.set(topoX + Math.cos(a) * 0.4 * s, topoY - 0.35 * s, Math.sin(a) * 0.4 * s); g.add(coco);
+  }
+  return { grupo: g, colisores: [{ minX: x - 0.5, maxX: x + 0.5, minZ: z - 0.5, maxZ: z + 0.5 }] };
+}
+
 // --- moita de flores altas do campo ---
 export function criaFlorAlta(x, z, cor = 0xf2c14e) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

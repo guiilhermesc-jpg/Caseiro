@@ -68,6 +68,34 @@ export function criaJanela(opts = {}) {
   return g;
 }
 
+// textura procedural de TELHA (fileiras escalonadas com sombra) — dá vida aos
+// telhados; gerada 1x e tingida pela cor do material (qualidade sem custo)
+let _texTelha = null;
+function texturaTelha() {
+  if (_texTelha) return _texTelha;
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = '#b0b0b0'; x.fillRect(0, 0, 128, 128);
+  const fila = 16, tw = 32;
+  for (let fy = 0; fy < 128; fy += fila) {
+    const off = (fy / fila) % 2 ? tw / 2 : 0;
+    for (let fx = -tw; fx < 128; fx += tw) {
+      x.fillStyle = ['#c4c4c4', '#bcbcbc', '#cacaca'][Math.floor(Math.random() * 3)];
+      x.fillRect(fx + off + 1, fy + 1, tw - 2, fila - 2);
+      x.fillStyle = 'rgba(0,0,0,.22)';
+      x.fillRect(fx + off + 1, fy + fila - 3, tw - 2, 2); // sombra da fileira de cima
+    }
+  }
+  _texTelha = new THREE.CanvasTexture(c);
+  _texTelha.wrapS = _texTelha.wrapT = THREE.RepeatWrapping; _texTelha.repeat.set(2, 2);
+  return _texTelha;
+}
+const matTelhaCache = {};
+export function matTelha(cor) {
+  if (!matTelhaCache[cor]) matTelhaCache[cor] = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.9, map: texturaTelha() });
+  return matTelhaCache[cor];
+}
+
 // telhado de DUAS ÁGUAS com beiral (cobre o retângulo certinho -> bordas coerentes)
 function telhadoDuasAguas(larg, prof, hTelh, cor, baseY) {
   const ov = 0.5; // beiral (overhang)
@@ -78,7 +106,7 @@ function telhadoDuasAguas(larg, prof, hTelh, cor, baseY) {
   shape.closePath();
   const geo = new THREE.ExtrudeGeometry(shape, { depth: prof + ov * 2, bevelEnabled: false });
   geo.translate(0, 0, -(prof + ov * 2) / 2);
-  const m = new THREE.Mesh(geo, mat(cor));
+  const m = new THREE.Mesh(geo, matTelha(cor)); // telhas texturizadas em TODOS os telhados
   m.position.y = baseY; m.castShadow = true;
   return m;
 }

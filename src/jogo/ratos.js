@@ -6,6 +6,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat } from './construcoes.js';
+import { giraSuave } from './avatar.js';
 
 const Y = -40;
 
@@ -88,7 +89,7 @@ export function atualizaRatos(ratos, dt, jog, podeAndar) {
       continue;
     }
     g.position.x = nx; g.position.z = nz;
-    g.rotation.y = Math.atan2(mx, mz);
+    giraSuave(g, Math.atan2(mx, mz), dt * 8); // vira macio (sem "pular" o ângulo)
     const p = g.userData.patas;
     if (p) { const s = Math.sin(r.tempo * 16) * 0.6; for (let i = 0; i < p.length; i++) p[i].rotation.x = (i % 2 ? -s : s); }
     if (g.userData.segs) g.userData.segs.forEach((sg, i) => { sg.position.x = Math.sin(r.tempo * 6 + i * 0.7) * 0.25; });
@@ -280,6 +281,33 @@ export function criaOrc(x, z) {
   [-0.24, 0.24].forEach((ox) => { const geo = new THREE.BoxGeometry(0.3, 0.85, 0.3); geo.translate(0, -0.42, 0); const p = new THREE.Mesh(geo, couro); p.position.set(ox, 0.85, 0); p.castShadow = true; g.add(p); patas.push(p); });
   const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.0, 6), couro); cabo.position.set(0.75, 1.0, 0.15); g.add(cabo);
   const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.06), mat(0xb8bcc4, 0.35)); lamina.position.set(0.75, 1.5, 0.15); g.add(lamina);
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
+// CARANGUEJO da praia (fraquinho; anda de lado com as garras pra cima)
+export function criaCaranguejo(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0xc24a2a, roughness: 0.7 });
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), corpoMat);
+  corpo.position.y = 0.32; corpo.scale.set(1.4, 0.6, 1); corpo.castShadow = true; g.add(corpo);
+  [-0.18, 0.18].forEach((ox) => {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), mat(0x101010));
+    olho.position.set(ox, 0.62, 0.3); g.add(olho);
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 4), corpoMat);
+    haste.position.set(ox, 0.52, 0.28); g.add(haste);
+  });
+  [-0.55, 0.55].forEach((ox) => { // garras erguidas
+    const garra = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), corpoMat);
+    garra.position.set(ox, 0.5, 0.4); garra.scale.set(1, 0.8, 1.3); garra.castShadow = true; g.add(garra);
+    const pinca = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 4), corpoMat);
+    pinca.position.set(ox, 0.62, 0.62); g.add(pinca);
+  });
+  const patas = [];
+  for (const s of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.025, 0.45, 4), corpoMat);
+    perna.position.set(s * 0.5, 0.22, 0.15 - i * 0.2); perna.rotation.z = s * 1.1; g.add(perna); patas.push(perna);
+  }
   g.userData = { patas, corpoMat, tipo: 'monstro' };
   return g;
 }

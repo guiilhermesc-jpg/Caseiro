@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { CONFIG3D } from './config3d.js';
 import { criaCidade } from './jogo/cidade.js';
-import { criaAvatar, animaAvatar } from './jogo/avatar.js';
+import { criaAvatar, animaAvatar, giraSuave } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
 import { criaGato, atualizaGato, PETS } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
@@ -18,7 +18,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
-import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc } from './jogo/ratos.js';
+import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
@@ -180,6 +180,8 @@ const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1
 [[300, 20], [470, -20], [476, -14]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
 [[360, -30], [490, 30]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
 addMonstro(criaCyclops(415, 50), 80, 30, 15, 1.2, true, areaMon(415, 50, 16)); // ciclope da mata fechada
+// caranguejos na Praia do Sul (fraquinhos — primeiro alvo de quem chega)
+[[-30, -225], [20, -230], [60, -218], [-85, -228], [110, -222]].forEach(([x, z]) => addMonstro(criaCaranguejo(x, z), 12, 4, 3, 2.2, false, areaMon(x, z, 13)));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -246,6 +248,7 @@ const LUGARES_MAPA = [
   { nome: 'Rio Fundo', x: 180, z: 0 }, { nome: 'Torre', x: 122, z: -9 },
   { nome: 'Fazenda', x: 105, z: 38 }, { nome: 'Cemitério', x: 130, z: -60 },
   { nome: 'Pântano', x: 225, z: -95 }, { nome: 'Bandidos', x: 252, z: 48 },
+  { nome: 'Praia', x: 0, z: -218 },
 ];
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, alcance: 90 });
 const npcs = criaNPCs(scene, colide);
@@ -270,6 +273,7 @@ function mostraMensagem(txt) {
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
+    if (it._off) continue; // coletável colhido (esperando renascer)
     if (Math.abs((it.y || 0) - avatar.position.y) > 6) continue; // mesmo "andar" (superfície × esgoto)
     const d = Math.hypot(it.x - avatar.position.x, it.z - avatar.position.z);
     if (d <= it.raio && d < melhorD) { melhorD = d; melhor = it; }
@@ -316,6 +320,7 @@ const customizar = criaCustomizar({
 // TABELA DE COMPRA dos mercadores (estilo Tibia: caçar → saquear → vender)
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
+  'Cogumelo': 2, 'Concha': 4, 'Coco': 3,
   'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
@@ -431,8 +436,13 @@ function executaAcao() {
 // --- COMBATE: HUD, bueiro, gravetos, descer/subir, atacar, loot ---
 const hud = criaHUD();
 const MAT_MADEIRA = new THREE.MeshStandardMaterial({ color: 0x7a5a2a, roughness: 0.9 });
-// vários bueiros espalhados pela cidade (cada um liga a uma escada do esgoto)
-const BUEIROS = [{ x: 20, z: -36 }, { x: -20, z: 40 }, { x: 44, z: 16 }, { x: -44, z: -16 }, { x: 10, z: 14 }];
+// BUEIROS validados: cada um fica NA RUA, exatamente em cima da escada do
+// esgoto (descida/subida vertical coerente). Os 2 últimos ficam em THAIS —
+// a rede de esgoto liga as duas cidades, igual no Tibia!
+const BUEIROS = [
+  { x: 16, z: -16 }, { x: -16, z: 16 }, { x: 48, z: 16 }, { x: -48, z: -16 }, { x: 18, z: 18 },
+  { x: 552, z: -2 }, { x: 570, z: 4 },
+];
 BUEIROS.forEach((bp, i) => {
   const b = new THREE.Group(); b.position.set(bp.x, 0, bp.z);
   const aro = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.25, 16), new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9 }));
@@ -451,6 +461,33 @@ BUEIROS.forEach((bp, i) => {
   it.onAcao = () => { scene.remove(grp); const i = interativos.indexOf(it); if (i >= 0) interativos.splice(i, 1); equipaGraveto(); };
   interativos.push(it);
 });
+
+// === COLETÁVEIS pelo mundo (colher → vender no mercador → renascem em 90s) ===
+const TIPOS_COLETA = {
+  Erva: { icone: '🌿', cria: () => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 5), new THREE.MeshStandardMaterial({ color: 0x3fa050, roughness: 0.9 })); m.position.y = 0.28; return m; } },
+  Cogumelo: { icone: '🍄', cria: () => { const g = new THREE.Group(); const c = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.32, 6), new THREE.MeshStandardMaterial({ color: 0xe8e0d0 })); c.position.y = 0.16; g.add(c); const ch = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xc23a2a })); ch.position.y = 0.32; g.add(ch); return g; } },
+  Concha: { icone: '🐚', cria: () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf0e2d0, roughness: 0.5 })); m.position.y = 0.06; m.scale.y = 0.5; return m; } },
+  Coco: { icone: '🥥', cria: () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), new THREE.MeshStandardMaterial({ color: 0x5a4226, roughness: 0.9 })); m.position.y = 0.2; return m; } },
+};
+[
+  ['Erva', [[-84, 8], [-90, 36], [120, 30], [160, -24], [310, 24], [-120, -40], [430, -26]]],
+  ['Cogumelo', [[-86, 20], [-92, -10], [135, 26], [365, 64], [-118, 60]]],
+  ['Concha', [[-50, -206], [-10, -212], [30, -208], [70, -214], [105, -206], [-90, -210]]],
+  ['Coco', [[-58, -212], [17, -216], [97, -214], [-138, -214]]],
+].forEach(([tipo, pontos]) => pontos.forEach(([cx, cz]) => {
+  const def = TIPOS_COLETA[tipo];
+  const mesh = def.cria();
+  mesh.position.set(cx, mesh.position.y, cz);
+  scene.add(mesh);
+  const it = { x: cx, z: cz, raio: 2.2, titulo: `${def.icone} ${tipo}`, acao: `Colher ${tipo} ${def.icone}` };
+  it.onAcao = () => {
+    if (!inventario.addItem({ nome: tipo, icone: def.icone })) { mostraMensagem('Mochila cheia! 🎒'); return; }
+    mesh.visible = false; it._off = true;
+    mostraMensagem(`${def.icone} Colheu ${tipo}! (vende no mercador)`);
+    setTimeout(() => { mesh.visible = true; it._off = false; }, 90000); // renasce em 90s
+  };
+  interativos.push(it);
+}));
 
 // CASAS À VENDA (compra com ouro; depois personaliza o telhado)
 const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
@@ -813,6 +850,76 @@ function reviveBicho(r) {
   r.hp = r.hpMax; r.vivo = true; r.respawnAt = null; r.alvo = { x: r.g.position.x, z: r.g.position.z };
 }
 
+// =============================================================
+//  CONTA DEV/GM (igual GM do Tibia) — entre com o nome "gm", "adm"
+//  ou "dev" na criação do personagem. Tecla G abre o painel com os
+//  poderes: teleporte, cura, ouro, XP, imortal, velocidade, spawn
+//  e extermínio de bichos.
+// =============================================================
+let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
+function tpGM(x, z) {
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
+  avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
+  mostraMensagem('🌀 Teleportado!');
+}
+function spawnGM(tipo) {
+  const px = avatar.position.x + Math.sin(avatar.rotation.y) * 5;
+  const pz = avatar.position.z + Math.cos(avatar.rotation.y) * 5;
+  let g2, hp = 20, xp = 5, dn = 3, vl = 1.9, forte = false;
+  if (tipo === 'rato') { g2 = criaRato(px, pz); }
+  else if (tipo === 'troll') { g2 = criaTroll(px, pz); hp = 25; xp = 8; dn = 6; vl = 2.0; }
+  else { g2 = criaDragao(px, pz); hp = 220; xp = 120; dn = 22; vl = 1.6; forte = true; }
+  g2.position.y = avatar.position.y;
+  ratos.push({ g: g2, hp, hpMax: hp, xp, dano: dn, vel: vl, forte, bounds: areaMon(px, pz, 14), y0: avatar.position.y, alvo: { x: px, z: pz }, pausa: 0, tempo: 0, vivo: true, piscar: 0 });
+  scene.add(g2);
+  mostraMensagem(`✨ GM: ${tipo} invocado!`);
+}
+function ativaGM() {
+  if (gmMode) return; gmMode = true;
+  gmPainel = document.createElement('div');
+  gmPainel.style.cssText = 'position:fixed;left:14px;top:50%;transform:translateY(-50%);z-index:60;display:none;'
+    + 'flex-direction:column;gap:5px;background:rgba(16,22,32,.95);border:1px solid #d9a522;border-radius:12px;padding:10px;'
+    + 'font-family:Arial;max-height:88vh;overflow:auto;';
+  const tit = document.createElement('div');
+  tit.textContent = '🛡️ PAINEL GM';
+  tit.style.cssText = 'color:#ffd23f;font-weight:bold;text-align:center;font-size:13px;margin-bottom:2px;';
+  gmPainel.appendChild(tit);
+  function B(txt, fn) {
+    const b = document.createElement('div');
+    b.textContent = txt;
+    b.style.cssText = 'background:#1c2836;border:1px solid #3a4654;border-radius:8px;color:#eef3f8;'
+      + 'padding:7px 12px;font-size:12px;cursor:pointer;user-select:none;white-space:nowrap;';
+    b.addEventListener('pointerdown', (e) => { e.stopPropagation(); fn(b); });
+    gmPainel.appendChild(b);
+    return b;
+  }
+  B('🌀 Ir: Venore', () => tpGM(0, 2));
+  B('🌀 Ir: Thais', () => tpGM(560, -2));
+  B('🌀 Ir: Pico do Dragão', () => tpGM(110, 300));
+  B('🌀 Ir: Praia', () => tpGM(0, -208));
+  B('❤️ Curar tudo', () => { vida = VIDA_MAX; hud.vida(vida, VIDA_MAX); mostraMensagem('❤️ GM: vida cheia'); });
+  B('🪙 +100 de ouro', () => { ouro += 100; hud.ouro(ouro); });
+  B('⭐ +100 de XP', () => hud.ganhaXP(100));
+  B('💀 Exterminar próximos', () => {
+    let n = 0;
+    for (const r of ratos) {
+      if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 8) continue;
+      if (Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z) > 16) continue;
+      r.hp = 0; mataBicho(r); n++;
+    }
+    mostraMensagem(`💀 GM: ${n} bicho(s) exterminado(s)`);
+  });
+  B('🐀 Invocar rato', () => spawnGM('rato'));
+  B('🧌 Invocar troll', () => spawnGM('troll'));
+  B('🐲 Invocar dragão', () => spawnGM('dragao'));
+  B('🛡️ Imortal: OFF', (b) => { gmImortal = !gmImortal; b.textContent = `🛡️ Imortal: ${gmImortal ? 'ON' : 'OFF'}`; });
+  B('⚡ Velocidade ×3: OFF', (b) => { gmVel = !gmVel; b.textContent = `⚡ Velocidade ×3: ${gmVel ? 'ON' : 'OFF'}`; });
+  document.body.appendChild(gmPainel);
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyG' && gmMode) gmPainel.style.display = gmPainel.style.display === 'none' ? 'flex' : 'none';
+  });
+}
+
 // NOMES DE LUGARES (estilo Tibia) — mostra o bairro/rua onde você está
 const DISTRITOS = [
   { nome: 'Praça Central de Venore', x: 0, z: 0, raio: 18 },
@@ -828,8 +935,9 @@ const DISTRITOS = [
   { nome: 'Farol do Porto', x: 66, z: 84, raio: 10 },
   { nome: 'Caminho de Thais', x: 300, z: 0, raio: 250 },
   { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
-  { nome: 'Portão de Thais', x: 514, z: 0, raio: 14 },
-  { nome: 'Cidade de Thais', x: 560, z: 0, raio: 44 },
+  { nome: 'Portão de Thais', x: 506, z: 0, raio: 14 },
+  { nome: 'Cidade de Thais', x: 560, z: 0, raio: 54 },
+  { nome: 'Praia de Venore', x: 0, z: -222, raio: 90 },
   { nome: 'Templo de Thais', x: 560, z: 18, raio: 12 },
   { nome: 'Ruínas da Estrada', x: 400, z: -70, raio: 18 },
   { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
@@ -929,6 +1037,11 @@ criaSelecao({
     inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
     hud.mostra(); hud.vida(vida, VIDA_MAX); hud.ouro(ouro);
     mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
+    // CONTA DEV/GM: entrar com o nome "gm", "adm" ou "dev" libera os poderes
+    if (['gm', 'adm', 'dev'].includes(nome.trim().toLowerCase())) {
+      ativaGM();
+      mostraMensagem('🛡️ Conta DEV/GM ativada — aperte G pra abrir o painel de poderes!');
+    }
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
 });
@@ -972,12 +1085,13 @@ function loop() {
       let vel = CONFIG3D.velocidade;
       if (correndo) vel *= 1.8;
       if (abaixado) vel *= 0.55;
+      if (gmVel) vel *= 3; // GM: velocidade ×3
       const passo = vel * dt;
       const nx = Math.max(areaAtiva.minX, Math.min(areaAtiva.maxX, avatar.position.x + mx * passo));
       if (!colide(nx, avatar.position.z)) avatar.position.x = nx;
       const nz = Math.max(areaAtiva.minZ, Math.min(areaAtiva.maxZ, avatar.position.z + mz * passo));
       if (!colide(avatar.position.x, nz)) avatar.position.z = nz;
-      avatar.rotation.y = Math.atan2(mx, mz);
+      giraSuave(avatar, Math.atan2(mx, mz), dt * 14); // giro macio (qualidade no andar)
     }
     if (controles.querPular() && noChao) { vy = 9; noChao = false; }
     vy -= 25 * dt;
@@ -1104,9 +1218,11 @@ function loop() {
     for (const r of ratos) {
       if (r.vivo && r.contato && tempo > (r.proxAtaque || 0)) {
         r.proxAtaque = tempo + 1.1;
-        vida -= Math.max(1, (r.dano || 5) - defesa);
-        hud.vida(vida, VIDA_MAX);
-        if (vida <= 0) { morre(); break; }
+        if (!gmImortal) { // GM imortal não toma dano
+          vida -= Math.max(1, (r.dano || 5) - defesa);
+          hud.vida(vida, VIDA_MAX);
+          if (vida <= 0) { morre(); break; }
+        }
       }
     }
     if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 1.5); hud.vida(vida, VIDA_MAX); } // regen lenta
