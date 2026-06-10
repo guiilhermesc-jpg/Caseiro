@@ -17,6 +17,9 @@ import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
+import { criaEsgoto } from './jogo/esgoto.js';
+import { criaRatos, atualizaRatos } from './jogo/ratos.js';
+import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
 
@@ -55,13 +58,25 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
+const LIM = CONFIG3D.limiteMundo;
+// colisão/altura/limite ATIVOS (mudam ao descer pro esgoto)
+let colisoresAtivos = obstaculos;
+let areaAtiva = { minX: -LIM, maxX: LIM, minZ: -LIM, maxZ: LIM };
+let chaoY = 0;
+let noEsgoto = false;
 function colide(x, z) {
-  for (const o of obstaculos) {
+  for (const o of colisoresAtivos) {
     if (x > o.minX - RAIO_AVATAR && x < o.maxX + RAIO_AVATAR &&
         z > o.minZ - RAIO_AVATAR && z < o.maxZ + RAIO_AVATAR) return true;
   }
   return false;
 }
+
+// --- esgoto (subsolo) + ratos + loot ---
+const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
+const ratos = criaRatos(8, esgoto.bounds); ratos.forEach((r) => scene.add(r.g));
+const lootChao = [];
+let armado = false;
 
 // avatar (recriado quando muda a aparência na tela de seleção)
 const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20 };
@@ -75,6 +90,7 @@ function montaAvatar() {
   avatar.position.copy(pos);
   avatar.rotation.y = rotY;
   avatar.userData.tipo = 'jogador'; // clicável (abre customização)
+  if (armado) poeArmaNaMao();       // mantém o graveto ao recriar (troca de cor)
   scene.add(avatar);
 }
 montaAvatar();
@@ -187,6 +203,86 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   }
 });
 
+// --- COMBATE: HUD, bueiro, gravetos, descer/subir, atacar, loot ---
+const hud = criaHUD();
+const MAT_MADEIRA = new THREE.MeshStandardMaterial({ color: 0x7a5a2a, roughness: 0.9 });
+const BUEIRO = { x: 20, z: -36 };
+{
+  const b = new THREE.Group(); b.position.set(BUEIRO.x, 0, BUEIRO.z);
+  const aro = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.25, 16), new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9 }));
+  aro.position.y = 0.12; b.add(aro);
+  const buraco = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.12, 16), new THREE.MeshStandardMaterial({ color: 0x080808 }));
+  buraco.position.y = 0.2; b.add(buraco);
+  scene.add(b);
+  interativos.push({ x: BUEIRO.x, z: BUEIRO.z, raio: 2.4, titulo: '🕳️ Bueiro', msg: 'Escuro lá embaixo...', onAcao: () => desce() });
+}
+[[26, 24], [-22, 26], [26, -22], [10, 54], [54, 10]].forEach(([gx, gz]) => {
+  const grp = new THREE.Group(); grp.position.set(gx, 0, gz);
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA);
+  stick.rotation.z = Math.PI / 2; stick.position.y = 0.1; grp.add(stick);
+  scene.add(grp);
+  const it = { x: gx, z: gz, raio: 2, titulo: '🪵 Graveto', msg: 'Um galho resistente.' };
+  it.onAcao = () => { scene.remove(grp); const i = interativos.indexOf(it); if (i >= 0) interativos.splice(i, 1); equipaGraveto(); };
+  interativos.push(it);
+});
+
+function desce() {
+  chaoY = -40; colisoresAtivos = esgoto.colisores; areaAtiva = esgoto.bounds; noEsgoto = true;
+  avatar.position.set(esgoto.entrada.x, -40, esgoto.entrada.z); vy = 0; noChao = true;
+  minimapa.esconde(); mostraMensagem('Você desce ao esgoto... cuidado com os ratos! 🐀');
+}
+function sobe() {
+  chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = { minX: -LIM, maxX: LIM, minZ: -LIM, maxZ: LIM }; noEsgoto = false;
+  avatar.position.set(BUEIRO.x, 0, BUEIRO.z + 2.5); vy = 0; noChao = true;
+  minimapa.mostra(); mostraMensagem('Você volta à superfície.');
+}
+function poeArmaNaMao() {
+  const p = avatar.userData.partes; if (!p || p.bracoDir.getObjectByName('arma')) return;
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA);
+  stick.name = 'arma'; stick.position.set(0, -1.0, 0.18); stick.rotation.x = 0.4; p.bracoDir.add(stick);
+}
+function equipaGraveto() {
+  if (armado) return; armado = true; poeArmaNaMao();
+  inventario.equipa('maoDir', { nome: 'Graveto', cor: '#7a5a2a' });
+  mostraMensagem('Pegou um graveto! Seus golpes agora dão 5. ⚔️');
+}
+const LOOT_TAB = [
+  { tipo: '🍖 Carne', cor: 0xc0432a, ch: 0.5 },
+  { tipo: '🧀 Queijo', cor: 0xe6c84a, ch: 0.2 },
+  { tipo: '🪙 Moeda', cor: 0xd9a522, ch: 0.25 },
+  { tipo: '〰️ Cauda de rato', cor: 0x7a5a4a, ch: 0.08 },
+];
+function dropaLoot(x, z) {
+  LOOT_TAB.forEach((it) => {
+    if (Math.random() < it.ch) {
+      const gx = x + (Math.random() - 0.5) * 1.2, gz = z + (Math.random() - 0.5) * 1.2;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.3), new THREE.MeshStandardMaterial({ color: it.cor, roughness: 0.6 }));
+      m.position.set(gx, -40 + 0.25, gz); m.castShadow = true; scene.add(m);
+      lootChao.push({ grupo: m, x: gx, z: gz, tipo: it.tipo });
+    }
+  });
+}
+function atacar() {
+  const dano = armado ? 5 : 2;
+  const fx = Math.sin(avatar.rotation.y), fz = Math.cos(avatar.rotation.y);
+  let melhor = null, melhorD = 2.4;
+  for (const r of ratos) {
+    if (!r.vivo) continue;
+    const dx = r.g.position.x - avatar.position.x, dz = r.g.position.z - avatar.position.z, d = Math.hypot(dx, dz);
+    if (d > 2.4 || (dx * fx + dz * fz) / (d || 1) < 0) continue; // perto e na frente
+    if (d < melhorD) { melhorD = d; melhor = r; }
+  }
+  if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
+  melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+  if (melhor.hp <= 0) mataRato(melhor);
+  else mostraMensagem(`Acertou o rato! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
+}
+function mataRato(r) {
+  r.vivo = false; scene.remove(r.g);
+  hud.ganhaXP(5); dropaLoot(r.g.position.x, r.g.position.z);
+  mostraMensagem('Rato derrotado! +5 XP 🎉');
+}
+
 criaSelecao({
   cores: coresJogador,
   aoMudarCor: () => montaAvatar(),
@@ -200,6 +296,7 @@ criaSelecao({
     }
     minimapa.mostra();
     inventario.mostra();
+    hud.mostra();
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
 });
@@ -236,17 +333,16 @@ function loop() {
       if (correndo) vel *= 1.8;
       if (abaixado) vel *= 0.55;
       const passo = vel * dt;
-      const lim = CONFIG3D.limiteMundo;
-      const nx = Math.max(-lim, Math.min(lim, avatar.position.x + mx * passo));
+      const nx = Math.max(areaAtiva.minX, Math.min(areaAtiva.maxX, avatar.position.x + mx * passo));
       if (!colide(nx, avatar.position.z)) avatar.position.x = nx;
-      const nz = Math.max(-lim, Math.min(lim, avatar.position.z + mz * passo));
+      const nz = Math.max(areaAtiva.minZ, Math.min(areaAtiva.maxZ, avatar.position.z + mz * passo));
       if (!colide(avatar.position.x, nz)) avatar.position.z = nz;
       avatar.rotation.y = Math.atan2(mx, mz);
     }
     if (controles.querPular() && noChao) { vy = 9; noChao = false; }
     vy -= 25 * dt;
     avatar.position.y += vy * dt;
-    if (avatar.position.y <= 0) { avatar.position.y = 0; vy = 0; noChao = true; }
+    if (avatar.position.y <= chaoY) { avatar.position.y = chaoY; vy = 0; noChao = true; }
     const escalaY = abaixado ? 0.6 : 1;
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
     animaAvatar(avatar, movendo && noChao, tempo, correndo);
@@ -255,8 +351,13 @@ function loop() {
     // AÇÃO: gesto do braço + interação com item próximo
     if (controles.querAgir()) {
       gesto = 1;
-      const alvo = achaInterativo();
-      if (alvo) { if (alvo.onAcao) alvo.onAcao(); else mostraMensagem(alvo.titulo + ' — ' + alvo.msg); }
+      if (noEsgoto) {
+        if (Math.hypot(avatar.position.x - esgoto.saida.x, avatar.position.z - esgoto.saida.z) < esgoto.saida.raio) sobe();
+        else atacar();
+      } else {
+        const alvo = achaInterativo();
+        if (alvo) { if (alvo.onAcao) alvo.onAcao(); else mostraMensagem(alvo.titulo + ' — ' + alvo.msg); }
+      }
     }
     if (gesto > 0) {
       gesto = Math.max(0, gesto - dt * 3);
@@ -302,9 +403,18 @@ function loop() {
     gt.position.x = Math.cos(gt.userData.ang) * r; gt.position.z = Math.sin(gt.userData.ang) * r;
     gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
   }
-  atualizaGato(gato, avatar, dt, tempo);
+  if (!noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet espera na superfície
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide);
+  atualizaRatos(ratos, dt, esgoto.bounds);
+  if (noEsgoto) {
+    for (let i = lootChao.length - 1; i >= 0; i--) {
+      const L = lootChao[i];
+      if (Math.hypot(L.x - avatar.position.x, L.z - avatar.position.z) < 1.3) {
+        scene.remove(L.grupo); hud.addItem(L.tipo); mostraMensagem('Pegou ' + L.tipo); lootChao.splice(i, 1);
+      }
+    }
+  }
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
 
