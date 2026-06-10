@@ -4,6 +4,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
+import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 
 export function criaCidade() {
   const scene = new THREE.Scene();
@@ -44,7 +45,7 @@ export function criaCidade() {
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), mat(0x9a9082, 1));
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
-  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [];
+  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [];
   const add = (res) => {
     scene.add(res.grupo); solidos.push(res.grupo);
     if (res.colisores) res.colisores.forEach((c) => obstaculos.push(c));
@@ -52,6 +53,7 @@ export function criaCidade() {
     if (res.aguas) res.aguas.forEach((a) => aguas.push(a));
     if (res.gotas) res.gotas.forEach((dg) => fonteGotas.push(dg));
     if (res.luz) postes.push({ luz: res.luz, lumMat: res.lumMat });
+    if (res.animados) res.animados.forEach((a) => animados.push(a));
   };
 
   // praça: fonte central + bancos + postes nas esquinas
@@ -98,6 +100,27 @@ export function criaCidade() {
   [[12, 5], [-12, 5], [5, -12], [-5, 12], [40, 40], [-40, 40], [40, -40], [-40, -40]]
     .forEach(([x, z]) => add(criaArbusto(x, z)));
 
+  // --- DETALHES / ADORNOS (riqueza visual, linha Tibia) ---
+  add(criaEstatua(-13, -13));        // herói de Venor (marco)
+  add(criaPoco(13, -13));
+  add(criaCanteiro(13, 13));
+  add(criaCanteiro(-13, 13));
+  // mercadinho na rua leste/oeste
+  add(criaBarraca(16, 9, 0, 0xb23a3a));
+  add(criaBarraca(16, -9, 0, 0x2a6ba0));
+  add(criaBarraca(-16, 9, 0, 0x2a8a4a));
+  // estandartes nas esquinas externas da praça
+  add(criaBandeira(20, 20, 0x9c2a2a));
+  add(criaBandeira(-20, 20, 0x2a5a9c));
+  add(criaBandeira(20, -20, 0x2a8a4a));
+  add(criaBandeira(-20, -20, 0xb8902a));
+  // barris e caixas (depósitos nos cantos de rua)
+  [[16, 40], [24, 48], [40, 24], [-16, 40], [-24, 48], [-40, 24], [40, -24], [-40, -24]]
+    .forEach(([x, z]) => { add(criaBarril(x, z)); add(criaCaixa(x + 1.3, z + 0.2)); });
+  // ITENS VALIOSOS (ganchos de quest futura)
+  add(criaBau(0, -26, 0.2));         // tesouro perto da igreja
+  add(criaCristal(0, 26));           // cristal arcano perto da escola
+
   // nuvens
   const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 });
   for (let i = 0; i < 14; i++) {
@@ -112,5 +135,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos };
+  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados };
 }

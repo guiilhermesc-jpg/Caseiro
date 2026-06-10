@@ -12,6 +12,8 @@ import { criaGato, atualizaGato } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
 import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
+import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
+import { animaProps } from './jogo/props.js';
 
 const container = document.getElementById('game');
 
@@ -39,11 +41,15 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// qualidade de imagem: tonemapping cinematográfico + cor correta
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
 
-const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos } = criaCidade();
+const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 function colide(x, z) {
@@ -90,6 +96,7 @@ scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, limite: CONFIG3D.limiteMundo });
+const npcs = criaNPCs(scene, colide, 6);
 
 criaSelecao({
   cores: coresJogador,
@@ -185,6 +192,8 @@ function loop() {
     gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
   }
   atualizaGato(gato, avatar, dt, tempo);
+  animaProps(animados, dt, tempo);
+  atualizaNPCs(npcs, dt, tempo, colide);
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
 
