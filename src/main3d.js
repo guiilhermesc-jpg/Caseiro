@@ -148,7 +148,15 @@ gato.userData.tipo = 'pet'; // clicável (trocar de pet)
 scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
-const minimapa = criaMinimapa({ obstaculos, ruas, marcos, alcance: 90 });
+// rótulos de lugares no minimapa (só aparecem quando você está por perto)
+const LUGARES_MAPA = [
+  { nome: 'Praça', x: 0, z: 0 }, { nome: 'Mercado', x: 18, z: 4 }, { nome: 'Ferreiro', x: -18, z: 4 },
+  { nome: 'Igreja', x: 0, z: -30 }, { nome: 'Escola', x: 0, z: 30 },
+  { nome: 'Bairro Sul', x: 0, z: -95 }, { nome: 'Moinho', x: -44, z: -74 },
+  { nome: 'Porto', x: 45, z: 64 }, { nome: 'Farol', x: 66, z: 84 }, { nome: 'Ponte', x: 16, z: 80 },
+  { nome: 'Thais', x: 320, z: 0 }, { nome: 'Templo', x: 320, z: 19 },
+];
+const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, alcance: 90 });
 const npcs = criaNPCs(scene, colide);
 const inventario = criaInventario({ aoEquipar: (item) => aoEquipar(item) });
 
@@ -494,6 +502,10 @@ const DISTRITOS = [
   { nome: 'Ponte do Riacho', x: 16, z: 78, raio: 14 },
   { nome: 'Beira do Lago', x: 45, z: 80, raio: 22 },
   { nome: 'Floresta do Oeste', x: -88, z: 0, raio: 45 },
+  { nome: 'Bairro do Comércio', x: 0, z: -95, raio: 26 },
+  { nome: 'Moinho de Venore', x: -44, z: -74, raio: 12 },
+  { nome: 'Porto de Venore', x: 45, z: 64, raio: 14 },
+  { nome: 'Farol do Porto', x: 66, z: 84, raio: 10 },
   { nome: 'Caminho de Thais', x: 180, z: 0, raio: 150 },
   { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
   { nome: 'Portão de Thais', x: 288, z: 0, raio: 14 },

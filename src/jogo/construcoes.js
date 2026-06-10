@@ -212,6 +212,81 @@ export function criaBanco(x = 0, z = 0, rot = 0) {
   return { grupo: g, colisores: [{ minX: x - wA / 2, maxX: x + wA / 2, minZ: z - dA / 2, maxZ: z + dA / 2 }] };
 }
 
+// MOINHO de vento (marco com pás que GIRAM) — frente vira p/ -Z
+export function criaMoinho(x = 0, z = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.0, 8, 16), mat(0xded3bd));
+  corpo.position.y = 4; corpo.castShadow = corpo.receiveShadow = true; g.add(corpo);
+  const cinta = new THREE.Mesh(new THREE.CylinderGeometry(2.55, 2.65, 0.5, 16), mat(0x8a6a44));
+  cinta.position.y = 5.4; g.add(cinta);
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.2), mat(0x5a3a22));
+  porta.position.set(0, 1.2, 2.85); g.add(porta);
+  [[1.7, 3.0], [-1.7, 3.0]].forEach(([jx, jy]) => { // janelinhas
+    const j = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.1), mat(0x9fd0e0, 0.35));
+    j.position.set(jx * 0.8, jy + 2.4, 2.4); g.add(j);
+  });
+  const teto = new THREE.Mesh(new THREE.ConeGeometry(2.95, 3, 16), mat(0x7a3a2a));
+  teto.position.y = 9.5; teto.castShadow = true; g.add(teto);
+  // cubo + 4 pás (giram no plano XY, viradas p/ -Z)
+  const hub = new THREE.Group(); hub.position.set(0, 7.6, -2.7); g.add(hub);
+  const eixo = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.7, 8), mat(0x4a3a2a));
+  eixo.rotation.x = Math.PI / 2; hub.add(eixo);
+  for (let i = 0; i < 4; i++) {
+    const pa = new THREE.Group(); pa.rotation.z = i * Math.PI / 2; hub.add(pa);
+    const haste = new THREE.Mesh(new THREE.BoxGeometry(0.16, 4.6, 0.16), mat(0x6e4a2a));
+    haste.position.y = 2.3; pa.add(haste);
+    const vela = new THREE.Mesh(new THREE.BoxGeometry(0.95, 3.8, 0.06), mat(0xeae0cc, 0.85));
+    vela.position.set(0.62, 2.5, 0.05); pa.add(vela);
+  }
+  return { grupo: g, colisores: [{ minX: x - 2.9, maxX: x + 2.9, minZ: z - 2.9, maxZ: z + 2.9 }], animados: [{ mesh: hub, giraZ: 0.5 }] };
+}
+
+// FAROL (marco do porto; lanterna brilhante no topo)
+export function criaFarol(x = 0, z = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.9, 2, 16), mat(0x8a8276));
+  base.position.y = 1; base.castShadow = base.receiveShadow = true; g.add(base);
+  const faixa = [0xefefef, 0xc0392b];
+  for (let i = 0; i < 5; i++) {
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry(1.4 - i * 0.12, 1.7 - i * 0.12, 2.4, 16), mat(faixa[i % 2]));
+    seg.position.y = 3.2 + i * 2.4; seg.castShadow = true; g.add(seg);
+  }
+  const topY = 2 + 5 * 2.4;
+  const varanda = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, 0.3, 16), mat(0x4a4a4a));
+  varanda.position.y = topY; g.add(varanda);
+  const lantMat = new THREE.MeshStandardMaterial({ color: 0xfff2b0, emissive: 0xffd24a, emissiveIntensity: 1.1, roughness: 0.2 });
+  const lant = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 1.6, 12), lantMat);
+  lant.position.y = topY + 1.0; g.add(lant);
+  const cupula = new THREE.Mesh(new THREE.ConeGeometry(1.3, 1.4, 12), mat(0x2a2a2a));
+  cupula.position.y = topY + 2.5; cupula.castShadow = true; g.add(cupula);
+  return { grupo: g, colisores: [{ minX: x - 2.6, maxX: x + 2.6, minZ: z - 2.6, maxZ: z + 2.6 }] };
+}
+
+// MERCADO COBERTO (pavilhão aberto: pilares + telhado; anda por baixo)
+export function criaMercado(x = 0, z = 0, w = 11, d = 8) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const mad = mat(0x6e4a2a); const hx = w / 2, hz = d / 2;
+  const colisores = [];
+  [[-hx, -hz], [hx, -hz], [-hx, hz], [hx, hz], [0, -hz], [0, hz]].forEach(([px, pz]) => {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 4.2, 8), mad);
+    p.position.set(px, 2.1, pz); p.castShadow = true; g.add(p);
+    colisores.push({ minX: x + px - 0.3, maxX: x + px + 0.3, minZ: z + pz - 0.3, maxZ: z + pz + 0.3 });
+  });
+  const viga = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), mad);
+  viga.position.y = 4.2; g.add(viga);
+  g.add(telhadoDuasAguas(w, d, 2.4, 0x9a4a3a, 4.3));
+  // bancadas internas com mercadorias
+  [[-hx + 1.6, 0], [hx - 1.6, 0]].forEach(([bx, bz]) => {
+    const bal = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, d - 1.6), mad);
+    bal.position.set(bx, 0.5, bz); bal.castShadow = true; g.add(bal);
+    for (let i = 0; i < 4; i++) {
+      const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), mat([0xd23a2a, 0xe0b020, 0x7a3a9a, 0x3a8a4a][i]));
+      fruta.position.set(bx, 1.12, -hz + 1.6 + i * 1.4); g.add(fruta);
+    }
+  });
+  return { grupo: g, colisores };
+}
+
 // poste de luz (luminária emissiva + PointLight controlada pelo ciclo dia/noite)
 export function criaPoste(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

@@ -3,9 +3,9 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 
@@ -151,6 +151,39 @@ export function criaCidade() {
   add(criaPlaca(2, -18, 'Largo da Igreja', 0));
   add(criaPlaca(-2, 18, 'Largo da Escola', Math.PI));
   add(criaPlaca(-20, 5, 'Rua do Ferreiro', Math.PI / 2));
+
+  // === CRESCER VENORE: Bairro do Comércio (sul) + marcos únicos ===
+  // ruas do bairro (conector ao sul + via principal) + praça
+  const viaConector = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 30), ruaMat);
+  viaConector.position.set(0, 0.02, -85); viaConector.receiveShadow = true; scene.add(viaConector);
+  const viaBairro = new THREE.Mesh(new THREE.BoxGeometry(60, 0.1, 8), ruaMat);
+  viaBairro.position.set(0, 0.02, -95); viaBairro.receiveShadow = true; scene.add(viaBairro);
+  const pracaSul = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 22), mat(0x9a9082, 1));
+  pracaSul.position.set(0, 0.03, -95); pracaSul.receiveShadow = true; scene.add(pracaSul);
+  // poço central + bancos do bairro
+  add(criaPoco(0, -95));
+  add(criaBanco(-7, -90, Math.PI)); add(criaBanco(7, -100, 0));
+  // mercado coberto + barracas
+  add(criaMercado(0, -107, 12, 7));
+  add(criaBarraca(-7, -105, 0.4, 0x2a8a4a));
+  add(criaBarraca(7, -105, -0.4, 0xb23a3a));
+  // casas do bairro (viradas pra praça)
+  [[-18, -84], [18, -84], [-26, -98], [26, -98], [-18, -110], [18, -110]].forEach(([x, z]) => add(criaPredio({
+    x, z, larg: rnd(8, 12), prof: rnd(8, 11), alt: rnd(6, 10),
+    cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -(z + 95))),
+  })));
+  // postes, canteiros e verde do bairro
+  [[-11, -88], [11, -88], [-11, -102], [11, -102]].forEach(([x, z]) => add(criaPoste(x, z)));
+  add(criaCanteiro(-9, -95)); add(criaCanteiro(9, -95));
+  [[-32, -84], [32, -84], [-32, -108], [32, -108]].forEach(([x, z], i) => add(i % 2 ? criaArbusto(x, z) : criaPinheiro(x, z)));
+  // placas de rua do bairro
+  add(criaPlaca(10, -87, 'Bairro do Comércio', -Math.PI / 2));
+  add(criaPlaca(-10, -103, 'Rua Sul', Math.PI / 2));
+
+  // MARCOS ÚNICOS de Venore (personalidade): moinho, farol e cais do porto
+  add(criaMoinho(-44, -74));   // moinho de vento (pás giram) nos campos do sudoeste
+  add(criaFarol(66, 84));      // farol à beira do lago norte
+  add(criaCais(45, 60, 12));   // cais do porto + barco no lago norte
 
   // === NATUREZA / BIOMAS (mundo expandido) ===
   // lago ao norte + riacho com ponte na rua x=16

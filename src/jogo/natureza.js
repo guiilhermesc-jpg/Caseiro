@@ -191,6 +191,33 @@ export function criaPlaca(x, z, texto = '→ THAIS', rot = 0) {
   return { grupo: g, colisores: [{ minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3 }] };
 }
 
+// --- cais de madeira (píer andável p/ dentro d'água) + barco amarrado ---
+export function criaCais(x, z, comp = 12) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const mad = mat(0x6e4a2a), madEsc = mat(0x4f3318);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, comp), mad);
+  deck.position.set(0, 0.22, comp / 2); deck.receiveShadow = true; deck.castShadow = true; g.add(deck);
+  for (let i = 0; i <= comp / 2; i++) {
+    [-1.3, 1.3].forEach((px) => {
+      const e = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 6), madEsc);
+      e.position.set(px, -0.25, i * 2); g.add(e);
+    });
+  }
+  // barril + caixa no fim do cais
+  const barril = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.36, 0.9, 10), mad);
+  barril.position.set(-0.9, 0.75, comp - 1.5); g.add(barril);
+  // barquinho amarrado (boia de leve)
+  const boat = new THREE.Group(); boat.position.set(2.6, 0.16, comp - 2);
+  const casco = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.55, 3.4), mad);
+  casco.position.y = 0.2; boat.add(casco);
+  const interior = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.4, 3.0), madEsc);
+  interior.position.y = 0.35; boat.add(interior);
+  const remo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.8, 6), mad);
+  remo.position.set(0.7, 0.5, 0); remo.rotation.z = 0.5; boat.add(remo);
+  g.add(boat);
+  return { grupo: g, colisores: [], animados: [{ mesh: boat, flutua: true, baseY: 0.16, fase: Math.random() * 6 }] };
+}
+
 // --- fogueira de acampamento (roda de pedras + lenha + chamas) ---
 export function criaFogueira(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

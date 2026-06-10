@@ -178,6 +178,7 @@ export function criaCristal(x, z) {
 export function animaProps(animados, dt, tempo) {
   for (const a of animados) {
     if (a.gira) a.mesh.rotation.y += dt * a.gira;
+    if (a.giraZ) a.mesh.rotation.z += dt * a.giraZ; // pás de moinho
     if (a.flutua) a.mesh.position.y = a.baseY + Math.sin(tempo * 2 + a.fase) * 0.12;
     if (a.pulsa) a.pulsa.emissiveIntensity = 0.55 + Math.sin(tempo * 3 + a.fase) * 0.35;
     if (a.balanca) a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.25;

@@ -10,7 +10,7 @@ const MARCO_COR = {
 };
 const corHex = (c) => '#' + ((c >>> 0) & 0xffffff).toString(16).padStart(6, '0');
 
-export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], alcance = 90 }) {
+export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], alcance = 90 }) {
   const TAM = 150;
   const cnv = document.createElement('canvas');
   cnv.width = TAM; cnv.height = TAM;
@@ -74,6 +74,21 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], alcance 
       ctx.fillRect(sx(m.x) - 4.5, sy(m.z) - 4.5, 9, 9);
       ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.5)';
       ctx.strokeRect(sx(m.x) - 4.5, sy(m.z) - 4.5, 9, 9);
+    }
+
+    // rótulos de ruas/lugares (nomes), só os próximos e dentro do quadro
+    if (lugares.length) {
+      ctx.font = 'bold 9px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (const L of lugares) {
+        if (!perto(L.x, L.z, alcance)) continue;
+        const px = sx(L.x), py = sy(L.z);
+        if (px < 6 || px > TAM - 6 || py < 7 || py > TAM - 5) continue;
+        const w = ctx.measureText(L.nome).width;
+        ctx.fillStyle = 'rgba(12,16,22,.66)';
+        ctx.fillRect(px - w / 2 - 2, py - 6, w + 4, 12);
+        ctx.fillStyle = '#ffe9b0';
+        ctx.fillText(L.nome, px, py);
+      }
     }
 
     // outros jogadores
