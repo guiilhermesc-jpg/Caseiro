@@ -157,6 +157,11 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 46. ✅ 🎨 **8 texturas geradas por IA** (gpt-image-1, ~$0,35 do crédito): grama/pedra/telha/areia/terra/**rocha**(montanha)/**muralha**(Thais)/**lava** — 512px, fallback procedural. Scripts em `scripts/gera-texturas*.mjs`.
 47. ✅ 📱 **Mobile**: pinça = zoom da câmera, duplo-toque NÃO dá mais zoom de página, botões compactos com ícone · 🏥 **Hospital ENTRÁVEL** (a porta funciona; Sira dentro — era o "travou no hospital").
 
+**JÁ FEITO (10ª rodada — RENDERIZAÇÃO PREMIUM):**
+48. ✅ ✨ **Pipeline premium (PC)**: BLOOM (UnrealBloomPass — lava/runas/tochas/olhos irradiam), **IBL** (PMREM RoomEnvironment — metais/vidro/água refletem), **anisotropia 8×** em todas as texturas (chão nítido até o horizonte — era o "borrado"), **céu panorâmico pintado** (IA, tingido pelo ciclo dia/noite). Mobile segue no caminho direto.
+49. ✅ 🎨 **Texturas HIGH** (leva 3): grama/pedra/telha regeneradas em alta + **madeira** (píer/pisos) + **céu** 1024×512. Total gasto nas 3 levas ≈ $1,2 do crédito.
+50. ✅ 🏙️ **Thais destravada**: casas 8.2 (vielas largas), centro das fileiras vazio (ruas transversais — sem becos-armadilha), metade das ameias (peso -50%).
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
