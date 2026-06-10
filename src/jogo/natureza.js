@@ -135,6 +135,80 @@ export function criaCogumelo(x, z) {
   return { grupo: g, colisores: [] };
 }
 
+// --- montanha (emoldura o mundo; bloqueia passagem) ---
+export function criaMontanha(x, z, esc = 1) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const rocha = mat(0x6e6a62, 1), rochaEsc = mat(0x54514a, 1), neve = mat(0xeef2f5, 1);
+  const h = 26 * esc, r = 17 * esc;
+  const base = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), rocha);
+  base.position.y = h / 2; base.castShadow = true; base.receiveShadow = true; g.add(base);
+  [[-r * 0.5, -r * 0.3, 0.6], [r * 0.55, r * 0.2, 0.7]].forEach(([ox, oz, s]) => {
+    const p = new THREE.Mesh(new THREE.ConeGeometry(r * s, h * s, 6), rochaEsc);
+    p.position.set(ox, h * s / 2, oz); p.castShadow = true; g.add(p);
+  });
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.4, h * 0.22, 7), neve);
+  cap.position.y = h * 0.9; g.add(cap);
+  const c = r * 0.62;
+  return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }] };
+}
+
+// --- estrada de pedra (andável) ao longo de X ---
+export function criaEstrada(xIni, xFim, z, larg = 7) {
+  const g = new THREE.Group();
+  const comp = xFim - xIni, cx = (xIni + xFim) / 2;
+  const via = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.08, larg), mat(0x6b6258, 1));
+  via.position.set(cx, 0.05, z); via.receiveShadow = true; g.add(via);
+  [-larg / 2 - 0.3, larg / 2 + 0.3].forEach((oz) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.22, 0.4), mat(0x54514a, 1));
+    b.position.set(cx, 0.11, z + oz); g.add(b);
+  });
+  return { grupo: g, colisores: [] };
+}
+
+// --- placa de madeira com texto (ex.: "→ THAIS") ---
+export function criaPlaca(x, z, texto = '→ THAIS', rot = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 2.4, 6), mat(0x6e4a2a));
+  poste.position.y = 1.2; poste.castShadow = true; g.add(poste);
+  const cnv = document.createElement('canvas'); cnv.width = 256; cnv.height = 96;
+  const ctx = cnv.getContext('2d');
+  ctx.fillStyle = '#7a5a32'; ctx.fillRect(0, 0, 256, 96);
+  ctx.fillStyle = '#f0e8d0'; ctx.font = 'bold 34px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(texto, 128, 48);
+  const tab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.12),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnv), roughness: 0.9 }));
+  tab.position.y = 2.0; tab.castShadow = true; g.add(tab);
+  return { grupo: g, colisores: [{ minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3 }] };
+}
+
+// --- cidade distante (fachada com muralha + portão; ainda não entra) ---
+export function criaCidadeDistante(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = mat(0x9a8e7a, 1), telha = mat(0x7a3a2a, 1);
+  const muro = new THREE.Mesh(new THREE.BoxGeometry(42, 9, 2), pedra);
+  muro.position.set(0, 4.5, 0); muro.castShadow = true; g.add(muro);
+  for (let i = -19; i <= 19; i += 3) {
+    const a = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 2.2), pedra);
+    a.position.set(i, 9.5, 0); g.add(a);
+  }
+  const portao = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 2.2), mat(0x3a2a1a));
+  portao.position.set(0, 3, 0.1); g.add(portao);
+  [-21, 21].forEach((tx) => {
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 14, 10), pedra);
+    t.position.set(tx, 7, 0); t.castShadow = true; g.add(t);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(2.7, 4, 10), telha);
+    cone.position.set(tx, 16, 0); g.add(cone);
+  });
+  for (let i = 0; i < 9; i++) {
+    const bx = (Math.random() - 0.5) * 34, bz = 5 + Math.random() * 18, alt = 4 + Math.random() * 5;
+    const casa = new THREE.Mesh(new THREE.BoxGeometry(4, alt, 4), pedra);
+    casa.position.set(bx, alt / 2, bz); casa.castShadow = true; g.add(casa);
+    const tel = new THREE.Mesh(new THREE.ConeGeometry(3.2, 2.4, 4), telha);
+    tel.position.set(bx, alt + 1.2, bz); tel.rotation.y = Math.PI / 4; g.add(tel);
+  }
+  return { grupo: g, colisores: [{ minX: x - 23, maxX: x + 23, minZ: z - 1.5, maxZ: z + 9 }] };
+}
+
 // --- moita de flores altas do campo ---
 export function criaFlorAlta(x, z, cor = 0xf2c14e) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

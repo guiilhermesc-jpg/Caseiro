@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaCidadeDistante } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
@@ -167,7 +167,30 @@ export function criaCidade() {
   // BIOMA campo florido (leste/sul): flores variadas + pedras
   [[80, 20], [88, -10], [76, 40], [84, 8], [70, -30], [82, -44], [-30, -80], [20, -84]]
     .forEach(([x, z], i) => add(criaFlorAlta(x, z, [0xf2c14e, 0xe85d75, 0xd06ad0, 0xff8a4c][i % 4])));
-  [[78, 0, 1.3], [86, 28, 1.0], [72, -16, 1.5]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[88, -30, 1.3], [86, 28, 1.0], [72, -16, 1.5]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+
+  // === MAPA AMPLIADO (estilo Tibia: Venore cercada por água, estrada p/ outra cidade, montanhas) ===
+  // MONTANHAS emoldurando o mundo (norte/oeste/sul, ao longe)
+  [[-70, 200, 1.3], [10, 220, 1.5], [90, 205, 1.2], [160, 215, 1.4], [-150, 185, 1.3],
+   [-210, 40, 1.4], [-220, 130, 1.2], [-200, -60, 1.3], [-180, -150, 1.4], [60, -205, 1.3], [-30, -215, 1.2]]
+    .forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
+  // LAGOS ao redor da cidade (Venore cercada por água) + beira d'água
+  [[-95, -55, 16], [100, 95, 18], [-105, 70, 14], [-75, -110, 15]].forEach(([x, z, r]) => {
+    add(criaLago(x, z, r));
+    add(criaSalgueiro(x + r * 0.6, z));
+    [[x - r, z + 2], [x + 2, z - r], [x - 4, z + r]].forEach(([jx, jz]) => add(criaJunco(jx, jz)));
+    add(criaFlorAlta(x + 3, z + r * 0.7, 0x6ab0ff));
+  });
+  // ESTRADA p/ uma cidade distante (tipo Thais), a leste
+  add(criaEstrada(72, 300, 0, 8));
+  add(criaPlaca(74, -7, '→ THAIS'));
+  add(criaCidadeDistante(318, 0));
+  // mais vegetação entre a cidade e as montanhas
+  [[120, 60], [150, -40], [-130, 30], [110, -90], [-120, -70], [170, 80], [-160, 100], [140, 140], [-110, 150], [90, 170]]
+    .forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+  [[130, 20], [-100, -30], [160, -80], [-150, -110], [100, 130], [-130, 90], [180, 40], [-90, 120]]
+    .forEach(([x, z], i) => add(criaFlorAlta(x, z, [0xf2c14e, 0xe85d75, 0xd06ad0, 0x6ab0ff][i % 4])));
+  [[115, -20, 1.4], [-110, 50, 1.2], [145, 100, 1.6], [-170, -40, 1.3]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
 
   // nuvens
   const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 });
