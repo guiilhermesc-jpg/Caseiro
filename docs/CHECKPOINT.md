@@ -7,6 +7,12 @@
 ## 🤝 HANDOFF PARA O PRÓXIMO AGENTE (Codex) — COMECE AQUI
 **Missão dada pelo maestro:** corrigir bugs críticos, melhorar qualidade visual/performance e PUBLICAR para teste.
 
+### ✅ REVISÃO PÓS-CODEX (Claude, 10/06 noite) — estado ATUAL
+- **Codex entregou 3 commits bons** (`ac5f00f`, `cb97edc`, `0dee0e1`): mobile estabilizado (mediump, pixelRatio 1.08, compileAsync, contexto WebGL protegido), bloom contido (0.16/1.08, exposure 0.74), dragão low-poly novo, bancos da praça pros cantos, casas entráveis reposicionadas, pointer capture nos controles. ⚠️ O último commit dele estava **sem push** (ficava só local — atenção a isso).
+- **2 conflitos de geometria do reposicionamento corrigidos por mim** (`b1e30ef`): árvore dentro da casa entrável (-78,24) e casa de Thais (528,0) bloqueando a rota portão→chafariz (movida pra 524,-14 porta norte). Portão real agora x=500 (HX=60): estrada/distritos/marcos de distância recalculados.
+- **Publicado e conferido**: produção = `dist` ✓.
+- **PRÓXIMA GRANDE TAREFA combinada com o maestro**: pipeline de PETS GLB (Quirky Series da Omabuarts — ele vai baixar o FREE pack e/ou comprar o Pets $16; arquivos irão pra `public/modelos/`). Padrão a seguir: slot do `dragao.glb` em main3d (GLTFLoader + fallback + mixer + guards de corpoMat).
+
 ### 🔴 BUGS CRÍTICOS CONHECIDOS (prioridade 1)
 1. **"Trava assim que loga"** (relato do maestro, possivelmente já mitigado): o loop morria por exceção no 1º frame de gameplay. O loop agora é BLINDADO (`main3d.js`, função `loop()` com try/catch): o erro aparece como toast "⚠️ Erro interno: ..." na tela e no console. **A exceção original NÃO foi identificada** — reproduzir logando no jogo e ler o console (F12). Suspeitos não descartados: algo no caminho `aoEntrar` → 1º frame (rede/conectarRede, GLTFLoader 404 handling, save/localStorage).
 2. **Colisões/travamentos de andar**: histórico de colisores invisíveis (baú na porta do templo, casas com porta dentro do colisor do hospital — JÁ corrigidos). Validar andando: praça→templo→hospital (entrável)→casa entrável→ponte do Rio Fundo→portão de Thais→vielas do casario. Grade espacial de colisão em `main3d.js` (`gradeCol`, células de 24).
