@@ -11,7 +11,7 @@ import { mat, criaJanela } from './construcoes.js';
 export function criaCasaInterior(x, z, opts = {}) {
   const { larg = 9, prof = 9, alt = 4, frente = 'sul', cor = 0xd8c4a0, corTelhado = 0x8a4632 } = opts;
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const t = 0.3, hx = larg / 2, hz = prof / 2, gw = 2.8;
+  const t = 0.3, hx = larg / 2, hz = prof / 2, gw = 4.6; // vão BEM largo (entrada fácil)
   const paredeMat = mat(cor);
   const colisores = [];
 
@@ -125,6 +125,11 @@ export function criaCasaInterior(x, z, opts = {}) {
   const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('🏠', 64, 70);
   const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
   marc.scale.set(2.2, 2.2, 1); marc.position.y = alt + hTelh + 1.5; marc.renderOrder = 997; g.add(marc);
+  // 🚪 no ponto exato de entrar
+  const cnv2 = document.createElement('canvas'); cnv2.width = 128; cnv2.height = 128;
+  const c2 = cnv2.getContext('2d'); c2.font = '88px Arial'; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillText('🚪', 64, 70);
+  const marcP = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv2), transparent: true, depthTest: false }));
+  marcP.scale.set(1.6, 1.6, 1); marcP.position.set((dpx - x) * 1.1, 2.7, (dpz - z) * 1.1); marcP.renderOrder = 997; g.add(marcP);
 
   const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
   return {
