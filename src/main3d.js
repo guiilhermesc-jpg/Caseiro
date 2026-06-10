@@ -18,7 +18,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
-import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena } from './jogo/ratos.js';
+import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
@@ -92,6 +92,8 @@ function addMonstro(g, hp, xp, dano, vel, forte, b) {
 const aX = 170, aZ = 95;
 addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16));
 [[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2, 2.4, false, areaMon(aX, aZ, 18)));
+[[160, 8], [205, -10], [235, 18]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(x, z, 16)));
+[[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto

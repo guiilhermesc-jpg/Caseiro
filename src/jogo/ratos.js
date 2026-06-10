@@ -146,6 +146,34 @@ export function criaAranhaPequena(x, z) {
   return g;
 }
 
+export function criaLadrao(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x3a3a42, roughness: 0.9 });
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.45), corpoMat); torso.position.y = 1.3; torso.castShadow = true; g.add(torso);
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.58, 0.58), mat(0xe0b088)); cabeca.position.y = 2.0; g.add(cabeca);
+  const capuz = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.7), corpoMat); capuz.position.y = 2.22; capuz.castShadow = true; g.add(capuz);
+  olhos(g, 0.13, 2.0, 0.3, 0.05, 0x222222);
+  const patas = [];
+  [-0.18, 0.18].forEach((ox) => { const geo = new THREE.BoxGeometry(0.24, 0.8, 0.24); geo.translate(0, -0.4, 0); const p = new THREE.Mesh(geo, mat(0x2a2a30)); p.position.set(ox, 0.85, 0); p.castShadow = true; g.add(p); patas.push(p); });
+  [-0.46, 0.46].forEach((ox) => { const geo = new THREE.BoxGeometry(0.2, 0.75, 0.2); geo.translate(0, -0.38, 0); const b = new THREE.Mesh(geo, corpoMat); b.position.set(ox, 1.7, 0); g.add(b); });
+  const adaga = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), mat(0xc0c4cc, 0.3)); adaga.position.set(0.52, 1.0, 0.1); g.add(adaga);
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
+export function criaEscorpiao(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x6a3a1a, roughness: 0.8 });
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.9), corpoMat); corpo.position.y = 0.3; corpo.castShadow = true; g.add(corpo);
+  for (let i = 0; i < 4; i++) { const seg = new THREE.Mesh(new THREE.SphereGeometry(0.12 - i * 0.015, 8, 6), corpoMat); seg.position.set(0, 0.4 + i * 0.18, -0.5 - i * 0.12); g.add(seg); }
+  const ferrao = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 6), mat(0x2a1a0a)); ferrao.position.set(0, 1.05, -0.95); ferrao.rotation.x = -1; g.add(ferrao);
+  [-0.35, 0.35].forEach((ox) => { const garra = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.3), corpoMat); garra.position.set(ox, 0.28, 0.55); g.add(garra); });
+  const patas = [];
+  for (const s of [-1, 1]) for (let i = 0; i < 3; i++) { const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.4, 4), corpoMat); perna.position.set(s * 0.3, 0.25, 0.2 - i * 0.25); perna.rotation.z = s * 0.9; g.add(perna); patas.push(perna); }
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
 // BOSS: cobra (rastejante) e crocodilo — maiores, mais vida/XP/loot.
 export function criaCobra(x, z) {
   const g = new THREE.Group(); g.position.set(x, Y, z);

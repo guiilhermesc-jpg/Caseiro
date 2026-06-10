@@ -138,17 +138,27 @@ export function criaCogumelo(x, z) {
 // --- montanha (emoldura o mundo; bloqueia passagem) ---
 export function criaMontanha(x, z, esc = 1) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const rocha = mat(0x6e6a62, 1), rochaEsc = mat(0x54514a, 1), neve = mat(0xeef2f5, 1);
-  const h = 26 * esc, r = 17 * esc;
-  const base = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), rocha);
-  base.position.y = h / 2; base.castShadow = true; base.receiveShadow = true; g.add(base);
-  [[-r * 0.5, -r * 0.3, 0.6], [r * 0.55, r * 0.2, 0.7]].forEach(([ox, oz, s]) => {
-    const p = new THREE.Mesh(new THREE.ConeGeometry(r * s, h * s, 6), rochaEsc);
-    p.position.set(ox, h * s / 2, oz); p.castShadow = true; g.add(p);
+  const rocha = mat(0x6e6a62, 1), rochaEsc = mat(0x4a473f, 1), rochaClara = mat(0x827d72, 1), neve = mat(0xeef2f5, 1);
+  const h = 28 * esc, r = 18 * esc;
+  const base = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), rocha);
+  base.position.y = h / 2; base.rotation.y = Math.random(); base.scale.x = 1.12; base.castShadow = true; base.receiveShadow = true; g.add(base);
+  // sub-picos (relevo irregular)
+  [[-r * 0.55, -r * 0.25, 0.62, rochaEsc], [r * 0.6, r * 0.15, 0.72, rochaClara], [-r * 0.2, r * 0.5, 0.5, rochaEsc]].forEach(([ox, oz, s, m]) => {
+    const p = new THREE.Mesh(new THREE.ConeGeometry(r * s, h * s * 1.1, 6), m);
+    p.position.set(ox, h * s * 1.1 / 2, oz); p.rotation.y = Math.random(); p.castShadow = true; g.add(p);
   });
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.4, h * 0.22, 7), neve);
-  cap.position.y = h * 0.9; g.add(cap);
-  const c = r * 0.62;
+  // penhasco (face de rocha)
+  const cliff = new THREE.Mesh(new THREE.BoxGeometry(r * 0.9, h * 0.5, r * 0.5), rochaEsc);
+  cliff.position.set(r * 0.2, h * 0.28, r * 0.5); cliff.rotation.y = 0.3; cliff.castShadow = true; g.add(cliff);
+  // pedregulhos na base
+  for (let i = 0; i < 4; i++) {
+    const a = Math.random() * Math.PI * 2, rr = r * (0.7 + Math.random() * 0.3);
+    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(r * (0.12 + Math.random() * 0.1), 0), rochaClara);
+    b.position.set(Math.cos(a) * rr, r * 0.1, Math.sin(a) * rr); b.rotation.set(Math.random(), Math.random(), Math.random()); b.castShadow = true; g.add(b);
+  }
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.42, h * 0.24, 6), neve);
+  cap.position.y = h * 0.88; cap.rotation.y = Math.random(); g.add(cap);
+  const c = r * 0.6;
   return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }] };
 }
 
