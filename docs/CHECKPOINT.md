@@ -149,6 +149,14 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 40. ✅ 🐲 **Dragão 50x**: escala 1.7× (Lord 2.0×), chifres curvos, mandíbula com dentes, barriga blindada, olhos brilhando, asas com dedos ósseos, garras, cauda com lâmina, espinhos; platô topo 8→12.
 41. ✅ 🎨 **Visual da vila**: ruas CALÇADAS (textura de pedra na grade toda), grama com manchas de terra/flores, sombras 2048 no PC.
 
+**JÁ FEITO (9ª rodada — monstros 50x, armas únicas, conta/save, texturas IA, mobile):**
+42. ✅ 🕷️ **Giant Spider Tibia**: ENORME (pernas articuladas, presas, 6 olhos em brasa), feroz (300hp/dano 20/vel 3.2) e **chama filhotes** na caça (máx 4); dropa Seda de Aranha.
+43. ✅ 👁️ **Beholder grande** (olho gigante, bocarra, 8 tentáculos) que **atira rajadas mágicas** (esquivável) · 🧿 **Cyclops gigante de 1 olho** (presas, clava com cravos, 150hp) · 🐲 **Dragão cospe fogo** (Lord 40 de dano) e **deixa LAVA no chão** 12s.
+44. ✅ ⚔️ **Armas com design único** (adaga/espada c/ guarda dourada/machado 2 lâminas/arco) + tocha com chama no TOPO (estava sob a mão) + elmo assentado.
+45. ✅ 💾 **CONTA LOCAL/SAVE**: cada nome = conta no localStorage (nível/XP/ouro/mochila/posição/visual); auto-save 10s + fechar + morte + botão 💾; mesmo nome = continua de onde parou. Conta online de verdade = futuro (banco no servidor Railway).
+46. ✅ 🎨 **8 texturas geradas por IA** (gpt-image-1, ~$0,35 do crédito): grama/pedra/telha/areia/terra/**rocha**(montanha)/**muralha**(Thais)/**lava** — 512px, fallback procedural. Scripts em `scripts/gera-texturas*.mjs`.
+47. ✅ 📱 **Mobile**: pinça = zoom da câmera, duplo-toque NÃO dá mais zoom de página, botões compactos com ícone · 🏥 **Hospital ENTRÁVEL** (a porta funciona; Sira dentro — era o "travou no hospital").
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
