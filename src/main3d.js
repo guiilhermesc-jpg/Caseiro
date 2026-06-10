@@ -85,6 +85,7 @@ function colide(x, z) {
 
 // --- esgoto (subsolo escuro) + ratos + boss + tocha ---
 const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
+esgoto.grupo.visible = false; // só renderiza a grade de túneis quando você está lá embaixo (perf)
 const ratos = criaRatos(6, esgoto.salaBounds);                       // ratos na câmara central
 esgoto.corredores.forEach((b) => criaRatos(2, b).forEach((r) => ratos.push(r))); // ratos patrulhando os túneis
 const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1.6, forte: true, bounds: esgoto.salaBounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
@@ -314,6 +315,7 @@ const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
 let acessoAtual = 0;
 function desce(i = 0) {
   acessoAtual = i;
+  esgoto.grupo.visible = true;
   chaoY = -40; colisoresAtivos = esgoto.colisores; areaAtiva = esgoto.bounds; noEsgoto = true;
   const a = esgoto.acessos[i] || esgoto.acessos[0];
   avatar.position.set(a.x, -40, a.z + (a.z > 0 ? -3 : 3)); vy = 0; noChao = true;
@@ -322,6 +324,7 @@ function desce(i = 0) {
   mostraMensagem(tochaOn ? 'Você desce ao esgoto. 🐀' : 'Está escuro! Acenda a tocha — tecla T 🔦');
 }
 function sobe(i = acessoAtual) {
+  esgoto.grupo.visible = false;
   chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false;
   const b = BUEIROS[i] || BUEIROS[0];
   avatar.position.set(b.x, 0, b.z + 2.5); vy = 0; noChao = true;
@@ -345,8 +348,11 @@ function aplicaDiaNoite(dt) {
   if (scene.fog) scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
   const noite = 1 - d;
   for (const p of postes) {
-    p.luz.intensity = (!ehMobile && noite > 0.45) ? (noite - 0.45) * 3.4 : 0; // sem point-lights no mobile
-    if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9;
+    // só acende a PointLight dos postes PERTO do jogador (limita luzes dinâmicas → perf no PC)
+    const pp = p.luz.parent ? p.luz.parent.position : null;
+    const perto = pp && Math.abs(pp.x - avatar.position.x) < 55 && Math.abs(pp.z - avatar.position.z) < 55;
+    p.luz.intensity = (!ehMobile && noite > 0.45 && perto) ? (noite - 0.45) * 3.4 : 0; // sem point-lights no mobile
+    if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9; // a luminária emissiva brilha em todos (barato)
   }
 }
 function poeArmaNaMao() {
@@ -500,7 +506,7 @@ function saqueia(r) {
 }
 function morre() {
   vida = VIDA_MAX;
-  if (noEsgoto) { chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
   avatar.position.set(8, 0, 12); vy = 0; noChao = true;
   hud.vida(vida, VIDA_MAX);
   mostraMensagem('💀 Você caiu! Acorda na praça de Venore.');
