@@ -342,12 +342,14 @@ const ARMADURAS = [
   { id: 'aneldef', nome: 'Anel de Defesa', icone: '💍', slot: 'anel', defesa: 1 },
 ];
 function aoEquipar(item) {
+  if (item.usavel === 'tocha') { alternaTocha(); return false; } // acende/apaga, não consome
   const slot = item.slot;
   if (equipados[slot]) { defesa -= equipados[slot].defesa || 0; inventario.addItem(equipados[slot]); }
   equipados[slot] = item; defesa += item.defesa || 0;
   inventario.equipa(slot, { nome: item.nome, icone: item.icone });
   poeCorpoEquip();
   mostraMensagem(`Equipou ${item.nome} (+${item.defesa} def) 🛡️`);
+  return true;
 }
 function poeCorpoEquip() {
   const p = avatar.userData.partes; if (!p) return;
@@ -538,7 +540,7 @@ criaSelecao({
     }
     minimapa.mostra();
     inventario.mostra();
-    inventario.addItem({ nome: 'Tocha', icone: '🔦' }); // todo mundo começa com uma tocha
+    inventario.addItem({ nome: 'Tocha', icone: '🔦', slot: 'tocha', usavel: 'tocha' }); // clicar acende/apaga
     inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
     hud.mostra(); hud.vida(vida, VIDA_MAX); hud.ouro(ouro);
     mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
@@ -642,6 +644,7 @@ function loop() {
              && avatar.position.z > c.box.minZ && avatar.position.z < c.box.maxZ;
       c.roof.visible = !d;
       if (d) dentroCasa = true;
+      if (c.portaAnim) c.portaAnim.alvo = (Math.hypot(avatar.position.x - c.px, avatar.position.z - c.pz) < 4.5) ? c.angAberto : 0; // porta abre sozinha
     }
 
     // câmera orbital + anti-oclusão

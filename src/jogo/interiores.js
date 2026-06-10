@@ -11,7 +11,7 @@ import { mat, criaJanela } from './construcoes.js';
 export function criaCasaInterior(x, z, opts = {}) {
   const { larg = 9, prof = 9, alt = 4, frente = 'sul', cor = 0xd8c4a0, corTelhado = 0x8a4632 } = opts;
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const t = 0.3, hx = larg / 2, hz = prof / 2, gw = 2.2;
+  const t = 0.3, hx = larg / 2, hz = prof / 2, gw = 2.8;
   const paredeMat = mat(cor);
   const colisores = [];
 
@@ -84,14 +84,7 @@ export function criaCasaInterior(x, z, opts = {}) {
 
   // estado/animação da porta (lerp suave no loop via animaProps)
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
-  const animPorta = { mesh: dobr, porta: true, alvo: 0 };
-  const estado = { aberta: false };
-  const inter = { x: dpx, z: dpz, raio: 2.8, titulo: 'Porta', acao: 'Abrir / fechar porta 🚪' };
-  inter.onAcao = () => {
-    estado.aberta = !estado.aberta;
-    animPorta.alvo = estado.aberta ? angAberto : 0;
-    inter.msgAcao = estado.aberta ? '🚪 Porta aberta' : '🚪 Porta fechada';
-  };
+  const animPorta = { mesh: dobr, porta: true, alvo: 0 }; // main3d abre automático ao chegar perto
 
   // MOBÍLIA (decorativa; interior fica livre pra andar)
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
@@ -127,12 +120,17 @@ export function criaCasaInterior(x, z, opts = {}) {
   const telhado = new THREE.Mesh(new THREE.ConeGeometry(Math.max(larg, prof) * 0.78, hTelh, 4), mat(corTelhado));
   telhado.position.set(0, alt + hTelh / 2 - 0.1, 0); telhado.rotation.y = Math.PI / 4; telhado.castShadow = true; g.add(telhado);
 
+  // marcador flutuante 🏠 (achar a entrada de longe)
+  const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
+  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('🏠', 64, 70);
+  const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
+  marc.scale.set(2.2, 2.2, 1); marc.position.y = alt + hTelh + 1.5; marc.renderOrder = 997; g.add(marc);
+
   const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
   return {
     grupo: g, colisores,
-    interativo: inter,
     animados: [animPorta],
-    casa: { roof: telhado, box },
+    casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz },
   };
 }
 

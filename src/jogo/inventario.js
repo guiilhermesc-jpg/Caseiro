@@ -55,7 +55,11 @@ export function criaInventario({ aoEquipar } = {}) {
       + 'background:#0e141c;border:1px solid #2c3845;border-radius:7px;font-size:18px;cursor:pointer;';
     cel.addEventListener('click', () => { // clicar = usar/equipar
       const it = mochila[i];
-      if (it && it.slot && aoEquipar) { aoEquipar(it); if (it.qtd > 1) it.qtd--; else mochila.splice(i, 1); renderMochila(); }
+      if (it && it.slot && aoEquipar) {
+        const consumir = aoEquipar(it); // false = item só "usado" (ex.: tocha), fica na mochila
+        if (consumir !== false) { if (it.qtd > 1) it.qtd--; else mochila.splice(i, 1); }
+        renderMochila();
+      }
     });
     gradeM.appendChild(cel); mochilaEls.push(cel);
   }

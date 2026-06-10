@@ -96,23 +96,39 @@ export function criaAvatar(cores = {}) {
 
 // OUTFIT por modelo — aparece no corpo (Tibia-like)
 function aplicaOutfit(g, tipo, C) {
-  if (tipo === 'cacador') {
-    const capuz = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.5, 0.94), mat(0x415035)); capuz.position.y = 2.96; capuz.castShadow = true; g.add(capuz);
-    const bico = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 4), mat(0x415035)); bico.position.set(0, 3.05, -0.32); bico.rotation.x = -0.6; g.add(bico);
-    const colete = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.92, 0.62), mat(0x6e4a2a)); colete.position.y = 1.58; g.add(colete);
+  // CINTO + fivela (todos os modelos) — quebra o "bloco" do torso
+  const cinto = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.18, 0.6), mat(0x3a2a1a));
+  cinto.position.y = 0.98; g.add(cinto);
+  const fivela = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.14, 0.05), mat(0xd9a522, 0.3));
+  fivela.position.set(0, 0.98, 0.31); g.add(fivela);
+
+  if (tipo === 'aldeao') {
+    const gola = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.6), mat(0xe8e0d0)); gola.position.y = 2.02; g.add(gola);
+    const bolso = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.04), mat(0x44521f)); bolso.position.set(-0.25, 1.42, 0.3); g.add(bolso);
+    const remendo = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.04), mat(0x6a7a3a)); remendo.position.set(0.3, 1.7, 0.3); g.add(remendo);
+  } else if (tipo === 'cacador') {
+    const capuz = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.55, 0.96), mat(0x415035)); capuz.position.y = 2.98; capuz.castShadow = true; g.add(capuz);
+    const bico = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.55, 4), mat(0x415035)); bico.position.set(0, 3.1, -0.34); bico.rotation.x = -0.6; g.add(bico);
+    const colete = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.95, 0.64), mat(0x6e4a2a)); colete.position.y = 1.6; g.add(colete);
+    [-0.5, 0.5].forEach((s) => { const tira = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.66), mat(0x4a3018)); tira.position.y = 1.6; tira.rotation.z = s * 0.5; g.add(tira); });
+    const aljava = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 8), mat(0x5a3a1a)); aljava.position.set(0.35, 2.0, -0.42); aljava.rotation.x = 0.3; g.add(aljava);
   } else if (tipo === 'mago') {
-    const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.08, 12), mat(0x342a66)); aba.position.y = 3.12; g.add(aba);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.46, 1.15, 12), mat(0x342a66)); cone.position.y = 3.7; cone.castShadow = true; g.add(cone);
-    const manto = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.92, 1.6, 10), mat(C.casaco)); manto.position.y = 0.8; manto.castShadow = true; g.add(manto);
-    const gola = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.6), mat(0x342a66)); gola.position.y = 2.05; g.add(gola);
+    const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.74, 0.08, 14), mat(0x342a66)); aba.position.y = 3.12; g.add(aba);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.48, 1.2, 14), mat(0x342a66)); cone.position.y = 3.74; cone.castShadow = true; g.add(cone);
+    const estrela = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(0xffe27a, 0.3)); estrela.position.set(0, 3.5, 0.42); g.add(estrela);
+    const manto = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.0, 1.7, 12), mat(C.casaco)); manto.position.y = 0.85; manto.castShadow = true; g.add(manto);
+    const capa = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.8, 0.1), mat(0x241a4a)); capa.position.set(0, 1.6, -0.34); g.add(capa);
+    const gola = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.32, 0.62), mat(0x241a4a)); gola.position.y = 2.06; g.add(gola);
   } else if (tipo === 'cavaleiro') {
-    const peito = new THREE.Mesh(new THREE.BoxGeometry(1.14, 1.02, 0.64), metal(0xb8bcc4)); peito.position.y = 1.55; peito.castShadow = true; g.add(peito);
-    [-0.66, 0.66].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.32, 0.62), metal(0xc8ccd4)); om.position.set(ox, 2.04, 0); om.castShadow = true; g.add(om); });
+    const capa = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.7, 0.1), mat(0x8a1a1a)); capa.position.set(0, 1.55, -0.36); g.add(capa);
+    const peito = new THREE.Mesh(new THREE.BoxGeometry(1.16, 1.04, 0.66), metal(0xb8bcc4)); peito.position.y = 1.55; peito.castShadow = true; g.add(peito);
+    const placa = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.68), metal(0xa0a4ac)); placa.position.y = 1.2; g.add(placa);
+    [-0.68, 0.68].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.66), metal(0xc8ccd4)); om.position.set(ox, 2.05, 0); om.castShadow = true; g.add(om); });
+    const gorja = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.6), metal(0x9a9ea6)); gorja.position.y = 2.12; g.add(gorja);
     const elmo = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.92, 0.9), metal(0xb0b4bc)); elmo.position.y = 2.6; elmo.castShadow = true; g.add(elmo);
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 0.05), mat(0x101010)); visor.position.set(0, 2.62, 0.44); g.add(visor);
-    const crista = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.5), mat(0xc0202a)); crista.position.set(0, 3.18, 0); g.add(crista);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.12, 0.05), mat(0x101010)); visor.position.set(0, 2.62, 0.45); g.add(visor);
+    const crista = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.36, 0.5), mat(0xc0202a)); crista.position.set(0, 3.2, 0); g.add(crista);
   }
-  // aldeao: base (sem peças extras)
 }
 
 export function animaAvatar(avatar, movendo, tempo, correndo = false) {
