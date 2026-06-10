@@ -63,7 +63,7 @@ export function criaCidade() {
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), mat(0x9a9082, 1));
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
-  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [];
+  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [], lagos = [];
   const add = (res) => {
     scene.add(res.grupo); solidos.push(res.grupo);
     if (res.colisores) res.colisores.forEach((c) => obstaculos.push(c));
@@ -74,6 +74,7 @@ export function criaCidade() {
     if (res.animados) res.animados.forEach((a) => animados.push(a));
     if (res.interativo) interativos.push(res.interativo);
     if (res.casa) casas.push(res.casa);
+    if (res.lago) lagos.push(res.lago);
   };
 
   // praça: fonte central + bancos + postes nas esquinas
@@ -206,5 +207,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, ceu, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas };
+  return { scene, sun, hemi, skyMat, ceu, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos };
 }

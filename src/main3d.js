@@ -55,7 +55,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
-const { scene, ceu, hemi, sun, skyMat, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
+const { scene, ceu, hemi, sun, skyMat, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
@@ -425,6 +425,42 @@ function botaoMapa(txt, bottom, fator) {
 botaoMapa('🗺️+', 72, 1.25);
 botaoMapa('🗺️−', 20, 0.8);
 
+// === PESCA (em qualquer lago) — espécies reais ===
+const PEIXES = [
+  { nome: 'Lambari', icone: '🐟', ch: 0.30, xp: 2 },
+  { nome: 'Tilápia', icone: '🐟', ch: 0.22, xp: 3 },
+  { nome: 'Traíra', icone: '🐟', ch: 0.15, xp: 4 },
+  { nome: 'Carpa', icone: '🐠', ch: 0.12, xp: 5 },
+  { nome: 'Bagre', icone: '🐟', ch: 0.10, xp: 5 },
+  { nome: 'Tucunaré', icone: '🐠', ch: 0.06, xp: 8 },
+  { nome: 'Dourado', icone: '🐠', ch: 0.03, xp: 12 },
+  { nome: 'Pintado', icone: '🐠', ch: 0.015, xp: 16 },
+  { nome: 'Bota velha', icone: '🥾', ch: 0.06, xp: 0 },
+];
+let pescandoAte = 0;
+function pertoDaAgua() {
+  for (const L of lagos) { if (Math.hypot(avatar.position.x - L.x, avatar.position.z - L.z) < L.r + 4) return L; }
+  return null;
+}
+function pescar() {
+  if (pescandoAte > 0) return;
+  pescandoAte = tempo + 1.5 + Math.random() * 2.2;
+  gesto = 1;
+  mostraMensagem('🎣 Pescando... aguarde a fisgada');
+}
+function resolvePesca() {
+  pescandoAte = 0;
+  let r = Math.random(), soma = 0, peixe = PEIXES[0];
+  for (const p of PEIXES) { soma += p.ch; if (r <= soma) { peixe = p; break; } }
+  if (peixe.xp > 0) {
+    inventario.addItem({ nome: peixe.nome, icone: peixe.icone });
+    hud.ganhaXP(peixe.xp);
+    mostraMensagem(`🎣 Fisgou: ${peixe.nome}! +${peixe.xp} XP`);
+  } else {
+    mostraMensagem('🎣 Hm... só uma bota velha. 🥾');
+  }
+}
+
 criaSelecao({
   cores: coresJogador,
   aoMudarCor: () => montaAvatar(),
@@ -439,8 +475,9 @@ criaSelecao({
     minimapa.mostra();
     inventario.mostra();
     inventario.addItem({ nome: 'Tocha', icone: '🔦' }); // todo mundo começa com uma tocha
+    inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
     hud.mostra();
-    mostraMensagem('Você tem uma tocha 🔦 — aperte T para acender no escuro.');
+    mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
 });
@@ -507,8 +544,9 @@ function loop() {
         if (alvo) {
           if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
           else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
-        } else { // sem interativo: saquear corpo / atacar bicho da superfície
-          const c = corpseProximo(); if (c) saqueia(c); else if (alvoRato()) atacar();
+        } else { // sem interativo: saquear / atacar / pescar
+          const c = corpseProximo();
+          if (c) saqueia(c); else if (alvoRato()) atacar(); else if (pertoDaAgua()) pescar();
         }
       }
     }
@@ -529,6 +567,7 @@ function loop() {
       if (it) dica = it.acao || it.titulo;
       else if (corpseProximo()) dica = 'Saquear o corpo 💀';
       else if (alvoRato()) dica = 'Atacar ⚔️';
+      else if (pertoDaAgua()) dica = 'Pescar 🎣';
     }
     mostraPrompt(dica);
 
@@ -576,6 +615,7 @@ function loop() {
   atualizaNPCs(npcs, dt, colide);
   atualizaRatos(ratos, dt);
   if (tochaOn) luzTocha.position.set(avatar.position.x, avatar.position.y + 2.6, avatar.position.z);
+  if (pescandoAte > 0 && tempo > pescandoAte) resolvePesca(); // fisgada da pesca
   // corpos somem em 30s; respawn calibrado (rato 25s, boss 60s)
   for (const r of ratos) {
     if (r.corpse && tempo > r.despawnAt) { r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25); }

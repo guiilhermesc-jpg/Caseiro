@@ -17,7 +17,7 @@ export function criaLago(x, z, r = 15) {
   const agua = new THREE.Mesh(new THREE.CircleGeometry(r, 30), AGUA);
   agua.rotation.x = -Math.PI / 2; agua.position.y = 0.1; g.add(agua);
   const c = r * 0.72;
-  return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }] };
+  return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }], lago: { x, z, r } };
 }
 
 // --- riacho (faixa de água ao longo de X), com vão para a ponte ---
