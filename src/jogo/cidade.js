@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia } from './natureza.js';
-import { criaCasaInterior } from './interiores.js';
+import { criaCasaInterior, criaTemploSagrado } from './interiores.js';
 import { criaThais } from './thais.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
@@ -119,7 +119,9 @@ export function criaCidade() {
     { tipo: 'delegacia', x: -32, z: 0, rot: Math.PI / 2 },
     { tipo: 'escola', x: 0, z: 32, rot: Math.PI },
   ];
-  marcos.forEach((m) => add(criaMarco(m.tipo, { x: m.x, z: m.z, rot: m.rot })));
+  // a igreja virou TEMPLO SAGRADO entrável (renascimento) — os outros marcos seguem
+  marcos.forEach((m) => { if (m.tipo !== 'igreja') add(criaMarco(m.tipo, { x: m.x, z: m.z, rot: m.rot })); });
+  add(criaTemploSagrado(0, -32));
 
   // casas diversas, ALINHADAS em ângulo reto (colisão correta) e viradas pro centro
   const cores = [0xd8c4a0, 0xc8a86a, 0xa8bcae, 0xd0a0a0, 0xb0b8c0, 0xe0d0a0, 0x9ab0a4, 0xcaa890];
@@ -143,8 +145,8 @@ export function criaCidade() {
   [[16, 16], [-16, 16], [16, -16], [-16, -16], [48, 16], [-48, 16], [48, -16], [-48, -16], [16, 48], [-16, 48], [16, -48], [-16, -48]]
     .forEach(([x, z]) => add(criaPoste(x, z)));
 
-  // pinheiros + arbustos (com flores)
-  [[24, 24], [-24, 24], [24, -24], [-24, -24], [56, 8], [-56, 8], [8, 56], [8, -56], [56, 56], [-56, -56], [-56, 56], [56, -56]]
+  // pinheiros + arbustos (com flores) — LONGE das portas das casas (frentes livres)
+  [[46, 46], [-46, 46], [46, -46], [-46, -46], [58, 16], [-58, 16], [20, 58], [20, -58], [56, 56], [-56, -56], [-56, 56], [56, -56]]
     .forEach(([x, z]) => add(criaPinheiro(x, z)));
   [[12, 5], [-12, 5], [5, -12], [-5, 12], [40, 40], [-40, 40], [40, -40], [-40, -40]]
     .forEach(([x, z]) => add(criaArbusto(x, z)));
@@ -175,7 +177,7 @@ export function criaCidade() {
   add(criaCasaInterior(-38, 0, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
   // placas de rua (estilo Tibia)
   add(criaPlaca(20, 6, 'Rua do Mercado', -Math.PI / 2));
-  add(criaPlaca(2, -18, 'Largo da Igreja', 0));
+  add(criaPlaca(4, -18, 'Templo Sagrado', 0));
   add(criaPlaca(-2, 18, 'Largo da Escola', Math.PI));
   add(criaPlaca(-20, 5, 'Rua do Ferreiro', Math.PI / 2));
 
@@ -251,8 +253,8 @@ export function criaCidade() {
     [[x - r, z + 2], [x + 2, z - r], [x - 4, z + r]].forEach(([jx, jz]) => add(criaJunco(jx, jz)));
     add(criaFlorAlta(x + 3, z + r * 0.7, 0x6ab0ff));
   });
-  // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=526)
-  add(criaEstrada(72, 526, 0, 8));               // estrada até o portão de Thais
+  // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=512)
+  add(criaEstrada(72, 512, 0, 8));               // estrada até o portão de Thais
   add(criaPlaca(74, -7, '→ THAIS'));
   add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));
   add(criaPlaca(230, -7, '→ THAIS'));
@@ -319,29 +321,31 @@ export function criaCidade() {
   add(criaCaixa(466, -12));
 
   // === MARCOS DE DISTÂNCIA na estrada (metragem REAL calculada do mapa)
-  // praça de Venore fica em (0,0); portão de Thais em (526,0)
-  add(criaMarcoDistancia(110, -6, 'THAIS 416\nVENORE 110'));
-  add(criaMarcoDistancia(192, 6, 'THAIS 334\nVENORE 192'));
-  add(criaMarcoDistancia(240, 6, 'THAIS 286\nVENORE 240'));
-  add(criaMarcoDistancia(320, -6, 'THAIS 206\nVENORE 320'));
-  add(criaMarcoDistancia(420, 6, 'THAIS 106\nVENORE 420'));
-  add(criaMarcoDistancia(490, -6, 'THAIS 36\nVENORE 490'));
+  // praça de Venore fica em (0,0); portão de Thais em (512,0)
+  add(criaMarcoDistancia(110, -6, 'THAIS 402\nVENORE 110'));
+  add(criaMarcoDistancia(192, 6, 'THAIS 320\nVENORE 192'));
+  add(criaMarcoDistancia(240, 6, 'THAIS 272\nVENORE 240'));
+  add(criaMarcoDistancia(320, -6, 'THAIS 192\nVENORE 320'));
+  add(criaMarcoDistancia(420, 6, 'THAIS 92\nVENORE 420'));
+  add(criaMarcoDistancia(490, -6, 'THAIS 22\nVENORE 490'));
 
   // === THAIS (cidade distante ENTRÁVEL) — agora BEM longe (centro x=560) ===
   add(criaThais(560, 0));
   add(criaFonte(560, 0));                         // praça central com fonte
-  add(criaPlaca(536, -7, 'Bem-vindo a Thais'));   // logo após o portão
-  // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some)
+  add(criaPlaca(522, -7, 'Bem-vindo a Thais'));   // logo após o portão
+  // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
   add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
-  // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro)
+  add(criaCasaInterior(534, 12, { frente: 'sul', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
+  add(criaCasaInterior(580, 0, { frente: 'oeste', cor: 0xdccfae, corTelhado: 0x2f8d80 }));
+  // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro) — frentes livres
   add(criaBarraca(550, 7, 0, 0xc0653a));
   add(criaBarraca(570, 7, 0, 0x2f8d80));
-  add(criaPoco(576, -6));
+  add(criaPoco(576, -10));
   add(criaEstatua(544, 8));
-  [[540, 22, 0x2f8d80], [580, 22, 0xd9a522], [540, -22, 0xd9a522], [580, -22, 0x2f8d80]]
+  [[540, 26, 0x2f8d80], [580, 26, 0xd9a522], [540, -26, 0xd9a522], [580, -26, 0x2f8d80]]
     .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
-  add(criaCanteiro(552, -8)); add(criaCanteiro(568, 10));
+  add(criaCanteiro(544, -4)); add(criaCanteiro(568, 10));
   // postes de luz na praça de Thais (acendem à noite)
   [[550, -8], [570, -8], [550, 12], [570, 12]].forEach(([x, z]) => add(criaPoste(x, z)));
   // montanhas emoldurando Thais e o fim do mundo a leste

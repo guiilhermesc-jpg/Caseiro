@@ -64,18 +64,38 @@ const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
 let limiteMundo = CONFIG3D.limiteMundo;
 function areaSuperficie() { return { minX: -limiteMundo, maxX: limiteMundo, minZ: -limiteMundo, maxZ: limiteMundo }; }
-let colisoresAtivos = obstaculos;
 let areaAtiva = areaSuperficie();
 let chaoY = 0;
 let noEsgoto = false;
 let zoomDist = 13; // distância da câmera (scroll do mouse)
+
+// GRADE ESPACIAL de colisão: o mundo cresceu (centenas de obstáculos) e varrer
+// a lista inteira a cada passo travava — agora cada célula de 24u guarda só os
+// colisores que a tocam, e cada checagem olha ~5-20 caixas em vez de ~700.
+const CELULA = 24, gradeCol = new Map();
+for (const o of obstaculos) {
+  const x0 = Math.floor((o.minX - 1.2) / CELULA), x1 = Math.floor((o.maxX + 1.2) / CELULA);
+  const z0 = Math.floor((o.minZ - 1.2) / CELULA), z1 = Math.floor((o.maxZ + 1.2) / CELULA);
+  for (let cx = x0; cx <= x1; cx++) for (let cz = z0; cz <= z1; cz++) {
+    const k = cx * 4096 + cz;
+    let arr = gradeCol.get(k); if (!arr) gradeCol.set(k, arr = []);
+    arr.push(o);
+  }
+}
 function colide(x, z) {
-  for (const o of colisoresAtivos) {
+  if (noEsgoto) { // subsolo: lista pequena, varre direto
+    for (const o of esgoto.colisores) {
+      if (x > o.minX - RAIO_AVATAR && x < o.maxX + RAIO_AVATAR &&
+          z > o.minZ - RAIO_AVATAR && z < o.maxZ + RAIO_AVATAR) return true;
+    }
+    return false;
+  }
+  const arr = gradeCol.get(Math.floor(x / CELULA) * 4096 + Math.floor(z / CELULA));
+  if (arr) for (const o of arr) {
     if (x > o.minX - RAIO_AVATAR && x < o.maxX + RAIO_AVATAR &&
         z > o.minZ - RAIO_AVATAR && z < o.maxZ + RAIO_AVATAR) return true;
   }
-  // portas fechadas bloqueiam o vão (na superfície); abrem ao chegar perto
-  if (!noEsgoto) for (const c of casas) {
+  for (const c of casas) { // vão de porta (só bloqueia se fechada — hoje ficam abertas)
     if (!c.aberta && c.portaCol &&
         x > c.portaCol.minX - RAIO_AVATAR && x < c.portaCol.maxX + RAIO_AVATAR &&
         z > c.portaCol.minZ - RAIO_AVATAR && z < c.portaCol.maxZ + RAIO_AVATAR) return true;
@@ -189,7 +209,7 @@ const controles = criaControles(renderer.domElement);
 // rótulos de lugares no minimapa (só aparecem quando você está por perto)
 const LUGARES_MAPA = [
   { nome: 'Praça', x: 0, z: 0 }, { nome: 'Mercado', x: 18, z: 4 }, { nome: 'Ferreiro', x: -18, z: 4 },
-  { nome: 'Igreja', x: 0, z: -30 }, { nome: 'Escola', x: 0, z: 30 },
+  { nome: 'Templo', x: 0, z: -30 }, { nome: 'Escola', x: 0, z: 30 },
   { nome: 'Bairro Sul', x: 0, z: -95 }, { nome: 'Moinho', x: -44, z: -74 },
   { nome: 'Porto', x: 45, z: 64 }, { nome: 'Farol', x: 66, z: 84 }, { nome: 'Ponte', x: 16, z: 80 },
   { nome: 'Thais', x: 560, z: 0 }, { nome: 'Templo', x: 560, z: 19 },
@@ -221,6 +241,7 @@ function mostraMensagem(txt) {
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
+    if (Math.abs((it.y || 0) - avatar.position.y) > 6) continue; // mesmo "andar" (superfície × esgoto)
     const d = Math.hypot(it.x - avatar.position.x, it.z - avatar.position.z);
     if (d <= it.raio && d < melhorD) { melhorD = d; melhor = it; }
   }
@@ -355,7 +376,11 @@ function executaAcao() {
       const a = esgoto.acessos[i];
       if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { sobe(i); subiu = true; break; }
     }
-    if (!subiu) { const c = corpseProximo(); if (c) saqueia(c); else atacar(); }
+    if (!subiu) {
+      const itEsg = achaInterativo(); // ex.: sua mochila caída no esgoto
+      if (itEsg && itEsg.onAcao) { itEsg.onAcao(); return; }
+      const c = corpseProximo(); if (c) saqueia(c); else atacar();
+    }
   } else {
     const alvo = achaInterativo();
     if (alvo) {
@@ -394,7 +419,7 @@ BUEIROS.forEach((bp, i) => {
 
 // CASAS À VENDA (compra com ouro; depois personaliza o telhado)
 const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
-[{ x: 32, z: 3, casaIdx: 0 }, { x: -32, z: 3, casaIdx: 1 }].forEach((cv) => {
+[{ x: 32, z: 8, casaIdx: 0 }, { x: -32, z: 8, casaIdx: 1 }].forEach((cv) => { // placas ao LADO (porta livre)
   cv.custo = 15; cv.corIdx = 0;
   const placa = new THREE.Group(); placa.position.set(cv.x, 0, cv.z);
   const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6), MAT_MADEIRA); poste.position.y = 0.9; placa.add(poste);
@@ -417,7 +442,7 @@ let acessoAtual = 0;
 function desce(i = 0) {
   acessoAtual = i;
   esgoto.grupo.visible = true;
-  chaoY = -40; colisoresAtivos = esgoto.colisores; areaAtiva = esgoto.bounds; noEsgoto = true;
+  chaoY = -40; areaAtiva = esgoto.bounds; noEsgoto = true;
   const a = esgoto.acessos[i] || esgoto.acessos[0];
   avatar.position.set(a.x, -40, a.z + (a.z > 0 ? -3 : 3)); vy = 0; noChao = true;
   hemi.intensity = 0.08; sun.intensity = 0.05; // ESGOTO ESCURO — acenda a tocha (T)
@@ -426,7 +451,7 @@ function desce(i = 0) {
 }
 function sobe(i = acessoAtual) {
   esgoto.grupo.visible = false;
-  chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false;
+  chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false;
   const b = BUEIROS[i] || BUEIROS[0];
   avatar.position.set(b.x, 0, b.z + 2.5); vy = 0; noChao = true;
   minimapa.mostra(); mostraMensagem('Você volta à superfície. ☀️'); // luz volta pelo ciclo dia/noite
@@ -616,12 +641,49 @@ function saqueia(r) {
   r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);
   mostraMensagem(pegou ? `Saqueou ${pegou} item(s) 🎒` : 'O corpo estava vazio.');
 }
+// CORPO CAÍDO: ao morrer a mochila fica no chão onde você caiu (volte pra recuperar!)
+let corpoCaido = null;
+function derrubaMochila(pos, itens) {
+  if (corpoCaido) { // um corpo por vez: o anterior se perde (igual Tibia raiz)
+    scene.remove(corpoCaido.mesh);
+    const i = interativos.indexOf(corpoCaido.it); if (i >= 0) interativos.splice(i, 1);
+  }
+  const g = new THREE.Group(); g.position.copy(pos);
+  const saco = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.65), MAT_MADEIRA);
+  saco.position.y = 0.3; saco.rotation.z = 0.35; saco.castShadow = true; g.add(saco);
+  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.06, 6, 12), MAT_MADEIRA);
+  alca.position.set(0.3, 0.62, 0); g.add(alca);
+  const cnvM = document.createElement('canvas'); cnvM.width = 128; cnvM.height = 128;
+  const cm = cnvM.getContext('2d'); cm.font = '88px Arial'; cm.textAlign = 'center'; cm.textBaseline = 'middle'; cm.fillText('🎒', 64, 70);
+  const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnvM), transparent: true, depthTest: false }));
+  marc.scale.set(1.6, 1.6, 1); marc.position.y = 2.2; marc.renderOrder = 997; g.add(marc);
+  scene.add(g);
+  const it = {
+    x: pos.x, z: pos.z, y: pos.y, raio: 2.6,
+    titulo: '🎒 Seus pertences', acao: 'Recuperar seus itens 🎒',
+    onAcao: () => {
+      let dev = 0;
+      for (const item of itens) for (let q = 0; q < item.qtd; q++) { if (inventario.addItem(item)) dev++; }
+      scene.remove(g);
+      const ix = interativos.indexOf(it); if (ix >= 0) interativos.splice(ix, 1);
+      corpoCaido = null;
+      mostraMensagem(`🎒 Você recuperou ${dev} item(s)!`);
+    },
+  };
+  interativos.push(it);
+  corpoCaido = { mesh: g, it };
+}
+// MORTE estilo Tibia: perde XP (pode descer de nível), derruba a mochila onde
+// caiu (dá pra voltar e recuperar) e RENASCE no Templo Sagrado de Venore.
 function morre() {
+  const perdidos = inventario.esvaziaMochila();
+  if (perdidos.length) derrubaMochila(avatar.position.clone(), perdidos);
+  const xpPerdido = hud.perdeXP();
   vida = VIDA_MAX;
-  if (noEsgoto) { chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
-  avatar.position.set(8, 0, 12); vy = 0; noChao = true;
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
+  avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX);
-  mostraMensagem('💀 Você caiu! Acorda na praça de Venore.');
+  mostraMensagem(`💀 Você caiu! Os deuses te trazem ao Templo Sagrado. (-${xpPerdido} XP${perdidos.length ? ' · sua mochila ficou onde você morreu 🎒' : ''})`);
 }
 function reviveBicho(r) {
   if (r.boss && r.forma) { // só o boss do esgoto troca de forma (cobra↔croc); dragão revive normal
@@ -642,7 +704,7 @@ function reviveBicho(r) {
 const DISTRITOS = [
   { nome: 'Praça Central de Venore', x: 0, z: 0, raio: 18 },
   { nome: 'Rua do Mercado', x: 16, z: 0, raio: 16 },
-  { nome: 'Largo da Igreja', x: 0, z: -30, raio: 15 },
+  { nome: 'Templo Sagrado de Venore', x: 0, z: -30, raio: 15 },
   { nome: 'Largo da Escola', x: 0, z: 28, raio: 15 },
   { nome: 'Ponte do Riacho', x: 16, z: 78, raio: 14 },
   { nome: 'Beira do Lago', x: 45, z: 80, raio: 22 },
@@ -653,8 +715,8 @@ const DISTRITOS = [
   { nome: 'Farol do Porto', x: 66, z: 84, raio: 10 },
   { nome: 'Caminho de Thais', x: 300, z: 0, raio: 250 },
   { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
-  { nome: 'Portão de Thais', x: 528, z: 0, raio: 14 },
-  { nome: 'Cidade de Thais', x: 560, z: 0, raio: 30 },
+  { nome: 'Portão de Thais', x: 514, z: 0, raio: 14 },
+  { nome: 'Cidade de Thais', x: 560, z: 0, raio: 44 },
   { nome: 'Templo de Thais', x: 560, z: 18, raio: 12 },
   { nome: 'Ruínas da Estrada', x: 400, z: -70, raio: 18 },
   { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
@@ -771,6 +833,11 @@ criaSelecao({
   },
 });
 
+// PRÉ-COMPILA todos os shaders agora (no carregamento). Sem isto, o three.js
+// compila o shader de cada material novo na PRIMEIRA vez que ele aparece na
+// tela — era a "travada do nada" ao explorar o mapa.
+renderer.compile(scene, camera);
+
 const relogio = new THREE.Clock();
 let tempo = 0;
 
@@ -830,6 +897,7 @@ function loop() {
     let dica = null;
     if (noEsgoto) {
       for (const a of esgoto.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir 🪜'; break; } }
+      if (!dica) { const itE = achaInterativo(); if (itE) dica = itE.acao || itE.titulo; }
       if (!dica && corpseProximo()) dica = 'Saquear o corpo 💀';
       if (!dica && alvoRato()) dica = 'Atacar ⚔️';
     } else {

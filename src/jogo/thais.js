@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { mat, texturaPedra, VIDRO } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
-  const { HX = 34, HZ = 30, ALT = 9, ESP = 2, gw = 8 } = opts;
+  const { HX = 48, HZ = 42, ALT = 9, ESP = 2, gw = 8 } = opts; // cidade GRANDE (casario do porte de Venore)
   const g = new THREE.Group(); g.position.set(cx, 0, cz);
   const colisores = [];
   // colisor em coords do MUNDO (o grupo está transladado p/ cx,cz)
@@ -113,6 +113,15 @@ export function criaThais(cx, cz, opts = {}) {
   predio(23, 17, 9, 9, 8, 0xcdb892, 0x2f8d80);
   predio(-23, -17, 9, 9, 8, 0xd2c19a, 0x9a4a3a);
   predio(23, -17, 9, 9, 7, 0xcab98e, 0xc0653a);
+
+  // CASARIO de Thais (tantas casas quanto Venore): fileiras norte/sul + flanco oeste
+  const coresT = [0xd8c8a4, 0xcdb892, 0xd2c19a, 0xcab98e, 0xdccfae];
+  const telhT = [0xc0653a, 0x2f8d80, 0x9a4a3a, 0xb8742a];
+  let ci = 0;
+  for (const lz of [32, -32]) for (let lx = -36; lx <= 36; lx += 12) {
+    predio(lx, lz, 9, 8, 6 + (ci % 3), coresT[ci % coresT.length], telhT[ci % telhT.length]); ci++;
+  }
+  [[-38, -16], [-38, 16]].forEach(([lx, lz]) => { predio(lx, lz, 8, 8, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
 
   return { grupo: g, colisores };
 }

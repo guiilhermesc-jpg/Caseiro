@@ -6,7 +6,7 @@
 //  Devolve { grupo, colisores, interativo (porta), animados, casa }.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaJanela } from './construcoes.js';
+import { mat, criaJanela, texturaPedra } from './construcoes.js';
 
 export function criaCasaInterior(x, z, opts = {}) {
   const { larg = 9, prof = 9, alt = 4, frente = 'sul', cor = 0xd8c4a0, corTelhado = 0x8a4632 } = opts;
@@ -147,4 +147,121 @@ export function criaCasaInterior(x, z, opts = {}) {
 function meshBox(w, h, d, material, x, y, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m;
+}
+
+// =============================================================
+//  TEMPLO SAGRADO de Venore · ENTRÁVEL, com altar, vitrais, bancos
+//  e velas. É o ponto de RENASCIMENTO quando o jogador morre.
+//  Porta (vão largo) virada pra praça; telhado+torre somem ao entrar.
+// =============================================================
+export function criaTemploSagrado(x, z) {
+  const larg = 16, prof = 20, alt = 6.5, gw = 5, t = 0.4;
+  const hx = larg / 2, hz = prof / 2;
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = mat(0xded8c8), pedraEsc = mat(0xb8b0a0, 1), ouroM = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.75, roughness: 0.3 });
+  const colisores = [];
+
+  // piso de pedra calçada
+  const chao = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.12, prof),
+    new THREE.MeshStandardMaterial({ map: texturaPedra(5), roughness: 1 }));
+  chao.position.y = 0.06; chao.receiveShadow = true; g.add(chao);
+
+  function muro(cx, cz, w, d) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), pedra);
+    m.position.set(cx, alt / 2, cz); m.castShadow = m.receiveShadow = true; g.add(m);
+    colisores.push({ minX: x + cx - w / 2, maxX: x + cx + w / 2, minZ: z + cz - d / 2, maxZ: z + cz + d / 2 });
+  }
+  muro(0, -hz, larg, t);                       // fundo (sul)
+  muro(-hx, 0, t, prof); muro(hx, 0, t, prof); // laterais
+  const seg = (larg - gw) / 2;                 // frente (norte) com vão largo
+  muro(-(gw / 2 + seg / 2), hz, seg, t); muro(gw / 2 + seg / 2, hz, seg, t);
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(gw, alt - 3.4, t), pedra);
+  verga.position.set(0, alt - (alt - 3.4) / 2, hz); g.add(verga);
+  // colunas flanqueando a entrada
+  [-gw / 2 - 0.6, gw / 2 + 0.6].forEach((cx) => {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.42, 3.6, 10), pedraEsc);
+    c.position.set(cx, 1.8, hz + 0.8); c.castShadow = true; g.add(c);
+  });
+
+  // VITRAIS coloridos nas laterais (brilham de leve)
+  const coresVitral = [0x7a4ad8, 0x4a8ad8, 0xd84a6a, 0x4ad88a];
+  [-1, 1].forEach((lado, li) => {
+    [-5, 0, 5].forEach((vz, vi) => {
+      const vid = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.6, 1.2),
+        new THREE.MeshStandardMaterial({ color: coresVitral[(li * 2 + vi) % 4], roughness: 0.2, metalness: 0.1, emissive: coresVitral[(li * 2 + vi) % 4], emissiveIntensity: 0.35, transparent: true, opacity: 0.85 }));
+      vid.position.set(lado * (hx + 0.03), 3.4, vz); g.add(vid);
+      const mold = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.0, 1.5), pedraEsc);
+      mold.position.set(lado * (hx + 0.01), 3.4, vz); g.add(mold);
+    });
+  });
+
+  // ALTAR no fundo: plataforma + mesa + CRISTAL dourado (pulsa) + estátua
+  const plat = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 4), pedraEsc);
+  plat.position.set(0, 0.25, -hz + 2.6); g.add(plat);
+  const mesa = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 1.2), pedra);
+  mesa.position.set(0, 1.05, -hz + 2.4); mesa.castShadow = true; g.add(mesa);
+  colisores.push({ minX: x - 1.3, maxX: x + 1.3, minZ: z - hz + 1.8, maxZ: z - hz + 3.0 });
+  const cristalMat = new THREE.MeshStandardMaterial({ color: 0xffe27a, emissive: 0xffc83a, emissiveIntensity: 0.8, roughness: 0.2 });
+  const cristal = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), cristalMat);
+  cristal.position.set(0, 2.3, -hz + 2.4); g.add(cristal);
+  // estátua do guardião (dourada) atrás do altar
+  const est = new THREE.Group(); est.position.set(0, 0.5, -hz + 0.9);
+  est.add(meshBox(0.9, 1.6, 0.5, ouroM, 0, 1.3, 0));
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), ouroM); cab.position.y = 2.45; est.add(cab);
+  est.add(meshBox(1.4, 0.18, 0.18, ouroM, 0, 1.9, 0)); // braços abertos (bênção)
+  g.add(est);
+
+  // BANCOS (2 colunas × 3 fileiras) virados pro altar + tapete central
+  const mad = mat(0x6e4a2a);
+  for (const bx of [-3.2, 3.2]) for (let fz = -2; fz <= 6; fz += 4) {
+    const banco = new THREE.Group(); banco.position.set(bx, 0, fz);
+    banco.add(meshBox(3.4, 0.16, 0.9, mad, 0, 0.62, 0));
+    banco.add(meshBox(3.4, 0.8, 0.14, mad, 0, 1.0, 0.45));
+    [-1.4, 1.4].forEach((px) => banco.add(meshBox(0.16, 0.62, 0.8, mad, px, 0.31, 0)));
+    g.add(banco);
+    colisores.push({ minX: x + bx - 1.7, maxX: x + bx + 1.7, minZ: z + fz - 0.5, maxZ: z + fz + 0.6 });
+  }
+  const tapete = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.05, prof - 4), mat(0x8a2a2a));
+  tapete.position.set(0, 0.13, 1); g.add(tapete);
+
+  // VELAS nos cantos (chama emissiva)
+  [[-hx + 1.2, -hz + 1.4], [hx - 1.2, -hz + 1.4], [-hx + 1.2, hz - 1.6], [hx - 1.2, hz - 1.6]].forEach(([vx, vz]) => {
+    const cand = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 1.5, 8), pedraEsc);
+    cand.position.set(vx, 0.75, vz); g.add(cand);
+    const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.35, 8), mat(0xf0ead8));
+    vela.position.set(vx, 1.65, vz); g.add(vela);
+    const chama = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xffb04a, emissive: 0xff7a2a, emissiveIntensity: 1 }));
+    chama.position.set(vx, 1.92, vz); g.add(chama);
+  });
+
+  // TELHADO duas águas + torre sineira com cruz dourada (somem ao entrar)
+  const roof = new THREE.Group();
+  const shape = new THREE.Shape();
+  shape.moveTo(-hx - 0.6, 0); shape.lineTo(hx + 0.6, 0); shape.lineTo(0, 4.2); shape.closePath();
+  const geoT = new THREE.ExtrudeGeometry(shape, { depth: prof + 1.2, bevelEnabled: false });
+  geoT.translate(0, 0, -(prof + 1.2) / 2);
+  const telh = new THREE.Mesh(geoT, mat(0x6a4a8a));
+  telh.position.y = alt; telh.castShadow = true; roof.add(telh);
+  const torre = new THREE.Mesh(new THREE.BoxGeometry(2.6, 4, 2.6), pedra);
+  torre.position.set(0, alt + 4.4, -hz + 2.4); torre.castShadow = true; roof.add(torre);
+  const topoT = new THREE.Mesh(new THREE.ConeGeometry(2.1, 2.2, 4), mat(0x6a4a8a));
+  topoT.position.set(0, alt + 7.5, -hz + 2.4); topoT.rotation.y = Math.PI / 4; roof.add(topoT);
+  const cv = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.6, 0.22), ouroM); cv.position.set(0, alt + 9.3, -hz + 2.4); roof.add(cv);
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.22), ouroM); ch.position.set(0, alt + 9.5, -hz + 2.4); roof.add(ch);
+  g.add(roof);
+
+  // marcador ⛪ flutuante
+  const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
+  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('⛪', 64, 70);
+  const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
+  marc.scale.set(2.6, 2.6, 1); marc.position.y = alt + 11; marc.renderOrder = 997; g.add(marc);
+
+  const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
+  return {
+    grupo: g, colisores,
+    animados: [{ mesh: cristal, pulsa: cristalMat, gira: 0.8, fase: 0 }],
+    casa: { roof, box, px: x, pz: z + hz, aberta: true }, // sem porta: o templo é sempre aberto
+    interativo: { x, z: z - hz + 4, raio: 3.2, titulo: '⛪ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
+  };
 }

@@ -39,6 +39,18 @@ export function criaHUD() {
   return {
     mostra() { wrap.style.display = 'block'; render(); },
     ganhaXP(n) { xp += n; while (xp >= prox) { xp -= prox; nivel++; prox = Math.round(prox * 1.5); } render(); },
+    // morte estilo Tibia: perde ~30% do XP do nível atual (pode até DESCER de nível)
+    perdeXP() {
+      let perda = Math.round(prox * 0.3);
+      const total = perda;
+      while (perda > 0) {
+        if (xp > 0) { const tira = Math.min(xp, perda); xp -= tira; perda -= tira; }
+        else if (nivel > 1) { nivel--; prox = Math.max(20, Math.round(prox / 1.5)); xp = prox; }
+        else break; // nível 1 com 0 XP: não desce mais
+      }
+      render();
+      return total;
+    },
     addItem(tipo) { itens[tipo] = (itens[tipo] || 0) + 1; render(); },
     vida(cur, max) { vidaEl.textContent = `❤️ Vida ${Math.max(0, Math.ceil(cur))}/${max}`; vidaFill.style.width = Math.max(0, (cur / max) * 100) + '%'; },
     ouro(n) { ouroEl.textContent = `🪙 ${n}`; },

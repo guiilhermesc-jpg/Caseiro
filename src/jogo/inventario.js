@@ -104,6 +104,12 @@ export function criaInventario({ aoEquipar } = {}) {
       if (mochila.length >= N_MOCHILA) return false;
       mochila.push({ ...item, qtd: 1 }); renderMochila(); return true; // guarda props (slot/defesa/id)
     },
+    // MORTE estilo Tibia: derruba TUDO da mochila (devolve a lista pro corpo no chão)
+    esvaziaMochila() {
+      const perdidos = mochila.splice(0, mochila.length);
+      renderMochila();
+      return perdidos;
+    },
     // VENDE pro mercador: remove da mochila tudo que estiver na tabela {nome: preço}
     // e devolve { ouro, itens } (estilo Tibia: caçar → saquear → vender).
     vendeItens(precos) {

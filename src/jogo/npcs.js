@@ -21,15 +21,15 @@ const ROSTER = [
     falas: { trabalho: 'Assando pão no mercado coberto do Bairro do Comércio. Sinta o cheiro!', dica: 'Queijo fresco atrai ratos... e aventureiros famintos.' } },
   { nome: 'Bram', prof: 'Ferreiro', post: { x: -17, z: 11 }, cor: 0x445162, humor: 'mau', sexo: 'homem', tipo: 'aldeao',
     falas: { trabalho: 'Minha forja fica na Rua do Ferreiro. Martelo ferro o dia todo.', dica: 'Esse graveto não vai longe. Volte quando eu tiver aço.' } },
-  { nome: 'Sira', prof: 'Curandeira', post: { x: 26, z: 3 }, cor: 0xeef0f2, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+  { nome: 'Sira', prof: 'Curandeira', post: { x: 27, z: 10 }, cor: 0xeef0f2, humor: 'bom', sexo: 'mulher', tipo: 'mago',
     falas: { trabalho: 'Atendo na porta do hospital. Pague quando puder.', dica: 'Se descer no esgoto, leve uma TOCHA. E cuidado com algo grande lá embaixo.' } },
-  { nome: 'Tobias', prof: 'Sacerdote', post: { x: 3, z: -25 }, cor: 0x6a4a8a, humor: 'bom', sexo: 'homem', tipo: 'mago',
-    falas: { trabalho: 'Guardo a porta da igreja e toco o sino.', dica: 'Aquele baú perto da igreja só abre com a chave certa.' } },
-  { nome: 'Lia', prof: 'Escriba', post: { x: 3, z: 26 }, cor: 0x3a5a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+  { nome: 'Tobias', prof: 'Sacerdote', post: { x: 0, z: -34 }, cor: 0x6a4a8a, humor: 'bom', sexo: 'homem', tipo: 'mago',
+    falas: { trabalho: 'Sirvo dentro do Templo Sagrado, junto ao altar.', dica: 'Quando alguém cai em batalha, os deuses o trazem de volta a este templo. Mas há um preço: experiência e a mochila ficam para trás...' } },
+  { nome: 'Lia', prof: 'Escriba', post: { x: 3, z: 23 }, cor: 0x3a5a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
     falas: { trabalho: 'Ensino as crianças aqui na escola e copio os velhos livros.', dica: 'O cristal arcano reage a quem tem dom. Já tentou examiná-lo?' } },
-  { nome: 'Marta', prof: 'Fazendeira', post: { x: 15, z: -14 }, cor: 0x556b2f, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+  { nome: 'Marta', prof: 'Fazendeira', post: { x: 16, z: -15 }, cor: 0x556b2f, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Cuido das hortas e deste poço. Água limpa é vida.', dica: 'As flores azuis só nascem à beira d’água.' } },
-  { nome: 'Vasco', prof: 'Guarda', post: { x: -26, z: -3 }, cor: 0x2a3a6a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
+  { nome: 'Vasco', prof: 'Guarda', post: { x: -24, z: -3 }, cor: 0x2a3a6a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
     falas: { trabalho: 'Posto fixo na delegacia. Vigio os bueiros: coisas sobem de lá à noite.', dica: 'A estrada a leste leva a Thais. Longa e perigosa — leve poções.' } },
   { nome: 'Nuno', prof: 'Aldeão', post: { x: 28, z: 18 }, cor: 0x6a2a3a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
     falas: { trabalho: 'Eu? Só vivo por aqui, vendo a vida passar.', dica: 'Venore já foi maior. As montanhas guardam segredos.' } },
@@ -38,7 +38,7 @@ const ROSTER = [
   { nome: 'Caio', prof: 'Pescador', post: { x: 43, z: 64 }, cor: 0x2a6a5a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
     falas: { trabalho: 'Pesco aqui do cais do porto. Paciência é tudo.', dica: 'Cada lago tem seus peixes — e a Yara de Thais paga bem pelos raros.' } },
   // --- moradores de THAIS (cidade distante, agora em x≈560) ---
-  { nome: 'Dorian', prof: 'Guardião do Portão', post: { x: 538, z: 6 }, home: { x: 548, z: -12 }, cor: 0x6a5a3a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
+  { nome: 'Dorian', prof: 'Guardião do Portão', post: { x: 520, z: 6 }, home: { x: 548, z: -12 }, cor: 0x6a5a3a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
     falas: { trabalho: 'Guardo o portão de Thais dia e noite. Não passa quem não deve.', dica: 'A estrada que te trouxe é infestada de trolls e bandidos. Sorte sua.' } },
   { nome: 'Yara', prof: 'Mercadora', post: { x: 552, z: 10 }, home: { x: 572, z: -12 }, cor: 0xb8902a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Trago especiarias de terras distantes. Thais vive do comércio.', dica: 'Em Venore o pão é melhor, mas aqui o ouro corre solto.' } },
@@ -57,7 +57,7 @@ const ROSTER = [
 
 // casas (residências) e quem trabalha à noite (lojistas/guarda continuam no posto)
 const HOMES = [[28, 28], [-28, 28], [28, -28], [-28, -28], [60, 6], [-60, 6], [6, 60], [6, -60], [34, 34], [-34, 34], [34, -34]];
-const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno']);
+const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias']); // Tobias guarda o templo a noite toda
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');
