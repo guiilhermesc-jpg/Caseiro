@@ -4,7 +4,8 @@
 
 ---
 
-## 🚨 PRÓXIMA SESSÃO — COMECE AQUI (atualizado 10/06 noite, v18 no ar)
+## 🚨 18ª RODADA (EM ABERTO) — PRÓXIMA SESSÃO, COMECE AQUI (atualizado 10/06 noite, v18 no ar)
+> Esta é a **continuação direta da 17ª rodada** (ver diário no fim do arquivo). O commit `6d0900b` ("CHECKPOINT de nova sessao") é o checkpoint desta 18ª rodada.
 **Estado:** jogo em produção (caseiro.pages.dev, selo de versão `v18` no canto inferior esquerdo — bump `VERSAO` no main3d.js a cada deploy). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
 
 ### 🔴 BUGS RELATADOS PELO MAESTRO (prioridade máxima)
@@ -269,3 +270,5 @@ bichos da superfície (troll/ciclope/aranha) + tocha inicial →
 **16ª rodada:** 💀 **Estado de morte de verdade** (relato: tela de morte "travava" depois): flag `morto` pausa tudo (recebeDano/andar/agir/magia/clique/regen ignorados), o **botão "Renascer no Templo Sagrado" faz o RESET completo** (`renasce()`: limpa veneno/escudo, restaura vida+mana parcial, sai do esgoto, teleporta 0,-30, salva) com pointerdown+click; **auto-renasce em 12s** (`mortoAuto`) — impossível ficar preso. Publicado ✓.
 
 **17ª rodada (VISUAL PREMIUM + PETS DOMÁVEIS):** 💎 Receita do "pack premium" feita em casa: `matFlat`/`desloca` em construcoes.js (flat shading facetado + vértices orgânicos) aplicados em árvores (4 paletas)/pedras (musgo)/montanhas/pinheiros/arbustos; **CACHOEIRA** (`criaCachoeira`, no lago norte 45,96); **espuma** nas margens dos lagos + praia; 12 manchas de cor no campo; fog 260-720, sol dourado, exposure 0.84 · 🐾 **PETS DOMÁVEIS Tibia**: sem pet inicial; 6 selvagens com 🐾 (gato/cachorro/coelho/lobo/BURRO novo/FILHOTE DE DRAGÃO no platô); item de domar por raridade (Lambari/Osso/**Cenoura** coletável nova na fazenda/Carne/Escama de Dragão) com chance 70%→30%; falha consome item (Tibia); domado segue+salva (`pets`/`pet` no save), selvagem some; trocar pet = clicar em si (só domados). FUTURO: montaria (velocidade) + pets no combate. Publicado ✓.
+
+**18ª rodada (EM ABERTO — checkpoint de 10/06 à noite, commit `6d0900b`, ainda NÃO executada):** plano completo na seção "🚨 18ª RODADA" no topo deste arquivo. Em resumo: 🔴 2 bugs do maestro (trava no PC / teleporte GM pra Thais engasga; marcador 🐾 dos domáveis grande/feio) · 🎨 missão principal = reestruturar a qualidade visual pra alcançar o Low Poly Big Environment Pack (GLBs profissionais de vegetação via InstancedMesh, relevo no terreno, praça/prédios de Venore, color grading) · 📋 backlog: montaria + pets lutando, GLBs a baixar (Quirky Pets/poly.pizza), lojas com interior em Thais, quests, conta online (Railway DB). Quando esta rodada for executada, substituir esta linha pelo resumo do que foi feito (padrão das rodadas acima).
