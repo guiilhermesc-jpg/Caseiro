@@ -64,6 +64,53 @@ export function atualizaRatos(ratos, dt, bounds) {
     g.position.z = Math.max(bounds.minZ + 0.7, Math.min(bounds.maxZ - 0.7, g.position.z + mz * vel * dt));
     g.rotation.y = Math.atan2(mx, mz);
     const s = Math.sin(r.tempo * 16) * 0.6, p = g.userData.patas;
-    p[0].rotation.x = s; p[3].rotation.x = s; p[1].rotation.x = -s; p[2].rotation.x = -s;
+    if (p) { p[0].rotation.x = s; p[3].rotation.x = s; p[1].rotation.x = -s; p[2].rotation.x = -s; }
+    if (g.userData.segs) g.userData.segs.forEach((sg, i) => { sg.position.x = Math.sin(r.tempo * 6 + i * 0.7) * 0.25; }); // rastejar
   }
+}
+
+// BOSS: cobra (rastejante) e crocodilo — maiores, mais vida/XP/loot.
+export function criaCobra(x, z) {
+  const g = new THREE.Group(); g.position.set(x, Y, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x3f7a3a, roughness: 0.7 });
+  const segs = [];
+  for (let i = 0; i < 7; i++) {
+    const r = 0.45 - i * 0.04;
+    const seg = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), corpoMat);
+    seg.position.set(0, 0.35, -i * 0.6); seg.scale.z = 1.3; seg.castShadow = true; g.add(seg); segs.push(seg);
+  }
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.7), corpoMat);
+  cabeca.position.set(0, 0.4, 0.6); cabeca.castShadow = true; g.add(cabeca);
+  [-0.16, 0.16].forEach((ox) => {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), mat(0xd8c020));
+    olho.position.set(ox, 0.52, 0.85); g.add(olho);
+  });
+  const lingua = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.3), mat(0xd83a5a));
+  lingua.position.set(0, 0.38, 1.05); g.add(lingua);
+  g.userData = { segs, corpoMat, tipo: 'boss' };
+  return g;
+}
+
+export function criaCrocodilo(x, z) {
+  const g = new THREE.Group(); g.position.set(x, Y, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x4a5a38, roughness: 0.8 });
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 2.4), corpoMat);
+  corpo.position.y = 0.35; corpo.castShadow = true; g.add(corpo);
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 1.1), corpoMat);
+  cabeca.position.set(0, 0.32, 1.5); cabeca.castShadow = true; g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.22, 0.7), corpoMat);
+  focinho.position.set(0, 0.24, 2.1); g.add(focinho);
+  [-0.22, 0.22].forEach((ox) => {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), mat(0xe0d040));
+    olho.position.set(ox, 0.55, 1.4); g.add(olho);
+  });
+  const patas = [];
+  [[-0.45, 0.9], [0.45, 0.9], [-0.45, -0.9], [0.45, -0.9]].forEach(([px, pz]) => {
+    const geo = new THREE.BoxGeometry(0.2, 0.3, 0.2); geo.translate(0, -0.15, 0);
+    const pa = new THREE.Mesh(geo, corpoMat); pa.position.set(px, 0.3, pz); g.add(pa); patas.push(pa);
+  });
+  const rabo = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.2), corpoMat);
+  rabo.position.set(0, 0.3, -1.6); g.add(rabo);
+  g.userData = { patas, corpoMat, tipo: 'boss' };
+  return g;
 }
