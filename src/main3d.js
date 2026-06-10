@@ -8,13 +8,15 @@ import { CONFIG3D } from './config3d.js';
 import { criaCidade } from './jogo/cidade.js';
 import { criaAvatar, animaAvatar } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
-import { criaGato, atualizaGato } from './jogo/pet.js';
+import { criaGato, atualizaGato, PETS } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
 import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
+import { criaDialogo } from './jogo/dialogo.js';
+import { criaCustomizar } from './jogo/customizar.js';
 
 const container = document.getElementById('game');
 
@@ -65,9 +67,14 @@ function colide(x, z) {
 const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20 };
 let avatar;
 function montaAvatar() {
+  // preserva posição/rotação ao recriar (troca de cor in-game não teleporta)
+  const pos = avatar ? avatar.position.clone() : new THREE.Vector3(8, 0, 12);
+  const rotY = avatar ? avatar.rotation.y : 0;
   if (avatar) scene.remove(avatar);
   avatar = criaAvatar(coresJogador);
-  avatar.position.set(8, 0, 12);
+  avatar.position.copy(pos);
+  avatar.rotation.y = rotY;
+  avatar.userData.tipo = 'jogador'; // clicável (abre customização)
   scene.add(avatar);
 }
 montaAvatar();
@@ -91,8 +98,9 @@ function estadoLocal() {
   };
 }
 
-const gato = criaGato();
+let gato = criaGato();
 gato.position.set(6, 0, 10);
+gato.userData.tipo = 'pet'; // clicável (trocar de pet)
 scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
@@ -124,6 +132,60 @@ function achaInterativo() {
   }
   return melhor;
 }
+
+// --- diálogo (NPC), customização (você) e troca de pet ---
+const dialogo = criaDialogo();
+let petTipo = 'gato';
+function trocaPet(tipo) {
+  if (!PETS[tipo] || tipo === petTipo) return;
+  const pos = gato.position.clone();
+  scene.remove(gato);
+  gato = PETS[tipo]();
+  gato.position.copy(pos);
+  gato.userData.tipo = 'pet';
+  scene.add(gato);
+  petTipo = tipo;
+}
+const customizar = criaCustomizar({
+  cores: coresJogador,
+  aoMudarCor: () => montaAvatar(),
+  aoMudarPet: (t) => trocaPet(t),
+  getPet: () => petTipo,
+});
+function abreDialogo(npc) {
+  // vira de frente pro jogador e pausa pra conversar
+  npc.g.rotation.y = Math.atan2(avatar.position.x - npc.g.position.x, avatar.position.z - npc.g.position.z);
+  npc.pausa = 4;
+  const saud = npc.humor === 'bom' ? 'Olá! Que bom te ver por aqui. 😊' : 'Hm? O que você quer?';
+  dialogo.abre(npc.nome, saud, [
+    {
+      texto: 'Tudo bem?', onClick: () => {
+        const linha = npc.contaHistoria ? npc.historia
+          : (npc.humor === 'bom' ? 'Tudo ótimo! Venore é um bom lugar pra viver.' : 'Já tive dias melhores... mas vou levando.');
+        dialogo.abre(npc.nome, linha, [{ texto: 'Entendi. Até!', onClick: () => dialogo.fecha() }]);
+      },
+    },
+    { texto: 'Tchau', onClick: () => dialogo.fecha() },
+  ]);
+}
+// CLIQUE/TOQUE: tap curto (sem arrasto) seleciona NPC / você / pet
+const rayTap = new THREE.Raycaster();
+function achaTipo(obj) { while (obj) { if (obj.userData && obj.userData.tipo) return obj; obj = obj.parent; } return null; }
+let tapIni = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { tapIni = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  const ini = tapIni; tapIni = null;
+  if (!ini || !jogoIniciado || dialogo.aberto || customizar.aberto) return;
+  if (Math.hypot(e.clientX - ini.x, e.clientY - ini.y) > 8 || performance.now() - ini.t > 350) return;
+  const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  rayTap.setFromCamera(ndc, camera);
+  for (const h of rayTap.intersectObjects(scene.children, true)) {
+    const alvo = achaTipo(h.object);
+    if (!alvo) continue;
+    if (alvo.userData.tipo === 'npc') abreDialogo(alvo.userData.ref); else customizar.abre();
+    break;
+  }
+});
 
 criaSelecao({
   cores: coresJogador,
@@ -233,7 +295,7 @@ function loop() {
   }
   atualizaGato(gato, avatar, dt, tempo);
   animaProps(animados, dt, tempo);
-  atualizaNPCs(npcs, dt, tempo, colide);
+  atualizaNPCs(npcs, dt, colide);
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
 

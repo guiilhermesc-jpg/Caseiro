@@ -2,7 +2,7 @@
 //  TELA DE SELEÇÃO  ·  nome + aparência do personagem (overlay).
 //  Prepara o multiplayer: cada jogador terá nome e cores próprios.
 // =============================================================
-const PALETAS = {
+export const PALETAS = {
   casaco: [0x556b2f, 0x3a5a8a, 0x7a4632, 0x6a2a3a, 0x445162, 0x2a2a30],
   pele:   [0xf2d6b8, 0xe0b088, 0xc89060, 0x9c6a42, 0x6e4628],
   cabelo: [0x241c14, 0x5a3a1c, 0xc8a24e, 0xa33a22, 0xb8b8b8],
