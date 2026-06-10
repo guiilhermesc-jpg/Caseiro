@@ -37,8 +37,9 @@ o jogador explora, luta, conversa, personaliza. Tibia é **inspiração** (não 
   (lagos ao redor, floresta, **montanhas**, **estrada→cidade distante**). Chão com textura; céu segue a câmera.
 - `src/jogo/construcoes.js` — prédios, marcos, **janelas variadas** (`criaJanela`), telhados, fonte, banco, poste.
 - `src/jogo/props.js` — adornos (barril/caixa/poço/barraca/estátua/canteiro/bandeira) + **itens valiosos** (baú, cristal).
-- `src/jogo/natureza.js` — lago/riacho/ponte/juncos/salgueiro/árvore/vitória-régia/pedra/cogumelo/flor + montanha/estrada/placa/cidade distante.
-- `src/jogo/interiores.js` — **casas entráveis** (porta na AÇÃO, telhado some ao entrar, mobília, janelas).
+- `src/jogo/natureza.js` — lago/riacho/ponte/juncos/salgueiro/árvore/vitória-régia/pedra/cogumelo/flor + montanha/estrada/placa + **cais** + **fogueira/carroça** (estrada).
+- `src/jogo/thais.js` — **cidade de Thais ENTRÁVEL** (muralha+ameias+torres, portão passável, templo, prédios, calçamento).
+- `src/jogo/interiores.js` — **casas entráveis** (porta auto-abre perto; **vão bloqueia quando fechada**; telhado some, mobília, janelas).
 - `src/jogo/avatar.js` — boneco com **sexo (M/F)** + **4 modelos** (aldeão/caçador/mago/cavaleiro), outfit no corpo. `criaAvatar(cores)`, `animaAvatar`.
 - `src/jogo/controles.js` — mover/câmera/pular/correr/abaixar + botão **AÇÃO** (tecla E).
 - `src/jogo/pet.js` — gato/cachorro/coelho (`PETS`).
@@ -64,6 +65,10 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 **Bichos:** rato, boss cobra/croc (esgoto); troll, ciclope, aranha-gigante+filhotes (superfície) ·
 **Inventário** (mochila 20 + equip) · **Dia/noite** (lampiões acendem) · **Minimapa radar** ·
 **Zoom no scroll** · **Mapa ajustável** (🗺️ +/-) · **Prompt de ação estilo Roblox** · Deploy funcionando.
+**THAIS entrável** (muralha/portão/templo/praça + casas entráveis + 5 NPCs) + **Caminho de Thais** com acampamentos ·
+**Venore maior** (Bairro do Comércio ao sul + moinho/farol/cais do porto) · **nomes de rua no minimapa** ·
+**Beholder** (olho flutuante) + **loot variado** (ossos/ervas/gemas/joias/bolsa de ouro) ·
+**calçamento de pedra** nas praças + **vidro de janela** de verdade · **esgoto em rede de túneis** (sob cada rua).
 
 ## 7. MODO DE TRABALHO + LIMITAÇÃO
 - **Usuário = MAESTRO** (decide o quê/porquê; quer qualidade, detalhes, complexidade tipo Tibia).
@@ -82,13 +87,19 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 🐉 bichos: rato, boss cobra/croc, troll, ciclope, aranha+filhotes, ladrão, escorpião ·
 ⛰️ montanhas com relevo · ⚡ otimização **mobile** (sem sombras/luzes) e **PC** (anti-oclusão só perto).
 
-**PRÓXIMOS (nesta ordem — pedidos do maestro):**
-1. 🏰 **Thais (cidade distante, a leste pelo Caminho de Thais) ENTRÁVEL** + conteúdo no caminho.
-2. 🏙️ **Crescer Venore** + detalhes únicos/personalidade + nomes de rua **no minimapa**.
-3. 🐉 Mais bichos (beholder) + mais variedade de loot.
-4. 🎨 **Qualidade sempre** — melhorar proporções/materiais/detalhes (o maestro repete muito: capricho).
-5. 🚪 Porta que **bloqueia** quando fechada; 🕳️ túneis sob cada rua do esgoto.
-6. ⚡ Otimização contínua (instancing/merge de geometrias se pesar) · 🔒 rotacionar token Cloudflare.
+**JÁ FEITO (fila de 10/06/2026 — 6 itens, todos no GitHub/main):**
+1. ✅ 🏰 **Thais ENTRÁVEL** (portão passável, muralha/torres, templo, praça, 2 casas entráveis, 5 NPCs) + **Caminho de Thais** (acampamentos: fogueira/carroça/barraca + placas).
+2. ✅ 🏙️ **Crescer Venore**: Bairro do Comércio ao sul (ruas/praça/mercado coberto/casas) + marcos únicos (**moinho** com pás girando, **farol**, **cais** com barco) + **nomes de rua no minimapa**.
+3. ✅ 🐉 **Beholder** (olho flutuante, Vale dos Monstros) + **loot variado** (osso/couro/erva/frasco + gemas/joias/bolsa de ouro; Olho do Beholder).
+4. ✅ 🎨 **Qualidade**: calçamento de pedra (textura) nas praças/Thais + material de **vidro** real nas janelas.
+5. ✅ 🚪 Porta **bloqueia quando fechada** (paredes da frente sólidas; vão abre perto) + 🕳️ **esgoto em rede de túneis** sob cada rua (grade + câmara central).
+6. ✅ ⚡ Perf: esconde a grade de túneis na superfície + só acende postes perto do jogador à noite.
+
+**PENDÊNCIAS / PRÓXIMOS:**
+- 🚀 **PUBLICAR**: faltou só o `wrangler pages deploy` (bloqueado por segurança nesta sessão). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true` (ou pedir pro Claude com permissão).
+- 🔒 **Rotacionar token Cloudflare** (continua pendente — ação do maestro no painel da Cloudflare: revogar o antigo, gerar novo, atualizar `.env`).
+- ⚡ Otimização mais funda (instancing/merge de geometrias) **só se pesar** nos testes (Edge/iPhone).
+- (ideias soltas) mais variedade em Thais (lojas reais), quests, mais bichos.
 
 **Modo de trabalho do maestro:** quer que eu **execute em sequência sem ficar parando pra perguntar** ("só para quando eu mandar"); valida no **Edge (PC)** e **iPhone**; foco em **qualidade + fluidez** (mobile não pode travar). A cada mudança: `npm run build` → deploy (wrangler) → `git commit` + `git push`.
 
@@ -96,7 +107,9 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
 combate/esgoto/ratos → esgoto profundo (boss, tocha, várias entradas) → mundo ampliado
 (montanhas/estrada/Thais) → NPCs com ofício + dia/noite → 4 modelos de personagem →
-bichos da superfície (troll/ciclope/aranha) + tocha inicial.
+bichos da superfície (troll/ciclope/aranha) + tocha inicial →
+**Thais entrável + Caminho de Thais** → **Bairro do Comércio + moinho/farol/cais + nomes no minimapa** →
+**beholder + loot variado** → **calçamento/vidro** → **porta que bloqueia + esgoto em túneis** → **perf (cull túneis/luzes)**.
 
 ---
 **Para retomar:** leia este arquivo. Estado no GitHub (`Caseiro`/main). Publicar = build + wrangler (cliente) / `railway up` (servidor).
