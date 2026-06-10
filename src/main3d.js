@@ -468,6 +468,36 @@ function reviveBicho(r) {
   r.hp = r.hpMax; r.vivo = true; r.respawnAt = null; r.alvo = { x: r.g.position.x, z: r.g.position.z };
 }
 
+// NOMES DE LUGARES (estilo Tibia) — mostra o bairro/rua onde você está
+const DISTRITOS = [
+  { nome: 'Praça Central de Venore', x: 0, z: 0, raio: 18 },
+  { nome: 'Rua do Mercado', x: 16, z: 0, raio: 16 },
+  { nome: 'Largo da Igreja', x: 0, z: -30, raio: 15 },
+  { nome: 'Largo da Escola', x: 0, z: 28, raio: 15 },
+  { nome: 'Ponte do Riacho', x: 16, z: 78, raio: 14 },
+  { nome: 'Beira do Lago', x: 45, z: 80, raio: 22 },
+  { nome: 'Floresta do Oeste', x: -88, z: 0, raio: 45 },
+  { nome: 'Caminho de Thais', x: 180, z: 0, raio: 150 },
+  { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
+];
+let localEl, localNome = '';
+function atualizaLocal() {
+  let nome = 'Venore', melhorD = Infinity;
+  if (noEsgoto) nome = 'Esgoto de Venore';
+  else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
+  if (nome === localNome) return;
+  localNome = nome;
+  if (!localEl) {
+    localEl = document.createElement('div');
+    localEl.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:35;'
+      + 'background:rgba(16,22,32,.7);border:1px solid #3a4654;border-radius:10px;padding:6px 16px;'
+      + 'color:#dfe7f0;font:bold 14px Arial;pointer-events:none;text-shadow:0 1px 2px #000;transition:opacity .4s;';
+    document.body.appendChild(localEl);
+  }
+  localEl.textContent = '📍 ' + nome; localEl.style.opacity = '1';
+  clearTimeout(localEl._t); localEl._t = setTimeout(() => { localEl.style.opacity = '0.35'; }, 3000);
+}
+
 // scroll do mouse = zoom da câmera
 renderer.domElement.addEventListener('wheel', (e) => {
   e.preventDefault();
@@ -641,6 +671,7 @@ function loop() {
       else if (pertoDaAgua()) dica = 'Pescar 🎣';
     }
     mostraPrompt(dica);
+    atualizaLocal();
 
     // INTERIORES: esconde o telhado da casa em que você está + aproxima a câmera
     let dentroCasa = false;
