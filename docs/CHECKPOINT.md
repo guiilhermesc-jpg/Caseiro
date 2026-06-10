@@ -120,6 +120,13 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 19. ✅ 🚪 **Portas SEMPRE abertas** (nascem abertas; o bloqueio de porta fechada foi REVERTIDO a pedido do maestro — entrar é direto). +2 casas entráveis no Bairro Sul (total 6).
 20. ✅ 🖱️ **Clique do mouse = AÇÃO** (estilo Roblox): NPC→conversa, bicho→ataca/saqueia, você/pet→customiza, mundo→ação do lugar (abrir/pegar/pescar/descer). Mesma rotina da tecla E (`executaAcao`).
 
+**JÁ FEITO (5ª rodada — anti-travadas + templo + morte Tibia):**
+21. ✅ ⚡ **Anti-travadas**: grade espacial de colisão (células 24u; checagem caiu de ~700 p/ ~5-20 caixas) + `renderer.compile()` no load (shaders pré-compilados; era a "trava do nada") + NPCs que estavam presos DENTRO de colisores reposicionados.
+22. ✅ ⛪ **Templo Sagrado** entrável em frente à praça (substitui a igreja): altar com cristal pulsante, vitrais, bancos, velas, torre com cruz; **Tobias mora dentro** (noturno). Respawn da morte é lá.
+23. ✅ 💀 **Morte estilo Tibia**: perde ~30% do XP do nível (desce de nível se precisar) + **mochila cai onde morreu** (corpo 🎒 recuperável; morrer de novo perde o anterior) + renasce no Templo.
+24. ✅ 🏘️ **Thais com casario** (muralha 48×42, +16 casas, 4 entráveis) + **frentes de casa livres** (pinheiros/placas/poço/canteiros reposicionados). Portão agora em x=512; marcos de distância recalculados.
+25. ✅ 🚀 **Deploy feito direto pelo Claude** (autorizado pelo maestro) + `publicar.bat` (2 cliques) criado pra publicar manualmente.
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
