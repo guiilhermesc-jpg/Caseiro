@@ -5,8 +5,9 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaCidadeDistante } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
+import { criaThais } from './thais.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
 function texturaGrama(rep = 60) {
@@ -187,10 +188,41 @@ export function criaCidade() {
     [[x - r, z + 2], [x + 2, z - r], [x - 4, z + r]].forEach(([jx, jz]) => add(criaJunco(jx, jz)));
     add(criaFlorAlta(x + 3, z + r * 0.7, 0x6ab0ff));
   });
-  // ESTRADA p/ uma cidade distante (tipo Thais), a leste
-  add(criaEstrada(72, 300, 0, 8));
+  // === CAMINHO DE THAIS (a leste) — estrada + acampamentos/marcos ===
+  add(criaEstrada(72, 286, 0, 8));               // estrada até o portão de Thais
   add(criaPlaca(74, -7, '→ THAIS'));
-  add(criaCidadeDistante(318, 0));
+  add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));   // marco no meio do caminho
+  add(criaPlaca(230, -7, '→ THAIS'));
+  // posto de descanso (acampamento) na beira da estrada
+  add(criaFogueira(120, 14));
+  add(criaBarraca(126, 16, -0.4, 0x9c6a2a));
+  add(criaBarril(116, 16)); add(criaCaixa(118, 17));
+  add(criaCarroca(118, 12, 0.3));
+  // segundo acampamento + carroça quebrada mais adiante
+  add(criaFogueira(208, -14));
+  add(criaBarraca(214, -16, 0.5, 0x2a6ba0));
+  add(criaCarroca(200, -12, -0.6));
+  add(criaBarril(204, -16));
+  // arvoredo ladeando a estrada (sombra na jornada)
+  [[100, -16], [140, 18], [175, -18], [255, 16], [270, -14]].forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+
+  // === THAIS (cidade distante ENTRÁVEL) — muralha + portão + templo + praça ===
+  add(criaThais(320, 0));
+  add(criaFonte(320, 0));                         // praça central com fonte
+  add(criaPlaca(296, -7, 'Bem-vindo a Thais'));   // logo após o portão
+  // casas ENTRÁVEIS dentro de Thais (porta auto-abre, telhado some)
+  add(criaCasaInterior(308, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
+  add(criaCasaInterior(332, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
+  // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro)
+  add(criaBarraca(310, 7, 0, 0xc0653a));
+  add(criaBarraca(330, 7, 0, 0x2f8d80));
+  add(criaPoco(336, -6));
+  add(criaEstatua(304, 8));
+  [[300, 22, 0x2f8d80], [340, 22, 0xd9a522], [300, -22, 0xd9a522], [340, -22, 0x2f8d80]]
+    .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
+  add(criaCanteiro(312, -8)); add(criaCanteiro(328, 10));
+  // postes de luz na praça de Thais (acendem à noite)
+  [[310, -8], [330, -8], [310, 12], [330, 12]].forEach(([x, z]) => add(criaPoste(x, z)));
   // mais vegetação entre a cidade e as montanhas
   [[120, 60], [150, -40], [-130, 30], [110, -90], [-120, -70], [170, 80], [-160, 100], [140, 140], [-110, 150], [90, 170]]
     .forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));

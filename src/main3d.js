@@ -496,6 +496,9 @@ const DISTRITOS = [
   { nome: 'Floresta do Oeste', x: -88, z: 0, raio: 45 },
   { nome: 'Caminho de Thais', x: 180, z: 0, raio: 150 },
   { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
+  { nome: 'Portão de Thais', x: 288, z: 0, raio: 14 },
+  { nome: 'Cidade de Thais', x: 320, z: 0, raio: 30 },
+  { nome: 'Templo de Thais', x: 320, z: 18, raio: 12 },
 ];
 let localEl, localNome = '';
 function atualizaLocal() {

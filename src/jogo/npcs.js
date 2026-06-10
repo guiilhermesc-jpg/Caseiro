@@ -36,11 +36,22 @@ const ROSTER = [
     falas: { trabalho: 'Costuro e cuido da praça. Gosto da fonte.', dica: 'Dizem que há cidades além das montanhas.' } },
   { nome: 'Caio', prof: 'Pescador', post: { x: 38, z: 70 }, cor: 0x2a6a5a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
     falas: { trabalho: 'Passo o dia pescando no lago. Paciência é tudo.', dica: 'Logo dá pra pescar de verdade. Cada lago tem seus peixes.' } },
+  // --- moradores de THAIS (cidade distante, a leste) ---
+  { nome: 'Dorian', prof: 'Guardião do Portão', post: { x: 298, z: 6 }, home: { x: 308, z: -12 }, cor: 0x6a5a3a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
+    falas: { trabalho: 'Guardo o portão de Thais dia e noite. Não passa quem não deve.', dica: 'A estrada que te trouxe é infestada de trolls e bandidos. Sorte sua.' } },
+  { nome: 'Yara', prof: 'Mercadora', post: { x: 314, z: 10 }, home: { x: 332, z: -12 }, cor: 0xb8902a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Trago especiarias de terras distantes. Thais vive do comércio.', dica: 'Em Venore o pão é melhor, mas aqui o ouro corre solto.' } },
+  { nome: 'Aldo', prof: 'Sacerdote de Thais', post: { x: 320, z: 9 }, home: { x: 316, z: -10 }, cor: 0x2f7d72, humor: 'bom', sexo: 'homem', tipo: 'mago',
+    falas: { trabalho: 'Cuido do templo no alto da praça. Suba os degraus e descanse.', dica: 'Dizem que sob Thais há catacumbas tão fundas quanto o esgoto de Venore.' } },
+  { nome: 'Khan', prof: 'Caçador', post: { x: 306, z: -10 }, home: { x: 308, z: -12 }, cor: 0x4a6a2a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
+    falas: { trabalho: 'Caço nas terras selvagens entre as duas cidades.', dica: 'O ciclope do vale dá um bom couro — se você sobreviver a ele.' } },
+  { nome: 'Bibi', prof: 'Aldeã', post: { x: 326, z: -10 }, home: { x: 332, z: -12 }, cor: 0xc05a7a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Nasci em Thais e nunca saí. Pra que sair de um lugar tão bonito?', dica: 'A fonte da praça nunca seca, dizem que é abençoada.' } },
 ];
 
 // casas (residências) e quem trabalha à noite (lojistas/guarda continuam no posto)
 const HOMES = [[28, 28], [-28, 28], [28, -28], [-28, -28], [60, 6], [-60, 6], [6, 60], [6, -60], [34, 34], [-34, 34], [34, -34]];
-const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco']);
+const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara']);
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');
@@ -78,9 +89,9 @@ export function criaNPCs(scene, colide) {
     g.position.set(sx, 0, sz);
     g.add(nomeSprite(d.nome));
     scene.add(g);
-    const h = HOMES[i % HOMES.length];
+    const h = d.home || { x: HOMES[i % HOMES.length][0], z: HOMES[i % HOMES.length][1] };
     const npc = {
-      g, post: d.post, home: { x: h[0], z: h[1] }, noturno: NOTURNOS.has(d.nome),
+      g, post: d.post, home: h, noturno: NOTURNOS.has(d.nome),
       nome: d.nome, prof: d.prof, humor: d.humor, falas: d.falas,
       alvo: alvoPertoDoPosto(d.post, colide), pausa: Math.random() * 3, tempo: Math.random() * 10,
     };

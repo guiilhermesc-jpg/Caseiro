@@ -191,32 +191,43 @@ export function criaPlaca(x, z, texto = '→ THAIS', rot = 0) {
   return { grupo: g, colisores: [{ minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3 }] };
 }
 
-// --- cidade distante (fachada com muralha + portão; ainda não entra) ---
-export function criaCidadeDistante(x, z) {
+// --- fogueira de acampamento (roda de pedras + lenha + chamas) ---
+export function criaFogueira(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const pedra = mat(0x9a8e7a, 1), telha = mat(0x7a3a2a, 1);
-  const muro = new THREE.Mesh(new THREE.BoxGeometry(42, 9, 2), pedra);
-  muro.position.set(0, 4.5, 0); muro.castShadow = true; g.add(muro);
-  for (let i = -19; i <= 19; i += 3) {
-    const a = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 2.2), pedra);
-    a.position.set(i, 9.5, 0); g.add(a);
+  for (let i = 0; i < 7; i++) { // roda de pedras
+    const a = (i / 7) * Math.PI * 2;
+    const p = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22 + Math.random() * 0.08, 0), mat(0x8b8b86, 1));
+    p.position.set(Math.cos(a) * 0.85, 0.16, Math.sin(a) * 0.85); p.rotation.set(Math.random(), Math.random(), Math.random()); g.add(p);
   }
-  const portao = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 2.2), mat(0x3a2a1a));
-  portao.position.set(0, 3, 0.1); g.add(portao);
-  [-21, 21].forEach((tx) => {
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 14, 10), pedra);
-    t.position.set(tx, 7, 0); t.castShadow = true; g.add(t);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(2.7, 4, 10), telha);
-    cone.position.set(tx, 16, 0); g.add(cone);
+  [-0.3, 0.3].forEach((o, k) => { // lenha cruzada
+    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.3, 6), mat(0x5a3f24));
+    l.position.set(o, 0.22, 0); l.rotation.set(0, k ? Math.PI / 3 : -Math.PI / 3, Math.PI / 2 + 0.15 * (k ? 1 : -1)); g.add(l);
   });
-  for (let i = 0; i < 9; i++) {
-    const bx = (Math.random() - 0.5) * 34, bz = 5 + Math.random() * 18, alt = 4 + Math.random() * 5;
-    const casa = new THREE.Mesh(new THREE.BoxGeometry(4, alt, 4), pedra);
-    casa.position.set(bx, alt / 2, bz); casa.castShadow = true; g.add(casa);
-    const tel = new THREE.Mesh(new THREE.ConeGeometry(3.2, 2.4, 4), telha);
-    tel.position.set(bx, alt + 1.2, bz); tel.rotation.y = Math.PI / 4; g.add(tel);
-  }
-  return { grupo: g, colisores: [{ minX: x - 23, maxX: x + 23, minZ: z - 1.5, maxZ: z + 9 }] };
+  const fogoMat = new THREE.MeshStandardMaterial({ color: 0xff8a2a, emissive: 0xff5a1a, emissiveIntensity: 1 });
+  [[0, 0.45, 0.7], [0.2, 0.35, 0.5], [-0.18, 0.3, 0.45]].forEach(([ox, h, s]) => {
+    const f = new THREE.Mesh(new THREE.ConeGeometry(s * 0.35, h, 6), fogoMat);
+    f.position.set(ox, 0.3 + h / 2, 0); g.add(f);
+  });
+  return { grupo: g, colisores: [] };
+}
+
+// --- carroça de madeira (caída na estrada; detalhe de jornada) ---
+export function criaCarroca(x, z, rot = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+  const mad = mat(0x6e4a2a), madEsc = mat(0x4f3318);
+  const cacamba = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.0, 1.8), mad);
+  cacamba.position.y = 1.0; cacamba.castShadow = true; g.add(cacamba);
+  [-0.9, 0.9].forEach((px) => { // tábuas laterais
+    const t = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.5, 0.1), madEsc);
+    t.position.set(0, 1.4, px); g.add(t);
+  });
+  [[-1.0, -1.0], [1.0, -1.0], [-1.0, 1.0], [1.0, 1.0]].forEach(([wx, wz]) => { // rodas
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.18, 12), madEsc);
+    r.position.set(wx, 0.7, wz); r.rotation.x = Math.PI / 2; r.castShadow = true; g.add(r);
+  });
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.4, 6), mad); // timão
+  haste.position.set(2.4, 0.7, 0); haste.rotation.z = Math.PI / 2 - 0.25; g.add(haste);
+  return { grupo: g, colisores: [{ minX: x - 1.8, maxX: x + 1.8, minZ: z - 1.2, maxZ: z + 1.2 }] };
 }
 
 // --- moita de flores altas do campo ---
