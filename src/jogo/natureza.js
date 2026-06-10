@@ -91,6 +91,32 @@ export function criaSalgueiro(x, z) {
   return { grupo: g, colisores: [{ minX: x - 0.9, maxX: x + 0.9, minZ: z - 0.9, maxZ: z + 0.9 }] };
 }
 
+// --- ÁRVORE GRANDE (estilo Tibia/Albion): tronco alto, raízes na base e
+//     copa frondosa em vários blobs — preenche a floresta ao redor das cidades ---
+export function criaArvoreGrande(x, z, s = 1) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const casca = mat(0x4f3a22), folha = mat(0x3e7032), folhaClara = mat(0x4f8a3e), folhaEsc = mat(0x32592a);
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.55 * s, 0.95 * s, 7.5 * s, 7), casca);
+  tronco.position.y = 3.75 * s; tronco.castShadow = true; g.add(tronco);
+  // raízes salientes na base (dão peso visual)
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.4;
+    const raiz = new THREE.Mesh(new THREE.BoxGeometry(0.4 * s, 0.9 * s, 1.3 * s), casca);
+    raiz.position.set(Math.cos(a) * 0.85 * s, 0.4 * s, Math.sin(a) * 0.85 * s);
+    raiz.rotation.y = -a; raiz.rotation.x = 0.25; g.add(raiz);
+  }
+  // galho lateral grosso
+  const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.32 * s, 3.2 * s, 6), casca);
+  galho.position.set(1.4 * s, 6.2 * s, 0.4 * s); galho.rotation.z = -1.0; galho.castShadow = true; g.add(galho);
+  // copa frondosa (5 blobs grandes em alturas variadas)
+  [[0, 9.5, 0, 3.4, folha], [2.4, 8.4, 0.8, 2.4, folhaClara], [-2.2, 8.6, -0.6, 2.5, folhaEsc],
+   [0.6, 10.8, 1.6, 2.2, folhaClara], [-0.8, 8.0, 2.0, 2.1, folha]].forEach(([ox, oy, oz, r, m]) => {
+    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r * s, 0), m);
+    c.position.set(ox * s, oy * s, oz * s); c.rotation.y = Math.random() * 2; c.castShadow = true; g.add(c);
+  });
+  return { grupo: g, colisores: [{ minX: x - 1.2 * s, maxX: x + 1.2 * s, minZ: z - 1.2 * s, maxZ: z + 1.2 * s }] };
+}
+
 // --- árvore de copa redonda (variedade além dos pinheiros) ---
 export function criaArvore(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

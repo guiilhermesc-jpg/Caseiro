@@ -126,6 +126,12 @@ ratos.push({ g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, ve
 });
 // mais ladrões no acampamento bandido (além dos que já rondam a estrada)
 [[248, 46], [256, 52]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(252, 48, 14)));
+// SEGUNDA METADE da viagem (depois do rio): mais selvagem e perigosa
+[[340, 25], [390, -18], [455, 22]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14)));
+[[396, -66], [404, -74], [430, 28]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(x, z, 14)));
+[[300, 20], [470, -20], [476, -14]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
+[[360, -30], [490, 30]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
+addMonstro(criaCyclops(415, 50), 80, 30, 15, 1.2, true, areaMon(415, 50, 16)); // ciclope da mata fechada
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
@@ -186,7 +192,7 @@ const LUGARES_MAPA = [
   { nome: 'Igreja', x: 0, z: -30 }, { nome: 'Escola', x: 0, z: 30 },
   { nome: 'Bairro Sul', x: 0, z: -95 }, { nome: 'Moinho', x: -44, z: -74 },
   { nome: 'Porto', x: 45, z: 64 }, { nome: 'Farol', x: 66, z: 84 }, { nome: 'Ponte', x: 16, z: 80 },
-  { nome: 'Thais', x: 320, z: 0 }, { nome: 'Templo', x: 320, z: 19 },
+  { nome: 'Thais', x: 560, z: 0 }, { nome: 'Templo', x: 560, z: 19 },
   { nome: 'Ruínas', x: 150, z: 250 }, { nome: 'Dragão', x: 40, z: 330 },
   { nome: 'Rio Fundo', x: 180, z: 0 }, { nome: 'Torre', x: 122, z: -9 },
   { nome: 'Fazenda', x: 105, z: 38 }, { nome: 'Cemitério', x: 130, z: -60 },
@@ -304,6 +310,8 @@ const rayTap = new THREE.Raycaster();
 function achaTipo(obj) { while (obj) { if (obj.userData && obj.userData.tipo) return obj; obj = obj.parent; } return null; }
 let tapIni = null;
 renderer.domElement.addEventListener('pointerdown', (e) => { tapIni = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+// CLIQUE = AÇÃO (estilo Roblox): clicar em NPC conversa, em bicho ataca/saqueia,
+// em você customiza; clicar no mundo executa a ação do lugar (abrir/pegar/pescar).
 renderer.domElement.addEventListener('pointerup', (e) => {
   const ini = tapIni; tapIni = null;
   if (!ini || !jogoIniciado || dialogo.aberto || customizar.aberto) return;
@@ -313,10 +321,52 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   for (const h of rayTap.intersectObjects(scene.children, true)) {
     const alvo = achaTipo(h.object);
     if (!alvo) continue;
-    if (alvo.userData.tipo === 'npc') abreDialogo(alvo.userData.ref); else customizar.abre();
+    const tipo = alvo.userData.tipo;
+    if (tipo === 'npc') {
+      const npc = alvo.userData.ref;
+      const d = Math.hypot(npc.g.position.x - avatar.position.x, npc.g.position.z - avatar.position.z);
+      if (d < 7) abreDialogo(npc); else mostraMensagem('Chegue mais perto pra conversar. 💬');
+      return;
+    }
+    if (tipo === 'jogador' || tipo === 'pet') { customizar.abre(); return; }
+    if (tipo === 'rato' || tipo === 'monstro' || tipo === 'boss') { // clicou no bicho
+      const r = ratos.find((m) => m.g === alvo);
+      if (r) {
+        const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+        if (r.corpse && d < 2.6) { saqueia(r); return; }
+        if (r.vivo && d < 2.8) { // vira pro alvo e golpeia
+          avatar.rotation.y = Math.atan2(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+          gesto = 1; atacar(); return;
+        }
+        mostraMensagem('Chegue mais perto! 🏃'); return;
+      }
+    }
     break;
   }
+  executaAcao(); // clicou no mundo → mesma ação da tecla E / botão AÇÃO
 });
+
+// AÇÃO do lugar (compartilhada entre tecla E, botão AÇÃO e clique do mouse)
+function executaAcao() {
+  gesto = 1;
+  if (noEsgoto) {
+    let subiu = false;
+    for (let i = 0; i < esgoto.acessos.length; i++) {
+      const a = esgoto.acessos[i];
+      if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { sobe(i); subiu = true; break; }
+    }
+    if (!subiu) { const c = corpseProximo(); if (c) saqueia(c); else atacar(); }
+  } else {
+    const alvo = achaInterativo();
+    if (alvo) {
+      if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
+      else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+    } else { // sem interativo: saquear / atacar / pescar
+      const c = corpseProximo();
+      if (c) saqueia(c); else if (alvoRato()) atacar(); else if (pertoDaAgua()) pescar();
+    }
+  }
+}
 
 // --- COMBATE: HUD, bueiro, gravetos, descer/subir, atacar, loot ---
 const hud = criaHUD();
@@ -601,11 +651,12 @@ const DISTRITOS = [
   { nome: 'Moinho de Venore', x: -44, z: -74, raio: 12 },
   { nome: 'Porto de Venore', x: 45, z: 64, raio: 14 },
   { nome: 'Farol do Porto', x: 66, z: 84, raio: 10 },
-  { nome: 'Caminho de Thais', x: 180, z: 0, raio: 150 },
+  { nome: 'Caminho de Thais', x: 300, z: 0, raio: 250 },
   { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
-  { nome: 'Portão de Thais', x: 288, z: 0, raio: 14 },
-  { nome: 'Cidade de Thais', x: 320, z: 0, raio: 30 },
-  { nome: 'Templo de Thais', x: 320, z: 18, raio: 12 },
+  { nome: 'Portão de Thais', x: 528, z: 0, raio: 14 },
+  { nome: 'Cidade de Thais', x: 560, z: 0, raio: 30 },
+  { nome: 'Templo de Thais', x: 560, z: 18, raio: 12 },
+  { nome: 'Ruínas da Estrada', x: 400, z: -70, raio: 18 },
   { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
   { nome: 'Terras do Dragão', x: 40, z: 300, raio: 45 },
   { nome: 'Covil do Dragão', x: 40, z: 330, raio: 22 },
@@ -767,27 +818,8 @@ function loop() {
     animaAvatar(avatar, movendo && noChao, tempo, correndo);
     ultimoAnim = { mov: movendo && noChao, corr: correndo, abx: abaixado };
 
-    // AÇÃO: gesto do braço + interação com item próximo
-    if (controles.querAgir()) {
-      gesto = 1;
-      if (noEsgoto) {
-        let subiu = false;
-        for (let i = 0; i < esgoto.acessos.length; i++) {
-          const a = esgoto.acessos[i];
-          if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { sobe(i); subiu = true; break; }
-        }
-        if (!subiu) { const c = corpseProximo(); if (c) saqueia(c); else atacar(); }
-      } else {
-        const alvo = achaInterativo();
-        if (alvo) {
-          if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
-          else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
-        } else { // sem interativo: saquear / atacar / pescar
-          const c = corpseProximo();
-          if (c) saqueia(c); else if (alvoRato()) atacar(); else if (pertoDaAgua()) pescar();
-        }
-      }
-    }
+    // AÇÃO (tecla E / botão): mesma rotina do clique do mouse
+    if (controles.querAgir()) executaAcao();
     if (gesto > 0) {
       gesto = Math.max(0, gesto - dt * 3);
       const p = avatar.userData.partes;
@@ -817,11 +849,8 @@ function loop() {
              && avatar.position.z > c.box.minZ && avatar.position.z < c.box.maxZ;
       c.roof.visible = !d;
       if (d) dentroCasa = true;
-      if (c.portaAnim) {
-        const pertoPorta = Math.hypot(avatar.position.x - c.px, avatar.position.z - c.pz) < 4.5;
-        c.portaAnim.alvo = pertoPorta ? c.angAberto : 0; // porta abre sozinha ao chegar perto
-        c.aberta = pertoPorta;                           // libera o vão (fechada = bloqueia)
-      }
+      // PORTA SEMPRE ABERTA (pedido do maestro: entrar tem que ser fácil)
+      if (c.portaAnim) { c.portaAnim.alvo = c.angAberto; c.aberta = true; }
     }
 
     // câmera orbital + anti-oclusão

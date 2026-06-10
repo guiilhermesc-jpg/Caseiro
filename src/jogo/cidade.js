@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 
@@ -199,6 +199,9 @@ export function criaCidade() {
     x, z, larg: rnd(8, 12), prof: rnd(8, 11), alt: rnd(6, 10),
     cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -(z + 95))),
   })));
+  // casas ENTRÁVEIS do bairro (porta aberta, telhado some ao entrar)
+  add(criaCasaInterior(-40, -95, { frente: 'leste', cor: 0xd0a0a0, corTelhado: 0x6a4a6a }));
+  add(criaCasaInterior(40, -95, { frente: 'oeste', cor: 0xa8bcae, corTelhado: 0x55636f }));
   // postes, canteiros e verde do bairro
   [[-11, -88], [11, -88], [-11, -102], [11, -102]].forEach(([x, z]) => add(criaPoste(x, z)));
   add(criaCanteiro(-9, -95)); add(criaCanteiro(9, -95));
@@ -248,11 +251,13 @@ export function criaCidade() {
     [[x - r, z + 2], [x + 2, z - r], [x - 4, z + r]].forEach(([jx, jz]) => add(criaJunco(jx, jz)));
     add(criaFlorAlta(x + 3, z + r * 0.7, 0x6ab0ff));
   });
-  // === CAMINHO DE THAIS (a leste) — estrada + acampamentos/marcos ===
-  add(criaEstrada(72, 286, 0, 8));               // estrada até o portão de Thais
+  // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=526)
+  add(criaEstrada(72, 526, 0, 8));               // estrada até o portão de Thais
   add(criaPlaca(74, -7, '→ THAIS'));
-  add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));   // marco no meio do caminho
+  add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));
   add(criaPlaca(230, -7, '→ THAIS'));
+  add(criaPlaca(350, -7, '→ THAIS'));
+  add(criaPlaca(450, 7, 'THAIS  ⟶', Math.PI));
   // posto de descanso (acampamento) na beira da estrada
   add(criaFogueira(120, 14));
   add(criaBarraca(126, 16, -0.4, 0x9c6a2a));
@@ -301,29 +306,74 @@ export function criaCidade() {
   add(criaBau(252, 43, 0.4));
   add(criaCaixa(246, 46)); add(criaBarril(259, 45));
 
-  // === MARCOS DE DISTÂNCIA na estrada (metragem REAL calculada do mapa)
-  // praça de Venore fica em (0,0); portão de Thais em (286,0)
-  add(criaMarcoDistancia(110, -6, 'THAIS 176\nVENORE 110'));
-  add(criaMarcoDistancia(192, 6, 'THAIS 94\nVENORE 192'));
-  add(criaMarcoDistancia(240, 6, 'THAIS 46\nVENORE 240'));
+  // === SEGUNDA METADE DA VIAGEM (depois do rio: mais selvagem e perigosa)
+  // ruínas da estrada velha (orcs) + acampamentos de viajantes
+  add(criaRuinas(400, -70));
+  add(criaPlaca(394, -56, 'Ruínas da Estrada', 0.3));
+  add(criaFogueira(380, 16));
+  add(criaBarraca(386, 18, -0.3, 0x2a8a4a));
+  add(criaCarroca(374, 14, 0.5));
+  add(criaBarril(383, 12));
+  add(criaFogueira(470, -14));
+  add(criaBarraca(476, -16, 0.4, 0xb23a3a));
+  add(criaCaixa(466, -12));
 
-  // === THAIS (cidade distante ENTRÁVEL) — muralha + portão + templo + praça ===
-  add(criaThais(320, 0));
-  add(criaFonte(320, 0));                         // praça central com fonte
-  add(criaPlaca(296, -7, 'Bem-vindo a Thais'));   // logo após o portão
-  // casas ENTRÁVEIS dentro de Thais (porta auto-abre, telhado some)
-  add(criaCasaInterior(308, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
-  add(criaCasaInterior(332, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
+  // === MARCOS DE DISTÂNCIA na estrada (metragem REAL calculada do mapa)
+  // praça de Venore fica em (0,0); portão de Thais em (526,0)
+  add(criaMarcoDistancia(110, -6, 'THAIS 416\nVENORE 110'));
+  add(criaMarcoDistancia(192, 6, 'THAIS 334\nVENORE 192'));
+  add(criaMarcoDistancia(240, 6, 'THAIS 286\nVENORE 240'));
+  add(criaMarcoDistancia(320, -6, 'THAIS 206\nVENORE 320'));
+  add(criaMarcoDistancia(420, 6, 'THAIS 106\nVENORE 420'));
+  add(criaMarcoDistancia(490, -6, 'THAIS 36\nVENORE 490'));
+
+  // === THAIS (cidade distante ENTRÁVEL) — agora BEM longe (centro x=560) ===
+  add(criaThais(560, 0));
+  add(criaFonte(560, 0));                         // praça central com fonte
+  add(criaPlaca(536, -7, 'Bem-vindo a Thais'));   // logo após o portão
+  // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some)
+  add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
+  add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
   // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro)
-  add(criaBarraca(310, 7, 0, 0xc0653a));
-  add(criaBarraca(330, 7, 0, 0x2f8d80));
-  add(criaPoco(336, -6));
-  add(criaEstatua(304, 8));
-  [[300, 22, 0x2f8d80], [340, 22, 0xd9a522], [300, -22, 0xd9a522], [340, -22, 0x2f8d80]]
+  add(criaBarraca(550, 7, 0, 0xc0653a));
+  add(criaBarraca(570, 7, 0, 0x2f8d80));
+  add(criaPoco(576, -6));
+  add(criaEstatua(544, 8));
+  [[540, 22, 0x2f8d80], [580, 22, 0xd9a522], [540, -22, 0xd9a522], [580, -22, 0x2f8d80]]
     .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
-  add(criaCanteiro(312, -8)); add(criaCanteiro(328, 10));
+  add(criaCanteiro(552, -8)); add(criaCanteiro(568, 10));
   // postes de luz na praça de Thais (acendem à noite)
-  [[310, -8], [330, -8], [310, 12], [330, 12]].forEach(([x, z]) => add(criaPoste(x, z)));
+  [[550, -8], [570, -8], [550, 12], [570, 12]].forEach(([x, z]) => add(criaPoste(x, z)));
+  // montanhas emoldurando Thais e o fim do mundo a leste
+  [[560, 95, 1.3], [560, -95, 1.2], [640, 40, 1.4], [630, -60, 1.3], [650, 130, 1.2], [635, -150, 1.3]]
+    .forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
+
+  // === FLORESTA GRANDE (estilo Tibia/Albion): mata fechada ao redor de Venore
+  const arvG = (x, z, s) => add(criaArvoreGrande(x, z, s));
+  // anel oeste/noroeste (engrossa a Floresta do Oeste)
+  [[-120, 10, 1.3], [-135, -25, 1.1], [-118, 55, 1.4], [-140, 90, 1.0], [-125, -90, 1.2],
+   [-150, 40, 1.3], [-160, -15, 1.1], [-110, 115, 1.2], [-135, 135, 1.0], [-105, -35, 1.0]]
+    .forEach(([x, z, s]) => arvG(x, z, s));
+  // anel norte (entre a cidade e as montanhas; respeita lagos/riacho)
+  [[-60, 120, 1.2], [-20, 130, 1.4], [20, 125, 1.1], [-40, 160, 1.0], [10, 170, 1.3], [60, 150, 1.1], [90, 140, 1.0]]
+    .forEach(([x, z, s]) => arvG(x, z, s));
+  // anel sul (cercando o Bairro do Comércio por fora)
+  [[60, -90, 1.2], [85, -120, 1.0], [20, -130, 1.3], [-15, -140, 1.1], [-50, -150, 1.2],
+   [95, -70, 1.0], [-120, -130, 1.1], [50, -160, 1.3], [-90, -160, 1.0]]
+    .forEach(([x, z, s]) => arvG(x, z, s));
+  // mata ladeando a ESTRADA inteira (sombra na viagem, sem invadir a pista)
+  [[90, -22, 1.1], [150, -26, 1.3], [205, -24, 1.0], [300, -26, 1.2], [340, -20, 1.0],
+   [385, -26, 1.3], [430, -22, 1.1], [505, -20, 1.2],
+   [95, 20, 1.0], [140, 24, 1.2], [165, 28, 1.0], [200, 22, 1.3], [235, 26, 1.1],
+   [270, 24, 1.0], [310, 28, 1.2], [355, 22, 1.3], [400, 26, 1.0], [445, 22, 1.2], [485, 28, 1.1]]
+    .forEach(([x, z, s]) => arvG(x, z, s));
+  // bolsões de mata fechada na 2ª metade (entre o rio e Thais)
+  [[320, 60, 1.4], [360, -60, 1.2], [410, 70, 1.3], [450, -60, 1.0], [480, 50, 1.2],
+   [350, 100, 1.1], [420, -100, 1.3], [500, 90, 1.0], [380, 140, 1.2], [460, 110, 1.1], [440, -130, 1.0]]
+    .forEach(([x, z, s]) => arvG(x, z, s));
+  // sub-bosque acompanhando (pinheiros e árvores comuns entremeados)
+  [[110, 26], [160, -30], [290, 26], [330, -24], [420, 24], [495, -26], [365, 60], [395, -90], [465, 70], [-115, 70], [-130, -60], [35, -145]]
+    .forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
   // mais vegetação entre a cidade e as montanhas
   [[120, 60], [150, -40], [-130, 30], [110, -90], [-120, -70], [170, 80], [-160, 100], [140, 140], [-110, 150], [90, 170]]
     .forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));

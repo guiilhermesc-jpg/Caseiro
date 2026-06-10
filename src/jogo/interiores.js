@@ -84,7 +84,7 @@ export function criaCasaInterior(x, z, opts = {}) {
 
   // estado/animação da porta (lerp suave no loop via animaProps)
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
-  const animPorta = { mesh: dobr, porta: true, alvo: 0 }; // main3d abre automático ao chegar perto
+  const animPorta = { mesh: dobr, porta: true, alvo: angAberto }; // porta começa ABERTA (entrada livre)
 
   // MOBÍLIA (decorativa; interior fica livre pra andar)
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
@@ -140,7 +140,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   return {
     grupo: g, colisores,
     animados: [animPorta],
-    casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz, portaCol, aberta: false },
+    casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz, portaCol, aberta: true }, // nasce ABERTA
   };
 }
 
