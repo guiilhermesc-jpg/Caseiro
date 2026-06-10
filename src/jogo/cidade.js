@@ -32,6 +32,7 @@ function texturaGrama(rep = 60) {
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep);
+  t.anisotropy = 8; // nitidez ao longe
   return t;
 }
 
@@ -48,6 +49,12 @@ export function criaCidade() {
   });
   const ceu = new THREE.Mesh(new THREE.SphereGeometry(600, 24, 16), skyMat);
   scene.add(ceu);
+  // CÉU PREMIUM: panorama pintado (gerado por IA) substitui o gradiente quando
+  // carregar; o ciclo dia/noite passa a TINGIR o panorama (main3d)
+  new THREE.TextureLoader().load('texturas/ceu.png', (t) => {
+    t.colorSpace = THREE.SRGBColorSpace;
+    ceu.material = new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false });
+  }, undefined, () => {});
 
   const hemi = new THREE.HemisphereLight(0xcfe2f5, 0x6f6a52, 0.95);
   scene.add(hemi);

@@ -21,6 +21,10 @@ import { criaEsgoto } from './jogo/esgoto.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 import { aplicaTexturaReal } from './jogo/construcoes.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const container = document.getElementById('game');
 // celular/tablet → modo leve (sem sombras, menos luz, menos pixels) p/ fluidez
@@ -59,7 +63,25 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
+// === RENDERIZAÇÃO PREMIUM ===
+// BLOOM (PC): lava, runas, tochas e olhos de monstro IRRADIAM luz de verdade.
+// No mobile fica o caminho direto (fluidez primeiro).
+let composer = null;
+if (!ehMobile) {
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(null, camera)); // a cena entra logo abaixo (criaCidade)
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.38, 0.55, 0.82));
+}
+
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
+// liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
+// passam a refletir o entorno — o salto de "protótipo" pra "premium"
+if (composer) {
+  composer.passes[0].scene = scene;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.55;
+}
 // ALTURA DO TERRENO: plano em todo o mapa, exceto a Montanha do Dragão (rampa
 // cônica escalável até o platô). O avatar "gruda" nessa altura ao andar.
 function alturaTerreno(x, z) {
@@ -563,8 +585,12 @@ function aplicaDiaNoite(dt) {
   ehNoite = d < 0.35;
   sun.intensity = 0.12 + d * 1.25;
   hemi.intensity = 0.22 + d * 0.72;
-  skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
-  skyMat.uniforms.corBase.value.copy(C_BASE_NOITE).lerp(C_BASE_DIA, d);
+  if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
+    ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
+  } else {
+    skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
+    skyMat.uniforms.corBase.value.copy(C_BASE_NOITE).lerp(C_BASE_DIA, d);
+  }
   if (scene.fog) scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
   const noite = 1 - d;
   // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
@@ -1469,7 +1495,7 @@ function loop() {
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
   ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)
 
-  renderer.render(scene, camera);
+  if (composer) composer.render(); else renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
 loop();
@@ -1478,6 +1504,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  if (composer) composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 window.__jogo = {

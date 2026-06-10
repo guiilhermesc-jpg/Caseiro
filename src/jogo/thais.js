@@ -30,7 +30,7 @@ export function criaThais(cx, cz, opts = {}) {
 
   // --- MURALHA com ameias ---
   function ameias(lx, lz, comp, eixo) {
-    const n = Math.max(1, Math.floor(comp / 2.4));
+    const n = Math.max(1, Math.floor(comp / 4.2)); // metade das ameias (peso 50% menor, mesma silhueta)
     for (let i = 0; i < n; i++) {
       const t = -comp / 2 + comp / n / 2 + i * (comp / n);
       const a = new THREE.Mesh(new THREE.BoxGeometry(eixo === 'x' ? 1.2 : ESP + 0.3, 1.3, eixo === 'x' ? ESP + 0.3 : 1.2), pedraClara);
@@ -132,8 +132,11 @@ export function criaThais(cx, cz, opts = {}) {
   const coresT = [0xd8c8a4, 0xcdb892, 0xd2c19a, 0xcab98e, 0xdccfae];
   const telhT = [0xc0653a, 0x2f8d80, 0x9a4a3a, 0xb8742a];
   let ci = 0;
+  // casas mais estreitas (8.2) = vielas LARGAS; o centro de cada fileira fica
+  // vazio = ruas transversais (o jogador não TRAVA mais em beco)
   for (const lz of [32, -32, 44, -44]) for (let lx = -36; lx <= 36; lx += 12) {
-    predio(lx, lz, 9, 8, 6 + (ci % 3), coresT[ci % coresT.length], telhT[ci % telhT.length]); ci++;
+    if (lx === 0) { ci++; continue; } // rua transversal norte-sul
+    predio(lx, lz, 8.2, 8, 6 + (ci % 3), coresT[ci % coresT.length], telhT[ci % telhT.length]); ci++;
   }
   [[-46, -16], [-46, 16]].forEach(([lx, lz]) => { predio(lx, lz, 8, 8, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
   [[44, -24], [44, -8], [44, 8], [44, 24]].forEach(([lx, lz]) => { predio(lx, lz, 9, 8, 6 + (ci % 3), coresT[ci % 5], telhT[ci % 4], 'x'); ci++; });

@@ -223,7 +223,9 @@ export function criaPlaca(x, z, texto = '→ THAIS', rot = 0) {
 export function criaCais(x, z, comp = 12) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const mad = mat(0x6e4a2a), madEsc = mat(0x4f3318);
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, comp), mad);
+  const deckMat = new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 });
+  aplicaTexturaReal(deckMat, 'madeira', 1, 4); // tábuas REAIS no píer
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, comp), deckMat);
   deck.position.set(0, 0.22, comp / 2); deck.receiveShadow = true; deck.castShadow = true; g.add(deck);
   for (let i = 0; i <= comp / 2; i++) {
     [-1.3, 1.3].forEach((px) => {

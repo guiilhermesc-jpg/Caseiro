@@ -20,6 +20,7 @@ export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) 
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(rx, rz);
     t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8; // NITIDEZ em ângulo raso (o chão não borra mais ao longe)
     material.map = t;
     if (!manterCor) material.color.set(0xffffff);
     material.needsUpdate = true;
@@ -48,7 +49,7 @@ export function texturaPedra(rep = 6) {
     _texPedra = new THREE.CanvasTexture(c);
     _texPedra.wrapS = _texPedra.wrapT = THREE.RepeatWrapping;
   }
-  const t = _texPedra.clone(); t.needsUpdate = true; t.repeat.set(rep, rep); return t;
+  const t = _texPedra.clone(); t.needsUpdate = true; t.repeat.set(rep, rep); t.anisotropy = 8; return t;
 }
 
 function _jbox(w, h, d, material, x, y, z) {

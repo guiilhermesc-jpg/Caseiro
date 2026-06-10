@@ -6,7 +6,7 @@
 //  Devolve { grupo, colisores, interativo (porta), animados, casa }.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaJanela, texturaPedra } from './construcoes.js';
+import { mat, criaJanela, texturaPedra, aplicaTexturaReal } from './construcoes.js';
 
 export function criaCasaInterior(x, z, opts = {}) {
   const { larg = 9, prof = 9, alt = 4, frente = 'sul', cor = 0xd8c4a0, corTelhado = 0x8a4632 } = opts;
@@ -15,8 +15,10 @@ export function criaCasaInterior(x, z, opts = {}) {
   const paredeMat = mat(cor);
   const colisores = [];
 
-  // chão de tábua
-  const chao = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.1, prof), mat(0x8a6a44));
+  // chão de tábua (textura REAL de madeira quando carregar)
+  const chaoMat = new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 });
+  aplicaTexturaReal(chaoMat, 'madeira', 2, 2);
+  const chao = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.1, prof), chaoMat);
   chao.position.y = 0.05; chao.receiveShadow = true; g.add(chao);
 
   // segmento de parede (caixa) + colisor em coords do mundo
