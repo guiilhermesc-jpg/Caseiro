@@ -1,6 +1,36 @@
 # 📌 CHECKPOINT — Jogo "Venore / Caseiro"
 > Documento-mestre para **retomar o projeto do zero** sem perder contexto.
-> Atualizado: 10/06/2026. Leia este arquivo primeiro ao reabrir o projeto.
+> Atualizado: 10/06/2026 (fim do dia). Leia este arquivo primeiro ao reabrir o projeto.
+
+---
+
+## 🤝 HANDOFF PARA O PRÓXIMO AGENTE (Codex) — COMECE AQUI
+**Missão dada pelo maestro:** corrigir bugs críticos, melhorar qualidade visual/performance e PUBLICAR para teste.
+
+### 🔴 BUGS CRÍTICOS CONHECIDOS (prioridade 1)
+1. **"Trava assim que loga"** (relato do maestro, possivelmente já mitigado): o loop morria por exceção no 1º frame de gameplay. O loop agora é BLINDADO (`main3d.js`, função `loop()` com try/catch): o erro aparece como toast "⚠️ Erro interno: ..." na tela e no console. **A exceção original NÃO foi identificada** — reproduzir logando no jogo e ler o console (F12). Suspeitos não descartados: algo no caminho `aoEntrar` → 1º frame (rede/conectarRede, GLTFLoader 404 handling, save/localStorage).
+2. **Colisões/travamentos de andar**: histórico de colisores invisíveis (baú na porta do templo, casas com porta dentro do colisor do hospital — JÁ corrigidos). Validar andando: praça→templo→hospital (entrável)→casa entrável→ponte do Rio Fundo→portão de Thais→vielas do casario. Grade espacial de colisão em `main3d.js` (`gradeCol`, células de 24).
+3. **Mobile/iPad**: pinça = zoom, duplo-toque bloqueado (`controles.js`). Validar no Safari iOS de verdade.
+
+### 🟡 PERFORMANCE (prioridade 2)
+- Mundo tem ~3000+ meshes (sem instancing nas árvores/casas). Candidatos: `InstancedMesh` para árvores grandes/pinheiros (criaArvoreGrande ~60 unidades), merge de geometria do casario de Thais.
+- Bloom (PC) já meio-res; mobile fica sem bloom/sombras/IBL (checagem `ehMobile` em main3d).
+- Anti-oclusão da câmera filtra `solidos` por distância (ok). `renderer.compile()` pré-compila shaders no load (com esgoto visível).
+
+### 🎨 QUALIDADE VISUAL (prioridade 3)
+- **Pipeline pronto**: texturas IA em `public/texturas/` (13 geradas via `scripts/gera-texturas*.mjs`, usa `OPENAI_API_KEY` do `.env`; maestro autorizou gastar crédito). `aplicaTexturaReal()` em `construcoes.js` troca mapa com fallback procedural + anisotropia 8.
+- **Modelos 3D profissionais**: slot pronto — se existir `public/modelos/dragao.glb` (Dragon Evolved, Quaternius, CC0, poly.pizza/m/LlwD0QNUPj), o GLTFLoader troca o dragão automaticamente (guards de `corpoMat` já no código). Expandir o padrão pra lobo/aranha/esqueleto se o maestro baixar mais GLBs.
+- Tom geral: exposure 0.92, bloom threshold 1.0 (só emissores brilham). NÃO deixar estourar branco (reclamação recorrente do maestro).
+
+### 🚀 COMO PUBLICAR (obrigatório ao final)
+1. `npm run build` (valida) → 2. `git add -A; git commit; git push` (origin/main) →
+3. Deploy: carregar `.env` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true` (ou 2 cliques no `publicar.bat`).
+4. CONFERIR: `curl -s https://caseiro.pages.dev | grep index-` tem que bater com `dist/index.html` (CDN demora ~15s).
+
+### 🧪 COMO TESTAR RÁPIDO
+- Conta GM: criar personagem com nome `gm`, `adm` ou `dev` → tecla **G** abre painel (teleportes, imortal, spawn, ouro/XP).
+- Save local: mesmo nome = mesma conta (localStorage `venor_conta_<nome>`); botão 💾.
+- Regras do maestro: SEMPRE responder em português; ele testa no Edge (PC) e iPhone; preview/WebGL não funciona no ambiente do agente (validar por build + ele testa).
 
 ---
 
