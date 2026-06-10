@@ -18,7 +18,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
-import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo } from './jogo/ratos.js';
+import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
@@ -77,8 +77,18 @@ function colide(x, z) {
 // --- esgoto (subsolo escuro) + ratos + boss + tocha ---
 const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
 const ratos = criaRatos(8, esgoto.bounds);
-const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
+const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, vel: 1.6, forte: true, bounds: esgoto.bounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
 ratos.push(boss);
+// CRIATURAS DA SUPERFÍCIE (região selvagem entre Venore e a cidade distante)
+function areaMon(x, z, r) { return { minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r }; }
+function addMonstro(g, hp, xp, vel, forte, b) {
+  ratos.push({ g, hp, hpMax: hp, xp, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0 });
+}
+[[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 2.0, false, areaMon(x, z, 14)));
+[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 80, 30, 1.2, true, areaMon(x, z, 16)));
+const aX = 170, aZ = 95;
+addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 1.6, true, areaMon(aX, aZ, 16));
+[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2.4, false, areaMon(aX, aZ, 18)));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
@@ -332,7 +342,7 @@ function alvoRato() {
   const fx = Math.sin(avatar.rotation.y), fz = Math.cos(avatar.rotation.y);
   let melhor = null, melhorD = 2.6;
   for (const r of ratos) {
-    if (!r.vivo) continue;
+    if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue; // mesmo "andar"
     const dx = r.g.position.x - avatar.position.x, dz = r.g.position.z - avatar.position.z, d = Math.hypot(dx, dz);
     if (d > 2.6 || (dx * fx + dz * fz) / (d || 1) < 0) continue; // perto e na frente
     if (d < melhorD) { melhorD = d; melhor = r; }
@@ -351,16 +361,16 @@ function mataBicho(r) {
   r.vivo = false; r.corpse = true;
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
   r.g.userData.corpoMat.emissive.setHex(0x000000);
-  r.loot = rollLoot(r.boss);
+  r.loot = rollLoot(r.boss || r.forte);
   r.despawnAt = tempo + 30;          // some em 30s se não saquear
-  const xp = r.boss ? 25 : 5;
+  const xp = r.xp || 5;
   hud.ganhaXP(xp);
-  mostraMensagem(`${r.boss ? 'BOSS derrotado!' : 'Rato derrotado!'} +${xp} XP — aperte AÇÃO no corpo p/ saquear`);
+  mostraMensagem(`${r.boss || r.forte ? 'Criatura poderosa derrotada!' : 'Derrotado!'} +${xp} XP — AÇÃO no corpo p/ saquear`);
 }
 function corpseProximo() {
   let melhor = null, melhorD = 2.4;
   for (const r of ratos) {
-    if (!r.corpse) continue;
+    if (!r.corpse || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
     const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
     if (d < melhorD) { melhorD = d; melhor = r; }
   }
@@ -380,9 +390,9 @@ function reviveBicho(r) {
     scene.add(r.g);
     mostraMensagem('🐍 Algo desperta no fundo do esgoto...');
   } else {
-    const b = esgoto.bounds;
+    const b = r.bounds;
     r.g.rotation.z = 0; r.g.visible = true;
-    r.g.position.set(b.minX + 3 + Math.random() * (b.maxX - b.minX - 6), -40, b.minZ + 3 + Math.random() * (b.maxZ - b.minZ - 6));
+    r.g.position.set(b.minX + 3 + Math.random() * (b.maxX - b.minX - 6), r.y0, b.minZ + 3 + Math.random() * (b.maxZ - b.minZ - 6));
   }
   r.hp = r.hpMax; r.vivo = true; r.respawnAt = null; r.alvo = { x: r.g.position.x, z: r.g.position.z };
 }
@@ -428,7 +438,9 @@ criaSelecao({
     }
     minimapa.mostra();
     inventario.mostra();
+    inventario.addItem({ nome: 'Tocha', icone: '🔦' }); // todo mundo começa com uma tocha
     hud.mostra();
+    mostraMensagem('Você tem uma tocha 🔦 — aperte T para acender no escuro.');
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
 });
@@ -495,6 +507,8 @@ function loop() {
         if (alvo) {
           if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
           else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+        } else { // sem interativo: saquear corpo / atacar bicho da superfície
+          const c = corpseProximo(); if (c) saqueia(c); else if (alvoRato()) atacar();
         }
       }
     }
@@ -513,6 +527,8 @@ function loop() {
     } else {
       const it = achaInterativo();
       if (it) dica = it.acao || it.titulo;
+      else if (corpseProximo()) dica = 'Saquear o corpo 💀';
+      else if (alvoRato()) dica = 'Atacar ⚔️';
     }
     mostraPrompt(dica);
 
@@ -558,7 +574,7 @@ function loop() {
   if (!noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet espera na superfície
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide);
-  atualizaRatos(ratos, dt, esgoto.bounds);
+  atualizaRatos(ratos, dt);
   if (tochaOn) luzTocha.position.set(avatar.position.x, avatar.position.y + 2.6, avatar.position.z);
   // corpos somem em 30s; respawn calibrado (rato 25s, boss 60s)
   for (const r of ratos) {
