@@ -8,6 +8,8 @@ import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
+import { alturaColinas, REGIAO } from './terreno.js';
+import { criaVegetacaoInstanciada } from './vegetacao.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
 function texturaGrama(rep = 60) {
@@ -97,8 +99,24 @@ export function criaCidade() {
   // grama (procedural já; troca pela textura REAL gerada por IA quando carregar)
   const gramaMat = new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 });
   aplicaTexturaReal(gramaMat, 'grama', 300, 300);
+  // plano-horizonte raso (some na neblina, levemente abaixo pra não brigar)
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), gramaMat);
-  grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
+  grama.rotation.x = -Math.PI / 2; grama.position.y = -0.06; grama.receiveShadow = true; scene.add(grama);
+  // === RELEVO: colinas procedurais (estilo pack premium) ===
+  // malha segmentada cujos vértices seguem alturaColinas() — a MESMA função
+  // que a física usa no main3d: cidades/estrada/praia/água ficam PLANAS.
+  const LARG_R = REGIAO.maxX - REGIAO.minX, PROF_R = REGIAO.maxZ - REGIAO.minZ;
+  const cxR = (REGIAO.maxX + REGIAO.minX) / 2, czR = (REGIAO.maxZ + REGIAO.minZ) / 2;
+  const geoRelevo = new THREE.PlaneGeometry(LARG_R, PROF_R, 180, 140);
+  geoRelevo.rotateX(-Math.PI / 2);
+  const posR = geoRelevo.attributes.position, uvR = geoRelevo.attributes.uv;
+  for (let i = 0; i < posR.count; i++) {
+    posR.setY(i, alturaColinas(posR.getX(i) + cxR, posR.getZ(i) + czR));
+    uvR.setXY(i, uvR.getX(i) * (LARG_R / 4200), uvR.getY(i) * (PROF_R / 4200)); // textura na mesma escala do horizonte
+  }
+  geoRelevo.computeVertexNormals();
+  const relevo = new THREE.Mesh(geoRelevo, gramaMat);
+  relevo.position.set(cxR, 0, czR); relevo.receiveShadow = true; scene.add(relevo);
 
   // MATO 3D (padrão Tibia): tufos de capim espalhados pelo campo inteiro —
   // instanciados em 2 draw calls (320 moitas quase de graça)
@@ -131,7 +149,7 @@ export function criaCidade() {
     if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
     if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
     if (px > 498) continue;                                   // fora de Thais
-    dummyM.position.set(px, 0, pz);
+    dummyM.position.set(px, alturaColinas(px, pz), pz); // tufos assentam na colina
     dummyM.rotation.y = Math.random() * Math.PI;
     dummyM.scale.setScalar(0.7 + Math.random() * 0.9);
     dummyM.updateMatrix();
@@ -163,6 +181,8 @@ export function criaCidade() {
 
   const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [], lagos = [];
   const add = (res) => {
+    // o que nasce "no chão" (y=0) assenta na colina local (zonas planas = +0)
+    if (res.grupo.position.y === 0) res.grupo.position.y = alturaColinas(res.grupo.position.x, res.grupo.position.z);
     scene.add(res.grupo); solidos.push(res.grupo);
     if (res.colisores) res.colisores.forEach((c) => obstaculos.push(c));
     if (res.agua) aguas.push(res.agua);
@@ -174,6 +194,12 @@ export function criaCidade() {
     if (res.casa) casas.push(res.casa);
     if (res.lago) lagos.push(res.lago);
   };
+  // === VEGETAÇÃO INSTANCIADA: coleta as posições e desenha tudo em ~9 draw
+  // calls (vegetacao.js) — antes eram ~900 meshes de árvore/pinheiro/pedra
+  const VEG = { arvores: [], pinheiros: [], pedras: [] };
+  const arvG = (x, z, s = 1) => VEG.arvores.push([x, z, s]);
+  const pinh = (x, z) => VEG.pinheiros.push([x, z]);
+  const pedr = (x, z, s = 1) => VEG.pedras.push([x, z, s]);
 
   // praça: fonte central + bancos + postes nas esquinas
   add(criaFonte(0, 0));
@@ -222,7 +248,7 @@ export function criaCidade() {
 
   // pinheiros + arbustos (com flores) — LONGE das portas das casas (frentes livres)
   [[46, 46], [-46, 46], [46, -46], [-46, -46], [58, 16], [-58, 16], [20, 58], [20, -58], [56, 56], [-56, -56], [-56, 56], [56, -56]]
-    .forEach(([x, z]) => add(criaPinheiro(x, z)));
+    .forEach(([x, z]) => pinh(x, z));
   [[12, 5], [-12, 5], [5, -12], [-5, 12], [40, 40], [-40, 40], [40, -40], [-40, -40]]
     .forEach(([x, z]) => add(criaArbusto(x, z)));
 
@@ -291,7 +317,7 @@ export function criaCidade() {
   // postes, canteiros e verde do bairro
   [[-11, -88], [11, -88], [-11, -102], [11, -102]].forEach(([x, z]) => add(criaPoste(x, z)));
   add(criaCanteiro(-9, -95)); add(criaCanteiro(9, -95));
-  [[-32, -84], [32, -84], [-32, -108], [32, -108]].forEach(([x, z], i) => add(i % 2 ? criaArbusto(x, z) : criaPinheiro(x, z)));
+  [[-32, -84], [32, -84], [-32, -108], [32, -108]].forEach(([x, z], i) => (i % 2 ? add(criaArbusto(x, z)) : pinh(x, z)));
   // placas de rua do bairro
   add(criaPlaca(10, -87, 'Bairro do Comércio', -Math.PI / 2));
   add(criaPlaca(-10, -103, 'Rua Sul', Math.PI / 2));
@@ -313,18 +339,18 @@ export function criaCidade() {
   [[-40, 76], [-20, 84], [0, 76], [-50, 83], [33, 70], [40, 92], [52, 90]].forEach(([x, z]) => add(criaJunco(x, z)));
   [[42, 78], [48, 84], [38, 86], [50, 74], [44, 88]].forEach(([x, z]) => add(criaNenufar(x, z)));
   [[-45, 74], [10, 75], [-15, 86], [58, 72]].forEach(([x, z]) => add(criaFlorAlta(x, z, 0x6ab0ff)));
-  [[30, 73, 1.2], [60, 88, 1.0], [-52, 76, 0.9]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[30, 73, 1.2], [60, 88, 1.0], [-52, 76, 0.9]].forEach(([x, z, s]) => pedr(x, z, s));
   // BIOMA floresta (oeste): pinheiros + árvores de copa + cogumelos + pedras
   [[-82, 0], [-92, 18], [-78, -22], [-95, -8], [-86, 34], [-80, -40], [-93, 42], [-88, -28]]
-    .forEach(([x, z]) => add(criaPinheiro(x, z)));
+    .forEach(([x, z]) => pinh(x, z));
   [[-86, 10], [-90, -16], [-80, 38], [-94, 6], [-84, -34], [-90, 50]]
     .forEach(([x, z]) => add(criaArvore(x, z))); // (-80,26 caía DENTRO da casa entrável nova)
   [[-83, 4], [-88, 22], [-85, -12], [-91, 30]].forEach(([x, z]) => add(criaCogumelo(x, z)));
-  [[-80, 14, 1.4], [-94, -2, 1.1], [-86, -46, 1.2]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[-80, 14, 1.4], [-94, -2, 1.1], [-86, -46, 1.2]].forEach(([x, z, s]) => pedr(x, z, s));
   // BIOMA campo florido (leste/sul): flores variadas + pedras
   [[80, 20], [88, -10], [76, 40], [84, 8], [70, -30], [82, -44], [-30, -80], [20, -84]]
     .forEach(([x, z], i) => add(criaFlorAlta(x, z, [0xf2c14e, 0xe85d75, 0xd06ad0, 0xff8a4c][i % 4])));
-  [[88, -30, 1.3], [86, 28, 1.0], [72, -16, 1.5]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[88, -30, 1.3], [86, 28, 1.0], [72, -16, 1.5]].forEach(([x, z, s]) => pedr(x, z, s));
 
   // === MAPA AMPLIADO (estilo Tibia: Venore cercada por água, estrada p/ outra cidade, montanhas) ===
   // MONTANHAS emoldurando o mundo (norte/oeste/sul, ao longe)
@@ -356,7 +382,7 @@ export function criaCidade() {
   add(criaCarroca(200, -12, -0.6));
   add(criaBarril(204, -16));
   // arvoredo ladeando a estrada (sombra na jornada)
-  [[100, -16], [140, 18], [167, -18], [255, 16], [270, -14]].forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+  [[100, -16], [140, 18], [167, -18], [255, 16], [270, -14]].forEach(([x, z], i) => (i % 2 ? add(criaArvore(x, z)) : pinh(x, z)));
 
   // === RIO FUNDO — corta o caminho na METADE exata da viagem (x=180);
   // a PONTE DE PEDRA é a única travessia (ponto estratégico, estilo Tibia)
@@ -364,7 +390,7 @@ export function criaCidade() {
   add(criaPonteDePedra(180, 0, 13));
   [[176, 10], [185, -12], [177, -40], [184, 40], [176, 62]].forEach(([x, z]) => add(criaJunco(x, z)));
   add(criaSalgueiro(172, 26)); add(criaSalgueiro(189, -58));
-  [[174, -90, 1.2], [187, 52, 1.0]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[174, -90, 1.2], [187, 52, 1.0]].forEach(([x, z, s]) => pedr(x, z, s));
 
   // === TORRE DE VIGIA — guarda observa a estrada (1º terço do caminho)
   add(criaTorreVigia(122, -9));
@@ -434,9 +460,13 @@ export function criaCidade() {
    [330, -60, 30, 0x4d7e38], [160, 130, 24, 0x71a14a], [-60, -150, 26, 0x5b8a3c], [430, 60, 28, 0x4a7a36],
    [80, -120, 22, 0x6f9a3e], [-160, 60, 30, 0x55893c], [280, 120, 26, 0x6a9440], [500, -40, 24, 0x5b8a3c]]
     .forEach(([mx, mz, r, cor]) => {
-      const m = new THREE.Mesh(new THREE.CircleGeometry(r, 18),
+      // a mancha DEITA na colina (vértices seguem alturaColinas — sem clipping)
+      const geoM = new THREE.CircleGeometry(r, 18); geoM.rotateX(-Math.PI / 2);
+      const pM = geoM.attributes.position;
+      for (let vi = 0; vi < pM.count; vi++) pM.setY(vi, alturaColinas(mx + pM.getX(vi), mz + pM.getZ(vi)) + 0.045);
+      const m = new THREE.Mesh(geoM,
         new THREE.MeshStandardMaterial({ color: cor, transparent: true, opacity: 0.16, roughness: 1, depthWrite: false }));
-      m.rotation.x = -Math.PI / 2; m.position.set(mx, 0.018, mz); scene.add(m);
+      m.position.set(mx, 0, mz); scene.add(m);
     });
   const trilhaMat = new THREE.MeshStandardMaterial({ color: 0x9a7e54, roughness: 1 });
   aplicaTexturaReal(trilhaMat, 'terra', 1.5, 16);
@@ -447,7 +477,7 @@ export function criaCidade() {
   [[-60, -210, 1.1], [-25, -222, 1.0], [15, -214, 1.2], [55, -226, 0.95], [95, -212, 1.1],
    [-100, -220, 1.0], [130, -224, 1.05], [-140, -212, 1.1], [35, -238, 1.0], [-70, -236, 0.95]]
     .forEach(([x, z, s]) => add(criaCoqueiro(x, z, s)));
-  [[-45, -240, 1.1], [80, -242, 0.9], [-115, -238, 1.0]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[-45, -240, 1.1], [80, -242, 0.9], [-115, -238, 1.0]].forEach(([x, z, s]) => pedr(x, z, s));
 
   // === THAIS (cidade distante ENTRÁVEL) — agora BEM longe (centro x=560) ===
   add(criaThais(560, 0));
@@ -475,7 +505,7 @@ export function criaCidade() {
     .forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
 
   // === FLORESTA GRANDE (estilo Tibia/Albion): mata fechada ao redor de Venore
-  const arvG = (x, z, s) => add(criaArvoreGrande(x, z, s));
+  // (arvG/pinh/pedr alimentam a vegetação INSTANCIADA — ver topo da função)
   // anel oeste/noroeste (engrossa a Floresta do Oeste)
   [[-120, 10, 1.3], [-135, -25, 1.1], [-118, 55, 1.4], [-140, 90, 1.0], [-125, -90, 1.2],
    [-150, 40, 1.3], [-160, -15, 1.1], [-110, 115, 1.2], [-135, 135, 1.0], [-105, -35, 1.0]]
@@ -499,13 +529,13 @@ export function criaCidade() {
     .forEach(([x, z, s]) => arvG(x, z, s));
   // sub-bosque acompanhando (pinheiros e árvores comuns entremeados)
   [[110, 26], [160, -30], [290, 26], [330, -24], [420, 24], [495, -26], [365, 60], [395, -90], [465, 70], [-115, 70], [-130, -60], [35, -145]]
-    .forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+    .forEach(([x, z], i) => (i % 2 ? add(criaArvore(x, z)) : pinh(x, z)));
   // mais vegetação entre a cidade e as montanhas
   [[120, 60], [150, -40], [-130, 30], [110, -90], [-120, -70], [170, 80], [-160, 100], [140, 140], [-110, 150], [90, 170]]
-    .forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+    .forEach(([x, z], i) => (i % 2 ? add(criaArvore(x, z)) : pinh(x, z)));
   [[130, 20], [-100, -30], [160, -80], [-150, -110], [100, 130], [-130, 90], [180, 40], [-90, 120]]
     .forEach(([x, z], i) => add(criaFlorAlta(x, z, [0xf2c14e, 0xe85d75, 0xd06ad0, 0x6ab0ff][i % 4])));
-  [[115, -20, 1.4], [-110, 50, 1.2], [145, 100, 1.6], [-170, -40, 1.3]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[115, -20, 1.4], [-110, 50, 1.2], [145, 100, 1.6], [-170, -40, 1.3]].forEach(([x, z, s]) => pedr(x, z, s));
 
   // === TERRAS DO DRAGÃO (norte distante) — vulcão + tesouro + cenário carbonizado ===
   add(criaCovilDragao(40, 330));                  // covil ao norte (amplia o mapa)
@@ -537,16 +567,20 @@ export function criaCidade() {
   });
   // ossadas e pedras no pé da montanha (avisos de quem tentou subir)
   [[MD.x - MD.r - 3, MD.z + 6, 1.4], [MD.x + 4, MD.z + MD.r + 3, 1.2], [MD.x + MD.r + 2, MD.z - 5, 1.1]]
-    .forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+    .forEach(([x, z, s]) => pedr(x, z, s));
   add(criaPlaca(MD.x - MD.r - 4, MD.z, 'Pico do Dragão — PERIGO', Math.PI / 2));
   // bosque carbonizado na aproximação (árvores mortas + pedras + caveiras de pedra)
   [[10, 280], [70, 285], [-10, 300], [80, 305], [25, 312], [55, 268], [-20, 262]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
-  [[0, 290, 1.6], [90, 300, 1.4], [60, 320, 1.8], [20, 340, 1.3]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  [[0, 290, 1.6], [90, 300, 1.4], [60, 320, 1.8], [20, 340, 1.3]].forEach(([x, z, s]) => pedr(x, z, s));
 
   // === RUÍNAS ANTIGAS (clima D&D; marcos de exploração no mapa amplo) ===
   add(criaRuinas(150, 250));                       // ruínas a caminho do dragão
   add(criaRuinas(-180, -90));                      // ruínas perdidas no sudoeste
   add(criaPlaca(150, 240, 'Ruinas Antigas'));
+
+  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~9 draw calls;
+  // slots GLB arvore1/pinheiro/pedra trocam o visual da espécie inteira)
+  add(criaVegetacaoInstanciada(VEG, alturaColinas));
 
   // nuvens
   const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 });

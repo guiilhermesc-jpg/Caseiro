@@ -206,7 +206,7 @@ export function criaPredio(opts) {
 
   if (janelas) {
     const estilo = () => ({ cruz: true, shutters: Math.random() < 0.5, floreira: Math.random() < 0.35 });
-    const yJ = Math.min(FB + alt * 0.55, topo - 1.4);
+    const yJ = Math.min(FB + alt * 0.45, topo - 1.4);
     // frente
     [-larg * 0.28, larg * 0.28].forEach((jx) => {
       const j = criaJanela(estilo()); j.position.set(jx, yJ, fz + 0.07); g.add(j);
@@ -218,6 +218,43 @@ export function criaPredio(opts) {
         const jD = criaJanela(estilo()); jD.position.set(larg / 2 + 0.07, yJ, jz); jD.rotation.y = Math.PI / 2; g.add(jD);
       });
     }
+    // 2º ANDAR de verdade: prédios altos ganham fileira superior de janelas
+    // acima da viga de enxaimel (a praça de Venore é a 1ª tela do jogo)
+    if (alt >= 8) {
+      const yJ2 = Math.min(FB + alt * 0.78, topo - 0.9);
+      [-larg * 0.28, larg * 0.28].forEach((jx) => {
+        const j = criaJanela({ cruz: true, floreira: Math.random() < 0.3 });
+        j.position.set(jx, yJ2, fz + 0.07); g.add(j);
+      });
+    }
+  }
+
+  // === SILHUETA VARIADA (18ª rodada): sacada OU torrinha — fim do "caixote"
+  if (alt >= 8 && Math.random() < 0.6) {
+    // SACADA com guarda-corpo sobre a porta + porta-janela do 2º andar
+    const yS = FB + alt * 0.55;
+    const pisoS = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.18, 1.0), pedraBase);
+    pisoS.position.set(0, yS, fz + 0.5); pisoS.castShadow = true; g.add(pisoS);
+    const portaJ = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.9, 0.12), portaMat);
+    portaJ.position.set(0, yS + 1.0, fz + 0.07); g.add(portaJ);
+    const corrimao = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.09, 0.09), madeira);
+    corrimao.position.set(0, yS + 0.95, fz + 0.96); g.add(corrimao);
+    for (let bi = -2; bi <= 2; bi++) { // balaústres
+      const bal = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.86, 0.07), madeira);
+      bal.position.set(bi * 0.58, yS + 0.5, fz + 0.96); g.add(bal);
+    }
+    [-1, 1].forEach((s) => { // corrimãos laterais
+      const lado = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.92), madeira);
+      lado.position.set(s * 1.26, yS + 0.95, fz + 0.5); g.add(lado);
+    });
+  } else if (Math.random() < 0.45) {
+    // TORRINHA de canto pendurada na quina frontal (silhueta medieval)
+    const tx = (Math.random() < 0.5 ? -1 : 1) * (larg / 2 - 0.3);
+    const hT2 = alt * 0.5;
+    const corpoT2 = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.6, hT2, 8), mat(cor));
+    corpoT2.position.set(tx, FB + alt - hT2 / 2 + 0.4, fz - 0.3); corpoT2.castShadow = true; g.add(corpoT2);
+    const chapeu = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.9, 8), matTelha(corTelhado));
+    chapeu.position.set(tx, FB + alt + 1.35, fz - 0.3); chapeu.castShadow = true; g.add(chapeu);
   }
 
   const girado = Math.abs(Math.sin(rot)) > 0.5;

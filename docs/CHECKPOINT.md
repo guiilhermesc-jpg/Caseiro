@@ -4,25 +4,26 @@
 
 ---
 
-## 🚨 18ª RODADA (EM ABERTO) — PRÓXIMA SESSÃO, COMECE AQUI (atualizado 10/06 noite, v18 no ar)
-> Esta é a **continuação direta da 17ª rodada** (ver diário no fim do arquivo). O commit `6d0900b` ("CHECKPOINT de nova sessao") é o checkpoint desta 18ª rodada.
-**Estado:** jogo em produção (caseiro.pages.dev, selo de versão `v18` no canto inferior esquerdo — bump `VERSAO` no main3d.js a cada deploy). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
+## 🚨 19ª RODADA (EM ABERTO) — PRÓXIMA SESSÃO, COMECE AQUI (atualizado 10/06 noite, v19)
+> A **18ª rodada FOI EXECUTADA** (resumo no diário, no fim do arquivo). Código no main; selo de versão agora é `v19`.
+**Estado:** jogo em produção (caseiro.pages.dev). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
 
-### 🔴 BUGS RELATADOS PELO MAESTRO (prioridade máxima)
-1. **"No PC travou" + "teleportar para Thais (GM) trava"** — investigar: teleporte GM pra Thais (560,-2) provavelmente engasga ao renderizar a região inteira pela 1ª vez (casario+muralha = muitos draw calls; shaders pré-compilados e texturas já sobem no load — suspeitar de volume de geometria ou exceção). Loop é blindado: se travar DE VEZ deve aparecer toast "⚠️ Erro interno: ..." — **pedir print do toast/console (F12)**. Fixes candidatos: merge de geometria do casario de Thais (BufferGeometryUtils.mergeGeometries por material), reduzir ameias, instancing.
-2. **Marcador 🐾 dos domáveis grande/feio** (print: "patas roxas" gigantes na praça) — reduzir escala (1.1→0.7), subir y, ou sprite com fundo.
+### 🧪 TESTAR PRIMEIRO (entregas da 18ª — Edge no PC + iPhone, Ctrl+Shift+R)
+1. **Teleporte GM→Thais**: a cidade foi MESCLADA por material (~300 meshes → ~12 draw calls em thais.js) — conferir se a trava/engasgo sumiu. Se travar, toast "⚠️ Erro interno" → mandar print/console (F12).
+2. **Marcador 🐾**: virou crachá pequeno com fundo escuro (praça) — conferir o tamanho.
+3. **RELEVO**: colinas suaves no campo (cidades/estrada/praia/água continuam PLANAS) — andar pra fora de Venore e olhar o horizonte; bichos/pets/coletáveis acompanham a altura (terreno.js = fonte única).
+4. **Praça de Venore**: prédios altos com 2º andar de janelas + sacada com guarda-corpo; alguns com torrinha de canto.
+5. **Color grading** (PC): saturação +6%, sombras um tico frias, vinheta leve — conferir que NADA estourou branco.
 
-### 🎨 MISSÃO PRINCIPAL: REESTRUTURAR A QUALIDADE VISUAL
-Maestro comparou com o Low Poly Big Environment Pack (Unity) e avaliou: **"ficou bem abaixo ainda"**. Flat-shading/cachoeira/espuma (17ª) melhorou a natureza mas NÃO alcança o pack. O que falta (ordem de impacto):
-1. **MODELOS PROFISSIONAIS no lugar de primitivas** — pack usa árvores/rochas ESCULPIDAS. Pipeline GLB pronto (slots dragao.glb/dragao2.glb + MODELOS_MONSTROS em main3d). FAZER O MESMO PRA VEGETAÇÃO: maestro baixa Quaternius Ultimate Nature/Stylized Nature (poly.pizza, CC0, GLB) → slots arvore1.glb/pinheiro.glb/pedra.glb substituindo criaArvoreGrande/criaPinheiro/criaPedra via **InstancedMesh** (~200 instâncias — instancing OBRIGATÓRIO).
-2. **RELEVO no terreno** — pack tem colinas; nosso chão é plano. Estender alturaTerreno() com colinas procedurais (senos/ruído, amp 2-4u, PLANO em cidades/estrada/praia) + grama com segments deslocados casando com alturaTerreno.
-3. **Praça/prédios de Venore** (primeira tela que o maestro vê): variação de silhueta, sacadas, 2 andares.
-4. **Color grading** leve no composer (PC).
+### 🎨 MISSÃO QUE CONTINUA: MODELOS PROFISSIONAIS (GLB)
+A vegetação inteira virou **InstancedMesh** (~900 meshes → ~9 draw calls, vegetacao.js) com **slots GLB prontos**: o maestro baixa Quaternius Ultimate Nature/Stylized Nature (poly.pizza, CC0, GLB) e solta em `public/modelos/`:
+- `arvore1.glb` → troca TODAS as árvores grandes · `pinheiro.glb` → todos os pinheiros · `pedra.glb` → todas as pedras
+(auto-escala pela altura, base no chão, mesmas posições — mesma receita do dragao.glb)
 ⚠️ Regras: NUNCA estourar branco (exposure 0.84, bloom th 1.0); validar por npm run build (agente sem WebGL); maestro testa Edge/iPhone; responder SEMPRE em português.
 
 ### 📋 BACKLOG COMBINADO
 - 🐾 Pets: MONTARIA (velocidade montado) + pets LUTANDO junto (decisivo por raça) — domar pronto (DOMAVEIS/main3d, save ok: pets/pet).
-- 🧸 GLBs a baixar pelo maestro: Quirky Pet Animals $16 (GLTF) + monstros poly.pizza (slots prontos: aranha/lobo/urso/esqueleto/orc/ciclope/troll/beholder/rato/caranguejo/escorpiao/ladrao/cobra.glb).
+- 🧸 GLBs a baixar pelo maestro: vegetação (acima) + Quirky Pet Animals $16 (GLTF) + monstros poly.pizza (slots prontos: aranha/lobo/urso/esqueleto/orc/ciclope/troll/beholder/rato/caranguejo/escorpiao/ladrao/cobra.glb).
 - 🏪 Lojas com interior em Thais · quests · conta online (Railway DB).
 - 💳 Billing API: platform.openai.com/settings/organization/billing · texturas: scripts/gera-texturas*.mjs.
 
@@ -271,4 +272,4 @@ bichos da superfície (troll/ciclope/aranha) + tocha inicial →
 
 **17ª rodada (VISUAL PREMIUM + PETS DOMÁVEIS):** 💎 Receita do "pack premium" feita em casa: `matFlat`/`desloca` em construcoes.js (flat shading facetado + vértices orgânicos) aplicados em árvores (4 paletas)/pedras (musgo)/montanhas/pinheiros/arbustos; **CACHOEIRA** (`criaCachoeira`, no lago norte 45,96); **espuma** nas margens dos lagos + praia; 12 manchas de cor no campo; fog 260-720, sol dourado, exposure 0.84 · 🐾 **PETS DOMÁVEIS Tibia**: sem pet inicial; 6 selvagens com 🐾 (gato/cachorro/coelho/lobo/BURRO novo/FILHOTE DE DRAGÃO no platô); item de domar por raridade (Lambari/Osso/**Cenoura** coletável nova na fazenda/Carne/Escama de Dragão) com chance 70%→30%; falha consome item (Tibia); domado segue+salva (`pets`/`pet` no save), selvagem some; trocar pet = clicar em si (só domados). FUTURO: montaria (velocidade) + pets no combate. Publicado ✓.
 
-**18ª rodada (EM ABERTO — checkpoint de 10/06 à noite, commit `6d0900b`, ainda NÃO executada):** plano completo na seção "🚨 18ª RODADA" no topo deste arquivo. Em resumo: 🔴 2 bugs do maestro (trava no PC / teleporte GM pra Thais engasga; marcador 🐾 dos domáveis grande/feio) · 🎨 missão principal = reestruturar a qualidade visual pra alcançar o Low Poly Big Environment Pack (GLBs profissionais de vegetação via InstancedMesh, relevo no terreno, praça/prédios de Venore, color grading) · 📋 backlog: montaria + pets lutando, GLBs a baixar (Quirky Pets/poly.pizza), lojas com interior em Thais, quests, conta online (Railway DB). Quando esta rodada for executada, substituir esta linha pelo resumo do que foi feito (padrão das rodadas acima).
+**18ª rodada (RELEVO + INSTANCING + THAIS MESCLADA + VENORE PREMIUM — v19):** 🏰 **Bug do teleporte GM→Thais atacado**: thais.js reescrito com `BufferGeometryUtils.mergeGeometries` POR MATERIAL (muralha+ameias+torres+templo+~30 prédios: ~300 meshes → **~12 draw calls**, colisores idênticos) · 🐾 **Marcador dos domáveis** virou crachá pequeno (fundo escuro translúcido + borda, escala 1.1→0.62, y 2.3) · ⛰️ **RELEVO procedural**: novo `terreno.js` com `alturaColinas(x,z)` (2 oitavas de seno, amp até 3.6u, smoothstep) — zonas PLANAS em cidades/estrada/praia/água/POIs; malha de chão segmentada (180×140) usa a MESMA função da física; bichos de superfície (atualizaRatos), pets domáveis, pet que segue, coletáveis, mato instanciado e manchas de cor TODOS acompanham a altura; Montanha do Dragão mantém o perfil próprio · 🌲 **Vegetação INSTANCIADA**: novo `vegetacao.js` — árvores grandes (4 paletas)/pinheiros (3 tons)/pedras (c/ e s/ musgo) com cores por vértice em InstancedMesh (~900 meshes → **~9 draw calls**) + **SLOTS GLB** arvore1/pinheiro/pedra.glb (espécie inteira troca, auto-escala, mesmas matrizes) · 🏘️ **Venore premium** (criaPredio): prédios altos ganham 2º andar de janelas, SACADA com guarda-corpo + porta-janela, ou torrinha de canto com chapéu de telha · 🎨 **Color grading** leve no composer (PC): saturação +6%, lift frio nas sombras, vinheta 0.12 — com clamp (NUNCA estoura branco) · Selo **v19**. Build ✓.

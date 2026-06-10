@@ -5,8 +5,14 @@
 //  Arquitetura mediterrânea (pedra clara, telhados terracota/turquesa),
 //  distinta de Venore. Fonte, casas entráveis e NPCs são colocados à
 //  parte (cidade.js / npcs.js). Devolve { grupo, colisores }.
+//
+//  18ª RODADA — GEOMETRIA MESCLADA POR MATERIAL: a cidade inteira
+//  (muralha+ameias+torres+templo+~30 prédios) era ~300 meshes e
+//  ENGASGAVA o teleporte GM→Thais na 1ª renderização; agora cada
+//  material vira UM ÚNICO mesh (~12 draw calls). Colisores idênticos.
 // =============================================================
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, texturaPedra, VIDRO, aplicaTexturaReal } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
@@ -15,6 +21,16 @@ export function criaThais(cx, cz, opts = {}) {
   const colisores = [];
   // colisor em coords do MUNDO (o grupo está transladado p/ cx,cz)
   const col = (lx, lz, w, d) => colisores.push({ minX: cx + lx - w / 2, maxX: cx + lx + w / 2, minZ: cz + lz - d / 2, maxZ: cz + lz + d / 2 });
+
+  // BALDE DE GEOMETRIA: acumula caixas/cilindros por material e mescla no fim
+  const baldes = new Map(); // material -> [geometrias já posicionadas]
+  const addG = (geo, material, lx, ly, lz, rotY = 0) => {
+    if (rotY) geo.rotateY(rotY);
+    geo.translate(lx, ly, lz);
+    let lista = baldes.get(material);
+    if (!lista) baldes.set(material, lista = []);
+    lista.push(geo);
+  };
 
   // muralha com textura REAL de blocos de castelo (gerada por IA)
   const pedra = new THREE.MeshStandardMaterial({ color: 0xcfc09a, roughness: 1 });
@@ -33,14 +49,12 @@ export function criaThais(cx, cz, opts = {}) {
     const n = Math.max(1, Math.floor(comp / 4.2)); // metade das ameias (peso 50% menor, mesma silhueta)
     for (let i = 0; i < n; i++) {
       const t = -comp / 2 + comp / n / 2 + i * (comp / n);
-      const a = new THREE.Mesh(new THREE.BoxGeometry(eixo === 'x' ? 1.2 : ESP + 0.3, 1.3, eixo === 'x' ? ESP + 0.3 : 1.2), pedraClara);
-      a.position.set(lx + (eixo === 'x' ? t : 0), ALT + 0.65, lz + (eixo === 'x' ? 0 : t));
-      g.add(a);
+      addG(new THREE.BoxGeometry(eixo === 'x' ? 1.2 : ESP + 0.3, 1.3, eixo === 'x' ? ESP + 0.3 : 1.2), pedraClara,
+        lx + (eixo === 'x' ? t : 0), ALT + 0.65, lz + (eixo === 'x' ? 0 : t));
     }
   }
   function muro(lx, lz, w, d) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, ALT, d), pedra);
-    m.position.set(lx, ALT / 2, lz); m.castShadow = m.receiveShadow = true; g.add(m);
+    addG(new THREE.BoxGeometry(w, ALT, d), pedra, lx, ALT / 2, lz);
     col(lx, lz, w, d);
     ameias(lx, lz, w > d ? w : d, w > d ? 'x' : 'z');
   }
@@ -52,8 +66,7 @@ export function criaThais(cx, cz, opts = {}) {
   muro(-HX, (gw / 2 + segZ / 2), ESP, segZ);
 
   // arco do portão (passa por baixo — SEM colisor) + placa "THAIS"
-  const arco = new THREE.Mesh(new THREE.BoxGeometry(ESP + 0.5, ALT - 5, gw), pedraEsc);
-  arco.position.set(-HX, ALT - (ALT - 5) / 2, 0); arco.castShadow = true; g.add(arco);
+  addG(new THREE.BoxGeometry(ESP + 0.5, ALT - 5, gw), pedraEsc, -HX, ALT - (ALT - 5) / 2, 0);
   const cnv = document.createElement('canvas'); cnv.width = 256; cnv.height = 80;
   const cc = cnv.getContext('2d');
   cc.fillStyle = '#7a5a32'; cc.fillRect(0, 0, 256, 80);
@@ -65,60 +78,49 @@ export function criaThais(cx, cz, opts = {}) {
 
   // TORRES (quinas + flanqueando o portão)
   function torre(lx, lz, r, h) {
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.25, h, 12), pedra);
-    t.position.set(lx, h / 2, lz); t.castShadow = true; g.add(t);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(r + 0.6, h * 0.45, 12), telhaT);
-    cone.position.set(lx, h + h * 0.225, lz); cone.castShadow = true; g.add(cone);
+    addG(new THREE.CylinderGeometry(r, r + 0.25, h, 12), pedra, lx, h / 2, lz);
+    addG(new THREE.ConeGeometry(r + 0.6, h * 0.45, 12), telhaT, lx, h + h * 0.225, lz);
     col(lx, lz, r * 1.7, r * 1.7);
   }
   [[-HX, -HZ], [HX, -HZ], [-HX, HZ], [HX, HZ]].forEach(([tx, tz]) => torre(tx, tz, 2.6, ALT + 4));
   [-(gw / 2 + 1.8), gw / 2 + 1.8].forEach((tz) => torre(-HX, tz, 1.8, ALT + 5));
 
   // --- TEMPLO (marco de Thais, ao norte; fachada vira pra praça) ---
-  const templo = new THREE.Group(); templo.position.set(0, 0, 19); g.add(templo);
-  const plat = new THREE.Mesh(new THREE.BoxGeometry(20, 1.2, 13), pedraClara);
-  plat.position.y = 0.6; plat.receiveShadow = true; templo.add(plat);
+  // (peças locais ao templo: deslocadas pra lz=19 dentro do grupo)
+  const TZ = 19;
+  addG(new THREE.BoxGeometry(20, 1.2, 13), pedraClara, 0, 0.6, TZ);
   // Só o corpo do templo bloqueia; a plataforma/escadaria é piso caminhável.
   col(0, 20, 15, 10);
   [0, 1, 2].forEach((i) => { // escadaria na frente (sul)
-    const deg = new THREE.Mesh(new THREE.BoxGeometry(14 - i * 1.2, 0.4, 1.0), pedraClara);
-    deg.position.set(0, 0.2 + i * 0.4, -6.5 - i * 0.9); templo.add(deg);
+    addG(new THREE.BoxGeometry(14 - i * 1.2, 0.4, 1.0), pedraClara, 0, 0.2 + i * 0.4, TZ - 6.5 - i * 0.9);
   });
-  const corpoT = new THREE.Mesh(new THREE.BoxGeometry(15, 8, 10), pedra);
-  corpoT.position.set(0, 5.2, 1); corpoT.castShadow = corpoT.receiveShadow = true; templo.add(corpoT);
+  addG(new THREE.BoxGeometry(15, 8, 10), pedra, 0, 5.2, TZ + 1);
   for (let i = -3; i <= 3; i++) { // colunata frontal
-    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 7.4, 12), pedraClara);
-    c.position.set(i * 2.3, 4.5, -5.4); c.castShadow = true; templo.add(c);
+    addG(new THREE.CylinderGeometry(0.5, 0.55, 7.4, 12), pedraClara, i * 2.3, 4.5, TZ - 5.4);
   }
-  const arq = new THREE.Mesh(new THREE.BoxGeometry(16, 1.4, 1.8), pedraClara); // entablamento
-  arq.position.set(0, 8.5, -5.4); arq.castShadow = true; templo.add(arq);
-  const teto = new THREE.Mesh(new THREE.ConeGeometry(12.5, 6, 4), telha);      // telhado piramidal
-  teto.position.set(0, 11.5, 1); teto.rotation.y = Math.PI / 4; teto.castShadow = true; templo.add(teto);
+  addG(new THREE.BoxGeometry(16, 1.4, 1.8), pedraClara, 0, 8.5, TZ - 5.4); // entablamento
+  const teto = new THREE.ConeGeometry(12.5, 6, 4); teto.rotateY(Math.PI / 4); // telhado piramidal
+  addG(teto, telha, 0, 11.5, TZ + 1);
   const pina = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12),
     new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.7, roughness: 0.3 }));
-  pina.position.set(0, 14.8, 1); templo.add(pina); // pináculo dourado
+  pina.position.set(0, 14.8, TZ + 1); g.add(pina); // pináculo dourado
 
-  // --- PRÉDIOS decorativos (fachada vira pro miolo; eixo 'x' p/ colunas leste/oeste) ---
+  // --- PRÉDIOS (fachada vira pro miolo; eixo 'x' p/ colunas leste/oeste) ---
   function predio(lx, lz, w, d, h, cor, corT, eixo = 'z') {
-    const p = new THREE.Group(); p.position.set(lx, 0, lz); g.add(p);
-    const corpoP = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(cor, 1));
-    corpoP.position.y = h / 2; corpoP.castShadow = corpoP.receiveShadow = true; p.add(corpoP);
-    const tel = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.72, h * 0.5 + 1.4, 4), mat(corT, 1));
-    tel.position.y = h + (h * 0.5 + 1.4) / 2 - 0.1; tel.rotation.y = Math.PI / 4; tel.castShadow = true; p.add(tel);
-    const porta = new THREE.Mesh(new THREE.BoxGeometry(eixo === 'z' ? 1.4 : 0.2, 2.8, eixo === 'z' ? 0.2 : 1.4), madeira);
+    addG(new THREE.BoxGeometry(w, h, d), mat(cor, 1), lx, h / 2, lz);
+    const tel = new THREE.ConeGeometry(Math.max(w, d) * 0.72, h * 0.5 + 1.4, 4); tel.rotateY(Math.PI / 4);
+    addG(tel, mat(corT, 1), lx, h + (h * 0.5 + 1.4) / 2 - 0.1, lz);
     if (eixo === 'z') {
       const faceZ = lz >= 0 ? -1 : 1; // porta/janelas viram pro centro
-      porta.position.set(0, 1.4, faceZ * (d / 2 + 0.02)); p.add(porta);
+      addG(new THREE.BoxGeometry(1.4, 2.8, 0.2), madeira, lx, 1.4, lz + faceZ * (d / 2 + 0.02));
       [-w * 0.28, w * 0.28].forEach((jx) => {
-        const j = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.08), VIDRO);
-        j.position.set(jx, h * 0.62, faceZ * (d / 2 + 0.05)); p.add(j);
+        addG(new THREE.BoxGeometry(1.1, 1.1, 0.08), VIDRO, lx + jx, h * 0.62, lz + faceZ * (d / 2 + 0.05));
       });
     } else {
       const faceX = lx >= 0 ? -1 : 1;
-      porta.position.set(faceX * (w / 2 + 0.02), 1.4, 0); p.add(porta);
+      addG(new THREE.BoxGeometry(0.2, 2.8, 1.4), madeira, lx + faceX * (w / 2 + 0.02), 1.4, lz);
       [-d * 0.28, d * 0.28].forEach((jz) => {
-        const j = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.1, 1.1), VIDRO);
-        j.position.set(faceX * (w / 2 + 0.05), h * 0.62, jz); p.add(j);
+        addG(new THREE.BoxGeometry(0.08, 1.1, 1.1), VIDRO, lx + faceX * (w / 2 + 0.05), h * 0.62, lz + jz);
       });
     }
     col(lx, lz, w, d);
@@ -143,6 +145,14 @@ export function criaThais(cx, cz, opts = {}) {
   }
   [[-50, -18], [-50, 18]].forEach(([lx, lz]) => { predio(lx, lz, 7.4, 7.4, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
   [[50, -28], [50, -10], [50, 10], [50, 28]].forEach(([lx, lz]) => { predio(lx, lz, 7.6, 7.2, 6 + (ci % 3), coresT[ci % 5], telhT[ci % 4], 'x'); ci++; });
+
+  // MESCLA: um único mesh por material — Thais inteira em ~12 draw calls
+  baldes.forEach((geos, material) => {
+    const unica = BufferGeometryUtils.mergeGeometries(geos);
+    const m = new THREE.Mesh(unica, material);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+  });
 
   return { grupo: g, colisores };
 }

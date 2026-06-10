@@ -55,10 +55,12 @@ export function criaRatos(n, bounds) {
 // usa o bounds PRÓPRIO de cada criatura. jog = {x,y,z} do jogador (persegue se perto).
 // podeAndar(x, z, y) = checagem de colisão com o cenário (padrão Tibia/Albion:
 // bicho NÃO atravessa parede/árvore; se bater, escolhe outro rumo).
-export function atualizaRatos(ratos, dt, jog, podeAndar) {
+export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
   for (const r of ratos) {
     if (!r.vivo || r.voando) continue; // voando = controlado pelo voo do dragão
     const g = r.g, b = r.bounds; r.tempo += dt;
+    // bicho de SUPERFÍCIE gruda no relevo (colinas); esgoto/platô ficam no andar deles
+    if (alturaSolo && r.y0 === 0) g.position.y = alturaSolo(g.position.x, g.position.z);
     if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0 && g.userData.corpoMat) g.userData.corpoMat.emissive.setHex(0x000000); }
     // asas (dragão) batem de leve mesmo parado
     if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; }

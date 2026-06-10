@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { CONFIG3D } from './config3d.js';
 import { criaCidade } from './jogo/cidade.js';
+import { alturaColinas } from './jogo/terreno.js';
 import { criaAvatar, animaAvatar, giraSuave } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
 import { criaGato, atualizaGato, PETS } from './jogo/pet.js';
@@ -24,6 +25,7 @@ import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
@@ -69,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'v18';
+const VERSAO = 'v19';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -100,17 +102,38 @@ if (!ehMobile) {
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.16, 0.32, 1.08));
+  // COLOR GRADING leve (PC): saturação +6%, sombras um tico frias e vinheta
+  // sutil — "fechamento de cor" de pack premium SEM estourar branco (clamp).
+  composer.addPass(new ShaderPass({
+    uniforms: { tDiffuse: { value: null } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'varying vec2 vUv; uniform sampler2D tDiffuse;\n'
+      + 'void main(){\n'
+      + '  vec4 c = texture2D(tDiffuse, vUv);\n'
+      + '  vec3 col = c.rgb;\n'
+      + '  float luma = dot(col, vec3(0.299, 0.587, 0.114));\n'
+      + '  col = mix(vec3(luma), col, 1.06);\n'
+      + '  col += vec3(0.010, 0.012, 0.022) * (1.0 - smoothstep(vec3(0.0), vec3(0.45), col));\n'
+      + '  col = clamp(col, 0.0, 1.0);\n'
+      + '  float d = distance(vUv, vec2(0.5));\n'
+      + '  col *= 1.0 - 0.12 * smoothstep(0.45, 0.85, d);\n'
+      + '  gl_FragColor = vec4(col, c.a);\n'
+      + '}',
+  }));
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.18; // reflexo sutil; sem clarear rostos/grama
 }
-// ALTURA DO TERRENO: plano em todo o mapa, exceto a Montanha do Dragão (rampa
-// cônica escalável até o platô). O avatar "gruda" nessa altura ao andar.
+// ALTURA DO TERRENO: colinas procedurais no campo (terreno.js — a malha do
+// chão usa a MESMA função, nada flutua) + Montanha do Dragão (rampa cônica
+// escalável até o platô). O avatar "gruda" nessa altura ao andar.
 function alturaTerreno(x, z) {
   const r = Math.hypot(x - montanhaDragao.x, z - montanhaDragao.z);
-  if (r >= montanhaDragao.r) return 0;
-  if (r <= montanhaDragao.topo) return montanhaDragao.h;
-  return montanhaDragao.h * (1 - (r - montanhaDragao.topo) / (montanhaDragao.r - montanhaDragao.topo));
+  if (r < montanhaDragao.r) {
+    if (r <= montanhaDragao.topo) return montanhaDragao.h;
+    return montanhaDragao.h * (1 - (r - montanhaDragao.topo) / (montanhaDragao.r - montanhaDragao.topo));
+  }
+  return alturaColinas(x, z);
 }
 const raycaster = new THREE.Raycaster();
 const occTmp = []; // buffer reutilizado da anti-oclusão (zero alocação por frame)
@@ -559,12 +582,17 @@ const domaveisVivos = [];
 DOMAVEIS.forEach((d) => {
   if (!PETS[d.tipo]) return;
   const g = PETS[d.tipo]();
-  g.position.set(d.x, d.y || 0, d.z);
+  g.position.set(d.x, d.y || alturaTerreno(d.x, d.z), d.z);
   scene.add(g);
+  // crachá discreto (a pata gigante "roxa" na praça era feia): bolinha escura
+  // translúcida com borda branca e a pata menor dentro, flutuando mais alto
   const cnvD = document.createElement('canvas'); cnvD.width = 128; cnvD.height = 128;
-  const cD = cnvD.getContext('2d'); cD.font = '88px Arial'; cD.textAlign = 'center'; cD.textBaseline = 'middle'; cD.fillText('🐾', 64, 70);
+  const cD = cnvD.getContext('2d');
+  cD.beginPath(); cD.arc(64, 64, 50, 0, Math.PI * 2); cD.fillStyle = 'rgba(22,28,38,.6)'; cD.fill();
+  cD.lineWidth = 5; cD.strokeStyle = 'rgba(255,255,255,.85)'; cD.stroke();
+  cD.font = '58px Arial'; cD.textAlign = 'center'; cD.textBaseline = 'middle'; cD.fillText('🐾', 64, 68);
   const spD = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnvD), transparent: true, depthTest: false }));
-  spD.scale.set(1.1, 1.1, 1); spD.position.y = 1.9; spD.renderOrder = 996; g.add(spD);
+  spD.scale.set(0.62, 0.62, 1); spD.position.y = 2.3; spD.renderOrder = 996; g.add(spD);
   domaveisVivos.push({ ...d, g, base: { x: d.x, z: d.z }, alvo: { x: d.x, z: d.z }, pausa: Math.random() * 3, fase: Math.random() * 6 });
 });
 function domavelProximo() {
@@ -806,7 +834,7 @@ const TIPOS_COLETA = {
 ].forEach(([tipo, pontos]) => pontos.forEach(([cx, cz]) => {
   const def = TIPOS_COLETA[tipo];
   const mesh = def.cria();
-  mesh.position.set(cx, mesh.position.y, cz);
+  mesh.position.set(cx, mesh.position.y + alturaTerreno(cx, cz), cz);
   scene.add(mesh);
   const it = { x: cx, z: cz, raio: 2.2, titulo: `${def.icone} ${tipo}`, acao: `Colher ${tipo} ${def.icone}` };
   it.onAcao = () => {
@@ -1820,7 +1848,10 @@ function passo() {
     gt.position.x = Math.cos(gt.userData.ang) * r; gt.position.z = Math.sin(gt.userData.ang) * r;
     gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
   }
-  if (gato && !noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet (se domado) espera na superfície
+  if (gato && !noEsgoto) {
+    atualizaGato(gato, avatar, dt, tempo); // pet (se domado) espera na superfície
+    gato.position.y = alturaTerreno(gato.position.x, gato.position.z); // gruda no relevo
+  }
   // pets selvagens perambulam perto do ponto deles (esperando um domador)
   for (const d of domaveisVivos) {
     d.pausa -= dt;
@@ -1829,13 +1860,14 @@ function passo() {
     if (dd < 0.3) { d.pausa = 1 + Math.random() * 3; d.alvo = { x: d.base.x + (Math.random() - 0.5) * 7, z: d.base.z + (Math.random() - 0.5) * 7 }; continue; }
     d.g.position.x += (ddx / dd) * 1.2 * dt;
     d.g.position.z += (ddz / dd) * 1.2 * dt;
+    if (!d.y) d.g.position.y = alturaTerreno(d.g.position.x, d.g.position.z); // segue o relevo
     d.g.rotation.y = Math.atan2(ddx, ddz);
     const uD = d.g.userData;
     if (uD.patas) { const sp = Math.sin(tempo * 10 + d.fase) * 0.45; uD.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
   }
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide, ehNoite);
-  atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho);
+  atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho, alturaTerreno);
 
   // VOO DO DRAGÃO: de tempos em tempos ele decola do pico, plana sobre Venore
   // atrás de comida e volta — dá pra ver ele cruzando o céu da cidade!
