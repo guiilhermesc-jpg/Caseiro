@@ -162,6 +162,13 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 49. ✅ 🎨 **Texturas HIGH** (leva 3): grama/pedra/telha regeneradas em alta + **madeira** (píer/pisos) + **céu** 1024×512. Total gasto nas 3 levas ≈ $1,2 do crédito.
 50. ✅ 🏙️ **Thais destravada**: casas 8.2 (vielas largas), centro das fileiras vazio (ruas transversais — sem becos-armadilha), metade das ameias (peso -50%).
 
+**JÁ FEITO (11ª rodada — luz definitiva, beholder D&D, cenário Tibia, slot GLB):**
+51. ✅ ☀️ **Luz definitiva**: exposure 0.92 + bloom threshold 1.0 (SÓ emissores brilham — céu/flores/roupas não estouram mais).
+52. ✅ 👁️ **Beholder v3 estilo livro D&D**: pele escura verrugosa, bocarra torta com dentes desiguais, olhão com veias, 10 tentáculos retorcidos.
+53. ✅ ⛰️ **Montanhas com textura de rocha** (materiais compartilhados) + 🌿 **320 tufos de mato 3D** instanciados (2 draw calls).
+54. ✅ 🐲 **Slot pro dragão 3D profissional**: ao colocar `public/modelos/dragao.glb` (Dragon Evolved do Quaternius, CC0 — baixar em poly.pizza/m/LlwD0QNUPj → botão Download → glTF), o jogo troca o dragão automaticamente com animação esquelética. Guards de corpoMat prontos.
+55. ℹ️ **Billing OpenAI**: créditos da API ficam em platform.openai.com/settings/organization/billing (NÃO é o ChatGPT) — explicado ao maestro.
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
