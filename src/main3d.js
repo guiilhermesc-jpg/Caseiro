@@ -635,7 +635,7 @@ renderer.domElement.addEventListener('pointerdown', (e) => { tapIni = { x: e.cli
 // em você customiza; clicar no mundo executa a ação do lugar (abrir/pegar/pescar).
 renderer.domElement.addEventListener('pointerup', (e) => {
   const ini = tapIni; tapIni = null;
-  if (!ini || !jogoIniciado || dialogo.aberto || customizar.aberto) return;
+  if (!ini || !jogoIniciado || morto || dialogo.aberto || customizar.aberto) return;
   if (Math.hypot(e.clientX - ini.x, e.clientY - ini.y) > 8 || performance.now() - ini.t > 350) return;
   const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   rayTap.setFromCamera(ndc, camera);
@@ -1157,14 +1157,15 @@ function derrubaMochila(pos, itens) {
   interativos.push(it);
   corposCaidos.push({ mesh: g, it, expiraAt: tempo + 600 }); // o corpo dura 10 MINUTOS
 }
-// TELA DE MORTE (estilo Tibia): escurece tudo, mostra o que se perdeu e o
-// botão de renascer — o jogador entende o que aconteceu em vez de "teleportar".
-let telaMorte = null;
+// TELA DE MORTE (estilo Tibia) com ESTADO de morte de verdade:
+// morreu → o jogo te pausa (nada te machuca nem te move) → o BOTÃO faz o
+// RESET completo e te leva ao Templo (se não clicar, volta sozinho em 12s).
+let telaMorte = null, morto = false, mortoAuto = 0;
 function mostraTelaMorte(xpPerdido, perdeuItens) {
   if (!telaMorte) {
     telaMorte = document.createElement('div');
     telaMorte.style.cssText = 'position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;'
-      + 'background:radial-gradient(ellipse at center, rgba(70,0,0,.8), rgba(8,0,0,.94));';
+      + 'background:radial-gradient(ellipse at center, rgba(70,0,0,.8), rgba(8,0,0,.94));touch-action:none;';
     document.body.appendChild(telaMorte);
   }
   telaMorte.innerHTML = `<div style="text-align:center;font-family:Arial;color:#f2e6e6;max-width:82vw;">
@@ -1176,27 +1177,39 @@ function mostraTelaMorte(xpPerdido, perdeuItens) {
         : ''}
     </div>
     <div id="btnRenascer" style="display:inline-block;background:#7a1f14;border:2px solid #ff8a6a;border-radius:14px;
-      padding:13px 30px;font-size:17px;font-weight:bold;color:#ffe9e2;cursor:pointer;user-select:none;
+      padding:14px 32px;font-size:17px;font-weight:bold;color:#ffe9e2;cursor:pointer;user-select:none;touch-action:none;
       box-shadow:0 6px 24px rgba(0,0,0,.6);">🙏 Renascer no Templo Sagrado</div>
+    <div style="margin-top:10px;font-size:12px;color:#a88;">(voltando automaticamente em alguns segundos…)</div>
   </div>`;
   telaMorte.style.display = 'flex';
-  telaMorte.querySelector('#btnRenascer').addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    telaMorte.style.display = 'none';
-  });
+  const btn = telaMorte.querySelector('#btnRenascer');
+  const vai = (e) => { e.preventDefault(); e.stopPropagation(); renasce(); };
+  btn.addEventListener('pointerdown', vai);
+  btn.addEventListener('click', vai); // redundância de clique (PC e touch)
+}
+// RENASCER = o reset de verdade: limpa efeitos, restaura recursos e
+// teleporta pro Templo Sagrado — disparado pelo BOTÃO (ou automático)
+function renasce() {
+  if (!morto) return;
+  morto = false;
+  if (telaMorte) telaMorte.style.display = 'none';
+  envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
+  vida = VIDA_MAX; mana = Math.max(mana, 15);
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
+  avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
+  hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
+  mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
+  salvaJogo();
 }
 // MORTE estilo Tibia: perde XP (pode descer de nível), derruba a mochila onde
-// caiu (dá pra voltar e recuperar) e RENASCE no Templo Sagrado de Venore.
+// caiu, e entra no ESTADO morto até o botão (ou o tempo) renascer.
 function morre() {
+  if (morto) return; // não morre duas vezes
+  morto = true; mortoAuto = tempo + 12;
   const perdidos = inventario.esvaziaMochila();
   if (perdidos.length) derrubaMochila(avatar.position.clone(), perdidos);
   const xpPerdido = hud.perdeXP();
-  vida = VIDA_MAX;
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
-  avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
-  hud.vida(vida, VIDA_MAX);
-  mostraTelaMorte(xpPerdido, perdidos.length > 0); // tela de morte (botão renasce)
-  salvaJogo(); // grava o estado pós-morte na conta
+  mostraTelaMorte(xpPerdido, perdidos.length > 0);
 }
 function reviveBicho(r) {
   if (r.dragao) {
@@ -1379,7 +1392,7 @@ const MAGIAS = [
 // DANO CENTRALIZADO (mesmo cálculo em todo lugar): Utamo absorve primeiro.
 // Devolve true se o golpe MATOU o jogador.
 function recebeDano(n) {
-  if (gmImortal || n <= 0) return false;
+  if (gmImortal || morto || n <= 0) return false; // morto = nada machuca até renascer
   if (tempo < escudoAte && escudoHP > 0) {
     const abs = Math.min(escudoHP, n);
     escudoHP -= abs; n -= abs;
@@ -1401,7 +1414,7 @@ function alvoMaisProximo(alc) {
   return melhor;
 }
 function lancaMagia(m) {
-  if (!jogoIniciado) return;
+  if (!jogoIniciado || morto) return;
   if (hud.estado().nivel < m.nivel) { mostraMensagem(`🔒 ${m.nome} desbloqueia no nível ${m.nivel}!`); return; }
   if (tempo < (cdMagias[m.id] || 0)) { mostraMensagem(`⏳ ${m.nome} recarregando (${Math.ceil(cdMagias[m.id] - tempo)}s)`); return; }
   if (mana < m.mana) { mostraMensagem(`🔮 Sem mana (${Math.floor(mana)}/${m.mana}) — ela regenera com o tempo.`); return; }
@@ -1639,7 +1652,7 @@ function passo() {
     const correndo = controles.correndo();
     const abaixado = controles.abaixado();
     const movendo = (inp.x !== 0 || inp.z !== 0);
-    if (movendo) {
+    if (movendo && !morto) { // morto não anda
       const frenteX = -Math.sin(cam.yaw), frenteZ = -Math.cos(cam.yaw);
       const direitaX = Math.cos(cam.yaw), direitaZ = -Math.sin(cam.yaw);
       let mx = frenteX * (-inp.z) + direitaX * inp.x;
@@ -1668,7 +1681,7 @@ function passo() {
     ultimoAnim = { mov: movendo && noChao, corr: correndo, abx: abaixado };
 
     // AÇÃO (tecla E / botão): mesma rotina do clique do mouse
-    if (controles.querAgir()) executaAcao();
+    if (controles.querAgir() && !morto) executaAcao();
     if (gesto > 0) {
       gesto = Math.max(0, gesto - dt * 3);
       const p = avatar.userData.partes;
@@ -1862,7 +1875,8 @@ function passo() {
       mostraMensagem(`🟢 Veneno... (-2) ${Math.ceil(envenenadoAte - tempo)}s`);
       recebeDano(2);
     }
-    if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 0.5); hud.vida(vida, VIDA_MAX); } // regen lenta
+    if (!morto && vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 0.5); hud.vida(vida, VIDA_MAX); } // regen lenta (morto não regenera)
+    if (morto && tempo > mortoAuto) renasce(); // rede de segurança: volta sozinho em 12s
     // MANA regenera + LUX te acompanha + barra de magias (cadeado/cooldown)
     mana = Math.min(MANA_MAX, mana + dt * 0.35); // regen LENTA (Tibia): mana cheia leva ~2,4 min
     if (Math.floor(mana) !== manaMostrada) { manaMostrada = Math.floor(mana); hud.mana(mana, MANA_MAX); }
