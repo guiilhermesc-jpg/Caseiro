@@ -18,7 +18,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
-import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder } from './jogo/ratos.js';
+import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
@@ -106,6 +106,9 @@ addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16)
 [[255, 95], [175, 120], [300, 70]].forEach(([x, z]) => {
   ratos.push({ g: criaBeholder(x, z), hp: 70, hpMax: 70, xp: 35, dano: 12, vel: 1.4, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' } });
 });
+// DRAGÃO (chefão D&D) guardando o Covil do Dragão, ao norte — muito forte, loot lendário
+const DRX = 40, DRZ = 305;
+ratos.push({ g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, bounds: areaMon(DRX, DRZ, 16), y0: 0, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' } });
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
@@ -167,6 +170,7 @@ const LUGARES_MAPA = [
   { nome: 'Bairro Sul', x: 0, z: -95 }, { nome: 'Moinho', x: -44, z: -74 },
   { nome: 'Porto', x: 45, z: 64 }, { nome: 'Farol', x: 66, z: 84 }, { nome: 'Ponte', x: 16, z: 80 },
   { nome: 'Thais', x: 320, z: 0 }, { nome: 'Templo', x: 320, z: 19 },
+  { nome: 'Ruínas', x: 150, z: 250 }, { nome: 'Dragão', x: 40, z: 330 },
 ];
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, alcance: 90 });
 const npcs = criaNPCs(scene, colide);
@@ -516,7 +520,7 @@ function morre() {
   mostraMensagem('💀 Você caiu! Acorda na praça de Venore.');
 }
 function reviveBicho(r) {
-  if (r.boss) {
+  if (r.boss && r.forma) { // só o boss do esgoto troca de forma (cobra↔croc); dragão revive normal
     scene.remove(r.g);
     r.forma = r.forma === 'cobra' ? 'croc' : 'cobra';
     r.g = (r.forma === 'cobra' ? criaCobra : criaCrocodilo)(0, -10);
@@ -548,6 +552,9 @@ const DISTRITOS = [
   { nome: 'Portão de Thais', x: 288, z: 0, raio: 14 },
   { nome: 'Cidade de Thais', x: 320, z: 0, raio: 30 },
   { nome: 'Templo de Thais', x: 320, z: 18, raio: 12 },
+  { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
+  { nome: 'Terras do Dragão', x: 40, z: 300, raio: 45 },
+  { nome: 'Covil do Dragão', x: 40, z: 330, raio: 22 },
 ];
 let localEl, localNome = '';
 function atualizaLocal() {

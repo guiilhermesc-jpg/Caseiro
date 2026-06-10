@@ -257,6 +257,73 @@ export function criaCarroca(x, z, rot = 0) {
   return { grupo: g, colisores: [{ minX: x - 1.8, maxX: x + 1.8, minZ: z - 1.2, maxZ: z + 1.2 }] };
 }
 
+// --- árvore morta/carbonizada (cenário das terras do dragão) ---
+export function criaArvoreMorta(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const m = mat(0x2a241e);
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 3.6, 6), m);
+  tronco.position.y = 1.8; tronco.castShadow = true; g.add(tronco);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const gal = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 1.6, 5), m);
+    gal.position.set(Math.cos(a) * 0.5, 2.9, Math.sin(a) * 0.5);
+    gal.rotation.set(Math.cos(a) * 0.6, 0, Math.sin(a) * 0.6 + (i % 2 ? 0.8 : -0.8)); g.add(gal);
+  }
+  return { grupo: g, colisores: [{ minX: x - 0.6, maxX: x + 0.6, minZ: z - 0.6, maxZ: z + 0.6 }] };
+}
+
+// --- ruínas antigas (colunas quebradas + arco; clima D&D, andável entre elas) ---
+export function criaRuinas(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = mat(0x8a8276, 1), pedraEsc = mat(0x6a6258, 1);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 14), pedraEsc); base.position.y = 0.15; base.receiveShadow = true; g.add(base);
+  const colisores = [];
+  [[-5, -5, 4.5], [5, -5, 3.0], [-5, 5, 2.0], [5, 5, 4.0], [0, -5, 3.6], [-5, 0, 1.2]].forEach(([cx, cz, h]) => {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, h, 10), pedra);
+    c.position.set(cx, h / 2, cz); c.castShadow = true; g.add(c);
+    if (h > 3) { const cap = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.4, 1.3), pedra); cap.position.set(cx, h + 0.2, cz); g.add(cap); }
+    colisores.push({ minX: x + cx - 0.6, maxX: x + cx + 0.6, minZ: z + cz - 0.6, maxZ: z + cz + 0.6 });
+  });
+  for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.6 + Math.random() * 0.6, 0), pedraEsc); b.position.set((Math.random() - 0.5) * 12, 0.5, (Math.random() - 0.5) * 12); b.rotation.set(Math.random(), Math.random(), Math.random()); g.add(b); }
+  const arcoL = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4, 0.6), pedra); arcoL.position.set(-2, 2, 5.5); arcoL.castShadow = true; g.add(arcoL);
+  const arcoR = new THREE.Mesh(new THREE.BoxGeometry(0.6, 3, 0.6), pedra); arcoR.position.set(2, 1.5, 5.5); g.add(arcoR);
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.6, 0.6), pedra); lintel.position.set(-0.3, 3.7, 5.5); lintel.rotation.z = -0.25; g.add(lintel);
+  return { grupo: g, colisores };
+}
+
+// --- COVIL DO DRAGÃO: vulcão escuro com cratera de lava, caverna e tesouro ---
+export function criaCovilDragao(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const rocha = mat(0x3a322e, 1), rochaEsc = mat(0x241e1a, 1);
+  const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
+  const ouroMat = new THREE.MeshStandardMaterial({ color: 0xe8c020, metalness: 0.75, roughness: 0.32, emissive: 0x4a3a00, emissiveIntensity: 0.25 });
+  const h = 46, r = 28;
+  const mont = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), rocha);
+  mont.position.y = h / 2; mont.rotation.y = Math.random(); mont.castShadow = mont.receiveShadow = true; g.add(mont);
+  // cratera de lava no topo (pulsa)
+  const crat = new THREE.Mesh(new THREE.CylinderGeometry(6, 8, 3, 12), lavaMat); crat.position.y = h - 1.4; g.add(crat);
+  // veios de lava escorrendo pela encosta
+  [0.7, 2.0, 4.3].forEach((a) => { const veio = new THREE.Mesh(new THREE.BoxGeometry(0.8, h * 0.7, 0.4), lavaMat); veio.position.set(Math.cos(a) * r * 0.5, h * 0.42, Math.sin(a) * r * 0.5); veio.lookAt(0, h, 0); g.add(veio); });
+  // boca da caverna (arco escuro virado p/ -Z) + buraco preto
+  const arco = new THREE.Mesh(new THREE.BoxGeometry(8, 7, 3), rochaEsc); arco.position.set(0, 3.5, -r * 0.82); arco.castShadow = true; g.add(arco);
+  const buraco = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 1), mat(0x050505, 1)); buraco.position.set(0, 2.8, -r * 0.82 - 1.3); g.add(buraco);
+  // poça de lava na frente da caverna
+  const poca = new THREE.Mesh(new THREE.CircleGeometry(6.5, 22), lavaMat); poca.rotation.x = -Math.PI / 2; poca.position.set(0, 0.1, -r * 0.82 - 9); g.add(poca);
+  // TESOURO do dragão (pilha de ouro + moedas + gemas) na boca da caverna
+  const tz = -r * 0.82 + 2;
+  const pilha = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.1, 14), ouroMat); pilha.position.set(0, 0.55, tz); g.add(pilha);
+  for (let i = 0; i < 16; i++) { const a = Math.random() * Math.PI * 2, rr = 1 + Math.random() * 2.6; const c = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 8), ouroMat); c.position.set(Math.cos(a) * rr, 0.06, tz + Math.sin(a) * rr); c.rotation.x = Math.random(); g.add(c); }
+  [[0x6fe6ff, -1.2, 0.4], [0xff5d8f, 1.0, -0.5], [0x7affa0, 0.2, 1.0]].forEach(([cor, ox, oz]) => { const gema = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.4, roughness: 0.2 })); gema.position.set(ox, 0.5, tz + oz); g.add(gema); });
+  // pedregulhos ao redor
+  for (let i = 0; i < 7; i++) { const a = Math.random() * Math.PI * 2, rr = r * 0.7; const b = new THREE.Mesh(new THREE.IcosahedronGeometry(2 + Math.random() * 2, 0), rochaEsc); b.position.set(Math.cos(a) * rr, 1, Math.sin(a) * rr); b.rotation.set(Math.random(), Math.random(), Math.random()); b.castShadow = true; g.add(b); }
+  const c = r * 0.6;
+  return {
+    grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }],
+    animados: [{ mesh: crat, pulsa: lavaMat, fase: 0 }],
+    interativo: { x, z: z + tz, raio: 4.5, titulo: '🐉 Tesouro do Dragão', acao: 'Examinar o tesouro 🐉', msg: 'Ouro a perder de vista... e o dragão sente sua presença. Lute ou fuja!' },
+  };
+}
+
 // --- moita de flores altas do campo ---
 export function criaFlorAlta(x, z, cor = 0xf2c14e) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

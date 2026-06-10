@@ -57,6 +57,7 @@ export function atualizaRatos(ratos, dt, jog) {
     if (!r.vivo) continue;
     const g = r.g, b = r.bounds; r.tempo += dt;
     if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0) g.userData.corpoMat.emissive.setHex(0x000000); }
+    if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; } // dragão bate as asas
     // PERSEGUIÇÃO: se o jogador está perto e no mesmo "andar", caça-o
     r.contato = false;
     if (jog && Math.abs(r.y0 - jog.y) < 6) {
@@ -210,6 +211,46 @@ export function criaBeholder(x, z) {
     stalk.castShadow = true; g.add(stalk); patas.push(stalk);
   }
   g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
+// DRAGÃO (chefão D&D): corpo grande, pescoço, asas que batem, cauda e crista.
+export function criaDragao(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x9a2a1a, roughness: 0.6 });
+  const escuro = mat(0x5a1810);
+  // corpo
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.4, 14, 12), corpoMat);
+  corpo.position.set(0, 1.9, -0.3); corpo.scale.set(1, 0.9, 1.55); corpo.castShadow = true; g.add(corpo);
+  // pescoço (sobe e avança) + cabeça
+  for (let i = 0; i < 4; i++) {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(0.62 - i * 0.07, 10, 8), corpoMat);
+    s.position.set(0, 2.3 + i * 0.45, 1.1 + i * 0.5); s.castShadow = true; g.add(s);
+  }
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.62, 1.1), corpoMat); cabeca.position.set(0, 4.2, 3.2); cabeca.castShadow = true; g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.4, 0.6), corpoMat); focinho.position.set(0, 4.1, 3.9); g.add(focinho);
+  [-0.24, 0.24].forEach((ox) => { const h = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.62, 6), escuro); h.position.set(ox, 4.75, 2.9); h.rotation.x = -0.5; g.add(h); });
+  [-0.24, 0.24].forEach((ox) => { const o = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(0xffd000)); o.position.set(ox, 4.35, 3.6); g.add(o); });
+  // ASAS (batem no loop via userData.asas)
+  const asas = [];
+  [-1, 1].forEach((s) => {
+    const asa = new THREE.Group(); asa.position.set(s * 1.1, 2.8, -0.3);
+    const membrana = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.08, 2.3), escuro); membrana.position.set(s * 1.6, 0, 0); membrana.castShadow = true; asa.add(membrana);
+    [-0.85, 0, 0.85].forEach((oz) => { const osso = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 3.0, 5), corpoMat); osso.rotation.z = Math.PI / 2; osso.position.set(s * 1.5, 0.05, oz); asa.add(osso); });
+    g.add(asa); asas.push(asa);
+  });
+  // 4 patas
+  const patas = [];
+  [[-0.85, 0.7], [0.85, 0.7], [-0.85, -1.2], [0.85, -1.2]].forEach(([px, pz]) => {
+    const geo = new THREE.BoxGeometry(0.42, 1.3, 0.42); geo.translate(0, -0.65, 0);
+    const p = new THREE.Mesh(geo, corpoMat); p.position.set(px, 1.3, pz); p.castShadow = true; g.add(p); patas.push(p);
+  });
+  // cauda + ponta
+  for (let i = 0; i < 6; i++) { const t = new THREE.Mesh(new THREE.SphereGeometry(0.5 - i * 0.07, 8, 6), corpoMat); t.position.set(0, 1.5, -1.7 - i * 0.5); g.add(t); }
+  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 6), escuro); ponta.position.set(0, 1.5, -4.9); ponta.rotation.x = -Math.PI / 2; g.add(ponta);
+  // crista nas costas
+  for (let i = 0; i < 5; i++) { const e = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.55, 4), escuro); e.position.set(0, 2.9, 0.7 - i * 0.5); g.add(e); }
+  g.userData = { patas, asas, corpoMat, tipo: 'boss' };
   return g;
 }
 

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 
@@ -289,6 +289,20 @@ export function criaCidade() {
   [[130, 20], [-100, -30], [160, -80], [-150, -110], [100, 130], [-130, 90], [180, 40], [-90, 120]]
     .forEach(([x, z], i) => add(criaFlorAlta(x, z, [0xf2c14e, 0xe85d75, 0xd06ad0, 0x6ab0ff][i % 4])));
   [[115, -20, 1.4], [-110, 50, 1.2], [145, 100, 1.6], [-170, -40, 1.3]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+
+  // === TERRAS DO DRAGÃO (norte distante) — vulcão + tesouro + cenário carbonizado ===
+  add(criaCovilDragao(40, 330));                  // covil ao norte (amplia o mapa)
+  add(criaPlaca(40, 268, 'Covil do Dragao — PERIGO'));
+  // montanhas escoltando o vale do dragão
+  [[-40, 320, 1.5], [110, 320, 1.4], [40, 360, 1.6]].forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
+  // bosque carbonizado na aproximação (árvores mortas + pedras + caveiras de pedra)
+  [[10, 280], [70, 285], [-10, 300], [80, 305], [25, 312], [55, 268], [-20, 262]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
+  [[0, 290, 1.6], [90, 300, 1.4], [60, 320, 1.8], [20, 340, 1.3]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+
+  // === RUÍNAS ANTIGAS (clima D&D; marcos de exploração no mapa amplo) ===
+  add(criaRuinas(150, 250));                       // ruínas a caminho do dragão
+  add(criaRuinas(-180, -90));                      // ruínas perdidas no sudoeste
+  add(criaPlaca(150, 240, 'Ruinas Antigas'));
 
   // nuvens
   const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 });
