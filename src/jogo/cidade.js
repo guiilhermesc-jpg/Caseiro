@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 
@@ -38,7 +38,7 @@ function texturaGrama(rep = 60) {
 
 export function criaCidade() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xcfe0ee, 320, 780);
+  scene.fog = new THREE.Fog(0xd6e4f0, 260, 720); // neblina mais presente = profundidade de pack premium
 
   // céu em gradiente (claro)
   const skyMat = new THREE.ShaderMaterial({
@@ -58,7 +58,7 @@ export function criaCidade() {
 
   const hemi = new THREE.HemisphereLight(0xcfe2f5, 0x6f6a52, 0.95);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xfff6e6, 1.35);
+  const sun = new THREE.DirectionalLight(0xffeed6, 1.35); // sol levemente dourado (luz pastel)
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); // sombras mais nítidas (só pesa no PC; mobile não usa sombra)
@@ -304,6 +304,7 @@ export function criaCidade() {
   // === NATUREZA / BIOMAS (mundo expandido) ===
   // lago ao norte + riacho com ponte na rua x=16
   add(criaLago(45, 80, 15));
+  add(criaCachoeira(45, 96)); // CACHOEIRA alimentando o lago norte (véu d'água + espuma)
   add(criaRiacho({ xIni: -55, xFim: 30, z: 80, larg: 5, gapX: 16, gapW: 7 }));
   add(criaPonte(16, 80, 8));
   // BIOMA beira-d'água: salgueiros, juncos, vitórias-régias, flores azuis, pedras
@@ -424,6 +425,19 @@ export function criaCidade() {
   obstaculos.push({ minX: -230, maxX: 230, minZ: -410, maxZ: -258 }); // mar fundo: não entra
   lagos.push({ x: 0, z: -300, r: 95 }); // pescaria na beira do mar!
   // caminho de terra do Bairro do Comércio até a praia
+  // ESPUMA da praia: faixa branca onde o mar encontra a areia
+  const espumaMar = new THREE.Mesh(new THREE.BoxGeometry(380, 0.04, 2.4),
+    new THREE.MeshStandardMaterial({ color: 0xeef6fa, transparent: true, opacity: 0.55, roughness: 0.5, depthWrite: false }));
+  espumaMar.position.set(0, 0.1, -251); scene.add(espumaMar);
+  // MANCHAS DE COR no campo (quebram a uniformidade do verde — visual premium)
+  [[120, 60, 30, 0x4a7a36], [-95, 120, 26, 0x6f9a3e], [250, 40, 34, 0x55893c], [-130, -50, 28, 0x6a9440],
+   [330, -60, 30, 0x4d7e38], [160, 130, 24, 0x71a14a], [-60, -150, 26, 0x5b8a3c], [430, 60, 28, 0x4a7a36],
+   [80, -120, 22, 0x6f9a3e], [-160, 60, 30, 0x55893c], [280, 120, 26, 0x6a9440], [500, -40, 24, 0x5b8a3c]]
+    .forEach(([mx, mz, r, cor]) => {
+      const m = new THREE.Mesh(new THREE.CircleGeometry(r, 18),
+        new THREE.MeshStandardMaterial({ color: cor, transparent: true, opacity: 0.16, roughness: 1, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2; m.position.set(mx, 0.018, mz); scene.add(m);
+    });
   const trilhaMat = new THREE.MeshStandardMaterial({ color: 0x9a7e54, roughness: 1 });
   aplicaTexturaReal(trilhaMat, 'terra', 1.5, 16);
   const trilha = new THREE.Mesh(new THREE.BoxGeometry(6, 0.07, 85), trilhaMat);

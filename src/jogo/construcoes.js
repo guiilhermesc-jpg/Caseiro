@@ -12,6 +12,30 @@ export function mat(cor, rough = 0.9) {
   return matCache[k];
 }
 
+// MATERIAL FACETADO (flat shading) — a assinatura visual dos packs low-poly
+// premium: cada face pega a luz separada e o modelo ganha "lapidação"
+const matFlatCache = {};
+export function matFlat(cor, rough = 0.95) {
+  const k = cor + '_' + rough;
+  if (!matFlatCache[k]) matFlatCache[k] = new THREE.MeshStandardMaterial({ color: cor, roughness: rough, flatShading: true });
+  return matFlatCache[k];
+}
+
+// DESLOCA os vértices aleatoriamente: geometria perfeita → forma ORGÂNICA
+// (cada árvore/pedra fica única, como nos packs profissionais)
+export function desloca(geo, amp) {
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    p.setXYZ(i,
+      p.getX(i) + (Math.random() - 0.5) * amp,
+      p.getY(i) + (Math.random() - 0.5) * amp,
+      p.getZ(i) + (Math.random() - 0.5) * amp);
+  }
+  p.needsUpdate = true;
+  geo.computeVertexNormals();
+  return geo;
+}
+
 // TEXTURA REAL (gerada por IA em public/texturas/): troca o mapa do material
 // quando o arquivo carrega; se faltar, fica a procedural (fallback seguro).
 // O renderer é registrado pra SUBIR a textura pra GPU JÁ no carregamento —
@@ -248,9 +272,9 @@ export function criaPinheiro(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.42, 2.2, 6), mat(0x5a3f24));
   tronco.position.y = 1.1; tronco.castShadow = true; g.add(tronco);
-  const corFolha = 0x356130;
+  const corFolha = [0x356130, 0x2e6e3a, 0x3d7a36][Math.floor(Math.random() * 3)];
   [[2.8, 2.6, 3.0], [2.1, 2.4, 4.8], [1.4, 2.2, 6.3]].forEach(([r, h, y]) => {
-    const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), mat(corFolha));
+    const c = new THREE.Mesh(desloca(new THREE.ConeGeometry(r, h, 7), r * 0.16), matFlat(corFolha));
     c.position.y = y; c.castShadow = true; g.add(c);
   });
   return { grupo: g, colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }] };
@@ -258,9 +282,9 @@ export function criaPinheiro(x = 0, z = 0) {
 
 export function criaArbusto(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const b1 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 0), mat(0x4f7e3e));
+  const b1 = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(1.15, 0), 0.3), matFlat(0x4f7e3e));
   b1.position.y = 0.95; b1.castShadow = true; g.add(b1);
-  const b2 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.8, 0), mat(0x568a44));
+  const b2 = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(0.8, 0), 0.22), matFlat(0x568a44));
   b2.position.set(0.7, 0.7, 0.3); b2.castShadow = true; g.add(b2);
   // flores
   const coresFlor = [0xe85d75, 0xf2c14e, 0xefefef, 0xd06ad0, 0xff8a4c];

@@ -5,7 +5,7 @@
 //  Cada função devolve { grupo, colisores:[...], animados?:[...] }.
 // =============================================================
 import * as THREE from 'three';
-import { mat, aplicaTexturaReal } from './construcoes.js';
+import { mat, matFlat, desloca, aplicaTexturaReal } from './construcoes.js';
 
 const AGUA = new THREE.MeshStandardMaterial({ color: 0x3f86c0, roughness: 0.15, metalness: 0.35, transparent: true, opacity: 0.82 });
 
@@ -16,6 +16,9 @@ export function criaLago(x, z, r = 15) {
   areia.rotation.x = -Math.PI / 2; areia.position.y = 0.04; areia.receiveShadow = true; g.add(areia);
   const agua = new THREE.Mesh(new THREE.CircleGeometry(r, 30), AGUA);
   agua.rotation.x = -Math.PI / 2; agua.position.y = 0.1; g.add(agua);
+  const espuma = new THREE.Mesh(new THREE.RingGeometry(r - 0.7, r + 0.4, 30),
+    new THREE.MeshStandardMaterial({ color: 0xeaf6fa, transparent: true, opacity: 0.45, roughness: 0.5, depthWrite: false }));
+  espuma.rotation.x = -Math.PI / 2; espuma.position.y = 0.115; g.add(espuma); // espuma da margem
   const c = r * 0.72;
   return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }], lago: { x, z, r } };
 }
@@ -95,7 +98,10 @@ export function criaSalgueiro(x, z) {
 //     copa frondosa em vários blobs — preenche a floresta ao redor das cidades ---
 export function criaArvoreGrande(x, z, s = 1) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const casca = mat(0x4f3a22), folha = mat(0x3e7032), folhaClara = mat(0x4f8a3e), folhaEsc = mat(0x32592a);
+  const casca = mat(0x4f3a22);
+  const PALETAS = [[0x3e7032, 0x4f8a3e, 0x32592a], [0x4a8a3a, 0x5d9c4b, 0x3a6e2e], [0x57924a, 0x6aa85a, 0x447238], [0x6a9a3a, 0x7cab4b, 0x54802e]];
+  const pal = PALETAS[Math.floor(Math.random() * PALETAS.length)]; // cada árvore com seu tom
+  const folha = matFlat(pal[0]), folhaClara = matFlat(pal[1]), folhaEsc = matFlat(pal[2]);
   const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.55 * s, 0.95 * s, 7.5 * s, 7), casca);
   tronco.position.y = 3.75 * s; tronco.castShadow = true; g.add(tronco);
   // raízes salientes na base (dão peso visual)
@@ -111,7 +117,7 @@ export function criaArvoreGrande(x, z, s = 1) {
   // copa frondosa (5 blobs grandes em alturas variadas)
   [[0, 9.5, 0, 3.4, folha], [2.4, 8.4, 0.8, 2.4, folhaClara], [-2.2, 8.6, -0.6, 2.5, folhaEsc],
    [0.6, 10.8, 1.6, 2.2, folhaClara], [-0.8, 8.0, 2.0, 2.1, folha]].forEach(([ox, oy, oz, r, m]) => {
-    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r * s, 0), m);
+    const c = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(r * s, 0), r * s * 0.34), m);
     c.position.set(ox * s, oy * s, oz * s); c.rotation.y = Math.random() * 2; c.castShadow = true; g.add(c);
   });
   return { grupo: g, colisores: [{ minX: x - 1.2 * s, maxX: x + 1.2 * s, minZ: z - 1.2 * s, maxZ: z + 1.2 * s }] };
@@ -122,9 +128,9 @@ export function criaArvore(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2.6, 7), mat(0x6b4a2a));
   tronco.position.y = 1.3; tronco.castShadow = true; g.add(tronco);
-  const cor = 0x4f8a3e;
+  const cor = [0x4f8a3e, 0x5d9c4b, 0x447238, 0x6a9a3a][Math.floor(Math.random() * 4)];
   [[1.9, 3.6, 0, 0], [1.4, 4.6, 0.8, 0.5], [1.3, 4.4, -0.7, -0.6]].forEach(([r, y, ox, oz]) => {
-    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat(cor));
+    const c = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(r, 0), r * 0.34), matFlat(cor));
     c.position.set(ox, y, oz); c.castShadow = true; g.add(c);
   });
   return { grupo: g, colisores: [{ minX: x - 0.9, maxX: x + 0.9, minZ: z - 0.9, maxZ: z + 0.9 }] };
@@ -145,9 +151,13 @@ export function criaNenufar(x, z) {
 // --- pedra / pedregulho ---
 export function criaPedra(x, z, s = 1) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const rocha = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat(0x8b8b86, 1));
+  const rocha = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(s, 0), s * 0.32), matFlat(0x8b8b86));
   rocha.position.y = s * 0.5; rocha.rotation.set(Math.random(), Math.random(), Math.random());
   rocha.castShadow = true; rocha.receiveShadow = true; g.add(rocha);
+  if (Math.random() < 0.45) { // musgo no topo (assinatura dos packs premium)
+    const musgo = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(s * 0.55, 0), s * 0.2), matFlat(0x5d8f46));
+    musgo.position.y = s * 1.05; musgo.scale.y = 0.45; g.add(musgo);
+  }
   return { grupo: g, colisores: [{ minX: x - s * 0.8, maxX: x + s * 0.8, minZ: z - s * 0.8, maxZ: z + s * 0.8 }] };
 }
 
@@ -163,9 +173,9 @@ export function criaCogumelo(x, z) {
 
 // --- montanha (emoldura o mundo; bloqueia passagem) ---
 // materiais COM TEXTURA DE ROCHA compartilhados por todas as montanhas
-const MAT_ROCHA = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1 });
-const MAT_ROCHA_ESC = new THREE.MeshStandardMaterial({ color: 0x4a473f, roughness: 1 });
-const MAT_ROCHA_CLARA = new THREE.MeshStandardMaterial({ color: 0x827d72, roughness: 1 });
+const MAT_ROCHA = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1, flatShading: true });
+const MAT_ROCHA_ESC = new THREE.MeshStandardMaterial({ color: 0x4a473f, roughness: 1, flatShading: true });
+const MAT_ROCHA_CLARA = new THREE.MeshStandardMaterial({ color: 0x827d72, roughness: 1, flatShading: true });
 aplicaTexturaReal(MAT_ROCHA, 'rocha', 3, 2, true);
 aplicaTexturaReal(MAT_ROCHA_ESC, 'rocha', 2.5, 1.8, true);
 aplicaTexturaReal(MAT_ROCHA_CLARA, 'rocha', 3.5, 2.2, true);
@@ -578,4 +588,26 @@ export function criaFlorAlta(x, z, cor = 0xf2c14e) {
     fl.position.set(Math.cos(a) * r, h, Math.sin(a) * r); g.add(fl);
   }
   return { grupo: g, colisores: [] };
+}
+
+// --- CACHOEIRA (estilo pack premium): penhasco facetado + véu d'água + espuma ---
+export function criaCachoeira(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  [[0, 3.2, 0.6, 4.6], [-2.8, 2.2, 1.2, 3.1], [2.8, 2.2, 1.2, 3.1]].forEach(([ox, oy, oz, s2]) => {
+    const r = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(s2, 0), s2 * 0.3), matFlat(0x6e6a62));
+    r.position.set(ox, oy, oz); r.castShadow = r.receiveShadow = true; g.add(r);
+  });
+  const aguaV = new THREE.MeshStandardMaterial({ color: 0x9fd4ec, roughness: 0.12, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+  const veu = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 6.6), aguaV);
+  veu.position.set(0, 3.1, -2.5); veu.rotation.x = -0.08; g.add(veu);
+  const veu2 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 5.4), aguaV);
+  veu2.position.set(-1.6, 2.6, -2.3); g.add(veu2);
+  const espumaMat = new THREE.MeshStandardMaterial({ color: 0xeef6fa, transparent: true, opacity: 0.8, roughness: 0.4 });
+  const animados = [];
+  for (let i = 0; i < 6; i++) { // borbulhas na base (sobem e descem)
+    const e = new THREE.Mesh(desloca(new THREE.IcosahedronGeometry(0.4 + Math.random() * 0.3, 0), 0.12), espumaMat);
+    e.position.set(-1.6 + i * 0.65, 0.22, -2.9 - Math.random() * 0.9);
+    g.add(e); animados.push({ mesh: e, flutua: true, baseY: 0.22, fase: Math.random() * 6 });
+  }
+  return { grupo: g, colisores: [{ minX: x - 3.4, maxX: x + 3.4, minZ: z - 1.2, maxZ: z + 2.6 }], animados };
 }

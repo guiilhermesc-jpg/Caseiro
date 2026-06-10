@@ -63,7 +63,7 @@ renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa mu
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.74; // premium sem "lavar" o céu/roupas/grama de branco
+renderer.toneMappingExposure = 0.84; // pastel premium (bloom 1.0 segura os estouros)
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
@@ -438,10 +438,10 @@ function estadoLocal() {
   };
 }
 
-let gato = criaGato();
-gato.position.set(6, 0, 10);
-gato.userData.tipo = 'pet'; // clicável (trocar de pet)
-scene.add(gato);
+// PETS estilo Tibia: você começa SEM companheiro — eles vivem SELVAGENS pelo
+// mundo e cada um é DOMADO com um item específico (quanto mais raro, mais difícil)
+let gato = null;
+const petsDomados = []; // espécies já domadas (vai pro save)
 
 const controles = criaControles(renderer.domElement);
 // rótulos de lugares no minimapa (só aparecem quando você está por perto)
@@ -522,16 +522,61 @@ function mostraPrompt(dica) {
 
 // --- diálogo (NPC), customização (você) e troca de pet ---
 const dialogo = criaDialogo();
-let petTipo = 'gato';
+let petTipo = null;
 function trocaPet(tipo) {
   if (!PETS[tipo] || tipo === petTipo) return;
-  const pos = gato.position.clone();
-  scene.remove(gato);
+  if (!petsDomados.includes(tipo)) { mostraMensagem('🐾 Você ainda não domou esse bicho — encontre-o no mundo!'); return; }
+  const pos = gato ? gato.position.clone() : avatar.position.clone().add(new THREE.Vector3(2, 0, 2));
+  if (gato) scene.remove(gato);
   gato = PETS[tipo]();
   gato.position.copy(pos);
   gato.userData.tipo = 'pet';
   scene.add(gato);
   petTipo = tipo;
+}
+
+// === PETS SELVAGENS DOMÁVEIS (estilo Tibia: cada um tem seu ITEM de domar;
+// quanto mais rara a montaria, mais difícil — do gato ao FILHOTE DE DRAGÃO)
+const DOMAVEIS = [
+  { tipo: 'gato', nome: 'Gato', emoji: '🐱', x: 10, z: 18, item: 'Lambari', chance: 0.7, dica: 'pesque um Lambari' },
+  { tipo: 'cachorro', nome: 'Cachorro', emoji: '🐶', x: 8, z: -92, item: 'Osso', chance: 0.7, dica: 'ossos caem da caça' },
+  { tipo: 'coelho', nome: 'Coelho', emoji: '🐰', x: 97, z: 52, item: 'Cenoura', chance: 0.6, dica: 'cenouras crescem na fazenda' },
+  { tipo: 'lobo', nome: 'Lobo', emoji: '🐺', x: -98, z: 12, item: 'Carne', chance: 0.5, dica: 'carne cai da caça' },
+  { tipo: 'burro', nome: 'Burro', emoji: '🐴', x: 117, z: 44, item: 'Cenoura', chance: 0.5, dica: 'cenouras da fazenda' },
+  { tipo: 'dragaozinho', nome: 'Filhote de Dragão', emoji: '🐲', x: 104, z: 308, y: 34, item: 'Escama de Dragão', chance: 0.3, dica: 'derrote o dragão do pico' },
+];
+const domaveisVivos = [];
+DOMAVEIS.forEach((d) => {
+  if (!PETS[d.tipo]) return;
+  const g = PETS[d.tipo]();
+  g.position.set(d.x, d.y || 0, d.z);
+  scene.add(g);
+  const cnvD = document.createElement('canvas'); cnvD.width = 128; cnvD.height = 128;
+  const cD = cnvD.getContext('2d'); cD.font = '88px Arial'; cD.textAlign = 'center'; cD.textBaseline = 'middle'; cD.fillText('🐾', 64, 70);
+  const spD = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnvD), transparent: true, depthTest: false }));
+  spD.scale.set(1.1, 1.1, 1); spD.position.y = 1.9; spD.renderOrder = 996; g.add(spD);
+  domaveisVivos.push({ ...d, g, base: { x: d.x, z: d.z }, alvo: { x: d.x, z: d.z }, pausa: Math.random() * 3, fase: Math.random() * 6 });
+});
+function domavelProximo() {
+  for (const d of domaveisVivos) {
+    if (Math.abs((d.y || 0) - avatar.position.y) > 6) continue;
+    if (Math.hypot(d.g.position.x - avatar.position.x, d.g.position.z - avatar.position.z) < 2.8) return d;
+  }
+  return null;
+}
+function tentaDomar(d) {
+  if (!inventario.temItem(d.item)) { mostraMensagem(`🐾 O ${d.nome} quer ${d.item}! (${d.dica})`); return; }
+  inventario.consomeItem(d.item);
+  if (Math.random() < d.chance) { // domou!
+    petsDomados.push(d.tipo);
+    scene.remove(d.g);
+    domaveisVivos.splice(domaveisVivos.indexOf(d), 1);
+    trocaPet(d.tipo);
+    mostraMensagem(`✨ Você DOMOU o ${d.nome}! ${d.emoji} Ele agora te segue. (clique em você pra trocar de pet)`);
+    salvaJogo();
+  } else {
+    mostraMensagem(`💨 O ${d.nome} comeu ${d.item} e escapuliu... tente de novo!`);
+  }
 }
 const customizar = criaCustomizar({
   cores: coresJogador,
@@ -542,7 +587,7 @@ const customizar = criaCustomizar({
 // TABELA DE COMPRA dos mercadores (estilo Tibia: caçar → saquear → vender)
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
-  'Cogumelo': 2, 'Concha': 4, 'Coco': 3,
+  'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
   'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
@@ -689,7 +734,9 @@ function executaAcao() {
     if (alvo) {
       if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
       else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
-    } else { // sem interativo: saquear / atacar / pescar
+    } else { // sem interativo: domar / saquear / atacar / pescar
+      const dom = domavelProximo();
+      if (dom) { tentaDomar(dom); return; }
       const c = corpseProximo();
       if (c) saqueia(c); else if (alvoRato(alcanceAtaque())) atacar(); else if (pertoDaAgua()) pescar();
     }
@@ -737,6 +784,7 @@ const TIPOS_COLETA = {
   Erva: { icone: '🌿', cria: () => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 5), new THREE.MeshStandardMaterial({ color: 0x3fa050, roughness: 0.9 })); m.position.y = 0.28; return m; } },
   Cogumelo: { icone: '🍄', cria: () => { const g = new THREE.Group(); const c = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.32, 6), new THREE.MeshStandardMaterial({ color: 0xe8e0d0 })); c.position.y = 0.16; g.add(c); const ch = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xc23a2a })); ch.position.y = 0.32; g.add(ch); return g; } },
   Concha: { icone: '🐚', cria: () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf0e2d0, roughness: 0.5 })); m.position.y = 0.06; m.scale.y = 0.5; return m; } },
+  Cenoura: { icone: '🥕', cria: () => { const g = new THREE.Group(); const c = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0xe8762a, roughness: 0.9 })); c.position.y = 0.12; c.rotation.x = Math.PI; g.add(c); const f = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 5), new THREE.MeshStandardMaterial({ color: 0x4a8a3a, roughness: 0.9 })); f.position.y = 0.36; g.add(f); return g; } },
   Coco: { icone: '🥥', cria: () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), new THREE.MeshStandardMaterial({ color: 0x5a4226, roughness: 0.9 })); m.position.y = 0.2; return m; } },
 };
 [
@@ -744,6 +792,7 @@ const TIPOS_COLETA = {
   ['Cogumelo', [[-86, 20], [-92, -10], [135, 26], [365, 64], [-118, 60]]],
   ['Concha', [[-50, -206], [-10, -212], [30, -208], [70, -214], [105, -206], [-90, -210]]],
   ['Coco', [[-58, -212], [17, -216], [97, -214], [-138, -214]]],
+  ['Cenoura', [[100, 33], [108, 37], [102, 43], [111, 30]]],
 ].forEach(([tipo, pontos]) => pontos.forEach(([cx, cz]) => {
   const def = TIPOS_COLETA[tipo];
   const mesh = def.cria();
@@ -1263,6 +1312,7 @@ function salvaJogo() {
       ouro, vida, hud: hud.estado(), mochila: inventario.estado(),
       equip: Object.values(equipados).filter(Boolean),
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
+      pet: petTipo, pets: petsDomados, // companheiros domados
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1282,6 +1332,11 @@ function carregaJogo(nome) {
     (d.equip || []).forEach((it) => inventario.addItem({ ...it })); // equipamento volta pra mochila (re-equipe com 1 clique)
     Object.assign(economia, d.economia || {});
     restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
+    (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
+    for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
+      if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
+    }
+    if (d.pet && PETS[d.pet]) trocaPet(d.pet);
     hud.ouro(ouro); hud.vida(vida, VIDA_MAX);
     return true;
   } catch (e) { return false; }
@@ -1697,7 +1752,9 @@ function passo() {
       if (!dica && alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';
     } else {
       const it = achaInterativo();
+      const domD = domavelProximo();
       if (it) dica = it.acao || it.titulo;
+      else if (domD) dica = `Domar ${domD.nome} (${domD.item}) 🐾`;
       else if (corpseProximo()) dica = 'Saquear o corpo 💀';
       else if (alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';
       else if (pertoDaAgua()) dica = 'Pescar 🎣';
@@ -1753,7 +1810,19 @@ function passo() {
     gt.position.x = Math.cos(gt.userData.ang) * r; gt.position.z = Math.sin(gt.userData.ang) * r;
     gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
   }
-  if (!noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet espera na superfície
+  if (gato && !noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet (se domado) espera na superfície
+  // pets selvagens perambulam perto do ponto deles (esperando um domador)
+  for (const d of domaveisVivos) {
+    d.pausa -= dt;
+    if (d.pausa > 0) continue;
+    const ddx = d.alvo.x - d.g.position.x, ddz = d.alvo.z - d.g.position.z, dd = Math.hypot(ddx, ddz);
+    if (dd < 0.3) { d.pausa = 1 + Math.random() * 3; d.alvo = { x: d.base.x + (Math.random() - 0.5) * 7, z: d.base.z + (Math.random() - 0.5) * 7 }; continue; }
+    d.g.position.x += (ddx / dd) * 1.2 * dt;
+    d.g.position.z += (ddz / dd) * 1.2 * dt;
+    d.g.rotation.y = Math.atan2(ddx, ddz);
+    const uD = d.g.userData;
+    if (uD.patas) { const sp = Math.sin(tempo * 10 + d.fase) * 0.45; uD.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
+  }
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide, ehNoite);
   atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho);
