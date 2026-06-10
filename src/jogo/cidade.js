@@ -50,6 +50,32 @@ export function criaCidade() {
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 420;
   scene.add(sun);
 
+  // === LUA + LUAR + ESTRELAS ===
+  // A lua é filha do céu (que segue a câmera) → aparece IGUAL de qualquer lugar do mapa.
+  // fog:false em tudo aqui pra a neblina não apagar o céu ao longe.
+  const luaMat = new THREE.MeshStandardMaterial({ color: 0xeef0f5, emissive: 0xcfd6e8, emissiveIntensity: 0.6, roughness: 1, fog: false });
+  const craterMat = new THREE.MeshStandardMaterial({ color: 0xc6cede, roughness: 1, fog: false });
+  const lua = new THREE.Group();
+  lua.add(new THREE.Mesh(new THREE.SphereGeometry(22, 28, 22), luaMat));
+  for (let i = 0; i < 9; i++) { // crateras (em qualquer ângulo)
+    const cr = new THREE.Mesh(new THREE.SphereGeometry(2 + Math.random() * 3, 10, 8), craterMat);
+    cr.position.setFromSphericalCoords(21, Math.acos(2 * Math.random() - 1), Math.random() * Math.PI * 2); lua.add(cr);
+  }
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(31, 22, 18), new THREE.MeshBasicMaterial({ color: 0xaab8da, transparent: true, opacity: 0.16, fog: false }));
+  lua.add(halo);
+  lua.position.set(190, 340, -250); ceu.add(lua); // posição fixa no céu (acompanha a câmera via ceu)
+  const luaLuz = new THREE.DirectionalLight(0x8c9ed6, 0); // luar azulado (intensidade no ciclo dia/noite)
+  luaLuz.position.set(-90, 130, -110); scene.add(luaLuz);
+  // estrelas (hemisfério de cima do céu; só aparecem à noite)
+  const NEST = 650, posE = new Float32Array(NEST * 3);
+  for (let i = 0; i < NEST; i++) {
+    const u = Math.random() * Math.PI * 2, v = Math.acos(Math.random()), R = 560;
+    posE[i * 3] = R * Math.sin(v) * Math.cos(u); posE[i * 3 + 1] = R * Math.cos(v) + 30; posE[i * 3 + 2] = R * Math.sin(v) * Math.sin(u);
+  }
+  const estrelasGeo = new THREE.BufferGeometry(); estrelasGeo.setAttribute('position', new THREE.BufferAttribute(posE, 3));
+  const estrelas = new THREE.Points(estrelasGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+  ceu.add(estrelas);
+
   // grama
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 }));
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
@@ -278,5 +304,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, ceu, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos };
+  return { scene, sun, hemi, skyMat, ceu, lua, luaLuz, luaMat, estrelas, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos };
 }

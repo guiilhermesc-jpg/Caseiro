@@ -58,7 +58,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
-const { scene, ceu, hemi, sun, skyMat, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos } = criaCidade();
+const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
@@ -347,6 +347,10 @@ function aplicaDiaNoite(dt) {
   skyMat.uniforms.corBase.value.copy(C_BASE_NOITE).lerp(C_BASE_DIA, d);
   if (scene.fog) scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
   const noite = 1 - d;
+  // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
+  luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
+  if (luaMat) luaMat.emissiveIntensity = 0.35 + noite * 0.85;
+  if (estrelas) estrelas.material.opacity = Math.min(1, Math.max(0, noite - 0.3) * 1.4);
   for (const p of postes) {
     // só acende a PointLight dos postes PERTO do jogador (limita luzes dinâmicas → perf no PC)
     const pp = p.luz.parent ? p.luz.parent.position : null;
