@@ -200,14 +200,21 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 55. ℹ️ **Billing OpenAI**: créditos da API ficam em platform.openai.com/settings/organization/billing (NÃO é o ChatGPT) — explicado ao maestro.
 
 **PENDÊNCIAS / PRÓXIMOS:**
-- 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
+- 🚀 **PUBLICAR**: nesta sessão o Codex deve tentar publicar ao final (`npm run build` → commit/push → `wrangler pages deploy`) e conferir o bundle em produção; se a permissão bloquear, o maestro roda `publicar.bat`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
 - 🤾 "Jogar/arremessar" itens (o clique já abre/pega/ataca; arremesso ainda não existe).
 - 🏪 Lojas com interior em Thais · 🗒️ quests · ⚡ instancing **só se pesar** no Edge/iPhone (a floresta nova é o primeiro candidato).
 
 **Modo de trabalho do maestro:** quer que eu **execute em sequência sem ficar parando pra perguntar** ("só para quando eu mandar"); valida no **Edge (PC)** e **iPhone**; foco em **qualidade + fluidez** (mobile não pode travar). A cada mudança: `npm run build` → deploy (wrangler) → `git commit` + `git push`.
 
-## 9. DIÁRIO (marcos recentes)
+## 9. RODADA CODEX (10/06/2026 — estabilidade, Thais e luz)
+- ✅ **Render premium sem ponto frágil**: o `EffectComposer` agora nasce só depois da cena existir (`new RenderPass(scene, camera)`), removendo o padrão arriscado `RenderPass(null, camera)`.
+- ✅ **Visual menos estourado/branco**: exposição reduzida (`0.74`), bloom mais seletivo (`0.16/0.32/1.08`), IBL mais sutil (`0.18`) e luz solar/hemisférica reduzidas no ciclo dia/noite.
+- ✅ **Vidros não viram lâmpadas**: material `VIDRO` perdeu o emissivo alto que fazia casas/rostos clarearem demais com bloom.
+- ✅ **Thais destravada de verdade**: muralha/portão maiores, ruas internas mais largas, plataforma do templo caminhável, casas decorativas mais estreitas e casas entráveis reposicionadas fora de prédios sobrepostos.
+- ✅ **Validação geométrica automatizada local**: busca em grade confirmou rota livre do portão de Thais até praça, casas laterais, norte e sul com raio do jogador.
+
+## 10. DIÁRIO (marcos recentes)
 Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
 combate/esgoto/ratos → esgoto profundo (boss, tocha, várias entradas) → mundo ampliado
 (montanhas/estrada/Thais) → NPCs com ofício + dia/noite → 4 modelos de personagem →

@@ -58,7 +58,7 @@ renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa mu
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.92; // sem estourar o horizonte/céu de branco
+renderer.toneMappingExposure = 0.74; // premium sem "lavar" o céu/roupas/grama de branco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
@@ -68,22 +68,18 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 // BLOOM (PC): lava, runas, tochas e olhos de monstro IRRADIAM luz de verdade.
 // No mobile fica o caminho direto (fluidez primeiro).
 let composer = null;
-if (!ehMobile) {
-  composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(null, camera)); // a cena entra logo abaixo (criaCidade)
-  // bloom SÓ para emissores de verdade (lava/chamas/olhos/lampiões):
-  // threshold 1.0 = nada de céu, flor ou parede clara brilhando
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.3, 0.4, 1.0));
-}
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
 // liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
 // passam a refletir o entorno — o salto de "protótipo" pra "premium"
-if (composer) {
-  composer.passes[0].scene = scene;
+if (!ehMobile) {
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  // Bloom contido: só emissores reais devem atravessar o threshold.
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.16, 0.32, 1.08));
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.3; // reflexo sutil (0.55 clareava demais os rostos)
+  scene.environmentIntensity = 0.18; // reflexo sutil; sem clarear rostos/grama
 }
 // ALTURA DO TERRENO: plano em todo o mapa, exceto a Montanha do Dragão (rampa
 // cônica escalável até o platô). O avatar "gruda" nessa altura ao andar.
@@ -605,8 +601,8 @@ function aplicaDiaNoite(dt) {
   tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
   const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
   ehNoite = d < 0.35;
-  sun.intensity = 0.12 + d * 1.25;
-  hemi.intensity = 0.22 + d * 0.72;
+  sun.intensity = 0.10 + d * 0.95;
+  hemi.intensity = 0.16 + d * 0.48;
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
     ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
   } else {

@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { mat, texturaPedra, VIDRO, aplicaTexturaReal } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
-  const { HX = 56, HZ = 50, ALT = 9, ESP = 2, gw = 8 } = opts; // proporção TIBIA: Thais é MAIOR que Venore
+  const { HX = 60, HZ = 54, ALT = 9, ESP = 2, gw = 10 } = opts; // Thais maior e com portão/ruas folgados
   const g = new THREE.Group(); g.position.set(cx, 0, cz);
   const colisores = [];
   // colisor em coords do MUNDO (o grupo está transladado p/ cx,cz)
@@ -78,7 +78,8 @@ export function criaThais(cx, cz, opts = {}) {
   const templo = new THREE.Group(); templo.position.set(0, 0, 19); g.add(templo);
   const plat = new THREE.Mesh(new THREE.BoxGeometry(20, 1.2, 13), pedraClara);
   plat.position.y = 0.6; plat.receiveShadow = true; templo.add(plat);
-  col(0, 19, 20, 13);
+  // Só o corpo do templo bloqueia; a plataforma/escadaria é piso caminhável.
+  col(0, 20, 15, 10);
   [0, 1, 2].forEach((i) => { // escadaria na frente (sul)
     const deg = new THREE.Mesh(new THREE.BoxGeometry(14 - i * 1.2, 0.4, 1.0), pedraClara);
     deg.position.set(0, 0.2 + i * 0.4, -6.5 - i * 0.9); templo.add(deg);
@@ -122,24 +123,26 @@ export function criaThais(cx, cz, opts = {}) {
     }
     col(lx, lz, w, d);
   }
-  predio(-23, 17, 9, 9, 7, 0xd8c8a4, 0xc0653a);
-  predio(23, 17, 9, 9, 8, 0xcdb892, 0x2f8d80);
-  predio(-23, -17, 9, 9, 8, 0xd2c19a, 0x9a4a3a);
-  predio(23, -17, 9, 9, 7, 0xcab98e, 0xc0653a);
+  predio(-26, 18, 8.2, 8.2, 7, 0xd8c8a4, 0xc0653a);
+  predio(26, 18, 8.2, 8.2, 8, 0xcdb892, 0x2f8d80);
+  predio(-26, -20, 8.2, 8.2, 8, 0xd2c19a, 0x9a4a3a);
+  predio(26, -20, 8.2, 8.2, 7, 0xcab98e, 0xc0653a);
 
   // CASARIO de Thais (proporção Tibia: MAIOR que Venore) — fileiras duplas
   // norte/sul, flanco oeste e coluna leste; vielas de 2.6u entre as fileiras
   const coresT = [0xd8c8a4, 0xcdb892, 0xd2c19a, 0xcab98e, 0xdccfae];
   const telhT = [0xc0653a, 0x2f8d80, 0x9a4a3a, 0xb8742a];
   let ci = 0;
-  // casas mais estreitas (8.2) = vielas LARGAS; o centro de cada fileira fica
-  // vazio = ruas transversais (o jogador não TRAVA mais em beco)
-  for (const lz of [32, -32, 44, -44]) for (let lx = -36; lx <= 36; lx += 12) {
-    if (lx === 0) { ci++; continue; } // rua transversal norte-sul
-    predio(lx, lz, 8.2, 8, 6 + (ci % 3), coresT[ci % coresT.length], telhT[ci % telhT.length]); ci++;
+  // Ruas largas e legíveis: fileiras nas bordas, centro vazado, corredor
+  // principal de 12u e corredores transversais a cada 18u. O jogador nunca
+  // deve "raspar" nas casas com o raio do avatar.
+  for (const lz of [33, -35, 46, -48]) for (let lx = -42; lx <= 42; lx += 14) {
+    if (Math.abs(lx) <= 7) { ci++; continue; } // avenida central norte-sul
+    if (Math.abs(lx) === 28 && Math.abs(lz) > 40) { ci++; continue; } // respiros laterais
+    predio(lx, lz, 7.2, 7.4, 6 + (ci % 3), coresT[ci % coresT.length], telhT[ci % telhT.length]); ci++;
   }
-  [[-46, -16], [-46, 16]].forEach(([lx, lz]) => { predio(lx, lz, 8, 8, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
-  [[44, -24], [44, -8], [44, 8], [44, 24]].forEach(([lx, lz]) => { predio(lx, lz, 9, 8, 6 + (ci % 3), coresT[ci % 5], telhT[ci % 4], 'x'); ci++; });
+  [[-50, -18], [-50, 18]].forEach(([lx, lz]) => { predio(lx, lz, 7.4, 7.4, 7, coresT[ci % 5], telhT[ci % 4]); ci++; });
+  [[50, -28], [50, -10], [50, 10], [50, 28]].forEach(([lx, lz]) => { predio(lx, lz, 7.6, 7.2, 6 + (ci % 3), coresT[ci % 5], telhT[ci % 4], 'x'); ci++; });
 
   return { grupo: g, colisores };
 }

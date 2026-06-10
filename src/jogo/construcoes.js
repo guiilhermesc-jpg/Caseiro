@@ -27,8 +27,9 @@ export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) 
   }, undefined, () => {});
 }
 
-// VIDRO de janela compartilhado (leve reflexo + brilho fraco → "vidro" de verdade)
-export const VIDRO = new THREE.MeshStandardMaterial({ color: 0x9fd0e0, roughness: 0.18, metalness: 0.18, emissive: 0x24506a, emissiveIntensity: 0.3 });
+// VIDRO de janela compartilhado: reflexo, não lâmpada. Emissivo alto fazia
+// casas e rostos "estourarem" com bloom no PC.
+export const VIDRO = new THREE.MeshStandardMaterial({ color: 0x8bb6c4, roughness: 0.14, metalness: 0.22, emissive: 0x07131a, emissiveIntensity: 0.035 });
 
 // textura procedural de PEDRA/calçamento (paralelepípedos com junta) p/ praças e pisos
 let _texPedra = null;

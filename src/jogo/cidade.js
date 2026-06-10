@@ -435,12 +435,12 @@ export function criaCidade() {
   // === THAIS (cidade distante ENTRÁVEL) — agora BEM longe (centro x=560) ===
   add(criaThais(560, 0));
   add(criaFonte(560, 0));                         // praça central com fonte
-  add(criaPlaca(510, -7, 'Bem-vindo a Thais'));   // logo após o portão
+  add(criaPlaca(506, -7, 'Bem-vindo a Thais'));   // logo após o portão
   // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
   add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
-  add(criaCasaInterior(534, 12, { frente: 'sul', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
-  add(criaCasaInterior(580, 0, { frente: 'oeste', cor: 0xdccfae, corTelhado: 0x2f8d80 }));
+  add(criaCasaInterior(528, 0, { frente: 'leste', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
+  add(criaCasaInterior(592, 0, { frente: 'oeste', cor: 0xdccfae, corTelhado: 0x2f8d80 }));
   // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro) — frentes livres
   add(criaBarraca(550, 7, 0, 0xc0653a));
   add(criaBarraca(570, 7, 0, 0x2f8d80));
