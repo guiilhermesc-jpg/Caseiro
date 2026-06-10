@@ -61,6 +61,12 @@ export function criaEsgoto() {
       deg.position.set(0, 0.15 + i * 0.5, -0.8 + i * 0.5); deg.castShadow = true; esc.add(deg);
     }
     g.add(esc);
+    // CLARIDADE da entrada: feixe de luz do dia descendo pelo bueiro + luz real
+    const feixe = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.6, alt, 12, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide }));
+    feixe.position.set(a.x, Y + alt / 2, a.z); g.add(feixe);
+    const luzEntrada = new THREE.PointLight(0xbfd8ff, 1.2, 13, 2);
+    luzEntrada.position.set(a.x, Y + alt - 0.6, a.z); g.add(luzEntrada);
   });
 
   return {

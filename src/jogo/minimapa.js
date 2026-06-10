@@ -21,10 +21,26 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
 
   const ctx = cnv.getContext('2d');
   const cx = TAM / 2, cy = TAM / 2;
-  const esc = (TAM / 2 - 6) / alcance; // mundo -> pixels
+  let alc = alcance;                  // alcance ATUAL (muda com o zoom)
+  let esc = (TAM / 2 - 6) / alc;      // mundo -> pixels
 
-  function mostra() { cnv.style.display = 'block'; }
-  function esconde() { cnv.style.display = 'none'; }
+  // ZOOM do minimapa: botões 🔍 colados no mapa (canto direito, logo abaixo)
+  function zoom(f) { alc = Math.max(45, Math.min(260, alc * f)); esc = (TAM / 2 - 6) / alc; }
+  const botoes = [];
+  function botaoZoom(txt, right, f) {
+    const b = document.createElement('div');
+    b.textContent = txt;
+    b.style.cssText = `position:fixed;top:${14 + TAM + 6}px;right:${right}px;width:38px;height:34px;z-index:21;display:none;`
+      + 'align-items:center;justify-content:center;font-size:15px;cursor:pointer;user-select:none;'
+      + 'background:rgba(16,22,32,.85);border:1px solid #3a4654;border-radius:9px;color:#fff;';
+    b.addEventListener('pointerdown', (e) => { e.stopPropagation(); zoom(f); });
+    document.body.appendChild(b); botoes.push(b);
+  }
+  botaoZoom('🔍+', 58, 0.72); // aproxima (vê menos área, maior detalhe)
+  botaoZoom('🔍−', 14, 1.38); // afasta (vê mais área)
+
+  function mostra() { cnv.style.display = 'block'; botoes.forEach((b) => { b.style.display = 'flex'; }); }
+  function esconde() { cnv.style.display = 'none'; botoes.forEach((b) => { b.style.display = 'none'; }); }
 
   function setaCentro(rot) {
     const fx = Math.sin(rot), fy = Math.cos(rot), rx = -fy, ry = fx;
@@ -41,7 +57,7 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
     const ax = avatar.position.x, az = avatar.position.z;
     const sx = (wx) => cx + (wx - ax) * esc;   // relativo ao jogador
     const sy = (wz) => cy + (wz - az) * esc;
-    const perto = (x, z, m = alcance * 1.4) => Math.abs(x - ax) < m && Math.abs(z - az) < m;
+    const perto = (x, z, m = alc * 1.4) => Math.abs(x - ax) < m && Math.abs(z - az) < m;
 
     ctx.clearRect(0, 0, TAM, TAM);
     ctx.fillStyle = '#5c7d44'; ctx.fillRect(0, 0, TAM, TAM);
@@ -80,7 +96,7 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
     if (lugares.length) {
       ctx.font = 'bold 9px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (const L of lugares) {
-        if (!perto(L.x, L.z, alcance)) continue;
+        if (!perto(L.x, L.z, alc)) continue;
         const px = sx(L.x), py = sy(L.z);
         if (px < 6 || px > TAM - 6 || py < 7 || py > TAM - 5) continue;
         const w = ctx.measureText(L.nome).width;
@@ -107,5 +123,5 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
     setaCentro(avatar.rotation.y);
   }
 
-  return { atualiza, mostra, esconde, el: cnv };
+  return { atualiza, mostra, esconde, zoom, el: cnv };
 }

@@ -104,6 +104,15 @@ export function criaInventario({ aoEquipar } = {}) {
       if (mochila.length >= N_MOCHILA) return false;
       mochila.push({ ...item, qtd: 1 }); renderMochila(); return true; // guarda props (slot/defesa/id)
     },
+    // tem pelo menos 1 unidade do item? (ex.: Flecha pro arco)
+    temItem(nome) { return mochila.some((m) => m.nome === nome && m.qtd > 0); },
+    // gasta 1 unidade (ex.: cada tiro de arco consome 1 Flecha)
+    consomeItem(nome) {
+      const i = mochila.findIndex((m) => m.nome === nome);
+      if (i < 0) return false;
+      if (mochila[i].qtd > 1) mochila[i].qtd--; else mochila.splice(i, 1);
+      renderMochila(); return true;
+    },
     // MORTE estilo Tibia: derruba TUDO da mochila (devolve a lista pro corpo no chão)
     esvaziaMochila() {
       const perdidos = mochila.splice(0, mochila.length);

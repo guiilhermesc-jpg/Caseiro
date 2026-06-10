@@ -58,7 +58,15 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
-const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos } = criaCidade();
+const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
+// ALTURA DO TERRENO: plano em todo o mapa, exceto a Montanha do Dragão (rampa
+// cônica escalável até o platô). O avatar "gruda" nessa altura ao andar.
+function alturaTerreno(x, z) {
+  const r = Math.hypot(x - montanhaDragao.x, z - montanhaDragao.z);
+  if (r >= montanhaDragao.r) return 0;
+  if (r <= montanhaDragao.topo) return montanhaDragao.h;
+  return montanhaDragao.h * (1 - (r - montanhaDragao.topo) / (montanhaDragao.r - montanhaDragao.topo));
+}
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
@@ -102,6 +110,21 @@ function colide(x, z) {
   }
   return false;
 }
+// colisão dos BICHOS com o cenário (padrão Tibia/Albion: monstro não atravessa
+// parede/árvore). y decide o andar: esgoto (fundo) ou superfície (grade).
+function podeAndarBicho(x, z, y) {
+  if (y < -10) {
+    for (const o of esgoto.colisores) {
+      if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
+    }
+    return true;
+  }
+  const arr = gradeCol.get(Math.floor(x / CELULA) * 4096 + Math.floor(z / CELULA));
+  if (arr) for (const o of arr) {
+    if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
+  }
+  return true;
+}
 
 // --- esgoto (subsolo escuro) + ratos + boss + tocha ---
 const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
@@ -127,8 +150,13 @@ addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16)
   ratos.push({ g: criaBeholder(x, z), hp: 70, hpMax: 70, xp: 35, dano: 12, vel: 1.4, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' } });
 });
 // DRAGÃO (chefão D&D) guardando o Covil do Dragão, ao norte — muito forte, loot lendário
-const DRX = 40, DRZ = 305;
-ratos.push({ g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, bounds: areaMon(DRX, DRZ, 16), y0: 0, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' } });
+// DRAGÃO VERDE (estilo Tibia) no TOPO da Montanha do Dragão — suba a rampa pra
+// enfrentá-lo. De tempos em tempos ele VOA sobre Venore atrás de comida.
+const DRX = montanhaDragao.x, DRZ = montanhaDragao.z, DRY = montanhaDragao.h;
+const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' } };
+dragao.g.position.y = DRY;
+ratos.push(dragao);
+const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1º voo logo no começo (pra você ver!)
 // FAUNA DO CAMINHO (cada região com seus bichos, estilo Tibia)
 // matilha de lobos rondando a ponte do rio + lobos na floresta oeste
 [[170, 14], [191, 16], [188, -18], [-96, 26]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
@@ -154,8 +182,9 @@ ratos.push({ g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, ve
 addMonstro(criaCyclops(415, 50), 80, 30, 15, 1.2, true, areaMon(415, 50, 16)); // ciclope da mata fechada
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
-const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
+const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
 let tochaOn = false;
+let tochaCarga = 1; // 1 = tocha nova; QUEIMA acesa (raio encolhe) e recupera apagada
 let vida = 100; const VIDA_MAX = 100; let defesa = 0; // defesa sobe ao equipar armadura
 const equipados = {}; // slot -> item de armadura
 let ouro = 0; // moeda do jogo (loot/pesca) — compra casas
@@ -213,7 +242,7 @@ const LUGARES_MAPA = [
   { nome: 'Bairro Sul', x: 0, z: -95 }, { nome: 'Moinho', x: -44, z: -74 },
   { nome: 'Porto', x: 45, z: 64 }, { nome: 'Farol', x: 66, z: 84 }, { nome: 'Ponte', x: 16, z: 80 },
   { nome: 'Thais', x: 560, z: 0 }, { nome: 'Templo', x: 560, z: 19 },
-  { nome: 'Ruínas', x: 150, z: 250 }, { nome: 'Dragão', x: 40, z: 330 },
+  { nome: 'Ruínas', x: 150, z: 250 }, { nome: 'Covil', x: 40, z: 330 }, { nome: 'Pico do Dragão', x: 110, z: 300 },
   { nome: 'Rio Fundo', x: 180, z: 0 }, { nome: 'Torre', x: 122, z: -9 },
   { nome: 'Fazenda', x: 105, z: 38 }, { nome: 'Cemitério', x: 130, z: -60 },
   { nome: 'Pântano', x: 225, z: -95 }, { nome: 'Bandidos', x: 252, z: 48 },
@@ -287,7 +316,7 @@ const customizar = criaCustomizar({
 // TABELA DE COMPRA dos mercadores (estilo Tibia: caçar → saquear → vender)
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
-  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -311,15 +340,21 @@ function abreDialogo(npc) {
         : 'Hmm... você não tem nada que me interesse. Caça, gemas e peixes pagam bem!', opcoes);
     } });
   }
-  // CURANDEIRA vende poção de vida
-  if (npc.prof === 'Curandeira') {
-    opcoes.splice(3, 0, { texto: '🧪 Comprar poção (8🪙)', onClick: () => {
-      if (ouro >= 8) {
-        ouro -= 8; hud.ouro(ouro);
-        inventario.addItem({ nome: 'Poção de Vida', icone: '🧪', slot: 'pocao', usavel: 'pocao' });
-        dialogo.abre(npc.nome, 'Aqui está. Clique nela na mochila pra beber (+35 ❤️).', opcoes);
-      } else dialogo.abre(npc.nome, `Custa 8 🪙 e você tem ${ouro}. Venda seu loot pro Otto!`, opcoes);
-    } });
+  // LOJA do NPC (estilo Tibia: cada vendedor tem sua mercadoria — armas na
+  // forja, runas com a Eldra, flechas com o Falk, poções com a Sira...)
+  if (npc.loja) {
+    for (const produto of npc.loja) {
+      opcoes.splice(opcoes.length - 1, 0, { texto: `${produto.icone} ${produto.nome} — ${produto.preco}🪙`, onClick: () => {
+        if (ouro < produto.preco) { dialogo.abre(npc.nome, `Custa ${produto.preco} 🪙 e você tem ${ouro}. Venda loot pra juntar!`, opcoes); return; }
+        const primeiro = produto.pacote
+          ? inventario.addItem({ nome: produto.pacote.nome, icone: produto.pacote.icone })
+          : inventario.addItem({ ...produto });
+        if (!primeiro) { dialogo.abre(npc.nome, 'Sua mochila está cheia! Venda ou use algo antes.', opcoes); return; }
+        ouro -= produto.preco; hud.ouro(ouro);
+        if (produto.pacote) for (let q = 1; q < produto.pacote.qtd; q++) inventario.addItem({ nome: produto.pacote.nome, icone: produto.pacote.icone });
+        dialogo.abre(npc.nome, `${produto.icone} ${produto.nome} — bom proveito! (${produto.preco} 🪙)`, opcoes);
+      } });
+    }
   }
   const saud = npc.humor === 'bom'
     ? `Saudações! Sou ${npc.nome}, ${npc.prof.toLowerCase()} de Venore. 😊`
@@ -355,7 +390,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
       if (r) {
         const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
         if (r.corpse && d < 2.6) { saqueia(r); return; }
-        if (r.vivo && d < 2.8) { // vira pro alvo e golpeia
+        if (r.vivo && d < alcanceAtaque() + 0.2) { // vira pro alvo e golpeia/atira
           avatar.rotation.y = Math.atan2(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
           gesto = 1; atacar(); return;
         }
@@ -388,7 +423,7 @@ function executaAcao() {
       else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
     } else { // sem interativo: saquear / atacar / pescar
       const c = corpseProximo();
-      if (c) saqueia(c); else if (alvoRato()) atacar(); else if (pertoDaAgua()) pescar();
+      if (c) saqueia(c); else if (alvoRato(alcanceAtaque())) atacar(); else if (pertoDaAgua()) pescar();
     }
   }
 }
@@ -489,7 +524,14 @@ function poeArmaNaMao() {
   const p = avatar.userData.partes; if (!p) return;
   const old = p.bracoDir.getObjectByName('arma'); if (old) p.bracoDir.remove(old);
   let m;
-  if (danoArma > 6) { m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.06), MAT_METAL); m.position.set(0, -1.4, 0.18); } // espada/machado
+  if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: haste curva + corda
+    m = new THREE.Group();
+    const haste = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 6, 12, Math.PI), MAT_MADEIRA);
+    haste.rotation.z = -Math.PI / 2; m.add(haste);
+    const corda = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.1, 0.02), MAT_METAL);
+    m.add(corda);
+    m.position.set(0, -1.0, 0.2); m.rotation.x = 0.2;
+  } else if (danoArma > 6) { m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.06), MAT_METAL); m.position.set(0, -1.4, 0.18); } // espada/machado
   else { m = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA); m.position.set(0, -1.0, 0.18); m.rotation.x = 0.4; } // graveto
   m.name = 'arma'; p.bracoDir.add(m);
 }
@@ -518,6 +560,26 @@ function aoEquipar(item) {
     if (vida >= VIDA_MAX) { mostraMensagem('Você já está com a vida cheia. ❤️'); return false; }
     vida = Math.min(VIDA_MAX, vida + 35); hud.vida(vida, VIDA_MAX);
     mostraMensagem('🧪 Glub glub... +35 de vida! ❤️');
+    return true;
+  }
+  if (item.usavel === 'runaCura') { // runa de cura: +50 na hora
+    if (vida >= VIDA_MAX) { mostraMensagem('Você já está com a vida cheia. ❤️'); return false; }
+    vida = Math.min(VIDA_MAX, vida + 50); hud.vida(vida, VIDA_MAX);
+    mostraMensagem('✨ Runa de Cura! +50 ❤️');
+    return true;
+  }
+  if (item.usavel === 'runaFogo') { // runa de fogo: explosão queima TODOS por perto
+    let acertou = 0;
+    for (const r of ratos) {
+      if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
+      const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+      if (d > 5) continue;
+      r.hp -= 30; r.piscar = 0.2; r.g.userData.corpoMat.emissive.setHex(0xa03010);
+      if (r.hp <= 0) mataBicho(r);
+      acertou++;
+    }
+    explosaoFogo();
+    mostraMensagem(acertou ? `🔥 Runa de Fogo! ${acertou} bicho(s) queimado(s) (-30)` : '🔥 A runa explode... sem alvos por perto.');
     return true;
   }
   if (item.arma) { // arma de mão
@@ -592,24 +654,55 @@ function rollLoot(ehBoss) {
   }
   return out;
 }
-function alvoRato() {
+function alcanceAtaque() { return (equipados.maoDir && equipados.maoDir.arco) ? 14 : 2.6; } // arco atira de LONGE
+function alvoRato(alcance = 2.6) {
   const fx = Math.sin(avatar.rotation.y), fz = Math.cos(avatar.rotation.y);
-  let melhor = null, melhorD = 2.6;
+  let melhor = null, melhorD = alcance;
   for (const r of ratos) {
     if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue; // mesmo "andar"
     const dx = r.g.position.x - avatar.position.x, dz = r.g.position.z - avatar.position.z, d = Math.hypot(dx, dz);
-    if (d > 2.6 || (dx * fx + dz * fz) / (d || 1) < 0) continue; // perto e na frente
+    if (d > alcance || (dx * fx + dz * fz) / (d || 1) < 0) continue; // no alcance e na frente
     if (d < melhorD) { melhorD = d; melhor = r; }
   }
   return melhor;
 }
+// FLECHAS voando (projétil visual do arco)
+const flechasVoando = [];
+function disparaFlecha(r) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.95, 4), MAT_MADEIRA);
+  const de = avatar.position.clone(); de.y += 2.0;
+  const ate = r.g.position.clone(); ate.y += 1.2;
+  m.position.copy(de);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), ate.clone().sub(de).normalize());
+  scene.add(m);
+  flechasVoando.push({ m, de, ate, t: 0 });
+}
+// EXPLOSÃO da Runa de Fogo (esfera que cresce e some)
+const explosoes = [];
+function explosaoFogo() {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10),
+    new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0.7, depthWrite: false }));
+  m.position.copy(avatar.position); m.position.y += 1.2;
+  scene.add(m);
+  explosoes.push({ m, t: 0 });
+}
 function atacar() {
   const dano = danoArma;
+  if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: tiro à distância (gasta 1 flecha)
+    const melhor = alvoRato(14);
+    if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
+    if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (Venore) ou Yara (Thais). ➹'); return; }
+    disparaFlecha(melhor);
+    melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+    if (melhor.hp <= 0) mataBicho(melhor);
+    else mostraMensagem(`🏹 Flechada! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
+    return;
+  }
   const melhor = alvoRato();
   if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
   melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);
   if (melhor.hp <= 0) mataBicho(melhor);
-  else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o rato'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
+  else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
 }
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;
@@ -686,7 +779,27 @@ function morre() {
   mostraMensagem(`💀 Você caiu! Os deuses te trazem ao Templo Sagrado. (-${xpPerdido} XP${perdidos.length ? ' · sua mochila ficou onde você morreu 🎒' : ''})`);
 }
 function reviveBicho(r) {
-  if (r.boss && r.forma) { // só o boss do esgoto troca de forma (cobra↔croc); dragão revive normal
+  if (r.dragao) {
+    // raramente (20%), no lugar do dragão verde nasce o DRAGON LORD vermelho,
+    // 5× mais forte; quando o Lord morre, volta o dragão verde de sempre.
+    scene.remove(r.g);
+    r.lord = !r.lord && Math.random() < 0.2;
+    r.g = criaDragao(DRX, DRZ, r.lord);
+    r.g.position.y = DRY;
+    scene.add(r.g);
+    if (r.lord) {
+      r.hpMax = 1100; r.xp = 600; r.dano = 55; r.vel = 1.9;
+      r.lootEspecial = { nome: 'Coração de Dragão', icone: '❤️‍🔥' };
+      mostraMensagem('🔥 Um DRAGON LORD pousou no pico da montanha!');
+    } else {
+      r.hpMax = 220; r.xp = 120; r.dano = 22; r.vel = 1.6;
+      r.lootEspecial = { nome: 'Escama de Dragão', icone: '🐲' };
+      mostraMensagem('🐲 Um dragão voltou ao pico da montanha.');
+    }
+    r.hp = r.hpMax; r.vivo = true; r.respawnAt = null; r.alvo = { x: DRX, z: DRZ };
+    return;
+  }
+  if (r.boss && r.forma) { // só o boss do esgoto troca de forma (cobra↔croc)
     scene.remove(r.g);
     r.forma = r.forma === 'cobra' ? 'croc' : 'cobra';
     r.g = (r.forma === 'cobra' ? criaCobra : criaCrocodilo)(0, -10);
@@ -722,6 +835,7 @@ const DISTRITOS = [
   { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
   { nome: 'Terras do Dragão', x: 40, z: 300, raio: 45 },
   { nome: 'Covil do Dragão', x: 40, z: 330, raio: 22 },
+  { nome: 'Pico do Dragão', x: 110, z: 300, raio: 50 },
   { nome: 'Ponte do Rio Fundo', x: 180, z: 0, raio: 12 },
   { nome: 'Rio Fundo', x: 180, z: -50, raio: 14 },
   { nome: 'Torre de Vigia', x: 122, z: -9, raio: 11 },
@@ -754,27 +868,13 @@ renderer.domElement.addEventListener('wheel', (e) => {
   zoomDist = Math.max(5, Math.min(45, zoomDist + e.deltaY * 0.02));
 }, { passive: false });
 
-// ajustar tamanho do mundo (ampliar/reduzir) — botões 🗺️ e teclas + / -
-function ajustaMapa(fator) {
-  limiteMundo = Math.max(80, Math.min(2000, Math.round(limiteMundo * fator)));
-  if (!noEsgoto) areaAtiva = areaSuperficie();
-  mostraMensagem('🗺️ Mapa: raio ' + limiteMundo);
-}
+// ZOOM DO MINIMAPA também pelas teclas + / − (os botões 🔍 ficam COLADOS no
+// mapa, canto direito — os antigos 🗺️ da esquerda mudavam o tamanho do MUNDO
+// e confundiam; foram removidos)
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'Equal' || e.code === 'NumpadAdd') ajustaMapa(1.25);
-  if (e.code === 'Minus' || e.code === 'NumpadSubtract') ajustaMapa(0.8);
+  if (e.code === 'Equal' || e.code === 'NumpadAdd') minimapa.zoom(0.72);
+  if (e.code === 'Minus' || e.code === 'NumpadSubtract') minimapa.zoom(1.38);
 });
-function botaoMapa(txt, bottom, fator) {
-  const b = document.createElement('div');
-  b.textContent = txt;
-  b.style.cssText = `position:fixed;left:14px;bottom:${bottom}px;width:46px;height:46px;z-index:30;`
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;user-select:none;'
-    + 'background:rgba(16,22,32,.8);border:1px solid #3a4654;border-radius:10px;color:#fff;';
-  b.addEventListener('pointerdown', (e) => { e.stopPropagation(); ajustaMapa(fator); });
-  document.body.appendChild(b);
-}
-botaoMapa('🗺️+', 72, 1.25);
-botaoMapa('🗺️−', 20, 0.8);
 
 // === PESCA (em qualquer lago) — espécies reais ===
 const PEIXES = [
@@ -836,7 +936,10 @@ criaSelecao({
 // PRÉ-COMPILA todos os shaders agora (no carregamento). Sem isto, o three.js
 // compila o shader de cada material novo na PRIMEIRA vez que ele aparece na
 // tela — era a "travada do nada" ao explorar o mapa.
+// (esgoto visível durante o compile p/ a 1ª descida não engasgar)
+esgoto.grupo.visible = true;
 renderer.compile(scene, camera);
+esgoto.grupo.visible = false;
 
 const relogio = new THREE.Clock();
 let tempo = 0;
@@ -879,7 +982,8 @@ function loop() {
     if (controles.querPular() && noChao) { vy = 9; noChao = false; }
     vy -= 25 * dt;
     avatar.position.y += vy * dt;
-    if (avatar.position.y <= chaoY) { avatar.position.y = chaoY; vy = 0; noChao = true; }
+    const solo = noEsgoto ? chaoY : alturaTerreno(avatar.position.x, avatar.position.z);
+    if (avatar.position.y <= solo) { avatar.position.y = solo; vy = 0; noChao = true; }
     const escalaY = abaixado ? 0.6 : 1;
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
     animaAvatar(avatar, movendo && noChao, tempo, correndo);
@@ -899,12 +1003,12 @@ function loop() {
       for (const a of esgoto.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir 🪜'; break; } }
       if (!dica) { const itE = achaInterativo(); if (itE) dica = itE.acao || itE.titulo; }
       if (!dica && corpseProximo()) dica = 'Saquear o corpo 💀';
-      if (!dica && alvoRato()) dica = 'Atacar ⚔️';
+      if (!dica && alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';
     } else {
       const it = achaInterativo();
       if (it) dica = it.acao || it.titulo;
       else if (corpseProximo()) dica = 'Saquear o corpo 💀';
-      else if (alvoRato()) dica = 'Atacar ⚔️';
+      else if (alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';
       else if (pertoDaAgua()) dica = 'Pescar 🎣';
     }
     mostraPrompt(dica);
@@ -956,7 +1060,46 @@ function loop() {
   if (!noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet espera na superfície
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide, ehNoite);
-  atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null);
+  atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho);
+
+  // VOO DO DRAGÃO: de tempos em tempos ele decola do pico, plana sobre Venore
+  // atrás de comida e volta — dá pra ver ele cruzando o céu da cidade!
+  if (dragao.vivo && !dragao.corpse) {
+    if (!vooDragao.ativo) {
+      vooDragao.proximo -= dt;
+      if (vooDragao.proximo <= 0) { vooDragao.ativo = true; vooDragao.t = 0; dragao.voando = true; mostraMensagem('🐉 O dragão levantou voo da montanha...'); }
+    } else {
+      vooDragao.t += dt / 28; // ~28s de voo (ida até a praça e volta)
+      const t = vooDragao.t;
+      if (t >= 1) {
+        vooDragao.ativo = false; dragao.voando = false;
+        vooDragao.proximo = 75 + Math.random() * 90;
+        dragao.g.position.set(DRX, DRY, DRZ);
+      } else {
+        const k = Math.sin(t * Math.PI);            // 0→1→0 (quão longe do pico)
+        const cx = DRX + (0 - DRX) * k, cz = DRZ + (0 - DRZ) * k; // rumo à praça de Venore
+        const px = cx + Math.sin(t * Math.PI * 2) * 16 * k;       // serpenteia no ar
+        const pz = cz + Math.cos(t * Math.PI * 2) * 10 * k;
+        const py = DRY + (62 - DRY) * Math.min(1, k * 1.6);       // sobe até ~62 de altura
+        const antX = dragao.g.position.x, antZ = dragao.g.position.z;
+        dragao.g.position.set(px, py, pz);
+        dragao.g.rotation.y = Math.atan2(px - antX, pz - antZ);
+        const asas = dragao.g.userData.asas;
+        if (asas) { const w = 0.45 + Math.sin(tempo * 9) * 0.5; asas[0].rotation.z = w; asas[1].rotation.z = -w; }
+      }
+    }
+  }
+  // flechas voando + explosões de runa
+  for (let i = flechasVoando.length - 1; i >= 0; i--) {
+    const f = flechasVoando[i]; f.t += dt * 5;
+    if (f.t >= 1) { scene.remove(f.m); flechasVoando.splice(i, 1); continue; }
+    f.m.position.lerpVectors(f.de, f.ate, f.t);
+  }
+  for (let i = explosoes.length - 1; i >= 0; i--) {
+    const e = explosoes[i]; e.t += dt * 3;
+    if (e.t >= 1) { scene.remove(e.m); explosoes.splice(i, 1); continue; }
+    e.m.scale.setScalar(1 + e.t * 4.5); e.m.material.opacity = 0.7 * (1 - e.t);
+  }
   if (jogoIniciado) {
     for (const r of ratos) {
       if (r.vivo && r.contato && tempo > (r.proxAtaque || 0)) {
@@ -968,7 +1111,16 @@ function loop() {
     }
     if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 1.5); hud.vida(vida, VIDA_MAX); } // regen lenta
   }
-  if (tochaOn) luzTocha.position.set(avatar.position.x, avatar.position.y + 2.6, avatar.position.z);
+  // TOCHA: ilumina FORTE quando nova e vai QUEIMANDO (raio/força encolhem);
+  // apagada, ela "descansa" e recupera. (~4 min acesa até ficar fraca)
+  if (tochaOn) {
+    luzTocha.position.set(avatar.position.x, avatar.position.y + 2.6, avatar.position.z);
+    tochaCarga = Math.max(0.12, tochaCarga - dt / 240);
+    luzTocha.intensity = 1.1 + tochaCarga * 2.3;
+    luzTocha.distance = 10 + tochaCarga * 24;
+  } else if (tochaCarga < 1) {
+    tochaCarga = Math.min(1, tochaCarga + dt / 120);
+  }
   if (pescandoAte > 0 && tempo > pescandoAte) resolvePesca(); // fisgada da pesca
   // corpos somem em 30s; respawn calibrado (rato 25s, boss 60s)
   for (const r of ratos) {

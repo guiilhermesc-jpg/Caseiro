@@ -20,9 +20,28 @@ const ROSTER = [
   { nome: 'Greta', prof: 'Padeira', post: { x: 4, z: -104 }, cor: 0xd8c4a0, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Assando pão no mercado coberto do Bairro do Comércio. Sinta o cheiro!', dica: 'Queijo fresco atrai ratos... e aventureiros famintos.' } },
   { nome: 'Bram', prof: 'Ferreiro', post: { x: -17, z: 11 }, cor: 0x445162, humor: 'mau', sexo: 'homem', tipo: 'aldeao',
-    falas: { trabalho: 'Minha forja fica na Rua do Ferreiro. Martelo ferro o dia todo.', dica: 'Esse graveto não vai longe. Volte quando eu tiver aço.' } },
+    falas: { trabalho: 'Minha forja fica na Rua do Ferreiro. Aço de verdade — escolha sua arma.', dica: 'Adaga é rápida e barata. Machado derruba até ciclope.' },
+    loja: [
+      { nome: 'Adaga', icone: '🗡️', preco: 25, slot: 'maoDir', dano: 8, arma: true },
+      { nome: 'Espada', icone: '⚔️', preco: 60, slot: 'maoDir', dano: 12, arma: true },
+      { nome: 'Machado', icone: '🪓', preco: 100, slot: 'maoDir', dano: 16, arma: true },
+    ] },
   { nome: 'Sira', prof: 'Curandeira', post: { x: 27, z: 10 }, cor: 0xeef0f2, humor: 'bom', sexo: 'mulher', tipo: 'mago',
-    falas: { trabalho: 'Atendo na porta do hospital. Pague quando puder.', dica: 'Se descer no esgoto, leve uma TOCHA. E cuidado com algo grande lá embaixo.' } },
+    falas: { trabalho: 'Atendo na porta do hospital. Poções frescas todo dia.', dica: 'Se descer no esgoto, leve uma TOCHA. E cuidado com algo grande lá embaixo.' },
+    loja: [{ nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' }] },
+  // --- LOJAS estilo Tibia (cada vendedor com sua finalidade) ---
+  { nome: 'Eldra', prof: 'Vendedora de Runas', post: { x: -22, z: 17 }, cor: 0x5a2a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+    falas: { trabalho: 'Runas mágicas! Cura na hora ou fogo nos inimigos — escolha a sua.', dica: 'A Runa de Fogo queima TODOS os bichos perto de você. Use quando estiver cercado.' },
+    loja: [
+      { nome: 'Runa de Cura', icone: '✨', preco: 15, slot: 'runa', usavel: 'runaCura' },
+      { nome: 'Runa de Fogo', icone: '🔥', preco: 20, slot: 'runa', usavel: 'runaFogo' },
+    ] },
+  { nome: 'Falk', prof: 'Arqueiro', post: { x: 22, z: -15 }, cor: 0x3a5a2a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
+    falas: { trabalho: 'Arcos e flechas de primeira. Com um arco você caça de LONGE.', dica: 'Equipou o arco? O golpe vira tiro: acerta bicho a até 14 passos. Cada tiro gasta 1 flecha.' },
+    loja: [
+      { nome: 'Arco', icone: '🏹', preco: 80, slot: 'maoDir', dano: 10, arma: true, arco: true },
+      { nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } },
+    ] },
   { nome: 'Tobias', prof: 'Sacerdote', post: { x: 0, z: -34 }, cor: 0x6a4a8a, humor: 'bom', sexo: 'homem', tipo: 'mago',
     falas: { trabalho: 'Sirvo dentro do Templo Sagrado, junto ao altar.', dica: 'Quando alguém cai em batalha, os deuses o trazem de volta a este templo. Mas há um preço: experiência e a mochila ficam para trás...' } },
   { nome: 'Lia', prof: 'Escriba', post: { x: 3, z: 23 }, cor: 0x3a5a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
@@ -41,7 +60,11 @@ const ROSTER = [
   { nome: 'Dorian', prof: 'Guardião do Portão', post: { x: 520, z: 6 }, home: { x: 548, z: -12 }, cor: 0x6a5a3a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
     falas: { trabalho: 'Guardo o portão de Thais dia e noite. Não passa quem não deve.', dica: 'A estrada que te trouxe é infestada de trolls e bandidos. Sorte sua.' } },
   { nome: 'Yara', prof: 'Mercadora', post: { x: 552, z: 10 }, home: { x: 572, z: -12 }, cor: 0xb8902a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
-    falas: { trabalho: 'Trago especiarias de terras distantes. Thais vive do comércio.', dica: 'Em Venore o pão é melhor, mas aqui o ouro corre solto.' } },
+    falas: { trabalho: 'Trago especiarias de terras distantes. Thais vive do comércio.', dica: 'Em Venore o pão é melhor, mas aqui o ouro corre solto.' },
+    loja: [
+      { nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' },
+      { nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } },
+    ] },
   { nome: 'Aldo', prof: 'Sacerdote de Thais', post: { x: 560, z: 9 }, home: { x: 556, z: -10 }, cor: 0x2f7d72, humor: 'bom', sexo: 'homem', tipo: 'mago',
     falas: { trabalho: 'Cuido do templo no alto da praça. Suba os degraus e descanse.', dica: 'Dizem que sob Thais há catacumbas tão fundas quanto o esgoto de Venore.' } },
   { nome: 'Khan', prof: 'Caçador', post: { x: 546, z: -10 }, home: { x: 548, z: -12 }, cor: 0x4a6a2a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
@@ -55,9 +78,10 @@ const ROSTER = [
     falas: { trabalho: 'Planto trigo nesta terra desde moleque. O espantalho? Chama-se Zé.', dica: 'Não vá ao cemitério depois do anoitecer. Os mortos lá não descansam.' } },
 ];
 
-// casas (residências) e quem trabalha à noite (lojistas/guarda continuam no posto)
-const HOMES = [[28, 28], [-28, 28], [28, -28], [-28, -28], [60, 6], [-60, 6], [6, 60], [6, -60], [34, 34], [-34, 34], [34, -34]];
-const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias']); // Tobias guarda o templo a noite toda
+// casas (residências) — pontos LIVRES na rua em frente às casas (os antigos
+// caíam DENTRO dos prédios e o NPC andava contra a parede a noite inteira!)
+const HOMES = [[24, 24], [-24, 24], [24, -24], [-24, -24], [56, 8], [-56, 8], [8, 56], [8, -56], [24, 40], [-24, 40], [40, -24]];
+const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias', 'Eldra', 'Falk']); // lojistas/templo viram a noite no posto
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');
@@ -122,6 +146,15 @@ export function atualizaNPCs(npcs, dt, colide, noite = false) {
     if (Math.hypot(g.position.x - base.x, g.position.z - base.z) > 7) n.alvo = { x: base.x, z: base.z };
     const dx = n.alvo.x - g.position.x, dz = n.alvo.z - g.position.z, dist = Math.hypot(dx, dz);
     if (dist < 0.5) { n.pausa = (noite ? 3 : 1.5) + Math.random() * 3; n.alvo = alvoPertoDoPosto(base, colide); animaAvatar(g, false, n.tempo); continue; }
+    // ANTI-PRESO: se em ~2.5s ele não se aproximou do alvo, desiste e re-mira
+    // (acaba com o "andando infinitamente contra a parede")
+    if (n.distAnt !== undefined && dist > n.distAnt - 0.012) n.preso = (n.preso || 0) + dt; else n.preso = 0;
+    n.distAnt = dist;
+    if (n.preso > 2.5) {
+      n.preso = 0; n.distAnt = undefined;
+      n.alvo = alvoPertoDoPosto(base, colide); n.pausa = 0.6 + Math.random();
+      animaAvatar(g, false, n.tempo); continue;
+    }
 
     const vel = 2.4, ang = Math.atan2(dx, dz);
     let andou = false;
@@ -138,7 +171,7 @@ export function atualizaNPCs(npcs, dt, colide, noite = false) {
     }
     if (!andou) {
       if (n.noChao) { n.vy = 6; n.noChao = false; }
-      n.alvo = alvoPertoDoPosto(n.post, colide); n.pausa = 0.3;
+      n.alvo = alvoPertoDoPosto(base, colide); n.pausa = 0.3; // re-mira perto de onde DEVE estar (posto de dia, casa à noite)
     }
     animaAvatar(g, andou && n.noChao, n.tempo);
   }

@@ -52,11 +52,15 @@ export function criaRatos(n, bounds) {
 }
 
 // usa o bounds PRÓPRIO de cada criatura. jog = {x,y,z} do jogador (persegue se perto).
-export function atualizaRatos(ratos, dt, jog) {
+// podeAndar(x, z, y) = checagem de colisão com o cenário (padrão Tibia/Albion:
+// bicho NÃO atravessa parede/árvore; se bater, escolhe outro rumo).
+export function atualizaRatos(ratos, dt, jog, podeAndar) {
   for (const r of ratos) {
-    if (!r.vivo) continue;
+    if (!r.vivo || r.voando) continue; // voando = controlado pelo voo do dragão
     const g = r.g, b = r.bounds; r.tempo += dt;
     if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0) g.userData.corpoMat.emissive.setHex(0x000000); }
+    // asas (dragão) batem de leve mesmo parado
+    if (g.userData.asas) { const w = 0.18 + Math.abs(Math.sin(r.tempo * 3)) * 0.3; g.userData.asas[0].rotation.z = w; g.userData.asas[1].rotation.z = -w; }
     if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; } // dragão bate as asas
     // PERSEGUIÇÃO: se o jogador está perto e no mesmo "andar", caça-o
     r.contato = false;
@@ -76,8 +80,14 @@ export function atualizaRatos(ratos, dt, jog) {
     const dx = r.alvo.x - g.position.x, dz = r.alvo.z - g.position.z, dist = Math.hypot(dx, dz);
     if (dist < 0.4) { r.pausa = 0.5 + Math.random() * 1.6; r.alvo = novoAlvoRato(b); continue; }
     const vel = r.vel || 1.9, mx = dx / dist, mz = dz / dist;
-    g.position.x = Math.max(b.minX + 0.7, Math.min(b.maxX - 0.7, g.position.x + mx * vel * dt));
-    g.position.z = Math.max(b.minZ + 0.7, Math.min(b.maxZ - 0.7, g.position.z + mz * vel * dt));
+    const nx = Math.max(b.minX + 0.7, Math.min(b.maxX - 0.7, g.position.x + mx * vel * dt));
+    const nz = Math.max(b.minZ + 0.7, Math.min(b.maxZ - 0.7, g.position.z + mz * vel * dt));
+    if (podeAndar && !podeAndar(nx, nz, g.position.y)) {
+      // bateu no cenário: desiste do rumo e escolhe outro (não fica preso na parede)
+      r.alvo = novoAlvoRato(b); r.pausa = 0.3 + Math.random() * 0.8;
+      continue;
+    }
+    g.position.x = nx; g.position.z = nz;
     g.rotation.y = Math.atan2(mx, mz);
     const p = g.userData.patas;
     if (p) { const s = Math.sin(r.tempo * 16) * 0.6; for (let i = 0; i < p.length; i++) p[i].rotation.x = (i % 2 ? -s : s); }
@@ -313,11 +323,12 @@ export function criaBeholder(x, z) {
   return g;
 }
 
-// DRAGÃO (chefão D&D): corpo grande, pescoço, asas que batem, cauda e crista.
-export function criaDragao(x, z) {
+// DRAGÃO (chefão): VERDE = dragão comum (estilo Tibia); lord=true = DRAGON
+// LORD vermelho, 5× mais forte, que raramente nasce no lugar do verde.
+export function criaDragao(x, z, lord = false) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x9a2a1a, roughness: 0.6 });
-  const escuro = mat(0x5a1810);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: lord ? 0x9a2a1a : 0x3a7a2a, roughness: 0.6 });
+  const escuro = mat(lord ? 0x5a1810 : 0x24481a);
   // corpo
   const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.4, 14, 12), corpoMat);
   corpo.position.set(0, 1.9, -0.3); corpo.scale.set(1, 0.9, 1.55); corpo.castShadow = true; g.add(corpo);
@@ -329,7 +340,7 @@ export function criaDragao(x, z) {
   const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.62, 1.1), corpoMat); cabeca.position.set(0, 4.2, 3.2); cabeca.castShadow = true; g.add(cabeca);
   const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.4, 0.6), corpoMat); focinho.position.set(0, 4.1, 3.9); g.add(focinho);
   [-0.24, 0.24].forEach((ox) => { const h = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.62, 6), escuro); h.position.set(ox, 4.75, 2.9); h.rotation.x = -0.5; g.add(h); });
-  [-0.24, 0.24].forEach((ox) => { const o = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(0xffd000)); o.position.set(ox, 4.35, 3.6); g.add(o); });
+  [-0.24, 0.24].forEach((ox) => { const o = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(lord ? 0xff4a00 : 0xffd000)); o.position.set(ox, 4.35, 3.6); g.add(o); });
   // ASAS (batem no loop via userData.asas)
   const asas = [];
   [-1, 1].forEach((s) => {

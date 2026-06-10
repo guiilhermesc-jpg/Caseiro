@@ -175,6 +175,13 @@ export function criaCidade() {
   // CASAS ENTRÁVEIS (porta abre na AÇÃO, telhado some ao entrar) — perto da praça
   add(criaCasaInterior(38, 0, { frente: 'oeste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
   add(criaCasaInterior(-38, 0, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
+  // LOJAS estilo Tibia (cada NPC com sua finalidade — runas, arco & flecha, forja)
+  add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldra
+  add(criaPlaca(-26, 14, 'Runas — Eldra', Math.PI / 2));
+  add(criaBarraca(22, -12, 0, 0x2a8a4a));               // banca de ARCO & FLECHA do Falk
+  add(criaPlaca(26, -12, 'Arco & Flecha', -Math.PI / 2));
+  add(criaPlaca(-21, 11, 'Forja — Armas', Math.PI / 2)); // armas com Bram, o ferreiro
+
   // placas de rua (estilo Tibia)
   add(criaPlaca(20, 6, 'Rua do Mercado', -Math.PI / 2));
   add(criaPlaca(4, -18, 'Templo Sagrado', 0));
@@ -389,7 +396,20 @@ export function criaCidade() {
   add(criaCovilDragao(40, 330));                  // covil ao norte (amplia o mapa)
   add(criaPlaca(40, 268, 'Covil do Dragao — PERIGO'));
   // montanhas escoltando o vale do dragão
-  [[-40, 320, 1.5], [110, 320, 1.4], [40, 360, 1.6]].forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
+  [[-40, 320, 1.5], [170, 330, 1.4], [40, 360, 1.6]].forEach(([x, z, s]) => add(criaMontanha(x, z, s)));
+
+  // === MONTANHA DO DRAGÃO (escalável!) — rampa cônica até o platô do topo,
+  // onde o dragão vive. A subida usa alturaTerreno() no main3d (mesmo perfil).
+  const MD = { x: 110, z: 300, r: 46, topo: 8, h: 34 };
+  const morro = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo, MD.r, MD.h, 28), mat(0x6e6a62, 1));
+  morro.position.set(MD.x, MD.h / 2, MD.z); morro.castShadow = morro.receiveShadow = true;
+  scene.add(morro); solidos.push(morro);
+  const plato = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo + 0.8, MD.topo + 0.8, 0.5, 20), mat(0x55514a, 1));
+  plato.position.set(MD.x, MD.h + 0.2, MD.z); scene.add(plato);
+  // ossadas e pedras no pé da montanha (avisos de quem tentou subir)
+  [[MD.x - MD.r - 3, MD.z + 6, 1.4], [MD.x + 4, MD.z + MD.r + 3, 1.2], [MD.x + MD.r + 2, MD.z - 5, 1.1]]
+    .forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+  add(criaPlaca(MD.x - MD.r - 4, MD.z, 'Pico do Dragão — PERIGO', Math.PI / 2));
   // bosque carbonizado na aproximação (árvores mortas + pedras + caveiras de pedra)
   [[10, 280], [70, 285], [-10, 300], [80, 305], [25, 312], [55, 268], [-20, 262]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
   [[0, 290, 1.6], [90, 300, 1.4], [60, 320, 1.8], [20, 340, 1.3]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
@@ -413,5 +433,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, ceu, lua, luaLuz, luaMat, estrelas, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos };
+  return { scene, sun, hemi, skyMat, ceu, lua, luaLuz, luaMat, estrelas, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao: MD };
 }
