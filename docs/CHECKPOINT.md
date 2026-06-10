@@ -73,15 +73,16 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
   (PC) e no **celular/iPad** (link caseiro.pages.dev). Se aparecer "Não foi possível iniciar o 3D", ligar
   Aceleração de Hardware no Chrome (o Edge funciona). Sempre que publico, no PC dar **Ctrl+Shift+R**.
 
-## 8. FILA DE PEDIDOS (próximos, em ordem aproximada)
-1. 🎣 **Pesca** nos lagos (espécies reais de rio/lago).
-2. 🏠 **Casas compráveis/personalizáveis** (economia + posse).
-3. 🏰 **Thais (cidade distante) entrável** + mais conteúdo no caminho.
-4. 🐉 **Mais bichos** (beholder, ladrões/"Hauter") + **dano ao jogador / barra de vida**.
-5. 🛡️ **Armaduras/itens dropáveis** que equipam nos slots e **aparecem no corpo** por item.
-6. 🚪 Porta que **bloqueia** de verdade; túneis sob cada rua.
-7. ⚡ **Otimização mobile** (juntar geometrias; reduzir luzes à noite se pesar).
-8. 🔒 Rotacionar o token Cloudflare.
+## 8. FILA DE PEDIDOS
+**FEITO recentemente:** 🎣 pesca (espécies reais) · 🏠 casas compráveis + personalizar telhado ·
+❤️ vida do jogador + bichos perseguem/atacam + morte/respawn · 🛡️ armaduras dropáveis
+(equipam pela mochila, aparecem no corpo, dão defesa) · 🪙 ouro (do loot, compra casas).
+**PRÓXIMOS:**
+1. 🏰 **Thais (cidade distante) entrável** + mais conteúdo no caminho.
+2. 🐉 **Mais bichos** (beholder, ladrões/"Hauter") + mais variedade de loot/armas.
+3. 🚪 Porta que **bloqueia** de verdade; túneis sob cada rua.
+4. ⚡ **Otimização mobile** (juntar geometrias; reduzir luzes à noite se pesar).
+5. 🔒 Rotacionar o token Cloudflare.
 
 ## 9. DIÁRIO (marcos recentes)
 Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
