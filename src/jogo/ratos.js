@@ -46,17 +46,31 @@ export function criaRatos(n, bounds) {
   const ratos = [];
   for (let i = 0; i < n; i++) {
     const a = novoAlvoRato(bounds);
-    ratos.push({ g: criaRato(a.x, a.z), hp: 20, hpMax: 20, xp: 5, vel: 1.9, bounds, y0: Y, alvo: novoAlvoRato(bounds), pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0 });
+    ratos.push({ g: criaRato(a.x, a.z), hp: 20, hpMax: 20, xp: 5, dano: 3, vel: 1.9, bounds, y0: Y, alvo: novoAlvoRato(bounds), pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0 });
   }
   return ratos;
 }
 
-// usa o bounds PRÓPRIO de cada criatura (esgoto OU região na superfície)
-export function atualizaRatos(ratos, dt) {
+// usa o bounds PRÓPRIO de cada criatura. jog = {x,y,z} do jogador (persegue se perto).
+export function atualizaRatos(ratos, dt, jog) {
   for (const r of ratos) {
     if (!r.vivo) continue;
     const g = r.g, b = r.bounds; r.tempo += dt;
     if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0) g.userData.corpoMat.emissive.setHex(0x000000); }
+    // PERSEGUIÇÃO: se o jogador está perto e no mesmo "andar", caça-o
+    r.contato = false;
+    if (jog && Math.abs(r.y0 - jog.y) < 6) {
+      const pdx = jog.x - g.position.x, pdz = jog.z - g.position.z, pd = Math.hypot(pdx, pdz);
+      if (pd < 12) {
+        r.pausa = 0;
+        if (pd < 1.7) {
+          r.contato = true; g.rotation.y = Math.atan2(pdx, pdz);
+          const p = g.userData.patas; if (p) { const s = Math.sin(r.tempo * 18) * 0.5; for (let i = 0; i < p.length; i++) p[i].rotation.x = (i % 2 ? -s : s); }
+          continue;
+        }
+        r.alvo = { x: jog.x, z: jog.z };
+      }
+    }
     if (r.pausa > 0) { r.pausa -= dt; continue; }
     const dx = r.alvo.x - g.position.x, dz = r.alvo.z - g.position.z, dist = Math.hypot(dx, dz);
     if (dist < 0.4) { r.pausa = 0.5 + Math.random() * 1.6; r.alvo = novoAlvoRato(b); continue; }

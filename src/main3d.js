@@ -77,22 +77,23 @@ function colide(x, z) {
 // --- esgoto (subsolo escuro) + ratos + boss + tocha ---
 const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
 const ratos = criaRatos(8, esgoto.bounds);
-const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, vel: 1.6, forte: true, bounds: esgoto.bounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
+const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1.6, forte: true, bounds: esgoto.bounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
 ratos.push(boss);
 // CRIATURAS DA SUPERFÍCIE (região selvagem entre Venore e a cidade distante)
 function areaMon(x, z, r) { return { minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r }; }
-function addMonstro(g, hp, xp, vel, forte, b) {
-  ratos.push({ g, hp, hpMax: hp, xp, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0 });
+function addMonstro(g, hp, xp, dano, vel, forte, b) {
+  ratos.push({ g, hp, hpMax: hp, xp, dano, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0 });
 }
-[[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 2.0, false, areaMon(x, z, 14)));
-[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 80, 30, 1.2, true, areaMon(x, z, 16)));
+[[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14)));
+[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 80, 30, 15, 1.2, true, areaMon(x, z, 16)));
 const aX = 170, aZ = 95;
-addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 1.6, true, areaMon(aX, aZ, 16));
-[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2.4, false, areaMon(aX, aZ, 18)));
+addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16));
+[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2, 2.4, false, areaMon(aX, aZ, 18)));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
 let tochaOn = false;
+let vida = 100; const VIDA_MAX = 100; let defesa = 0; // defesa sobe ao equipar armadura
 
 // avatar (recriado quando muda a aparência na tela de seleção)
 const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20, sexo: 'homem', tipo: 'aldeao' };
@@ -382,6 +383,13 @@ function saqueia(r) {
   r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);
   mostraMensagem(pegou ? `Saqueou ${pegou} item(s) 🎒` : 'O corpo estava vazio.');
 }
+function morre() {
+  vida = VIDA_MAX;
+  if (noEsgoto) { chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false; minimapa.mostra(); }
+  avatar.position.set(8, 0, 12); vy = 0; noChao = true;
+  hud.vida(vida, VIDA_MAX);
+  mostraMensagem('💀 Você caiu! Acorda na praça de Venore.');
+}
 function reviveBicho(r) {
   if (r.boss) {
     scene.remove(r.g);
@@ -476,7 +484,7 @@ criaSelecao({
     inventario.mostra();
     inventario.addItem({ nome: 'Tocha', icone: '🔦' }); // todo mundo começa com uma tocha
     inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
-    hud.mostra();
+    hud.mostra(); hud.vida(vida, VIDA_MAX);
     mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
@@ -613,7 +621,18 @@ function loop() {
   if (!noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet espera na superfície
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide);
-  atualizaRatos(ratos, dt);
+  atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null);
+  if (jogoIniciado) {
+    for (const r of ratos) {
+      if (r.vivo && r.contato && tempo > (r.proxAtaque || 0)) {
+        r.proxAtaque = tempo + 1.1;
+        vida -= Math.max(1, (r.dano || 5) - defesa);
+        hud.vida(vida, VIDA_MAX);
+        if (vida <= 0) { morre(); break; }
+      }
+    }
+    if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 1.5); hud.vida(vida, VIDA_MAX); } // regen lenta
+  }
   if (tochaOn) luzTocha.position.set(avatar.position.x, avatar.position.y + 2.6, avatar.position.z);
   if (pescandoAte > 0 && tempo > pescandoAte) resolvePesca(); // fisgada da pesca
   // corpos somem em 30s; respawn calibrado (rato 25s, boss 60s)
