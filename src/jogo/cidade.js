@@ -3,7 +3,7 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
@@ -137,11 +137,11 @@ export function criaCidade() {
   }
   const matoMat = new THREE.MeshStandardMaterial({ map: texturaMato(), transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 1 });
   const matoGeo = new THREE.PlaneGeometry(1.7, 1.25); matoGeo.translate(0, 0.55, 0);
-  const N_MATO = 320, dummyM = new THREE.Object3D();
+  const N_MATO = 700, dummyM = new THREE.Object3D(); // 2× mais denso (refs premium) — seguem 2 draw calls
   const mato1 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   const mato2 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   let mi = 0;
-  for (let tent = 0; tent < 5000 && mi < N_MATO; tent++) {
+  for (let tent = 0; tent < 16000 && mi < N_MATO; tent++) {
     const px = (Math.random() - 0.5) * 760, pz = (Math.random() - 0.5) * 560;
     if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;     // fora da cidade
     if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;   // fora da estrada
@@ -366,6 +366,28 @@ export function criaCidade() {
   });
   // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=504)
   add(criaEstrada(72, 500, 0, 8));               // estrada até o portão de Thais (muralha HX=60 → portão em x=500)
+  { // PEDRINHAS nas bordas da estrada (refs premium: caminho com pedras de
+    // verdade demarcando o trajeto) — ~280 pedras em 1 draw call
+    const geoPed = desloca(new THREE.IcosahedronGeometry(0.34, 0), 0.12);
+    geoPed.scale(1.35, 0.55, 0.9);
+    const matPed = new THREE.MeshStandardMaterial({ color: 0x8d877c, roughness: 1, flatShading: true });
+    const NPED = 300, imPed = new THREE.InstancedMesh(geoPed, matPed, NPED);
+    const dPed = new THREE.Object3D();
+    let ip = 0;
+    for (let px = 74; px <= 500 && ip < NPED; px += 2.9) {
+      for (const lado of [-1, 1]) {
+        if (ip >= NPED) break;
+        if (Math.random() < 0.18) continue;     // falhas naturais
+        if (Math.abs(px - 180) < 9) continue;   // vão da Ponte de Pedra
+        dPed.position.set(px + (Math.random() - 0.5) * 1.4, 0.06, lado * (4.15 + (Math.random() - 0.5) * 0.5));
+        dPed.rotation.y = Math.random() * Math.PI;
+        dPed.scale.setScalar(0.7 + Math.random() * 0.8);
+        dPed.updateMatrix();
+        imPed.setMatrixAt(ip++, dPed.matrix);
+      }
+    }
+    imPed.count = ip; imPed.castShadow = true; imPed.receiveShadow = true; scene.add(imPed);
+  }
   add(criaPlaca(74, -7, '→ THAIS'));
   add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));
   add(criaPlaca(230, -7, '→ THAIS'));
@@ -580,12 +602,26 @@ export function criaCidade() {
   add(criaRuinas(-180, -90));                      // ruínas perdidas no sudoeste
   add(criaPlaca(150, 240, 'Ruinas Antigas'));
 
-  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~9 draw calls;
+  // MOITAS espalhadas pelo campo (refs premium: sub-bosque denso) — sem
+  // colisor (atravessável, estilo capim alto do Tibia), 2 draw calls
+  VEG.moitas = [];
+  for (let tent = 0; tent < 12000 && VEG.moitas.length < 120; tent++) {
+    const px = (Math.random() - 0.5) * 880, pz = (Math.random() - 0.5) * 640;
+    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;     // fora da cidade
+    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;   // fora da estrada
+    if (pz < -178) continue;                                  // fora da praia/mar
+    if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
+    if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
+    if (px > 498) continue;                                   // fora de Thais
+    VEG.moitas.push([px, pz, 0.8 + Math.random() * 0.9]);
+  }
+  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~11 draw calls;
   // slots GLB arvore1/pinheiro/pedra trocam o visual da espécie inteira)
   add(criaVegetacaoInstanciada(VEG, alturaColinas));
 
-  // nuvens
-  const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 });
+  // nuvens — CLARAS de verdade (emissivas suaves): viravam blobs cinza-escuros
+  // porque dependiam 100% da luz da cena (feio nos prints do maestro)
+  const nuvemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xf2f5fa, emissiveIntensity: 0.42, roughness: 1, transparent: true, opacity: 0.88 });
   for (let i = 0; i < 14; i++) {
     const nv = new THREE.Group();
     const n = 3 + Math.floor(Math.random() * 3);

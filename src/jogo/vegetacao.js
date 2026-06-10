@@ -63,6 +63,15 @@ function geoPinheiro(corFolha) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
+function geoMoita(pal) {
+  const partes = [];
+  [[0, 0.62, 0, 1.05], [0.7, 0.46, 0.3, 0.7], [-0.6, 0.42, -0.28, 0.62]].forEach(([ox, oy, oz, r], i) => {
+    const b = pinta(desloca(new THREE.IcosahedronGeometry(r, 0), r * 0.3), pal[i % pal.length]);
+    b.translate(ox, oy, oz); partes.push(b);
+  });
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
 function geoPedra(comMusgo) {
   const partes = [];
   const rocha = pinta(desloca(new THREE.IcosahedronGeometry(1, 0), 0.32), 0x8b8b86);
@@ -75,8 +84,8 @@ function geoPedra(comMusgo) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
-// posições: arvores/pedras = [x, z, s], pinheiros = [x, z]
-export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [] }, alturaSolo) {
+// posições: arvores/pedras/moitas = [x, z, s], pinheiros = [x, z]
+export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [] }, alturaSolo) {
   const g = new THREE.Group();
   const colisores = [];
   const dummy = new THREE.Object3D();
@@ -92,7 +101,7 @@ export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras 
       dummy.updateMatrix();
       porArq[i % geos.length].push(dummy.matrix.clone());
       todas.push(dummy.matrix.clone());
-      colisores.push({ minX: x - raioCol * s, maxX: x + raioCol * s, minZ: z - raioCol * s, maxZ: z + raioCol * s });
+      if (raioCol > 0) colisores.push({ minX: x - raioCol * s, maxX: x + raioCol * s, minZ: z - raioCol * s, maxZ: z + raioCol * s });
     });
     const meshes = [];
     porArq.forEach((mats, k) => {
@@ -108,11 +117,13 @@ export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras 
   lote(arvores, PALETAS.map((p) => geoArvoreGrande(p)), 1.2, 11, 'arvore1');
   lote(pinheiros, [0x356130, 0x2e6e3a, 0x3d7a36].map((c) => geoPinheiro(c)), 1.0, 7.5, 'pinheiro');
   lote(pedras, [geoPedra(true), geoPedra(false)], 0.8, 1.5, 'pedra');
+  // moitas: SEM colisor (atravessável, como capim alto) e sem slot GLB
+  lote(moitas, [geoMoita([0x4f7e3e, 0x568a44, 0x3f6e34]), geoMoita([0x5d8f46, 0x4a7a38, 0x6a9a50])], 0, 0, '');
 
   // SLOT GLB: ao carregar, a espécie inteira troca pelo modelo profissional
   // (auto-escala pela altura, base no chão, mesmas matrizes de instância)
   registros.forEach((reg) => {
-    if (!reg.todas.length) return;
+    if (!reg.todas.length || !reg.arquivoGLB) return;
     new GLTFLoader().load(`modelos/${reg.arquivoGLB}.glb`, (gltf) => {
       const cena = gltf.scene; cena.updateMatrixWorld(true);
       const bb = new THREE.Box3().setFromObject(cena);

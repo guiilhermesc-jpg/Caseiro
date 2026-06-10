@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'v21';
+const VERSAO = 'v22';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -103,8 +103,10 @@ if (!ehMobile) {
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.16, 0.32, 1.08));
-  // COLOR GRADING leve (PC): saturação +6%, sombras um tico frias e vinheta
-  // sutil — "fechamento de cor" de pack premium SEM estourar branco (clamp).
+  // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
+  // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
+  // saturação +12%, split-tone (sombras frias / altas levemente quentes),
+  // VINHETA de cinema e dither anti-banding no céu/neblina.
   composer.addPass(new ShaderPass({
     uniforms: { tDiffuse: { value: null } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
@@ -112,13 +114,16 @@ if (!ehMobile) {
       + 'void main(){\n'
       + '  vec4 c = texture2D(tDiffuse, vUv);\n'
       + '  vec3 col = c.rgb;\n'
+      + '  col = clamp((col - 0.5) * 1.09 + 0.506, 0.0, 1.0);\n'                                  // S-curve fílmica leve
       + '  float luma = dot(col, vec3(0.299, 0.587, 0.114));\n'
-      + '  col = mix(vec3(luma), col, 1.06);\n'
-      + '  col += vec3(0.010, 0.012, 0.022) * (1.0 - smoothstep(vec3(0.0), vec3(0.45), col));\n'
+      + '  col = mix(vec3(luma), col, 1.12);\n'                                                    // saturação
+      + '  col += vec3(0.012, 0.014, 0.030) * (1.0 - smoothstep(vec3(0.0), vec3(0.4), col));\n'    // sombras frias
+      + '  col = mix(col, col * vec3(1.045, 1.0, 0.94), smoothstep(0.55, 1.0, luma) * 0.45);\n'    // altas quentes
       + '  col = clamp(col, 0.0, 1.0);\n'
       + '  float d = distance(vUv, vec2(0.5));\n'
-      + '  col *= 1.0 - 0.12 * smoothstep(0.45, 0.85, d);\n'
-      + '  gl_FragColor = vec4(col, c.a);\n'
+      + '  col *= 1.0 - 0.22 * smoothstep(0.38, 0.80, d);\n'                                       // vinheta de cinema
+      + '  col += (fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;\n'     // dither anti-banding
+      + '  gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);\n'
       + '}',
   }));
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -137,6 +142,11 @@ function alturaTerreno(x, z) {
   return alturaColinas(x, z);
 }
 const raycaster = new THREE.Raycaster();
+// ⚠️ FIX DA "TELA TRAVADA": Sprite.raycast LÊ raycaster.camera.matrixWorld.
+// Sem a câmera setada, qualquer sprite (marcador 🏠/🚪 das casas entráveis)
+// perto do jogador estourava "matrixWorld null" TODO FRAME na anti-oclusão —
+// o passo() morria antes da câmera (boneco andava, tela parada).
+raycaster.camera = camera;
 const occTmp = []; // buffer reutilizado da anti-oclusão (zero alocação por frame)
 const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
@@ -384,6 +394,8 @@ function aplicaGLBEm(r) { // veste o modelo da espécie num bicho (spawn novo in
   const base = baseGLBPorEspecie[r.especie];
   if (!base) return false;
   const inst = cloneSkinned(base);
+  // o .clone() NÃO carrega o override de raycast — re-blinda o clone novo
+  inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; o.raycast = () => {}; } });
   const tipoAntigo = (r.g.userData && r.g.userData.tipo) || 'monstro';
   while (r.g.children.length) r.g.remove(r.g.children[0]);
   r.g.add(inst);
@@ -1915,7 +1927,12 @@ function passo() {
     const occ = occTmp;
     const hits = raycaster.intersectObjects(occ, true);
     let dist = distMax;
-    if (hits.length && hits[0].distance < distMax) dist = Math.max(3, hits[0].distance - 0.6);
+    // sprites (marcadores 🏠/🚪/🐾) NÃO ocluem a câmera — só geometria sólida
+    for (const h of hits) {
+      if (h.object.isSprite) continue;
+      if (h.distance < distMax) dist = Math.max(3, h.distance - 0.6);
+      break;
+    }
     // OLHAR PRO CÉU (Roblox/Minecraft): com pitch negativo a câmera desceria
     // pro subsolo — em vez disso ela DESLIZA pelo raio e para rente ao chão,
     // apontando pra cima (o personagem fica na base da tela e o céu aparece).
