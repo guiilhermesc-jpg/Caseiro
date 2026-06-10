@@ -55,7 +55,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
-const { scene, ceu, hemi, sun, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
+const { scene, ceu, hemi, sun, skyMat, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 // tamanho do mundo (ajustável no jogo) + colisão/altura/limite ATIVOS
@@ -128,7 +128,7 @@ scene.add(gato);
 
 const controles = criaControles(renderer.domElement);
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, alcance: 90 });
-const npcs = criaNPCs(scene, colide, 6);
+const npcs = criaNPCs(scene, colide);
 const inventario = criaInventario();
 
 // --- mensagens (toast) + ação/interação ---
@@ -196,17 +196,16 @@ function abreDialogo(npc) {
   // vira de frente pro jogador e pausa pra conversar
   npc.g.rotation.y = Math.atan2(avatar.position.x - npc.g.position.x, avatar.position.z - npc.g.position.z);
   npc.pausa = 4;
-  const saud = npc.humor === 'bom' ? 'Olá! Que bom te ver por aqui. 😊' : 'Hm? O que você quer?';
-  dialogo.abre(npc.nome, saud, [
-    {
-      texto: 'Tudo bem?', onClick: () => {
-        const linha = npc.contaHistoria ? npc.historia
-          : (npc.humor === 'bom' ? 'Tudo ótimo! Venore é um bom lugar pra viver.' : 'Já tive dias melhores... mas vou levando.');
-        dialogo.abre(npc.nome, linha, [{ texto: 'Entendi. Até!', onClick: () => dialogo.fecha() }]);
-      },
-    },
+  const opcoes = [
+    { texto: 'Como vai?', onClick: () => dialogo.abre(npc.nome, npc.humor === 'bom' ? 'Tudo tranquilo por aqui. 🙂' : 'Já tive dias melhores...', opcoes) },
+    { texto: 'Seu ofício?', onClick: () => dialogo.abre(npc.nome, npc.falas.trabalho, opcoes) },
+    { texto: 'Novidades?', onClick: () => dialogo.abre(npc.nome, npc.falas.dica, opcoes) },
     { texto: 'Tchau', onClick: () => dialogo.fecha() },
-  ]);
+  ];
+  const saud = npc.humor === 'bom'
+    ? `Saudações! Sou ${npc.nome}, ${npc.prof.toLowerCase()} de Venore. 😊`
+    : `${npc.nome}, ${npc.prof.toLowerCase()}. O que você quer?`;
+  dialogo.abre(npc.nome, saud, opcoes);
 }
 // CLIQUE/TOQUE: tap curto (sem arrasto) seleciona NPC / você / pet
 const rayTap = new THREE.Raycaster();
@@ -265,8 +264,27 @@ function sobe(i = acessoAtual) {
   chaoY = 0; colisoresAtivos = obstaculos; areaAtiva = areaSuperficie(); noEsgoto = false;
   const b = BUEIROS[i] || BUEIROS[0];
   avatar.position.set(b.x, 0, b.z + 2.5); vy = 0; noChao = true;
-  hemi.intensity = 0.95; sun.intensity = 1.35;
-  minimapa.mostra(); mostraMensagem('Você volta à superfície. ☀️');
+  minimapa.mostra(); mostraMensagem('Você volta à superfície. ☀️'); // luz volta pelo ciclo dia/noite
+}
+
+// CICLO DIA/NOITE (discreto): muda sol/ambiente/céu/neblina e acende os lampiões
+const C_TOPO_DIA = new THREE.Color(0x4f86c0), C_BASE_DIA = new THREE.Color(0xdce9f2);
+const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0x16233f);
+const C_FOG_DIA = new THREE.Color(0xcfe0ee), C_FOG_NOITE = new THREE.Color(0x111b2e);
+let tempoDia = 0.3; // começa de manhã
+function aplicaDiaNoite(dt) {
+  tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
+  const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
+  sun.intensity = 0.12 + d * 1.25;
+  hemi.intensity = 0.22 + d * 0.72;
+  skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
+  skyMat.uniforms.corBase.value.copy(C_BASE_NOITE).lerp(C_BASE_DIA, d);
+  if (scene.fog) scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
+  const noite = 1 - d;
+  for (const p of postes) {
+    p.luz.intensity = noite > 0.45 ? (noite - 0.45) * 3.4 : 0;
+    if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9;
+  }
 }
 function poeArmaNaMao() {
   const p = avatar.userData.partes; if (!p || p.bracoDir.getObjectByName('arma')) return;
@@ -528,7 +546,8 @@ function loop() {
     camera.lookAt(foco.x, foco.y, foco.z);
   }
 
-  // ambiente vivo (sempre): nuvens, jatos da fonte, gato
+  // ambiente vivo (sempre): ciclo dia/noite (na superfície), nuvens, fonte, gato
+  if (!noEsgoto) aplicaDiaNoite(dt);
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;
