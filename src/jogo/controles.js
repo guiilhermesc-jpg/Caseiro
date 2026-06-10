@@ -65,13 +65,16 @@ export function criaControles(dom) {
     if (touch) e.preventDefault();
     try { dom.setPointerCapture(e.pointerId); } catch (_) {}
     if (touch) toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (touch && toques.size === 2) { // virou pinca: solta joystick e camera
-      joy.ativo = false; joy.id = null; joy.dx = 0; joy.dz = 0; escondeJoy();
-      look.ativo = false;
-      look.id = null;
+    if (touch && toques.size === 2) {
       const [a, b] = [...toques.values()];
-      pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
-      return;
+      // PINÇA só vale na PARTE DE CIMA da tela (55%): embaixo os 2 dedos são
+      // joystick+câmera — antes o zoom disparava sem querer ao virar/andar
+      if (a.y < window.innerHeight * 0.55 && b.y < window.innerHeight * 0.55) {
+        joy.ativo = false; joy.id = null; joy.dx = 0; joy.dz = 0; escondeJoy();
+        look.ativo = false; look.id = null;
+        pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+        return;
+      }
     }
     if (touch && e.clientX < window.innerWidth / 2) {
       joy.ativo = true; joy.id = e.pointerId; joy.baseX = e.clientX; joy.baseY = e.clientY; joy.dx = 0; joy.dz = 0;
@@ -141,6 +144,12 @@ export function criaControles(dom) {
     abaixarToggle = !abaixarToggle;
     b.style.background = abaixarToggle ? 'rgba(120,180,255,.5)' : 'rgba(16,22,32,.5)';
   });
+  // ZOOM da câmera no touch: botões dedicados na REGIÃO DE CIMA (lado direito),
+  // longe do joystick — sem disparar zoom sem querer ao virar/andar
+  if ('ontouchstart' in window) {
+    botao('🔭+', 'Aproximar câmera', 'right:14px;top:34%;width:44px;height:44px;font-size:17px;', () => { pinchFator *= 0.8; });
+    botao('🔭−', 'Afastar câmera', 'right:14px;top:42%;width:44px;height:44px;font-size:17px;', () => { pinchFator *= 1.25; });
+  }
 
   function vetorMov() {
     let x = 0, z = 0;

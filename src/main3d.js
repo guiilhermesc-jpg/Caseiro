@@ -192,19 +192,19 @@ const CAMPOS = [
   { tipo: 'veneno', x: 236, z: -87, r: 4.5, y: 0 },
 ];
 let envenenadoAte = 0, proxTickLava = 0, proxTickVeneno = 0;
-[[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14)));
-[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 150, 60, 18, 1.3, true, areaMon(x, z, 16))); // GIGANTES de um olho
+[[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14), { especie: 'troll' }));
+[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 150, 60, 18, 1.3, true, areaMon(x, z, 16), { especie: 'ciclope' })); // GIGANTES de um olho
 // GIANT SPIDER (Tibia): ENORME, feroz, RÁPIDA (3.2 — corre atrás!), difícil
 // de matar (300hp) e CRIA FILHOTES durante a caça (mecânica no loop)
 const aX = 170, aZ = 95;
-const aranhaMae = addMonstro(criaAranhaGigante(aX, aZ), 300, 150, 20, 3.2, true, areaMon(aX, aZ, 22), { veneno: true, lootEspecial: { nome: 'Seda de Aranha', icone: '🕸️' } });
-[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 3, 2.8, false, areaMon(aX, aZ, 22), { veneno: true, filhote: true }));
-[[160, 8], [205, -10], [235, 18]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(x, z, 16)));
-[[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14), { veneno: true }));
+const aranhaMae = addMonstro(criaAranhaGigante(aX, aZ), 300, 150, 20, 3.2, true, areaMon(aX, aZ, 22), { veneno: true, especie: 'aranha', lootEspecial: { nome: 'Seda de Aranha', icone: '🕸️' } });
+[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 3, 2.8, false, areaMon(aX, aZ, 22), { veneno: true, filhote: true, especie: 'aranhaPequena' }));
+[[160, 8], [205, -10], [235, 18]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(x, z, 16), { especie: 'ladrao' }));
+[[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14), { veneno: true, especie: 'escorpiao' }));
 // BEHOLDERS (agora GRANDES e imponentes) no Vale dos Monstros — ATIRAM
 // rajadas mágicas que vêm na sua direção (dá pra esquivar correndo!)
 [[255, 95], [175, 120], [300, 70]].forEach(([x, z]) => {
-  ratos.push({ g: criaBeholder(x, z), hp: 170, hpMax: 170, xp: 80, dano: 12, vel: 1.3, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' }, atira: 'magia', alcanceTiro: 18, danoTiro: 12, cadencia: 2.6 });
+  ratos.push({ g: criaBeholder(x, z), hp: 170, hpMax: 170, xp: 80, dano: 12, vel: 1.3, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' }, especie: 'beholder', atira: 'magia', alcanceTiro: 18, danoTiro: 12, cadencia: 2.6 });
 });
 // DRAGÃO (chefão D&D) guardando o Covil do Dragão, ao norte — muito forte, loot lendário
 // DRAGÃO VERDE (estilo Tibia) no TOPO da Montanha do Dragão — suba a rampa pra
@@ -219,6 +219,24 @@ const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1
 // baixável em poly.pizza/m/LlwD0QNUPj), ele SUBSTITUI o dragão de blocos
 // automaticamente — com animação esquelética de verdade.
 let mixerDragao = null, modeloDragaoGLB = null;
+// ANIMAÇÃO VIVA dos dragões GLB: o modelo veio sem clipes, então animamos os
+// OSSOS direto (cabeça olha em volta, cauda balança, asas tremem); se o
+// esqueleto não tiver nomes reconhecíveis, o corpo "respira" (escala sutil)
+const dragoesVivos = [];
+function achaOssos(modelo) {
+  const ossos = { cabeca: null, cauda: [], asas: [] };
+  modelo.traverse((o) => {
+    if (!o.isBone) return;
+    const n = (o.name || '').toLowerCase();
+    if (!ossos.cabeca && /head|neck|cabeca|pescoco/.test(n)) ossos.cabeca = o;
+    if (/tail|cauda/.test(n)) ossos.cauda.push(o);
+    if (/wing|asa/.test(n)) ossos.asas.push(o);
+  });
+  return ossos;
+}
+function registraDragaoVivo(modelo) {
+  dragoesVivos.push({ ossos: achaOssos(modelo), raiz: modelo, fase: Math.random() * 6, escalaBase: modelo.scale.y });
+}
 // veste o modelo GLB no grupo do dragão (também usado no RESPAWN/Dragon Lord)
 function aplicaModeloDragao() {
   if (!modeloDragaoGLB) return;
@@ -251,6 +269,7 @@ new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   });
   modeloDragaoGLB = modelo;
   aplicaModeloDragao();
+  registraDragaoVivo(modelo); // cabeça/cauda ganham vida no loop
   if (gltf.animations && gltf.animations.length) {
     mixerDragao = new THREE.AnimationMixer(modelo);
     const anim = gltf.animations.find((a) => /idle|fly/i.test(a.name)) || gltf.animations[0];
@@ -286,34 +305,90 @@ new GLTFLoader().load('modelos/dragao2.glb', (gltf) => {
     g.userData = { tipo: 'boss' };
     ratos.push({ g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 });
     scene.add(g);
+    registraDragaoVivo(inst); // idle vivo também nos regionais
   });
   mostraMensagem('🐲 Dragões regionais chegaram (Thais e Venore)!');
 }, undefined, () => {});
+
+// =============================================================
+//  MODELOS 3D DE MONSTROS (genérico — mesmo padrão do dragão):
+//  solte um .glb em public/modelos/ com o nome da espécie e o bicho
+//  TROCA DE VISUAL sozinho (auto-escala, sombra, sem raycast).
+//  Nomes: aranha.glb, lobo.glb, urso.glb, esqueleto.glb, orc.glb,
+//  ciclope.glb, troll.glb, beholder.glb, rato.glb, caranguejo.glb,
+//  escorpiao.glb, ladrao.glb, cobra.glb
+// =============================================================
+const MODELOS_MONSTROS = [
+  { arquivo: 'aranha', especie: 'aranha', tam: 7 },
+  { arquivo: 'aranha', especie: 'aranhaPequena', tam: 2.2 },
+  { arquivo: 'lobo', especie: 'lobo', tam: 2.6 },
+  { arquivo: 'urso', especie: 'urso', tam: 3.8 },
+  { arquivo: 'esqueleto', especie: 'esqueleto', tam: 3.2 },
+  { arquivo: 'orc', especie: 'orc', tam: 3.4 },
+  { arquivo: 'ciclope', especie: 'ciclope', tam: 7.5 },
+  { arquivo: 'troll', especie: 'troll', tam: 3 },
+  { arquivo: 'beholder', especie: 'beholder', tam: 6 },
+  { arquivo: 'rato', especie: 'rato', tam: 1.3 },
+  { arquivo: 'caranguejo', especie: 'caranguejo', tam: 1.5 },
+  { arquivo: 'escorpiao', especie: 'escorpiao', tam: 2 },
+  { arquivo: 'ladrao', especie: 'ladrao', tam: 3.1 },
+  { arquivo: 'cobra', especie: 'cobra', tam: 2.6 },
+];
+const baseGLBPorEspecie = {}; // espécie -> base pronta (spawns novos também vestem)
+function preparaBaseGLB(gltf, tam) {
+  const base = gltf.scene;
+  const b1 = new THREE.Box3().setFromObject(base);
+  const tb = new THREE.Vector3(); b1.getSize(tb);
+  base.scale.setScalar(tam / (Math.max(tb.x, tb.y, tb.z) || 1));
+  const b2 = new THREE.Box3().setFromObject(base);
+  const cc = new THREE.Vector3(); b2.getCenter(cc);
+  base.position.x -= cc.x; base.position.z -= cc.z; base.position.y -= b2.min.y;
+  base.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; o.raycast = () => {}; } });
+  return base;
+}
+function aplicaGLBEm(r) { // veste o modelo da espécie num bicho (spawn novo incluso)
+  const base = baseGLBPorEspecie[r.especie];
+  if (!base) return false;
+  const inst = cloneSkinned(base);
+  const tipoAntigo = (r.g.userData && r.g.userData.tipo) || 'monstro';
+  while (r.g.children.length) r.g.remove(r.g.children[0]);
+  r.g.add(inst);
+  r.g.userData = { tipo: tipoAntigo };
+  return true;
+}
+MODELOS_MONSTROS.forEach(({ arquivo, especie, tam }) => {
+  new GLTFLoader().load(`modelos/${arquivo}.glb`, (gltf) => {
+    baseGLBPorEspecie[especie] = preparaBaseGLB(gltf, tam);
+    let n = 0;
+    for (const r of ratos) { if (r.especie === especie && aplicaGLBEm(r)) n++; }
+    if (n) mostraMensagem(`✨ Modelo 3D aplicado: ${especie} (${n} bicho${n > 1 ? 's' : ''})`);
+  }, undefined, () => { /* sem arquivo: visual procedural continua */ });
+});
 // FAUNA DO CAMINHO (cada região com seus bichos, estilo Tibia)
 // matilha de lobos rondando a ponte do rio + lobos na floresta oeste
-[[170, 14], [191, 16], [188, -18], [-96, 26]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
+[[170, 14], [191, 16], [188, -18], [-96, 26]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15), { especie: 'lobo' }));
 // ursos na floresta e no sopé das montanhas (fortes)
-[[-104, 42], [72, 192]].forEach(([x, z]) => addMonstro(criaUrso(x, z), 55, 18, 11, 1.7, true, areaMon(x, z, 14)));
+[[-104, 42], [72, 192]].forEach(([x, z]) => addMonstro(criaUrso(x, z), 55, 18, 11, 1.7, true, areaMon(x, z, 14), { especie: 'urso' }));
 // esqueletos no cemitério abandonado (saem da cova...)
-[[124, -56], [136, -64], [128, -67], [138, -55]].forEach(([x, z]) => addMonstro(criaEsqueleto(x, z), 30, 12, 7, 1.8, false, areaMon(130, -60, 14)));
+[[124, -56], [136, -64], [128, -67], [138, -55]].forEach(([x, z]) => addMonstro(criaEsqueleto(x, z), 30, 12, 7, 1.8, false, areaMon(130, -60, 14), { especie: 'esqueleto' }));
 // orcs guardando as ruínas (norte e sudoeste)
-[[146, 246], [156, 254]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(150, 250, 14)));
-[[-184, -86], [-176, -94], [-180, -98]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(-180, -90, 14)));
+[[146, 246], [156, 254]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(150, 250, 14), { especie: 'orc' }));
+[[-184, -86], [-176, -94], [-180, -98]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(-180, -90, 14), { especie: 'orc' }));
 // cobras na lama do Pântano da Serpente
 [[220, -90], [230, -100], [214, -102]].forEach(([x, z]) => {
   const c = criaCobra(x, z); c.position.y = 0; // a cobra nasce no esgoto (y=-40); aqui vive na superfície
-  addMonstro(c, 28, 10, 8, 1.5, false, areaMon(225, -95, 16), { veneno: true });
+  addMonstro(c, 28, 10, 8, 1.5, false, areaMon(225, -95, 16), { veneno: true, especie: 'cobra' });
 });
 // mais ladrões no acampamento bandido (além dos que já rondam a estrada)
-[[248, 46], [256, 52]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(252, 48, 14)));
+[[248, 46], [256, 52]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(252, 48, 14), { especie: 'ladrao' }));
 // SEGUNDA METADE da viagem (depois do rio): mais selvagem e perigosa
-[[340, 25], [390, -18], [455, 22]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14)));
-[[396, -66], [404, -74], [430, 28]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(x, z, 14)));
-[[300, 20], [470, -20], [476, -14]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
+[[340, 25], [390, -18], [455, 22]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14), { especie: 'troll' }));
+[[396, -66], [404, -74], [430, 28]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(x, z, 14), { especie: 'orc' }));
+[[300, 20], [470, -20], [476, -14]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15), { especie: 'lobo' }));
 [[360, -30], [490, 30]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
-addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16)); // ciclope da mata fechada
+addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), { especie: 'ciclope' }); // ciclope da mata fechada
 // caranguejos na Praia do Sul (fraquinhos — primeiro alvo de quem chega)
-[[-30, -225], [20, -230], [60, -218], [-85, -228], [110, -222]].forEach(([x, z]) => addMonstro(criaCaranguejo(x, z), 12, 4, 3, 2.2, false, areaMon(x, z, 13)));
+[[-30, -225], [20, -230], [60, -218], [-85, -228], [110, -222]].forEach(([x, z]) => addMonstro(criaCaranguejo(x, z), 12, 4, 3, 2.2, false, areaMon(x, z, 13), { especie: 'caranguejo' }));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -1292,12 +1367,14 @@ let mana = 50; const MANA_MAX = 50;
 let escudoAte = 0, escudoHP = 0, luxAte = 0, manaMostrada = -1, proxAttBarra = 0;
 const luzLux = new THREE.PointLight(0xcfe2ff, 0, 30, 2); scene.add(luzLux);
 const cdMagias = {};
+// BALANCEAMENTO Tibia: recurso é FINITO — mana recupera devagar e cada
+// magia tem cooldown de 6 a 24s conforme a força (nada de spam infinito)
 const MAGIAS = [
-  { id: 'lux', nome: 'Lux', icone: '💡', nivel: 1, mana: 5, cd: 5, desc: 'Luz mágica por 60s (melhor que tocha)' },
-  { id: 'exura', nome: 'Exura', icone: '💚', nivel: 2, mana: 15, cd: 4, desc: 'Cura +40 de vida' },
-  { id: 'exori', nome: 'Exori', icone: '💥', nivel: 3, mana: 20, cd: 6, desc: 'Golpe em ÁREA: 25 de dano em volta' },
-  { id: 'utamo', nome: 'Utamo', icone: '🔵', nivel: 4, mana: 25, cd: 20, desc: 'ESCUDO: absorve 40 de dano por 20s' },
-  { id: 'flam', nome: 'Exori Flam', icone: '🔥', nivel: 5, mana: 25, cd: 8, desc: 'BOLA DE FOGO no alvo (35, alcance 14)' },
+  { id: 'lux', nome: 'Lux', icone: '💡', nivel: 1, mana: 5, cd: 6, desc: 'Luz mágica por 60s (melhor que tocha)' },
+  { id: 'exura', nome: 'Exura', icone: '💚', nivel: 2, mana: 18, cd: 8, desc: 'Cura +40 de vida' },
+  { id: 'exori', nome: 'Exori', icone: '💥', nivel: 3, mana: 22, cd: 12, desc: 'Golpe em ÁREA: 25 de dano em volta' },
+  { id: 'utamo', nome: 'Utamo', icone: '🔵', nivel: 4, mana: 28, cd: 24, desc: 'ESCUDO: absorve 40 de dano por 20s' },
+  { id: 'flam', nome: 'Exori Flam', icone: '🔥', nivel: 5, mana: 26, cd: 14, desc: 'BOLA DE FOGO no alvo (35, alcance 14)' },
 ];
 // DANO CENTRALIZADO (mesmo cálculo em todo lugar): Utamo absorve primeiro.
 // Devolve true se o golpe MATOU o jogador.
@@ -1729,8 +1806,9 @@ function passo() {
     if (dM < 20 && Math.abs(aranhaMae.g.position.y - avatar.position.y) < 6) {
       aranhaMae.proxCria = tempo + 7;
       if (ratos.filter((r) => r.filhote && r.vivo).length < 4) {
-        const f = addMonstro(criaAranhaPequena(aranhaMae.g.position.x + 2, aranhaMae.g.position.z + 2), 10, 3, 3, 2.8, false, aranhaMae.bounds, { veneno: true, filhote: true });
+        const f = addMonstro(criaAranhaPequena(aranhaMae.g.position.x + 2, aranhaMae.g.position.z + 2), 10, 3, 3, 2.8, false, aranhaMae.bounds, { veneno: true, filhote: true, especie: 'aranhaPequena' });
         scene.add(f.g);
+        aplicaGLBEm(f); // nasce já com o modelo 3D, se a espécie tiver .glb
         mostraMensagem('🕷️ A Aranha Gigante chamou um FILHOTE!');
       }
     }
@@ -1784,9 +1862,9 @@ function passo() {
       mostraMensagem(`🟢 Veneno... (-2) ${Math.ceil(envenenadoAte - tempo)}s`);
       recebeDano(2);
     }
-    if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 1.5); hud.vida(vida, VIDA_MAX); } // regen lenta
+    if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 0.5); hud.vida(vida, VIDA_MAX); } // regen lenta
     // MANA regenera + LUX te acompanha + barra de magias (cadeado/cooldown)
-    mana = Math.min(MANA_MAX, mana + dt * 0.9);
+    mana = Math.min(MANA_MAX, mana + dt * 0.35); // regen LENTA (Tibia): mana cheia leva ~2,4 min
     if (Math.floor(mana) !== manaMostrada) { manaMostrada = Math.floor(mana); hud.mana(mana, MANA_MAX); }
     if (tempo < luxAte) {
       luzLux.intensity = 1.8;
@@ -1828,6 +1906,16 @@ function passo() {
     if (!r.vivo && !r.corpse && r.respawnAt && tempo > r.respawnAt) reviveBicho(r);
   }
   if (mixerDragao) mixerDragao.update(dt); // animação esquelética do dragão 3D (se o .glb existir)
+  // dragões GLB VIVOS: cabeça olha em volta, cauda balança, asas tremem
+  for (const dv of dragoesVivos) {
+    const tD = tempo + dv.fase;
+    if (dv.ossos.cabeca) {
+      dv.ossos.cabeca.rotation.y = Math.sin(tD * 0.7) * 0.35;
+      dv.ossos.cabeca.rotation.x = Math.sin(tD * 0.45) * 0.14;
+    } else dv.raiz.scale.y = dv.escalaBase * (1 + Math.sin(tD * 1.6) * 0.02); // sem osso: respira
+    dv.ossos.cauda.forEach((b, i) => { b.rotation.y = Math.sin(tD * 1.1 + i * 0.6) * 0.16; });
+    dv.ossos.asas.forEach((b, i) => { b.rotation.z = (i % 2 ? -1 : 1) * Math.sin(tD * 2.2) * 0.22; });
+  }
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
   ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)
