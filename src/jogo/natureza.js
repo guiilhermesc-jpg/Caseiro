@@ -301,24 +301,27 @@ export function criaRio({ zIni, zFim, x, larg = 8, gapZ = null, gapW = 8 }) {
   return { grupo: g, colisores };
 }
 
-// --- PONTE DE PEDRA (atravessa o rio no sentido X; parapeitos guiam a travessia) ---
+// --- PONTE DE PEDRA (atravessa o rio no sentido X) ---
+//  AJUSTADA: tablado quase na largura da ESTRADA (7.4) com parapeitos finos
+//  nas bordas → passagem larga (≈5.4 útil), sem funil que travava o jogador;
+//  deck rente ao chão (o avatar não "afunda").
 export function criaPonteDePedra(x, z, comp = 12) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const pedra = mat(0x8a8276, 1), pedraEsc = mat(0x6a6258, 1);
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.3, 5.4), pedra);
-  deck.position.y = 0.2; deck.castShadow = deck.receiveShadow = true; g.add(deck);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.22, 7.4), pedra);
+  deck.position.y = 0.11; deck.castShadow = deck.receiveShadow = true; g.add(deck);
   // arco por baixo (vão da água)
-  const arco = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 4.6, 12, 1, false, 0, Math.PI), pedraEsc);
+  const arco = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 6.6, 12, 1, false, 0, Math.PI), pedraEsc);
   arco.rotation.z = Math.PI / 2; arco.rotation.y = Math.PI / 2; arco.position.y = 0.1; g.add(arco);
   const colisores = [];
-  [-2.6, 2.6].forEach((oz) => { // parapeitos com colisão (não cai na água)
-    const par = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.9, 0.4), pedraEsc);
-    par.position.set(0, 0.75, oz); par.castShadow = true; g.add(par);
-    colisores.push({ minX: x - comp / 2, maxX: x + comp / 2, minZ: z + oz - 0.2, maxZ: z + oz + 0.2 });
+  [-3.55, 3.55].forEach((oz) => { // parapeitos finos na BORDA (não cai na água)
+    const par = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.85, 0.3), pedraEsc);
+    par.position.set(0, 0.64, oz); par.castShadow = true; g.add(par);
+    colisores.push({ minX: x - comp / 2, maxX: x + comp / 2, minZ: z + oz - 0.15, maxZ: z + oz + 0.15 });
   });
-  [[-comp / 2 + 0.4, -2.6], [comp / 2 - 0.4, -2.6], [-comp / 2 + 0.4, 2.6], [comp / 2 - 0.4, 2.6]].forEach(([px, pz]) => {
-    const pil = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.5, 0.7), pedra);
-    pil.position.set(px, 0.85, pz); pil.castShadow = true; g.add(pil);
+  [[-comp / 2 + 0.4, -3.55], [comp / 2 - 0.4, -3.55], [-comp / 2 + 0.4, 3.55], [comp / 2 - 0.4, 3.55]].forEach(([px, pz]) => {
+    const pil = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.3, 0.6), pedra);
+    pil.position.set(px, 0.65, pz); pil.castShadow = true; g.add(pil);
   });
   return { grupo: g, colisores };
 }

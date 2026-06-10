@@ -491,7 +491,7 @@ const TIPOS_COLETA = {
 
 // CASAS À VENDA (compra com ouro; depois personaliza o telhado)
 const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
-[{ x: 32, z: 8, casaIdx: 0 }, { x: -32, z: 8, casaIdx: 1 }].forEach((cv) => { // placas ao LADO (porta livre)
+[{ x: 43, z: 6, casaIdx: 0 }, { x: -43, z: 6, casaIdx: 1 }].forEach((cv) => { // placas junto às portas novas (lado da rua)
   cv.custo = 15; cv.corIdx = 0;
   const placa = new THREE.Group(); placa.position.set(cv.x, 0, cv.z);
   const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6), MAT_MADEIRA); poste.position.y = 0.9; placa.add(poste);

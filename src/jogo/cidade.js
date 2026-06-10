@@ -169,12 +169,14 @@ export function criaCidade() {
   [[16, 40], [24, 48], [40, 24], [-16, 40], [-24, 48], [-40, 24], [40, -24], [-40, -24]]
     .forEach(([x, z]) => { add(criaBarril(x, z)); add(criaCaixa(x + 1.3, z + 0.2)); });
   // ITENS VALIOSOS (ganchos de quest futura)
-  add(criaBau(0, -20, 0.2));         // tesouro à frente da igreja (fora do colisor dela)
+  add(criaBau(9, -18, 0.4));         // tesouro ao LADO do templo (a porta fica LIVRE)
   add(criaCristal(0, 21));           // cristal arcano à frente da escola (fora do colisor)
 
-  // CASAS ENTRÁVEIS (porta abre na AÇÃO, telhado some ao entrar) — perto da praça
-  add(criaCasaInterior(38, 0, { frente: 'oeste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
-  add(criaCasaInterior(-38, 0, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
+  // CASAS ENTRÁVEIS (porta aberta, telhado some ao entrar) — perto da praça.
+  // ⚠️ A porta vira pra RUA (leste/oeste): antes abria de frente pro colisor
+  // do hospital/delegacia e o jogador TRAVAVA ali sem entender o porquê.
+  add(criaCasaInterior(38, 0, { frente: 'leste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
+  add(criaCasaInterior(-38, 0, { frente: 'oeste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
   // LOJAS estilo Tibia (cada NPC com sua finalidade — runas, arco & flecha, forja)
   add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldra
   add(criaPlaca(-26, 14, 'Runas — Eldra', Math.PI / 2));
