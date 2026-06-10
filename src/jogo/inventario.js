@@ -17,7 +17,7 @@ const SLOTS = [
 ];
 const N_MOCHILA = 20;
 
-export function criaInventario() {
+export function criaInventario({ aoEquipar } = {}) {
   const equipado = {};
   const slotEls = {};
   const mochila = []; // [{nome, icone, qtd}]
@@ -52,7 +52,11 @@ export function criaInventario() {
   for (let i = 0; i < N_MOCHILA; i++) {
     const cel = document.createElement('div');
     cel.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;'
-      + 'background:#0e141c;border:1px solid #2c3845;border-radius:7px;font-size:18px;';
+      + 'background:#0e141c;border:1px solid #2c3845;border-radius:7px;font-size:18px;cursor:pointer;';
+    cel.addEventListener('click', () => { // clicar = usar/equipar
+      const it = mochila[i];
+      if (it && it.slot && aoEquipar) { aoEquipar(it); if (it.qtd > 1) it.qtd--; else mochila.splice(i, 1); renderMochila(); }
+    });
     gradeM.appendChild(cel); mochilaEls.push(cel);
   }
   document.body.appendChild(painel);
@@ -94,7 +98,7 @@ export function criaInventario() {
       const ex = mochila.find((m) => m.nome === item.nome);
       if (ex) { ex.qtd++; renderMochila(); return true; }
       if (mochila.length >= N_MOCHILA) return false;
-      mochila.push({ nome: item.nome, icone: item.icone, qtd: 1 }); renderMochila(); return true;
+      mochila.push({ ...item, qtd: 1 }); renderMochila(); return true; // guarda props (slot/defesa/id)
     },
   };
 }

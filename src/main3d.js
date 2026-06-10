@@ -94,6 +94,8 @@ let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
 let tochaOn = false;
 let vida = 100; const VIDA_MAX = 100; let defesa = 0; // defesa sobe ao equipar armadura
+const equipados = {}; // slot -> item de armadura
+const MAT_METAL = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.6, roughness: 0.4 });
 
 // avatar (recriado quando muda a aparência na tela de seleção)
 const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20, sexo: 'homem', tipo: 'aldeao' };
@@ -109,6 +111,7 @@ function montaAvatar() {
   avatar.userData.tipo = 'jogador'; // clicável (abre customização)
   if (armado) poeArmaNaMao();       // mantém o graveto ao recriar (troca de cor)
   if (tochaOn) poeTochaNaMao(true); // mantém a tocha acesa
+  poeCorpoEquip();                  // mantém as armaduras no corpo
   scene.add(avatar);
 }
 montaAvatar();
@@ -140,7 +143,7 @@ scene.add(gato);
 const controles = criaControles(renderer.domElement);
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, alcance: 90 });
 const npcs = criaNPCs(scene, colide);
-const inventario = criaInventario();
+const inventario = criaInventario({ aoEquipar: (item) => aoEquipar(item) });
 
 // --- mensagens (toast) + ação/interação ---
 let gesto = 0;
@@ -307,6 +310,31 @@ function equipaGraveto() {
   inventario.equipa('maoDir', { nome: 'Graveto', icone: '🪵' });
   mostraMensagem('Pegou um graveto! Seus golpes agora dão 5. ⚔️');
 }
+// ARMADURAS — caem de bichos fortes; clique na mochila p/ equipar (aparece no corpo + defesa)
+const ARMADURAS = [
+  { id: 'elmo', nome: 'Elmo de Ferro', icone: '🪖', slot: 'cabeca', defesa: 3 },
+  { id: 'peitoral', nome: 'Peitoral', icone: '🥋', slot: 'tronco', defesa: 6 },
+  { id: 'escudo', nome: 'Escudo', icone: '🛡️', slot: 'maoEsq', defesa: 4 },
+  { id: 'botas', nome: 'Botas de Aço', icone: '🥾', slot: 'pes', defesa: 2 },
+  { id: 'amuleto', nome: 'Amuleto', icone: '📿', slot: 'colar', defesa: 2 },
+  { id: 'aneldef', nome: 'Anel de Defesa', icone: '💍', slot: 'anel', defesa: 1 },
+];
+function aoEquipar(item) {
+  const slot = item.slot;
+  if (equipados[slot]) { defesa -= equipados[slot].defesa || 0; inventario.addItem(equipados[slot]); }
+  equipados[slot] = item; defesa += item.defesa || 0;
+  inventario.equipa(slot, { nome: item.nome, icone: item.icone });
+  poeCorpoEquip();
+  mostraMensagem(`Equipou ${item.nome} (+${item.defesa} def) 🛡️`);
+}
+function poeCorpoEquip() {
+  const p = avatar.userData.partes; if (!p) return;
+  avatar.children.filter((c) => c.name === 'equipCorpo').forEach((c) => avatar.remove(c));
+  p.bracoEsq.children.filter((c) => c.name === 'equipCorpo').forEach((c) => p.bracoEsq.remove(c));
+  if (equipados.cabeca) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.5, 0.86), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 2.85; m.castShadow = true; avatar.add(m); }
+  if (equipados.tronco) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.08, 1.0, 0.62), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 1.5; m.castShadow = true; avatar.add(m); }
+  if (equipados.maoEsq) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.7), MAT_METAL); m.name = 'equipCorpo'; m.position.set(0, -0.4, 0.3); p.bracoEsq.add(m); }
+}
 // TOCHA (acende o esgoto escuro)
 function poeTochaNaMao(on) {
   const p = avatar.userData.partes; if (!p) return;
@@ -336,7 +364,10 @@ const LOOT_TAB = [
 function rollLoot(ehBoss) {
   const out = [];
   LOOT_TAB.forEach((it) => { if (Math.random() < (ehBoss ? it.ch + 0.25 : it.ch)) out.push({ nome: it.nome, icone: it.icone }); });
-  if (ehBoss) { out.push({ nome: 'Presa do Boss', icone: '🦷' }); if (Math.random() < 0.35) out.push({ nome: 'Anel velho', icone: '💍' }); }
+  if (ehBoss) {
+    out.push({ nome: 'Presa do Boss', icone: '🦷' });
+    if (Math.random() < 0.45) out.push({ ...ARMADURAS[Math.floor(Math.random() * ARMADURAS.length)] }); // dropa armadura
+  }
   return out;
 }
 function alvoRato() {
