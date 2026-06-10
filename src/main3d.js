@@ -74,13 +74,20 @@ function colide(x, z) {
     if (x > o.minX - RAIO_AVATAR && x < o.maxX + RAIO_AVATAR &&
         z > o.minZ - RAIO_AVATAR && z < o.maxZ + RAIO_AVATAR) return true;
   }
+  // portas fechadas bloqueiam o vão (na superfície); abrem ao chegar perto
+  if (!noEsgoto) for (const c of casas) {
+    if (!c.aberta && c.portaCol &&
+        x > c.portaCol.minX - RAIO_AVATAR && x < c.portaCol.maxX + RAIO_AVATAR &&
+        z > c.portaCol.minZ - RAIO_AVATAR && z < c.portaCol.maxZ + RAIO_AVATAR) return true;
+  }
   return false;
 }
 
 // --- esgoto (subsolo escuro) + ratos + boss + tocha ---
 const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
-const ratos = criaRatos(8, esgoto.bounds);
-const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1.6, forte: true, bounds: esgoto.bounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
+const ratos = criaRatos(6, esgoto.salaBounds);                       // ratos na câmara central
+esgoto.corredores.forEach((b) => criaRatos(2, b).forEach((r) => ratos.push(r))); // ratos patrulhando os túneis
+const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1.6, forte: true, bounds: esgoto.salaBounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
 ratos.push(boss);
 // CRIATURAS DA SUPERFÍCIE (região selvagem entre Venore e a cidade distante)
 function areaMon(x, z, r) { return { minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r }; }
@@ -732,7 +739,11 @@ function loop() {
              && avatar.position.z > c.box.minZ && avatar.position.z < c.box.maxZ;
       c.roof.visible = !d;
       if (d) dentroCasa = true;
-      if (c.portaAnim) c.portaAnim.alvo = (Math.hypot(avatar.position.x - c.px, avatar.position.z - c.pz) < 4.5) ? c.angAberto : 0; // porta abre sozinha
+      if (c.portaAnim) {
+        const pertoPorta = Math.hypot(avatar.position.x - c.px, avatar.position.z - c.pz) < 4.5;
+        c.portaAnim.alvo = pertoPorta ? c.angAberto : 0; // porta abre sozinha ao chegar perto
+        c.aberta = pertoPorta;                           // libera o vão (fechada = bloqueia)
+      }
     }
 
     // câmera orbital + anti-oclusão

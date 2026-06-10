@@ -35,14 +35,14 @@ export function criaCasaInterior(x, z, opts = {}) {
     const vert = alt - 2.6; // verga acima da porta
     if (lado === 'sul' || lado === 'norte') {
       const cz = lado === 'sul' ? -hz : hz, seg = (larg - gw) / 2;
-      muro(-(gw / 2 + seg / 2), cz, seg, t, true); // sem colisão = entra fácil pela frente
-      muro(gw / 2 + seg / 2, cz, seg, t, true);
+      muro(-(gw / 2 + seg / 2), cz, seg, t); // laterais sólidas; só o vão da porta abre
+      muro(gw / 2 + seg / 2, cz, seg, t);
       const verga = new THREE.Mesh(new THREE.BoxGeometry(gw, vert, t), paredeMat);
       verga.position.set(0, alt - vert / 2, cz); g.add(verga);
     } else {
       const cx = lado === 'oeste' ? -hx : hx, seg = (prof - gw) / 2;
-      muro(cx, -(gw / 2 + seg / 2), t, seg, true);
-      muro(cx, gw / 2 + seg / 2, t, seg, true);
+      muro(cx, -(gw / 2 + seg / 2), t, seg);
+      muro(cx, gw / 2 + seg / 2, t, seg);
       const verga = new THREE.Mesh(new THREE.BoxGeometry(t, vert, gw), paredeMat);
       verga.position.set(cx, alt - vert / 2, 0); g.add(verga);
     }
@@ -131,11 +131,16 @@ export function criaCasaInterior(x, z, opts = {}) {
   const marcP = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv2), transparent: true, depthTest: false }));
   marcP.scale.set(1.6, 1.6, 1); marcP.position.set((dpx - x) * 1.1, 2.7, (dpz - z) * 1.1); marcP.renderOrder = 997; g.add(marcP);
 
+  // colisor do VÃO da porta — bloqueia quando FECHADA, libera quando abre perto
+  const portaCol = (frente === 'sul' || frente === 'norte')
+    ? { minX: x - gw / 2, maxX: x + gw / 2, minZ: dpz - 0.45, maxZ: dpz + 0.45 }
+    : { minX: dpx - 0.45, maxX: dpx + 0.45, minZ: z - gw / 2, maxZ: z + gw / 2 };
+
   const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
   return {
     grupo: g, colisores,
     animados: [animPorta],
-    casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz },
+    casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz, portaCol, aberta: false },
   };
 }
 
