@@ -86,7 +86,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
   const animPorta = { mesh: dobr, porta: true, alvo: 0 };
   const estado = { aberta: false };
-  const inter = { x: dpx, z: dpz, raio: 2.8, titulo: 'Porta' };
+  const inter = { x: dpx, z: dpz, raio: 2.8, titulo: 'Porta', acao: 'Abrir / fechar porta 🚪' };
   inter.onAcao = () => {
     estado.aberta = !estado.aberta;
     animPorta.alvo = estado.aberta ? angAberto : 0;

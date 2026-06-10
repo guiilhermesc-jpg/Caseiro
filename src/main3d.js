@@ -156,6 +156,23 @@ function achaInterativo() {
   return melhor;
 }
 
+// AVISO de ação flutuante (estilo Roblox): "[E] Abrir porta"
+let promptEl;
+function mostraPrompt(dica) {
+  if (!promptEl) {
+    promptEl = document.createElement('div');
+    promptEl.style.cssText = 'position:fixed;left:50%;bottom:130px;transform:translateX(-50%);z-index:46;display:none;'
+      + 'background:rgba(20,28,40,.92);border:1px solid #5aa06a;border-radius:12px;padding:9px 16px;text-align:center;'
+      + 'color:#eaffea;font-family:Arial;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4);';
+    document.body.appendChild(promptEl);
+  }
+  if (dica) {
+    promptEl.innerHTML = `<b style="font-size:15px;">${dica}</b>`
+      + '<div style="font-size:11px;opacity:.85;margin-top:2px;">aperte <b>E</b> ou o botão <b>AÇÃO</b></div>';
+    promptEl.style.display = 'block';
+  } else { promptEl.style.display = 'none'; }
+}
+
 // --- diálogo (NPC), customização (você) e troca de pet ---
 const dialogo = criaDialogo();
 let petTipo = 'gato';
@@ -222,14 +239,14 @@ BUEIROS.forEach((bp, i) => {
   const buraco = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.12, 16), new THREE.MeshStandardMaterial({ color: 0x080808 }));
   buraco.position.y = 0.2; b.add(buraco);
   scene.add(b);
-  interativos.push({ x: bp.x, z: bp.z, raio: 2.4, titulo: '🕳️ Bueiro', msg: 'Escuro lá embaixo...', onAcao: () => desce(i) });
+  interativos.push({ x: bp.x, z: bp.z, raio: 2.4, titulo: '🕳️ Bueiro', acao: 'Descer ao esgoto 🕳️', msg: 'Escuro lá embaixo...', onAcao: () => desce(i) });
 });
 [[26, 24], [-22, 26], [26, -22], [10, 54], [54, 10]].forEach(([gx, gz]) => {
   const grp = new THREE.Group(); grp.position.set(gx, 0, gz);
   const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA);
   stick.rotation.z = Math.PI / 2; stick.position.y = 0.1; grp.add(stick);
   scene.add(grp);
-  const it = { x: gx, z: gz, raio: 2, titulo: '🪵 Graveto', msg: 'Um galho resistente.' };
+  const it = { x: gx, z: gz, raio: 2.2, titulo: '🪵 Graveto', acao: 'Pegar graveto 🪵', msg: 'Um galho resistente.' };
   it.onAcao = () => { scene.remove(grp); const i = interativos.indexOf(it); if (i >= 0) interativos.splice(i, 1); equipaGraveto(); };
   interativos.push(it);
 });
@@ -293,8 +310,7 @@ function rollLoot(ehBoss) {
   if (ehBoss) { out.push({ nome: 'Presa do Boss', icone: '🦷' }); if (Math.random() < 0.35) out.push({ nome: 'Anel velho', icone: '💍' }); }
   return out;
 }
-function atacar() {
-  const dano = armado ? 5 : 2;
+function alvoRato() {
   const fx = Math.sin(avatar.rotation.y), fz = Math.cos(avatar.rotation.y);
   let melhor = null, melhorD = 2.6;
   for (const r of ratos) {
@@ -303,6 +319,11 @@ function atacar() {
     if (d > 2.6 || (dx * fx + dz * fz) / (d || 1) < 0) continue; // perto e na frente
     if (d < melhorD) { melhorD = d; melhor = r; }
   }
+  return melhor;
+}
+function atacar() {
+  const dano = armado ? 5 : 2;
+  const melhor = alvoRato();
   if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
   melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);
   if (melhor.hp <= 0) mataBicho(melhor);
@@ -464,6 +485,18 @@ function loop() {
       const p = avatar.userData.partes;
       if (p) p.bracoDir.rotation.x = -Math.sin((1 - gesto) * Math.PI) * 1.6;
     }
+
+    // DICA de ação (Roblox-style): o que a tecla E / botão AÇÃO faz aqui perto
+    let dica = null;
+    if (noEsgoto) {
+      for (const a of esgoto.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir 🪜'; break; } }
+      if (!dica && corpseProximo()) dica = 'Saquear o corpo 💀';
+      if (!dica && alvoRato()) dica = 'Atacar ⚔️';
+    } else {
+      const it = achaInterativo();
+      if (it) dica = it.acao || it.titulo;
+    }
+    mostraPrompt(dica);
 
     // INTERIORES: esconde o telhado da casa em que você está + aproxima a câmera
     let dentroCasa = false;

@@ -151,7 +151,7 @@ export function criaBau(x, z, rot = 0) {
     grupo: g,
     colisores: [{ minX: x - 0.8, maxX: x + 0.8, minZ: z - 0.6, maxZ: z + 0.6 }],
     animados: [{ mesh: gema, pulsa: gemaMat, gira: 1.5, fase: Math.random() * 6 }],
-    interativo: { x, z, raio: 2.6, titulo: '🪙 Baú do Tesouro', msg: 'Está trancado. Você precisa de uma chave...' },
+    interativo: { x, z, raio: 2.6, titulo: '🪙 Baú do Tesouro', acao: 'Examinar baú 🪙', msg: 'Está trancado. Você precisa de uma chave...' },
   };
 }
 
@@ -170,7 +170,7 @@ export function criaCristal(x, z) {
     grupo: g,
     colisores: [{ minX: x - 0.8, maxX: x + 0.8, minZ: z - 0.8, maxZ: z + 0.8 }],
     animados: [{ mesh: cristal, pulsa: cristalMat, gira: 0.8, flutua: true, baseY: 2.4, fase: Math.random() * 6 }],
-    interativo: { x, z, raio: 2.6, titulo: '🔮 Cristal Arcano', msg: 'Pulsa com uma energia estranha. Algo aqui é importante...' },
+    interativo: { x, z, raio: 2.6, titulo: '🔮 Cristal Arcano', acao: 'Examinar cristal 🔮', msg: 'Pulsa com uma energia estranha. Algo aqui é importante...' },
   };
 }
 
