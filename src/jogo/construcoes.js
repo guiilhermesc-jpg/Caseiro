@@ -12,6 +12,37 @@ export function mat(cor, rough = 0.9) {
   return matCache[k];
 }
 
+function _jbox(w, h, d, material, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  m.position.set(x, y, z); return m;
+}
+
+// JANELA variada (vidro + moldura; opcional cruzeta, postigos, floreira c/ flores).
+// O vidro fica virado para +Z; o chamador posiciona/gira na parede.
+export function criaJanela(opts = {}) {
+  const { w = 1.3, h = 1.3, cruz = true, shutters = false, floreira = false, cor = 0x9fd0e0 } = opts;
+  const g = new THREE.Group();
+  const moldura = mat(0xede6d2), vidro = mat(cor, 0.35), fr = 0.1;
+  g.add(_jbox(w, h, 0.06, vidro, 0, 0, 0));
+  g.add(_jbox(w + fr, fr, 0.12, moldura, 0, h / 2, 0));
+  g.add(_jbox(w + fr, fr, 0.12, moldura, 0, -h / 2, 0));
+  g.add(_jbox(fr, h + fr, 0.12, moldura, -w / 2, 0, 0));
+  g.add(_jbox(fr, h + fr, 0.12, moldura, w / 2, 0, 0));
+  if (cruz) { g.add(_jbox(w, 0.06, 0.1, moldura, 0, 0, 0)); g.add(_jbox(0.06, h, 0.1, moldura, 0, 0, 0)); }
+  if (shutters) [-1, 1].forEach((s) => {
+    g.add(_jbox(w * 0.52, h, 0.05, mat(0x6a4a8a), s * (w * 0.52 / 2 + w / 2 + 0.03), 0, 0.05));
+  });
+  if (floreira) {
+    g.add(_jbox(w + 0.2, 0.22, 0.3, mat(0x6e4a2a), 0, -h / 2 - 0.16, 0.16));
+    const cores = [0xe85d75, 0xf2c14e, 0xd06ad0, 0xff8a4c];
+    [-0.35, 0, 0.35].forEach((ox) => {
+      const fl = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), mat(cores[Math.floor(Math.random() * cores.length)]));
+      fl.position.set(ox, -h / 2 - 0.02, 0.24); g.add(fl);
+    });
+  }
+  return g;
+}
+
 // telhado de DUAS ÁGUAS com beiral (cobre o retângulo certinho -> bordas coerentes)
 function telhadoDuasAguas(larg, prof, hTelh, cor, baseY) {
   const ov = 0.5; // beiral (overhang)
@@ -46,11 +77,19 @@ export function criaPredio(opts) {
   porta.position.set(0, 1.6, prof / 2 + 0.02); g.add(porta);
 
   if (janelas) {
-    const jmat = mat(0x9fd0e0, 0.4);
-    [-larg * 0.3, larg * 0.3].forEach((jx) => {
-      const j = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 0.2), jmat);
-      j.position.set(jx, alt * 0.62, prof / 2 + 0.02); g.add(j);
+    const estilo = () => ({ cruz: true, shutters: Math.random() < 0.5, floreira: Math.random() < 0.35 });
+    const yJ = Math.min(alt * 0.6, alt - 1.4);
+    // frente
+    [-larg * 0.28, larg * 0.28].forEach((jx) => {
+      const j = criaJanela(estilo()); j.position.set(jx, yJ, prof / 2 + 0.07); g.add(j);
     });
+    // laterais (prédios mais fundos ganham janelas nos lados)
+    if (prof >= 9) {
+      [-prof * 0.24, prof * 0.24].forEach((jz) => {
+        const jE = criaJanela(estilo()); jE.position.set(-larg / 2 - 0.07, yJ, jz); jE.rotation.y = -Math.PI / 2; g.add(jE);
+        const jD = criaJanela(estilo()); jD.position.set(larg / 2 + 0.07, yJ, jz); jD.rotation.y = Math.PI / 2; g.add(jD);
+      });
+    }
   }
 
   const girado = Math.abs(Math.sin(rot)) > 0.5;

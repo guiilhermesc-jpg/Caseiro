@@ -137,8 +137,8 @@ export function criaCidade() {
   [[16, 40], [24, 48], [40, 24], [-16, 40], [-24, 48], [-40, 24], [40, -24], [-40, -24]]
     .forEach(([x, z]) => { add(criaBarril(x, z)); add(criaCaixa(x + 1.3, z + 0.2)); });
   // ITENS VALIOSOS (ganchos de quest futura)
-  add(criaBau(0, -26, 0.2));         // tesouro perto da igreja
-  add(criaCristal(0, 26));           // cristal arcano perto da escola
+  add(criaBau(0, -20, 0.2));         // tesouro à frente da igreja (fora do colisor dela)
+  add(criaCristal(0, 21));           // cristal arcano à frente da escola (fora do colisor)
 
   // CASAS ENTRÁVEIS (porta abre na AÇÃO, telhado some ao entrar) — perto da praça
   add(criaCasaInterior(38, 0, { frente: 'oeste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));

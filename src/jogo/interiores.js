@@ -6,7 +6,7 @@
 //  Devolve { grupo, colisores, interativo (porta), animados, casa }.
 // =============================================================
 import * as THREE from 'three';
-import { mat } from './construcoes.js';
+import { mat, criaJanela } from './construcoes.js';
 
 export function criaCasaInterior(x, z, opts = {}) {
   const { larg = 9, prof = 9, alt = 4, frente = 'sul', cor = 0xd8c4a0, corTelhado = 0x8a4632 } = opts;
@@ -48,6 +48,17 @@ export function criaCasaInterior(x, z, opts = {}) {
     }
   }
   ['sul', 'norte', 'oeste', 'leste'].forEach((l) => { if (l === frente) ladoComVao(l); else ladoCheio(l); });
+
+  // janelas variadas nas paredes que não têm a porta
+  ['sul', 'norte', 'oeste', 'leste'].forEach((l) => {
+    if (l === frente) return;
+    const j = criaJanela({ cruz: true, shutters: Math.random() < 0.6, floreira: Math.random() < 0.4 });
+    if (l === 'sul') j.position.set(0, 1.9, -hz - 0.07);
+    else if (l === 'norte') { j.position.set(0, 1.9, hz + 0.07); j.rotation.y = Math.PI; }
+    else if (l === 'oeste') { j.position.set(-hx - 0.07, 1.9, 0); j.rotation.y = -Math.PI / 2; }
+    else { j.position.set(hx + 0.07, 1.9, 0); j.rotation.y = Math.PI / 2; }
+    g.add(j);
+  });
 
   // PORTA (folha) com dobradiça na borda do vão
   const dobr = new THREE.Group();

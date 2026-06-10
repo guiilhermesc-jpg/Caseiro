@@ -87,26 +87,43 @@ export function criaNPCs(scene, colide, n = 6) {
   return npcs;
 }
 
+// desvios de heading testados quando o caminho direto está bloqueado
+const DESVIOS = [0, 0.6, -0.6, 1.2, -1.2, 2.0, -2.0];
+
 export function atualizaNPCs(npcs, dt, colide) {
   for (const n of npcs) {
     const g = n.g;
     n.tempo += dt;
+    // gravidade + pulo (quando encurralado, dá um salto)
+    n.vy = (n.vy || 0) - 20 * dt;
+    g.position.y += n.vy * dt;
+    if (g.position.y <= 0) { g.position.y = 0; n.vy = 0; n.noChao = true; }
+
     if (n.pausa > 0) { n.pausa -= dt; animaAvatar(g, false, n.tempo); continue; }
-    let dx = n.alvo.x - g.position.x, dz = n.alvo.z - g.position.z;
-    let dist = Math.hypot(dx, dz);
-    // se vagou longe do posto, volta pra perto dele
-    if (Math.hypot(g.position.x - n.post.x, g.position.z - n.post.z) > 7) {
-      n.alvo = { x: n.post.x, z: n.post.z };
-      dx = n.alvo.x - g.position.x; dz = n.alvo.z - g.position.z; dist = Math.hypot(dx, dz);
-    }
+    // se vagou longe do posto, mira de volta
+    if (Math.hypot(g.position.x - n.post.x, g.position.z - n.post.z) > 7) n.alvo = { x: n.post.x, z: n.post.z };
+    const dx = n.alvo.x - g.position.x, dz = n.alvo.z - g.position.z;
+    const dist = Math.hypot(dx, dz);
     if (dist < 0.5) { n.pausa = 1.5 + Math.random() * 3; n.alvo = alvoPertoDoPosto(n.post, colide); animaAvatar(g, false, n.tempo); continue; }
-    const vel = 2.4, mx = dx / dist, mz = dz / dist;
-    const nx = g.position.x + mx * vel * dt, nz = g.position.z + mz * vel * dt;
-    let mexeu = false;
-    if (!colide(nx, g.position.z)) { g.position.x = nx; mexeu = true; }
-    if (!colide(g.position.x, nz)) { g.position.z = nz; mexeu = true; }
-    if (!mexeu) { n.alvo = alvoPertoDoPosto(n.post, colide); n.pausa = 0.4; } // travou -> novo alvo
-    g.rotation.y = Math.atan2(mx, mz);
-    animaAvatar(g, true, n.tempo);
+
+    const vel = 2.4, ang = Math.atan2(dx, dz); // direção desejada
+    let andou = false;
+    for (const off of DESVIOS) { // tenta direto; se travar, contorna pelos lados
+      const a = ang + off, mx = Math.sin(a), mz = Math.cos(a);
+      const nx = g.position.x + mx * vel * dt, nz = g.position.z + mz * vel * dt;
+      const livreX = !colide(nx, g.position.z), livreZ = !colide(g.position.x, nz);
+      if (livreX || livreZ) {
+        if (livreX) g.position.x = nx;
+        if (livreZ) g.position.z = nz;
+        g.rotation.y = Math.atan2(mx, mz);
+        andou = true; break;
+      }
+    }
+    if (!andou) { // totalmente preso: PULA o obstáculo e escolhe novo caminho
+      if (n.noChao) { n.vy = 6; n.noChao = false; }
+      n.alvo = alvoPertoDoPosto(n.post, colide);
+      n.pausa = 0.3;
+    }
+    animaAvatar(g, andou && n.noChao, n.tempo);
   }
 }
