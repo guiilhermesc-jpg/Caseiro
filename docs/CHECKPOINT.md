@@ -1,145 +1,93 @@
-# 📌 CHECKPOINT — Projeto "Venor / Caseiro"
+# 📌 CHECKPOINT — Jogo "Venore / Caseiro"
 > Documento-mestre para **retomar o projeto do zero** sem perder contexto.
-> Atualizado: 09/06/2026. Leia este arquivo primeiro ao reabrir o projeto.
+> Atualizado: 10/06/2026. Leia este arquivo primeiro ao reabrir o projeto.
 
 ---
 
 ## 1. O QUE É
-Jogo **3D estilo Roblox** (web), mundo aberto **sandbox** inspirado no **Tibia**
-(mundo com história, **sem objetivo único** — o jogador escolhe o que fazer: viver
-sozinho, formar família, juntar-se a grupos; várias formas de "vencer").
-- Mundo inicial: a cidade **VENOR** (vilarejo antigo, **normal/não destruído**).
-- Origem: começou como survival 2D (inspirado em 60 Seconds!/This War of Mine) e
-  **pivotou para 3D estilo Roblox** a pedido do maestro. A pegada de guerra/sobrevivência
-  fica guardada como possível **evento futuro** dentro do mundo.
+Jogo **3D estilo Roblox/Tibia** (web), mundo aberto **sandbox** com cidade **VENORE**,
+multiplayer, combate, esgoto, inventário, NPCs com ofício e arredores (lagos, floresta,
+montanhas e uma **estrada para uma cidade distante "Thais"**). Sem objetivo único:
+o jogador explora, luta, conversa, personaliza. Tibia é **inspiração** (não cópia, não é OT).
 
-## 2. STACK / TECNOLOGIA
-- **Three.js** (3D na web) + **Vite** (bundler/dev server). Node 24, npm, Git.
-- **Pasta local:** `C:\Users\Pichau\projeto-sirene`
-- **Repo GitHub:** https://github.com/guiilhermesc-jpg/Caseiro
-- **Site publicado:** https://caseiro.pages.dev (Cloudflare Pages)
-- **Deploy:** por comando, via **Wrangler** (eu rodo). Cloudflare Pages projeto = `caseiro`.
+## 2. STACK / INFRA
+- **Three.js** (3D) + **Vite** (bundler). Node 24, npm, Git. PowerShell no Windows.
+- **Pasta:** `C:\Users\Pichau\projeto-sirene` · **Repo:** github.com/guiilhermesc-jpg/Caseiro (branch `main`)
+- **Cliente publicado:** https://caseiro.pages.dev (Cloudflare Pages, projeto `caseiro`)
+- **Servidor multiplayer:** Railway, projeto **venor-servidor**, plano **Hobby ($5/mês)**
+  - URL: **`wss://venor-servidor-production.up.railway.app`** (em `src/config3d.js` › `servidorMP`)
+  - Código em `server/` (Node + `ws`, relay de estados). Railway CLI já logado (guiilherme.sc@gmail.com).
 
 ## 3. COMO RODAR / PUBLICAR
-- **Rodar local:** `npm run dev` → http://localhost:5173 (host:true → acessível na rede).
-- **Build:** `npm run build` → gera `dist/`.
-- **Deploy (publicar):** carregar o `.env` nas variáveis e rodar
-  `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
-  (PowerShell carrega o `.env` linha a linha em `$env:` antes de chamar o wrangler.)
-- **Git:** `git add -A; git commit -m "..."; git push` (remote `origin` = Caseiro, branch `main`).
+- **Rodar local:** `npm run dev` → localhost:5173 · servidor MP local: `cd server; npm start` (ws://localhost:8080).
+- **Build:** `npm run build` (sempre rodo isto pra validar; **não consigo testar o 3D** — ver §7).
+- **Publicar cliente (Cloudflare):** carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
+- **Publicar servidor (Railway):** `cd server` e `railway up --ci`. Gerar domínio: `railway domain`.
+- **Git:** `git add -A; git commit; git push` (origin=Caseiro, main).
 
-## 4. SEGREDOS / .env  (NÃO versionado — está no .gitignore)
-- `OPENAI_API_KEY` — legado (era pra arte 2D via gpt-image-1; não usado no 3D).
-- `CLOUDFLARE_API_TOKEN` — usado pelo Wrangler pro deploy.
-- `CLOUDFLARE_ACCOUNT_ID` — id da conta Cloudflare.
-- ⚠️ **PENDÊNCIA DE SEGURANÇA:** o token Cloudflare apareceu no chat uma vez →
-  **revogar e gerar um novo** (colar só no `.env`).
+## 4. SEGREDOS / .env (NÃO versionado)
+`OPENAI_API_KEY` (legado) · `CLOUDFLARE_API_TOKEN` · `CLOUDFLARE_ACCOUNT_ID`.
+⚠️ Pendência antiga: o token Cloudflare já apareceu no chat → ideal **revogar e gerar novo**.
 
-## 5. ARQUITETURA DE ARQUIVOS (3D atual)
-- `index.html` → carrega `/src/main3d.js` (entry do jogo 3D).
-- `src/main3d.js` — loop principal; **modo SELEÇÃO** (boneco girando + overlay) e
-  **modo JOGO** (movimento, câmera orbital, física); colisão; câmera anti-oclusão.
-- `src/config3d.js` — "dials": `velocidade`, `limiteMundo`, cores.
-- `src/jogo/cidade.js` — **Venor**: grade de ruas, praça, marcos, casas, adereços, céu
-  (shader gradiente), luz (hemisphere+sol), nuvens. Retorna `{scene, sun, obstaculos,
-  solidos, aguas, postes, nuvens, fonteGotas, ...}`.
-- `src/jogo/construcoes.js` — peças modulares (materiais cacheados):
-  `criaPredio`, `criaMarco` (igreja c/ sino, hospital, delegacia, escola),
-  `telhadoDuasAguas`, `criaArvore/criaPinheiro/criaArbusto`, `criaFonte` (2 taças+gotas),
-  `criaBanco`, `criaPoste`.
-- `src/jogo/avatar.js` — `criaAvatar(cores)` boneco blocky c/ rosto; `animaAvatar`.
-- `src/jogo/controles.js` — mover (WASD/joystick esq.), câmera orbital (arrasto dir./mouse),
-  `querPular/correndo/abaixado` (Espaço/Shift/C + botões mobile).
-- `src/jogo/pet.js` — `criaGato/atualizaGato` (segue o avatar).
-- `src/jogo/selecao.js` — overlay de seleção (nome + cores roupa/pele/cabelo).
-- **Legado 2D (não usado):** `src/main.js`, `src/scenes/*`, `src/data/*`,
-  `src/systems/sons.js`, `src/ui/*`, `public/assets/personagens/jogador.png`,
-  `scripts/gerar-arte.mjs`, `docs/ARTE.md|PROMPTS-ARTE.md|SCENARIO-GUIA.md`.
+## 5. ARQUITETURA (módulos)
+- `src/main3d.js` — loop, câmera (zoom no scroll), física/colisão, **combate**, **dia/noite**,
+  AÇÃO + **prompt estilo Roblox**, clique p/ interagir, descer/subir esgoto, mapa ajustável.
+- `src/config3d.js` — dials: `velocidade`, `limiteMundo` (500, ajustável no jogo), `servidorMP`.
+- `src/jogo/cidade.js` — Venore (grade/praça/marcos/casas) + biomas + **mundo ampliado**
+  (lagos ao redor, floresta, **montanhas**, **estrada→cidade distante**). Chão com textura; céu segue a câmera.
+- `src/jogo/construcoes.js` — prédios, marcos, **janelas variadas** (`criaJanela`), telhados, fonte, banco, poste.
+- `src/jogo/props.js` — adornos (barril/caixa/poço/barraca/estátua/canteiro/bandeira) + **itens valiosos** (baú, cristal).
+- `src/jogo/natureza.js` — lago/riacho/ponte/juncos/salgueiro/árvore/vitória-régia/pedra/cogumelo/flor + montanha/estrada/placa/cidade distante.
+- `src/jogo/interiores.js` — **casas entráveis** (porta na AÇÃO, telhado some ao entrar, mobília, janelas).
+- `src/jogo/avatar.js` — boneco com **sexo (M/F)** + **4 modelos** (aldeão/caçador/mago/cavaleiro), outfit no corpo. `criaAvatar(cores)`, `animaAvatar`.
+- `src/jogo/controles.js` — mover/câmera/pular/correr/abaixar + botão **AÇÃO** (tecla E).
+- `src/jogo/pet.js` — gato/cachorro/coelho (`PETS`).
+- `src/jogo/selecao.js` — criação: nome + **sexo + modelo** + cores. `PALETAS` exportado.
+- `src/jogo/customizar.js` — editar aparência **no jogo** (clicar em si): cores/sexo/modelo/pet.
+- `src/jogo/dialogo.js` — caixa de conversa (NPC).
+- `src/jogo/npcs.js` — **elenco de Venore** (11 moradores com ofício/posto/diálogo, modelo por papel).
+- `src/jogo/minimapa.js` — **radar** centrado no jogador.
+- `src/jogo/inventario.js` — **mochila 20 slots** (empilha) + slots de equipamento (colar/cabeça/tocha/mãos/tronco/anel/pernas/pés).
+- `src/jogo/hud.js` — nível + barra de XP + itens.
+- `src/jogo/esgoto.js` — subsolo **escuro** (y=-40) com vários acessos/escadas.
+- `src/jogo/ratos.js` — rato (esgoto) + **boss cobra/crocodilo** + criaturas de superfície (**troll/ciclope/aranha-gigante+filhotes**).
+- `src/jogo/rede.js` — cliente WebSocket (renderiza outros, nomes, interpola, sincroniza modelo/cor).
+- `server/index.js` — servidor relay (ws). `server/smoke-test.mjs`, `smoke-prod.mjs` testam o relay.
 
 ## 6. O QUE JÁ ESTÁ PRONTO ✅
-- Cidade Venor em **grade** (ruas padrão), praça central com **fonte viva** (2 taças + jatos).
-- Marcos: **igreja** (torre + **sino**), **hospital** (cruz), **delegacia**, **escola**.
-- ~20 **casas** diversas (tamanho/cor/altura) **alinhadas** (colisão correta).
-- **Telhados de duas águas**, **bancos** (grandes), **postes**, **pinheiros**, **arbustos c/ flores**.
-- **Céu em gradiente** + **nuvens** se movendo.
-- **Avatar** blocky com **rosto** (olhos/boca/mãos/botas) e **cores escolhíveis**.
-- **Controles:** movimento relativo à câmera, **câmera orbital** (gira/vê o céu),
-  **pular / correr / abaixar** (botões no mobile + teclas no PC).
-- Colisão (não atravessa paredes), **anti-oclusão** de câmera, **anti-afundamento** (pés no chão).
-- **Pet gatinho** que segue.
-- **Tela de seleção de personagem** (nome + aparência, preview girando).
-- **Deploy** funcionando (publicado e atualizável por comando).
+Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada→cidade distante) ·
+**Multiplayer** (Railway, jogadores se veem/interagem, nomes flutuantes) · **NPCs com ofício** (padrão Tibia) ·
+**Diálogo** · **Clique p/ interagir** · **Customização in-game** (sexo/modelo/cores/pet) ·
+**4 modelos de personagem** (M/F, outfit no corpo) · **Interiores** (casas entráveis) ·
+**Combate** (graveto = arma; AÇÃO golpeia; loot no corpo; XP/níveis; respawn) ·
+**Esgoto escuro + tocha** (todos começam com tocha; tecla T) · **Bueiros/escadas** ·
+**Bichos:** rato, boss cobra/croc (esgoto); troll, ciclope, aranha-gigante+filhotes (superfície) ·
+**Inventário** (mochila 20 + equip) · **Dia/noite** (lampiões acendem) · **Minimapa radar** ·
+**Zoom no scroll** · **Mapa ajustável** (🗺️ +/-) · **Prompt de ação estilo Roblox** · Deploy funcionando.
 
-## 7. MODO DE TRABALHO
-- **Usuário = MAESTRO** (decide o quê/porquê; ainda não programa, entende processos,
-  quer segurança e cuidado).
-- **Claude = EXECUTOR** (programa, testa, deploya; explica em linguagem simples).
-- Ciclo: proponho → maestro aprova/redireciona → construo → publico/mostro.
-- Fronteira de segurança: **credenciais/contas/pagamentos são sempre do usuário**
-  (criar token, login, billing, colar chave no `.env`). Eu nunca digito credenciais.
-- **Limitação conhecida:** o PREVIEW local do Claude esgota contextos WebGL após muitos
-  reloads (erros "WebGL context could not be created"). NÃO é bug do jogo. Para validar,
-  usar `npm run build` (checa o código) + testar no **site publicado** (navegador real).
+## 7. MODO DE TRABALHO + LIMITAÇÃO
+- **Usuário = MAESTRO** (decide o quê/porquê; quer qualidade, detalhes, complexidade tipo Tibia).
+- **Claude = EXECUTOR** (programa/testa via build/deploya; explica simples). Credenciais são sempre do usuário.
+- ⚠️ **LIMITAÇÃO CRÍTICA:** o preview do Claude e o navegador automatizado estão com **WebGL desligado**
+  → **não consigo ver o 3D nem testar visualmente**. Valido por `npm run build` + smoke tests, e o **MAESTRO testa no Edge**
+  (PC) e no **celular/iPad** (link caseiro.pages.dev). Se aparecer "Não foi possível iniciar o 3D", ligar
+  Aceleração de Hardware no Chrome (o Edge funciona). Sempre que publico, no PC dar **Ctrl+Shift+R**.
 
-## 8. ROADMAP (coordenação — em ordem)
-1. **MULTIPLAYER** ← *🚧 EM ANDAMENTO* (frente paralela / outra conversa). (estado §11, plano §9)
-2. **Interiores**: entrar nos prédios (paredes ocas + porta), **andares e subsolos**. (plano técnico §12)
-3. **Polish de qualidade**: proporções, padrões de rua, mais detalhe/vida (NPCs, animais),
-   texturas dos ambientes.
-4. **Sistemas sandbox (Tibia-like)**: profissões, família/grupo, economia, objetivos múltiplos.
-5. **Segurança**: rotacionar o token Cloudflare.
-6. **(futuro)** App nativo Android/iOS via Capacitor (se desejado).
+## 8. FILA DE PEDIDOS (próximos, em ordem aproximada)
+1. 🎣 **Pesca** nos lagos (espécies reais de rio/lago).
+2. 🏠 **Casas compráveis/personalizáveis** (economia + posse).
+3. 🏰 **Thais (cidade distante) entrável** + mais conteúdo no caminho.
+4. 🐉 **Mais bichos** (beholder, ladrões/"Hauter") + **dano ao jogador / barra de vida**.
+5. 🛡️ **Armaduras/itens dropáveis** que equipam nos slots e **aparecem no corpo** por item.
+6. 🚪 Porta que **bloqueia** de verdade; túneis sob cada rua.
+7. ⚡ **Otimização mobile** (juntar geometrias; reduzir luzes à noite se pesar).
+8. 🔒 Rotacionar o token Cloudflare.
 
-## 9. PLANO DO MULTIPLAYER (próxima implementação)
-- **Servidor:** Node + **WebSocket** (lib `ws`, ou framework `Colyseus`/`PartyKit`),
-  hospedado no **Railway** (o maestro tem conta). Repo/serviço separado ou subpasta `server/`.
-- **Sincroniza:** cada cliente envia `{id, nome, cores, x, z, rotY, anim}` ~10–15x/seg;
-  o servidor repassa a todos; cada cliente renderiza os OUTROS jogadores (com `criaAvatar`
-  usando as cores deles) e **interpola** as posições (movimento suave).
-- **Identidade:** já vem da **tela de seleção** (nome + cores) — só conectar e enviar.
-- **Cliente (no Three.js):** após "ENTRAR", abre `WebSocket(wss://<app>.up.railway.app)`,
-  mantém um mapa `outros[id] = avatarMesh`, atualiza no `onmessage`, remove no disconnect.
-  Nome flutuante (sprite/HTML) sobre cada avatar.
-- **Deploy:** servidor no **Railway** (precisa: criar serviço, conectar repo OU `railway up`
-  via CLI com login/token do usuário — credencial é dele). Cliente no Cloudflare aponta pra
-  URL `wss://` do Railway (guardar em `src/config3d.js` ou variável de build).
-- **Etapas sugeridas:** (a) servidor echo de posições; (b) cliente conecta + renderiza outros;
-  (c) nomes flutuantes; (d) sincronizar aparência/animação; (e) (futuro) chat, salas.
-
-## 10. DIÁRIO RESUMIDO (marcos)
-v0.x: protótipo 2D (Phaser) survival → arte graphic novel (OpenAI) → **pivot para 3D**.
-v1.0 base 3D (Three.js) · v1.1 colisão+câmera · v1.2 cidade Venor · v1.3 polish/atmosfera ·
-v1.4 grade+adereços · v1.5 rosto+pular/correr/abaixar · v1.6 fixes (telhado/fonte/colisão/pet) ·
-v1.7 **publicado** (caseiro.pages.dev) · v1.8 **tela de seleção** de personagem.
-*(Detalhe completo em `docs/VISAO.md` › Diário de bordo.)*
-
-## 11. ESTADO DO MULTIPLAYER (🚧 em andamento — frente paralela)
-Já no working dir (09/06, ainda **NÃO commitado**):
-- `server/` — servidor Node + **WebSocket** (`ws`): `index.js`, `package.json`,
-  `smoke-test.mjs`, `fake-player.mjs`. `node_modules` instalado.
-- `src/jogo/rede.js` — cliente: `conectarRede({url, scene, getEstadoLocal})`, renderiza os
-  outros jogadores e interpola posições.
-- `src/main3d.js` — importa `conectarRede`, conecta ao "ENTRAR", chama `rede.atualiza(dt)`.
-- `src/config3d.js` — `servidorMP` (URL `wss` do Railway; vazio → usa `ws://localhost:8080`).
-- **Falta:** rodar/testar o servidor; **deploy no Railway**; preencher `CONFIG3D.servidorMP`
-  com a URL do Railway; redeploy do cliente no Cloudflare.
-
-## 12. PLANO TÉCNICO DOS INTERIORES (pronto pra executar — não conflita c/ multiplayer)
-Mexe SÓ em `construcoes.js` + `cidade.js` (+ 1 linha no `main3d.js`). Fazer em **branch própria
-ou commit seletivo**.
-- **`criaPredio` OCO:** trocar a caixa sólida por **piso + 4 paredes finas** (esp. ~0.4); a
-  parede do lado `portaPara` ('n'|'s'|'l'|'o') tem **vão de porta** (2 segmentos + verga).
-  **Sem rotação do grupo** (mantém AABB exato). Colisores = 1 AABB por parede (lado do vão = 2).
-  Retornar também `{ telhado, areaInterna }`. Pôr 1 móvel simples (mesa) dentro.
-- **`criaMarco`:** trocar `rot` por `portaPara` (igreja 's', hospital 'o', delegacia 'l', escola 'n').
-- **`cidade.js`:** casas → `portaPara = Math.abs(x)>=Math.abs(z) ? (x>0?'o':'l') : (z>0?'n':'s')`
-  (porta pro centro); coletar `predios:[{telhado,areaInterna}]` e adicionar ao `return`.
-- **`main3d.js` (1 trecho no loop):** telhado some ao entrar →
-  `for (p of predios) p.telhado.visible = !(avatar dentro de p.areaInterna);`
-  ⚠️ **coordenar** — multiplayer também edita main3d.
-- Depois: andares / escadas / subsolos.
+## 9. DIÁRIO (marcos recentes)
+Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
+combate/esgoto/ratos → esgoto profundo (boss, tocha, várias entradas) → mundo ampliado
+(montanhas/estrada/Thais) → NPCs com ofício + dia/noite → 4 modelos de personagem →
+bichos da superfície (troll/ciclope/aranha) + tocha inicial.
 
 ---
-**Para retomar:** leia este arquivo + `docs/VISAO.md`. Código no GitHub (`Caseiro`, `main`).
-⚠️ **Duas frentes ativas no mesmo disco** (multiplayer + interiores) → usar **commit seletivo**
-(`git add <arquivos>`, nunca `-A`) ou **branches/worktrees separados**, pra não misturar.
+**Para retomar:** leia este arquivo. Estado no GitHub (`Caseiro`/main). Publicar = build + wrangler (cliente) / `railway up` (servidor).
