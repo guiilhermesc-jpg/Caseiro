@@ -38,6 +38,10 @@ const ROSTER = [
     falas: { trabalho: 'Passo o dia pescando no lago. Paciência é tudo.', dica: 'Logo dá pra pescar de verdade. Cada lago tem seus peixes.' } },
 ];
 
+// casas (residências) e quem trabalha à noite (lojistas/guarda continuam no posto)
+const HOMES = [[28, 28], [-28, 28], [28, -28], [-28, -28], [60, 6], [-60, 6], [6, 60], [6, -60], [34, 34], [-34, 34], [34, -34]];
+const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco']);
+
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');
   cnv.width = 256; cnv.height = 64;
@@ -63,7 +67,7 @@ function alvoPertoDoPosto(post, colide) {
 
 export function criaNPCs(scene, colide) {
   const npcs = [];
-  for (const d of ROSTER) {
+  ROSTER.forEach((d, i) => {
     const g = criaAvatar({ casaco: d.cor, pele: pick(PELE), cabelo: pick(CABELO), sexo: d.sexo, tipo: d.tipo });
     let sx = d.post.x, sz = d.post.z;
     for (let t = 0; t < 16; t++) {
@@ -74,19 +78,21 @@ export function criaNPCs(scene, colide) {
     g.position.set(sx, 0, sz);
     g.add(nomeSprite(d.nome));
     scene.add(g);
+    const h = HOMES[i % HOMES.length];
     const npc = {
-      g, post: d.post, nome: d.nome, prof: d.prof, humor: d.humor, falas: d.falas,
+      g, post: d.post, home: { x: h[0], z: h[1] }, noturno: NOTURNOS.has(d.nome),
+      nome: d.nome, prof: d.prof, humor: d.humor, falas: d.falas,
       alvo: alvoPertoDoPosto(d.post, colide), pausa: Math.random() * 3, tempo: Math.random() * 10,
     };
     g.userData.tipo = 'npc'; g.userData.ref = npc;
     npcs.push(npc);
-  }
+  });
   return npcs;
 }
 
 const DESVIOS = [0, 0.6, -0.6, 1.2, -1.2, 2.0, -2.0];
 
-export function atualizaNPCs(npcs, dt, colide) {
+export function atualizaNPCs(npcs, dt, colide, noite = false) {
   for (const n of npcs) {
     const g = n.g;
     n.tempo += dt;
@@ -94,10 +100,11 @@ export function atualizaNPCs(npcs, dt, colide) {
     g.position.y += n.vy * dt;
     if (g.position.y <= 0) { g.position.y = 0; n.vy = 0; n.noChao = true; }
 
+    const base = (noite && !n.noturno) ? n.home : n.post; // à noite vai pra casa (exceto lojistas/guarda)
     if (n.pausa > 0) { n.pausa -= dt; animaAvatar(g, false, n.tempo); continue; }
-    if (Math.hypot(g.position.x - n.post.x, g.position.z - n.post.z) > 7) n.alvo = { x: n.post.x, z: n.post.z };
+    if (Math.hypot(g.position.x - base.x, g.position.z - base.z) > 7) n.alvo = { x: base.x, z: base.z };
     const dx = n.alvo.x - g.position.x, dz = n.alvo.z - g.position.z, dist = Math.hypot(dx, dz);
-    if (dist < 0.5) { n.pausa = 1.5 + Math.random() * 3; n.alvo = alvoPertoDoPosto(n.post, colide); animaAvatar(g, false, n.tempo); continue; }
+    if (dist < 0.5) { n.pausa = (noite ? 3 : 1.5) + Math.random() * 3; n.alvo = alvoPertoDoPosto(base, colide); animaAvatar(g, false, n.tempo); continue; }
 
     const vel = 2.4, ang = Math.atan2(dx, dz);
     let andou = false;

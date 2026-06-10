@@ -308,9 +308,11 @@ const C_TOPO_DIA = new THREE.Color(0x4f86c0), C_BASE_DIA = new THREE.Color(0xdce
 const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0x16233f);
 const C_FOG_DIA = new THREE.Color(0xcfe0ee), C_FOG_NOITE = new THREE.Color(0x111b2e);
 let tempoDia = 0.3; // começa de manhã
+let ehNoite = false;
 function aplicaDiaNoite(dt) {
   tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
   const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
+  ehNoite = d < 0.35;
   sun.intensity = 0.12 + d * 1.25;
   hemi.intensity = 0.22 + d * 0.72;
   skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
@@ -679,7 +681,7 @@ function loop() {
   }
   if (!noEsgoto) atualizaGato(gato, avatar, dt, tempo); // pet espera na superfície
   animaProps(animados, dt, tempo);
-  atualizaNPCs(npcs, dt, colide);
+  atualizaNPCs(npcs, dt, colide, ehNoite);
   atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null);
   if (jogoIniciado) {
     for (const r of ratos) {
