@@ -26,8 +26,8 @@ const ROSTER = [
       { nome: 'Espada', icone: '⚔️', preco: 60, slot: 'maoDir', dano: 12, arma: true },
       { nome: 'Machado', icone: '🪓', preco: 100, slot: 'maoDir', dano: 16, arma: true },
     ] },
-  { nome: 'Sira', prof: 'Curandeira', post: { x: 27, z: 10 }, cor: 0xeef0f2, humor: 'bom', sexo: 'mulher', tipo: 'mago',
-    falas: { trabalho: 'Atendo na porta do hospital. Poções frescas todo dia.', dica: 'Se descer no esgoto, leve uma TOCHA. E cuidado com algo grande lá embaixo.' },
+  { nome: 'Sira', prof: 'Curandeira', post: { x: 30, z: 3 }, cor: 0xeef0f2, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+    falas: { trabalho: 'Atendo DENTRO do hospital — entre pela porta da praça. Poções frescas todo dia.', dica: 'Se descer no esgoto, leve uma TOCHA. E cuidado com algo grande lá embaixo.' },
     loja: [{ nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' }] },
   // --- LOJAS estilo Tibia (cada vendedor com sua finalidade) ---
   { nome: 'Eldra', prof: 'Vendedora de Runas', post: { x: -22, z: 17 }, cor: 0x5a2a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',

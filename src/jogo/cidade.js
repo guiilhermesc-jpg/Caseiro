@@ -3,10 +3,10 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro } from './natureza.js';
-import { criaCasaInterior, criaTemploSagrado } from './interiores.js';
+import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
@@ -87,14 +87,18 @@ export function criaCidade() {
   const estrelas = new THREE.Points(estrelasGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
   ceu.add(estrelas);
 
-  // grama
-  const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 }));
+  // grama (procedural já; troca pela textura REAL gerada por IA quando carregar)
+  const gramaMat = new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 });
+  aplicaTexturaReal(gramaMat, 'grama', 300, 300);
+  const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), gramaMat);
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
 
   // ruas em GRADE — agora CALÇADAS de pedra (textura), quase no nível do chão
   function matRua(rx, rz) {
     const t = texturaPedra(1); t.repeat.set(rx, rz);
-    return new THREE.MeshStandardMaterial({ map: t, color: 0x9a9a98, roughness: 1 });
+    const m = new THREE.MeshStandardMaterial({ map: t, color: 0x9a9a98, roughness: 1 });
+    aplicaTexturaReal(m, 'pedra', rx, rz); // calçamento REAL quando carregar
+    return m;
   }
   const ruaMatH = matRua(34, 1.6), ruaMatV = matRua(1.6, 34);
   const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMatH); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); };
@@ -103,6 +107,7 @@ export function criaCidade() {
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
   const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), roughness: 1 }); // calçamento das praças
+  aplicaTexturaReal(pisoMat, 'pedra', 7, 7);
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
@@ -134,9 +139,11 @@ export function criaCidade() {
     { tipo: 'delegacia', x: -32, z: 0, rot: Math.PI / 2 },
     { tipo: 'escola', x: 0, z: 32, rot: Math.PI },
   ];
-  // a igreja virou TEMPLO SAGRADO entrável (renascimento) — os outros marcos seguem
-  marcos.forEach((m) => { if (m.tipo !== 'igreja') add(criaMarco(m.tipo, { x: m.x, z: m.z, rot: m.rot })); });
+  // igreja → TEMPLO SAGRADO entrável; hospital → HOSPITAL entrável (a porta
+  // que se vê FUNCIONA — era ali que o jogador "travava" tentando entrar)
+  marcos.forEach((m) => { if (m.tipo !== 'igreja' && m.tipo !== 'hospital') add(criaMarco(m.tipo, { x: m.x, z: m.z, rot: m.rot })); });
   add(criaTemploSagrado(0, -32));
+  add(criaHospitalInterior(32, 0));
 
   // casas diversas, ALINHADAS em ângulo reto (colisão correta) e viradas pro centro
   const cores = [0xd8c4a0, 0xc8a86a, 0xa8bcae, 0xd0a0a0, 0xb0b8c0, 0xe0d0a0, 0x9ab0a4, 0xcaa890];
@@ -354,7 +361,9 @@ export function criaCidade() {
   add(criaMarcoDistancia(490, -6, 'THAIS 14\nVENORE 490'));
 
   // === PRAIA DO SUL + MAR (novo bioma: areia, coqueiros, conchas e caranguejos)
-  const areia = new THREE.Mesh(new THREE.BoxGeometry(380, 0.08, 75), mat(0xd9c692, 1));
+  const areiaMat = new THREE.MeshStandardMaterial({ color: 0xd9c692, roughness: 1 });
+  aplicaTexturaReal(areiaMat, 'areia', 30, 6);
+  const areia = new THREE.Mesh(new THREE.BoxGeometry(380, 0.08, 75), areiaMat);
   areia.position.set(0, 0.04, -222); areia.receiveShadow = true; scene.add(areia);
   const mar = new THREE.Mesh(new THREE.BoxGeometry(460, 0.06, 160),
     new THREE.MeshStandardMaterial({ color: 0x2e6fa8, roughness: 0.12, metalness: 0.35, transparent: true, opacity: 0.88 }));
@@ -362,7 +371,9 @@ export function criaCidade() {
   obstaculos.push({ minX: -230, maxX: 230, minZ: -410, maxZ: -258 }); // mar fundo: não entra
   lagos.push({ x: 0, z: -300, r: 95 }); // pescaria na beira do mar!
   // caminho de terra do Bairro do Comércio até a praia
-  const trilha = new THREE.Mesh(new THREE.BoxGeometry(6, 0.07, 85), mat(0x9a7e54, 1));
+  const trilhaMat = new THREE.MeshStandardMaterial({ color: 0x9a7e54, roughness: 1 });
+  aplicaTexturaReal(trilhaMat, 'terra', 1.5, 16);
+  const trilha = new THREE.Mesh(new THREE.BoxGeometry(6, 0.07, 85), trilhaMat);
   trilha.position.set(0, 0.04, -152); trilha.receiveShadow = true; scene.add(trilha);
   add(criaPlaca(6, -190, 'Praia de Venore'));
   // coqueiral
@@ -436,13 +447,16 @@ export function criaCidade() {
   // === MONTANHA DO DRAGÃO (escalável!) — rampa cônica até o platô do topo,
   // onde o dragão vive. A subida usa alturaTerreno() no main3d (mesmo perfil).
   const MD = { x: 110, z: 300, r: 46, topo: 12, h: 34 }; // platô largo (dragão GRANDE mora lá)
-  const morro = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo, MD.r, MD.h, 28), mat(0x6e6a62, 1));
+  const rochaMat = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1 });
+  aplicaTexturaReal(rochaMat, 'rocha', 7, 3); // rocha REAL na encosta
+  const morro = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo, MD.r, MD.h, 28), rochaMat);
   morro.position.set(MD.x, MD.h / 2, MD.z); morro.castShadow = morro.receiveShadow = true;
   scene.add(morro); solidos.push(morro);
   const plato = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo + 0.8, MD.topo + 0.8, 0.5, 20), mat(0x55514a, 1));
   plato.position.set(MD.x, MD.h + 0.2, MD.z); scene.add(plato);
   // poças de LAVA no platô (pisar QUEIMA — campos tratados no main3d)
   const lavaMat2 = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
+  aplicaTexturaReal(lavaMat2, 'lava', 2, 2, true); // lava REAL incandescente
   [[104, 296, 2.8], [116, 305, 2.4]].forEach(([lx, lz, lr]) => {
     const poça = new THREE.Mesh(new THREE.CircleGeometry(lr, 16), lavaMat2);
     poça.rotation.x = -Math.PI / 2; poça.position.set(lx, MD.h + 0.48, lz); scene.add(poça);

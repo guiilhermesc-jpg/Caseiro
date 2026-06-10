@@ -150,6 +150,95 @@ function meshBox(w, h, d, material, x, y, z) {
 }
 
 // =============================================================
+//  HOSPITAL de Venore · ENTRÁVEL (a porta que se vê AGORA FUNCIONA).
+//  Macas com lençol, mesa de poções e armário; a curandeira atende
+//  lá dentro. Telhado some ao entrar. Cruz vermelha na fachada.
+// =============================================================
+export function criaHospitalInterior(x, z) {
+  const larg = 13, prof = 16, alt = 7, gw = 4.2, t = 0.4;
+  const hx = larg / 2, hz = prof / 2;
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const parede = mat(0xeef0f2), branco = mat(0xf8f8f8, 0.8), mad = mat(0x8a6a44);
+  const colisores = [];
+
+  const chao = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.1, prof), mat(0xd8d8d2, 1));
+  chao.position.y = 0.05; chao.receiveShadow = true; g.add(chao);
+
+  function muro(cx, cz, w, d) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), parede);
+    m.position.set(cx, alt / 2, cz); m.castShadow = m.receiveShadow = true; g.add(m);
+    colisores.push({ minX: x + cx - w / 2, maxX: x + cx + w / 2, minZ: z + cz - d / 2, maxZ: z + cz + d / 2 });
+  }
+  muro(0, -hz, larg, t); muro(0, hz, larg, t);   // norte/sul
+  muro(hx, 0, t, prof);                            // leste (fundo)
+  const seg = (prof - gw) / 2;                     // OESTE com vão (porta vira pra praça)
+  muro(-hx, -(gw / 2 + seg / 2), t, seg); muro(-hx, gw / 2 + seg / 2, t, seg);
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(t, alt - 3.4, gw), parede);
+  verga.position.set(-hx, alt - (alt - 3.4) / 2, 0); g.add(verga);
+
+  // CRUZ VERMELHA na fachada (acima da porta)
+  const cruzMat = mat(0xd83a3a);
+  const cv = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.2, 0.6), cruzMat); cv.position.set(-hx - 0.1, 5.2, 0); g.add(cv);
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 2.2), cruzMat); ch.position.set(-hx - 0.1, 5.2, 0); g.add(ch);
+
+  // janelas nas paredes norte/sul
+  [[-2.5, -hz], [2.5, -hz], [-2.5, hz], [2.5, hz]].forEach(([jx, jz]) => {
+    const j = criaJanela({ cruz: true });
+    j.position.set(jx, 2.6, jz + (jz > 0 ? 0.07 : -0.07));
+    if (jz > 0) j.rotation.y = Math.PI;
+    g.add(j);
+  });
+
+  // MACAS (3) encostadas na parede leste: estrutura + colchão + manta vermelha
+  for (let i = 0; i < 3; i++) {
+    const mz = -4.5 + i * 4.5;
+    const maca = new THREE.Group(); maca.position.set(hx - 1.7, 0, mz);
+    maca.add(meshBox(2.4, 0.5, 1.3, mad, 0, 0.3, 0));
+    maca.add(meshBox(2.3, 0.16, 1.2, branco, 0, 0.62, 0));
+    maca.add(meshBox(1.3, 0.1, 1.18, mat(0xc23a3a), -0.4, 0.7, 0));
+    maca.add(meshBox(0.5, 0.14, 0.9, branco, 0.85, 0.68, 0)); // travesseiro
+    g.add(maca);
+    colisores.push({ minX: x + hx - 2.9, maxX: x + hx - 0.5, minZ: z + mz - 0.7, maxZ: z + mz + 0.7 });
+  }
+  // MESA DE POÇÕES + frascos coloridos brilhando de leve
+  const mesa = new THREE.Group(); mesa.position.set(-hx + 1.6, 0, -hz + 1.8);
+  mesa.add(meshBox(2.2, 0.12, 1.0, mad, 0, 1.0, 0));
+  [[-0.8, -0.3], [0.8, -0.3], [-0.8, 0.3], [0.8, 0.3]].forEach(([px, pz]) => mesa.add(meshBox(0.1, 1.0, 0.1, mad, px, 0.5, pz)));
+  [0xd84a4a, 0x4ad86a, 0x4a8ad8].forEach((cor, i) => {
+    const frasco = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.3, 8),
+      new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.25, transparent: true, opacity: 0.9 }));
+    frasco.position.set(-0.6 + i * 0.6, 1.22, 0); mesa.add(frasco);
+  });
+  g.add(mesa);
+  colisores.push({ minX: x - hx + 0.4, maxX: x - hx + 2.8, minZ: z - hz + 1.2, maxZ: z - hz + 2.4 });
+  // armário de remédios
+  const arm = meshBox(1.2, 2.6, 0.6, mad, hx - 0.9, 1.3, hz - 0.8); g.add(arm);
+  colisores.push({ minX: x + hx - 1.6, maxX: x + hx - 0.3, minZ: z + hz - 1.2, maxZ: z + hz - 0.4 });
+
+  // telhado duas águas cinza-azulado (some ao entrar)
+  const roof = new THREE.Group();
+  const shape = new THREE.Shape();
+  shape.moveTo(-hx - 0.6, 0); shape.lineTo(hx + 0.6, 0); shape.lineTo(0, 3.4); shape.closePath();
+  const geoT = new THREE.ExtrudeGeometry(shape, { depth: prof + 1.2, bevelEnabled: false });
+  geoT.translate(0, 0, -(prof + 1.2) / 2);
+  const telh = new THREE.Mesh(geoT, mat(0xb0b6bc));
+  telh.position.y = alt; telh.castShadow = true; roof.add(telh);
+  g.add(roof);
+
+  // marcador 🏥
+  const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
+  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('🏥', 64, 70);
+  const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
+  marc.scale.set(2.4, 2.4, 1); marc.position.y = alt + 4.6; marc.renderOrder = 997; g.add(marc);
+
+  const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
+  return {
+    grupo: g, colisores,
+    casa: { roof, box, px: x - hx, pz: z, aberta: true }, // porta oeste sempre aberta
+  };
+}
+
+// =============================================================
 //  TEMPLO SAGRADO de Venore · ENTRÁVEL, com altar, vitrais, bancos
 //  e velas. É o ponto de RENASCIMENTO quando o jogador morre.
 //  Porta (vão largo) virada pra praça; telhado+torre somem ao entrar.

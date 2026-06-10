@@ -104,6 +104,13 @@ export function criaInventario({ aoEquipar } = {}) {
       if (mochila.length >= N_MOCHILA) return false;
       mochila.push({ ...item, qtd: 1 }); renderMochila(); return true; // guarda props (slot/defesa/id)
     },
+    // SAVE: exporta/restaura a mochila inteira (conta local do jogador)
+    estado() { return mochila.map((m) => ({ ...m })); },
+    carrega(lista) {
+      mochila.splice(0, mochila.length);
+      (lista || []).forEach((i) => mochila.push({ ...i }));
+      renderMochila();
+    },
     // tem pelo menos 1 unidade do item? (ex.: Flecha pro arco)
     temItem(nome) { return mochila.some((m) => m.nome === nome && m.qtd > 0); },
     // gasta 1 unidade (ex.: cada tiro de arco consome 1 Flecha)

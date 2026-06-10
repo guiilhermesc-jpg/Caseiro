@@ -2,10 +2,13 @@
 //  CONTROLES  ·  mover + câmera orbital + pular/correr/abaixar.
 //
 //  PC:    WASD/setas mover · arrastar mouse gira câmera ·
-//         Espaço pular · Shift correr · C abaixar.
+//         Espaço pular · Shift correr · C abaixar · E agir.
 //  Mobile: metade ESQUERDA = joystick (mover); metade DIREITA =
-//          arrastar pra girar câmera; botões PULAR/CORRER/ABAIXAR.
-//  Expõe: vetorMov(), cam{yaw,pitch}, querPular(), correndo(), abaixado().
+//          arrastar gira câmera; PINÇA de 2 dedos = zoom da câmera;
+//          botões compactos com ÍCONE (sem texto) no canto direito.
+//  O zoom de página do navegador (duplo-toque/pinça do iOS) é BLOQUEADO.
+//  Expõe: vetorMov(), cam{yaw,pitch}, querPular(), querAgir(),
+//         correndo(), abaixado(), pegaPinch().
 // =============================================================
 export function criaControles(dom) {
   const teclas = {};
@@ -16,6 +19,17 @@ export function criaControles(dom) {
   const joy = { ativo: false, id: null, baseX: 0, baseY: 0, dx: 0, dz: 0 };
   const look = { ativo: false, id: null, lastX: 0, lastY: 0 };
   let correrToggle = false, abaixarToggle = false, pularFlag = false, agirFlag = false;
+
+  // BLOQUEIA o zoom de página do navegador (duplo-toque no iPad dava zoom
+  // sem volta; pinça idem) — o jogo controla o próprio zoom.
+  let _ultimoToque = 0;
+  document.addEventListener('touchend', (e) => {
+    const agora = Date.now();
+    if (agora - _ultimoToque < 350) e.preventDefault(); // duplo-toque
+    _ultimoToque = agora;
+  }, { passive: false });
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('dblclick', (e) => e.preventDefault());
 
   window.addEventListener('keydown', (e) => {
     teclas[e.code] = true;
@@ -29,9 +43,9 @@ export function criaControles(dom) {
   function garante() {
     if (base) return;
     base = document.createElement('div');
-    base.style.cssText = 'position:fixed;width:130px;height:130px;border:3px solid rgba(255,255,255,.28);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:10';
+    base.style.cssText = 'position:fixed;width:120px;height:120px;border:3px solid rgba(255,255,255,.28);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:10';
     thumb = document.createElement('div');
-    thumb.style.cssText = 'position:fixed;width:58px;height:58px;background:rgba(255,255,255,.32);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:11';
+    thumb.style.cssText = 'position:fixed;width:52px;height:52px;background:rgba(255,255,255,.32);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:11';
     document.body.appendChild(base); document.body.appendChild(thumb);
   }
   function mostraJoy(bx, by, tx, ty) {
@@ -41,8 +55,19 @@ export function criaControles(dom) {
   }
   function escondeJoy() { if (base) { base.style.display = 'none'; thumb.style.display = 'none'; } }
 
+  // PINÇA (2 dedos) = zoom da câmera — main3d consome via pegaPinch()
+  const toques = new Map();
+  let pinchDist = 0, pinchFator = 1;
+
   dom.addEventListener('pointerdown', (e) => {
     const touch = e.pointerType === 'touch';
+    if (touch) toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touch && !joy.ativo && toques.size === 2) { // virou pinça: solta a câmera
+      look.ativo = false;
+      const [a, b] = [...toques.values()];
+      pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+      return;
+    }
     if (touch && e.clientX < window.innerWidth / 2) {
       joy.ativo = true; joy.id = e.pointerId; joy.baseX = e.clientX; joy.baseY = e.clientY; joy.dx = 0; joy.dz = 0;
       mostraJoy(e.clientX, e.clientY, e.clientX, e.clientY);
@@ -51,6 +76,13 @@ export function criaControles(dom) {
     }
   });
   dom.addEventListener('pointermove', (e) => {
+    if (toques.has(e.pointerId)) toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!joy.ativo && toques.size === 2 && pinchDist > 0) { // pinça ativa
+      const [a, b] = [...toques.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d > 10) { pinchFator *= pinchDist / d; pinchDist = d; }
+      return;
+    }
     if (joy.ativo && e.pointerId === joy.id) {
       let ox = e.clientX - joy.baseX, oy = e.clientY - joy.baseY;
       const dist = Math.hypot(ox, oy), R = 60;
@@ -65,34 +97,41 @@ export function criaControles(dom) {
     }
   });
   const up = (e) => {
+    toques.delete(e.pointerId);
+    if (toques.size < 2) pinchDist = 0;
     if (joy.id === e.pointerId) { joy.ativo = false; joy.dx = 0; joy.dz = 0; escondeJoy(); }
     if (look.id === e.pointerId) { look.ativo = false; }
   };
   dom.addEventListener('pointerup', up);
   dom.addEventListener('pointercancel', up);
 
-  // botões de ação (funcionam no PC e no mobile)
-  function botao(txt, css, onTap) {
+  // BOTÕES compactos com ÍCONE (alinhados em arco no canto inferior direito)
+  function botao(icone, titulo, css, onTap) {
     const b = document.createElement('div');
-    b.textContent = txt;
-    b.style.cssText = 'position:fixed;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.34);color:#fff;font:bold 13px Arial;display:flex;align-items:center;justify-content:center;z-index:12;user-select:none;touch-action:none;' + css;
-    b.addEventListener('pointerdown', (e) => { e.stopPropagation(); onTap(b); });
+    b.textContent = icone;
+    b.title = titulo;
+    b.style.cssText = 'position:fixed;border-radius:50%;background:rgba(16,22,32,.5);border:2px solid rgba(255,255,255,.35);'
+      + 'display:flex;align-items:center;justify-content:center;z-index:12;user-select:none;touch-action:none;'
+      + 'box-shadow:0 3px 10px rgba(0,0,0,.35);' + css;
+    b.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); onTap(b); });
+    b.addEventListener('touchend', (e) => e.preventDefault(), { passive: false }); // sem zoom de toque repetido
     document.body.appendChild(b);
     return b;
   }
-  botao('PULAR', 'right:28px;bottom:120px;width:84px;height:84px;', () => { pularFlag = true; });
-  botao('CORRER', 'right:122px;bottom:172px;width:70px;height:70px;', (b) => {
+  // AÇÃO (dourado, principal) + PULAR ao lado; CORRER/ABAIXAR menores acima
+  const btnAcao = botao('✋', 'Ação (E)', 'right:96px;bottom:28px;width:66px;height:66px;font-size:28px;background:rgba(230,180,60,.35);border-color:rgba(255,210,90,.75);', () => {
+    agirFlag = true;
+    btnAcao.style.background = 'rgba(255,210,90,.6)';
+    setTimeout(() => { btnAcao.style.background = 'rgba(230,180,60,.35)'; }, 120);
+  });
+  botao('⬆️', 'Pular (Espaço)', 'right:22px;bottom:76px;width:58px;height:58px;font-size:24px;', () => { pularFlag = true; });
+  botao('🏃', 'Correr (Shift)', 'right:104px;bottom:104px;width:46px;height:46px;font-size:20px;', (b) => {
     correrToggle = !correrToggle;
-    b.style.background = correrToggle ? 'rgba(120,220,120,.42)' : 'rgba(255,255,255,.16)';
+    b.style.background = correrToggle ? 'rgba(120,220,120,.5)' : 'rgba(16,22,32,.5)';
   });
-  botao('ABAIXAR', 'right:28px;bottom:218px;width:70px;height:70px;', (b) => {
+  botao('🔽', 'Abaixar (C)', 'right:32px;bottom:142px;width:44px;height:44px;font-size:18px;', (b) => {
     abaixarToggle = !abaixarToggle;
-    b.style.background = abaixarToggle ? 'rgba(120,180,255,.42)' : 'rgba(255,255,255,.16)';
-  });
-  const btnAcao = botao('AÇÃO', 'right:122px;bottom:96px;width:80px;height:80px;background:rgba(230,180,60,.30);border-color:rgba(255,210,90,.7);', () => { agirFlag = true; });
-  btnAcao.addEventListener('pointerdown', () => {
-    btnAcao.style.background = 'rgba(255,210,90,.55)';
-    setTimeout(() => { btnAcao.style.background = 'rgba(230,180,60,.30)'; }, 120);
+    b.style.background = abaixarToggle ? 'rgba(120,180,255,.5)' : 'rgba(16,22,32,.5)';
   });
 
   function vetorMov() {
@@ -114,5 +153,7 @@ export function criaControles(dom) {
     querAgir: () => { if (agirFlag) { agirFlag = false; return true; } return false; },
     correndo: () => !!(teclas['ShiftLeft'] || teclas['ShiftRight'] || correrToggle),
     abaixado: () => !!(teclas['KeyC'] || abaixarToggle),
+    // fator de pinça acumulado desde o último frame (1 = sem mudança)
+    pegaPinch: () => { const f = pinchFator; pinchFator = 1; return f; },
   };
 }

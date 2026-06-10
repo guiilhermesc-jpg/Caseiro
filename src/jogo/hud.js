@@ -54,5 +54,8 @@ export function criaHUD() {
     addItem(tipo) { itens[tipo] = (itens[tipo] || 0) + 1; render(); },
     vida(cur, max) { vidaEl.textContent = `❤️ Vida ${Math.max(0, Math.ceil(cur))}/${max}`; vidaFill.style.width = Math.max(0, (cur / max) * 100) + '%'; },
     ouro(n) { ouroEl.textContent = `🪙 ${n}`; },
+    // SAVE: exporta/restaura nível e XP (conta local do jogador)
+    estado() { return { nivel, xp, prox }; },
+    carrega(s) { nivel = s.nivel || 1; xp = s.xp || 0; prox = s.prox || 20; render(); },
   };
 }

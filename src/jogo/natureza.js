@@ -5,7 +5,7 @@
 //  Cada função devolve { grupo, colisores:[...], animados?:[...] }.
 // =============================================================
 import * as THREE from 'three';
-import { mat } from './construcoes.js';
+import { mat, aplicaTexturaReal } from './construcoes.js';
 
 const AGUA = new THREE.MeshStandardMaterial({ color: 0x3f86c0, roughness: 0.15, metalness: 0.35, transparent: true, opacity: 0.82 });
 
@@ -188,11 +188,13 @@ export function criaMontanha(x, z, esc = 1) {
   return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }] };
 }
 
-// --- estrada de pedra (andável) ao longo de X ---
+// --- estrada de terra batida (andável) ao longo de X ---
 export function criaEstrada(xIni, xFim, z, larg = 7) {
   const g = new THREE.Group();
   const comp = xFim - xIni, cx = (xIni + xFim) / 2;
-  const via = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.08, larg), mat(0x6b6258, 1));
+  const viaMat = new THREE.MeshStandardMaterial({ color: 0x8a7458, roughness: 1 });
+  aplicaTexturaReal(viaMat, 'terra', comp / 8, 1.4); // terra REAL ao longo do caminho
+  const via = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.08, larg), viaMat);
   via.position.set(cx, 0.05, z); via.receiveShadow = true; g.add(via);
   [-larg / 2 - 0.3, larg / 2 + 0.3].forEach((oz) => {
     const b = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.22, 0.4), mat(0x54514a, 1));

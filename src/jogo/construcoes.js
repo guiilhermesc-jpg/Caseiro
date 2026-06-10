@@ -12,6 +12,20 @@ export function mat(cor, rough = 0.9) {
   return matCache[k];
 }
 
+// TEXTURA REAL (gerada por IA em public/texturas/): troca o mapa do material
+// quando o arquivo carrega; se faltar, fica a procedural (fallback seguro).
+const _loaderTex = new THREE.TextureLoader();
+export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) {
+  _loaderTex.load('texturas/' + arquivo + '.png', (t) => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(rx, rz);
+    t.colorSpace = THREE.SRGBColorSpace;
+    material.map = t;
+    if (!manterCor) material.color.set(0xffffff);
+    material.needsUpdate = true;
+  }, undefined, () => {});
+}
+
 // VIDRO de janela compartilhado (leve reflexo + brilho fraco → "vidro" de verdade)
 export const VIDRO = new THREE.MeshStandardMaterial({ color: 0x9fd0e0, roughness: 0.18, metalness: 0.18, emissive: 0x24506a, emissiveIntensity: 0.3 });
 
@@ -92,7 +106,10 @@ function texturaTelha() {
 }
 const matTelhaCache = {};
 export function matTelha(cor) {
-  if (!matTelhaCache[cor]) matTelhaCache[cor] = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.9, map: texturaTelha() });
+  if (!matTelhaCache[cor]) {
+    matTelhaCache[cor] = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.9, map: texturaTelha() });
+    aplicaTexturaReal(matTelhaCache[cor], 'telha', 2, 2, true); // telha REAL tingida pela cor
+  }
   return matTelhaCache[cor];
 }
 

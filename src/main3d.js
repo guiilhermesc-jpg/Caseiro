@@ -20,6 +20,7 @@ import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
+import { aplicaTexturaReal } from './jogo/construcoes.js';
 
 const container = document.getElementById('game');
 // celular/tablet → modo leve (sem sombras, menos luz, menos pixels) p/ fluidez
@@ -136,7 +137,9 @@ ratos.push(boss);
 // CRIATURAS DA SUPERFÍCIE (região selvagem entre Venore e a cidade distante)
 function areaMon(x, z, r) { return { minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r }; }
 function addMonstro(g, hp, xp, dano, vel, forte, b, extra) {
-  ratos.push({ g, hp, hpMax: hp, xp, dano, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, ...extra });
+  const r = { g, hp, hpMax: hp, xp, dano, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, ...extra };
+  ratos.push(r);
+  return r;
 }
 
 // CAMPOS DE CHÃO (estilo Tibia): pisar na LAVA queima; pisar no LODO do
@@ -155,21 +158,24 @@ const CAMPOS = [
 ];
 let envenenadoAte = 0, proxTickLava = 0, proxTickVeneno = 0;
 [[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14)));
-[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 80, 30, 15, 1.2, true, areaMon(x, z, 16)));
+[[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 150, 60, 18, 1.3, true, areaMon(x, z, 16))); // GIGANTES de um olho
+// GIANT SPIDER (Tibia): ENORME, feroz, RÁPIDA (3.2 — corre atrás!), difícil
+// de matar (300hp) e CRIA FILHOTES durante a caça (mecânica no loop)
 const aX = 170, aZ = 95;
-addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16), { veneno: true });
-[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2, 2.4, false, areaMon(aX, aZ, 18), { veneno: true }));
+const aranhaMae = addMonstro(criaAranhaGigante(aX, aZ), 300, 150, 20, 3.2, true, areaMon(aX, aZ, 22), { veneno: true, lootEspecial: { nome: 'Seda de Aranha', icone: '🕸️' } });
+[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 3, 2.8, false, areaMon(aX, aZ, 22), { veneno: true, filhote: true }));
 [[160, 8], [205, -10], [235, 18]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(x, z, 16)));
 [[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14), { veneno: true }));
-// BEHOLDERS (olhos flutuantes) no Vale dos Monstros — fortes, loot raro
+// BEHOLDERS (agora GRANDES e imponentes) no Vale dos Monstros — ATIRAM
+// rajadas mágicas que vêm na sua direção (dá pra esquivar correndo!)
 [[255, 95], [175, 120], [300, 70]].forEach(([x, z]) => {
-  ratos.push({ g: criaBeholder(x, z), hp: 70, hpMax: 70, xp: 35, dano: 12, vel: 1.4, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' } });
+  ratos.push({ g: criaBeholder(x, z), hp: 170, hpMax: 170, xp: 80, dano: 12, vel: 1.3, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' }, atira: 'magia', alcanceTiro: 18, danoTiro: 12, cadencia: 2.6 });
 });
 // DRAGÃO (chefão D&D) guardando o Covil do Dragão, ao norte — muito forte, loot lendário
 // DRAGÃO VERDE (estilo Tibia) no TOPO da Montanha do Dragão — suba a rampa pra
 // enfrentá-lo. De tempos em tempos ele VOA sobre Venore atrás de comida.
 const DRX = montanhaDragao.x, DRZ = montanhaDragao.z, DRY = montanhaDragao.h;
-const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' } };
+const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 16, danoTiro: 18, cadencia: 4 };
 dragao.g.position.y = DRY;
 ratos.push(dragao);
 const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1º voo logo no começo (pra você ver!)
@@ -195,7 +201,7 @@ const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1
 [[396, -66], [404, -74], [430, 28]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(x, z, 14)));
 [[300, 20], [470, -20], [476, -14]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
 [[360, -30], [490, 30]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
-addMonstro(criaCyclops(415, 50), 80, 30, 15, 1.2, true, areaMon(415, 50, 16)); // ciclope da mata fechada
+addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16)); // ciclope da mata fechada
 // caranguejos na Praia do Sul (fraquinhos — primeiro alvo de quem chega)
 [[-30, -225], [20, -230], [60, -218], [-85, -228], [110, -222]].forEach(([x, z]) => addMonstro(criaCaranguejo(x, z), 12, 4, 3, 2.2, false, areaMon(x, z, 13)));
 ratos.forEach((r) => scene.add(r.g));
@@ -573,20 +579,62 @@ function aplicaDiaNoite(dt) {
     if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9; // a luminária emissiva brilha em todos (barato)
   }
 }
+// CADA ARMA TEM SEU DESIGN (adaga ≠ espada ≠ machado ≠ arco ≠ graveto):
+// a peça na mão precisa PARECER o que é.
+const MAT_OURO = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.75, roughness: 0.3 });
+const MAT_COURO = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.9 });
 function poeArmaNaMao() {
   const p = avatar.userData.partes; if (!p) return;
   const old = p.bracoDir.getObjectByName('arma'); if (old) p.bracoDir.remove(old);
-  let m;
-  if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: haste curva + corda
-    m = new THREE.Group();
+  const item = equipados.maoDir;
+  const m = new THREE.Group(); m.name = 'arma';
+  const nome = item ? item.nome : null;
+  if (item && item.arco) { // ARCO: haste curva + corda tensionada
     const haste = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 6, 12, Math.PI), MAT_MADEIRA);
     haste.rotation.z = -Math.PI / 2; m.add(haste);
     const corda = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.1, 0.02), MAT_METAL);
     m.add(corda);
     m.position.set(0, -1.0, 0.2); m.rotation.x = 0.2;
-  } else if (danoArma > 6) { m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.06), MAT_METAL); m.position.set(0, -1.4, 0.18); } // espada/machado
-  else { m = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA); m.position.set(0, -1.0, 0.18); m.rotation.x = 0.4; } // graveto
-  m.name = 'arma'; p.bracoDir.add(m);
+  } else if (nome === 'Machado') { // MACHADO: cabo longo + cabeça LARGA de duas lâminas
+    const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.5, 6), MAT_MADEIRA);
+    cabo.position.y = 0.2; m.add(cabo);
+    const olhoM = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.3, 0.16), MAT_METAL);
+    olhoM.position.y = 0.85; m.add(olhoM);
+    [-1, 1].forEach((ld) => { // duas lâminas em leque
+      const lamina = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.07, 10, 1, false, ld > 0 ? -Math.PI / 2.6 : Math.PI - Math.PI / 2.6, Math.PI / 1.3), MAT_METAL);
+      lamina.rotation.x = Math.PI / 2; lamina.position.set(ld * 0.28, 0.85, 0); m.add(lamina);
+    });
+    m.position.set(0, -1.05, 0.28); m.rotation.x = -0.45;
+  } else if (nome === 'Espada') { // ESPADA: lâmina longa + guarda dourada + punho + pomo
+    const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.05, 0.04), MAT_METAL);
+    lamina.position.y = 0.62; m.add(lamina);
+    const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.18, 4), MAT_METAL);
+    ponta.position.y = 1.22; ponta.rotation.y = Math.PI / 4; m.add(ponta);
+    const fio = new THREE.Mesh(new THREE.BoxGeometry(0.025, 1.05, 0.055), MAT_METAL); // vinco central
+    fio.position.set(0, 0.62, 0); m.add(fio);
+    const guarda = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.07, 0.1), MAT_OURO);
+    guarda.position.y = 0.07; m.add(guarda);
+    const punho = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.3, 8), MAT_COURO);
+    punho.position.y = -0.12; m.add(punho);
+    const pomo = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), MAT_OURO);
+    pomo.position.y = -0.3; m.add(pomo);
+    m.position.set(0, -1.0, 0.28); m.rotation.x = -0.5;
+  } else if (nome === 'Adaga') { // ADAGA: curta e ágil
+    const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.03), MAT_METAL);
+    lamina.position.y = 0.32; m.add(lamina);
+    const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.14, 4), MAT_METAL);
+    ponta.position.y = 0.64; m.add(ponta);
+    const guarda = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.08), MAT_METAL);
+    guarda.position.y = 0.05; m.add(guarda);
+    const punho = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.24, 8), MAT_COURO);
+    punho.position.y = -0.1; m.add(punho);
+    m.position.set(0, -1.0, 0.26); m.rotation.x = -0.5;
+  } else { // GRAVETO
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA);
+    m.add(stick);
+    m.position.set(0, -1.0, 0.18); m.rotation.x = 0.4;
+  }
+  p.bracoDir.add(m);
 }
 function equipaGraveto() {
   if (armado) return; armado = true; danoArma = 5; poeArmaNaMao();
@@ -652,7 +700,7 @@ function poeCorpoEquip() {
   const p = avatar.userData.partes; if (!p) return;
   avatar.children.filter((c) => c.name === 'equipCorpo').forEach((c) => avatar.remove(c));
   p.bracoEsq.children.filter((c) => c.name === 'equipCorpo').forEach((c) => p.bracoEsq.remove(c));
-  if (equipados.cabeca) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.5, 0.86), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 2.85; m.castShadow = true; avatar.add(m); }
+  if (equipados.cabeca) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.6, 0.9), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 2.72; m.castShadow = true; avatar.add(m); } // elmo ASSENTA na cabeça
   if (equipados.tronco) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.08, 1.0, 0.62), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 1.5; m.castShadow = true; avatar.add(m); }
   if (equipados.maoEsq) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.7), MAT_METAL); m.name = 'equipCorpo'; m.position.set(0, -0.4, 0.3); p.bracoEsq.add(m); }
 }
@@ -662,9 +710,9 @@ function poeTochaNaMao(on) {
   const existe = p.bracoEsq.getObjectByName('tocha');
   if (on && !existe) {
     const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 6), MAT_MADEIRA);
-    cabo.name = 'tocha'; cabo.position.set(0, -1.0, 0.18);
+    cabo.name = 'tocha'; cabo.position.set(0, -0.85, 0.26); cabo.rotation.x = 0.3;
     const chama = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffb04a, emissive: 0xff7a2a, emissiveIntensity: 1 }));
-    chama.position.y = -0.5; cabo.add(chama); p.bracoEsq.add(cabo);
+    chama.position.y = 0.5; cabo.add(chama); p.bracoEsq.add(cabo); // chama no TOPO do cabo (antes ficava sob a mão)
   } else if (!on && existe) { existe.parent.remove(existe); }
 }
 function alternaTocha() {
@@ -730,6 +778,28 @@ function disparaFlecha(r) {
   scene.add(m);
   flechasVoando.push({ m, de, ate, t: 0 });
 }
+// === PROJÉTEIS DOS BICHOS (beholder = magia roxa; dragão = BOLA DE FOGO
+// que às vezes deixa LAVA no chão por 12s — quem pisar QUEIMA)
+const projeteis = [];
+const camposTemp = [];
+const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 1 });
+const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
+const MAT_LAVA_CHAO = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
+aplicaTexturaReal(MAT_LAVA_CHAO, 'lava', 1.5, 1.5, true);
+function disparaBicho(r) {
+  const fogo = r.atira === 'fogo';
+  const m = new THREE.Mesh(new THREE.SphereGeometry(fogo ? 0.5 : 0.36, 10, 10), fogo ? MAT_PROJ_FOGO : MAT_PROJ_MAGIA);
+  const de = r.g.position.clone(); de.y += fogo ? 7.4 : 4.2; // sai da boca/olho
+  const ate = avatar.position.clone(); ate.y += 1.4;          // mira onde você ESTÁ (corre pra esquivar!)
+  m.position.copy(de); scene.add(m);
+  projeteis.push({ m, de, ate, t: 0, dur: Math.max(0.3, de.distanceTo(ate) / 22), dano: r.danoTiro || 10, fogo });
+}
+function criaLavaTemp(x, z, y) {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(2, 14), MAT_LAVA_CHAO);
+  m.rotation.x = -Math.PI / 2; m.position.set(x, y + 0.09, z); scene.add(m);
+  camposTemp.push({ tipo: 'lava', x, z, r: 2, y, expiraAt: tempo + 12, mesh: m });
+}
+
 // EXPLOSÃO da Runa de Fogo (esfera que cresce e some)
 const explosoes = [];
 function explosaoFogo() {
@@ -827,6 +897,7 @@ function morre() {
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX);
   mostraMensagem(`💀 Você caiu! Os deuses te trazem ao Templo Sagrado. (-${xpPerdido} XP${perdidos.length ? ' · sua mochila ficou onde você morreu 🎒' : ''})`);
+  salvaJogo(); // grava o estado pós-morte na conta
 }
 function reviveBicho(r) {
   if (r.dragao) {
@@ -838,11 +909,11 @@ function reviveBicho(r) {
     r.g.position.y = DRY;
     scene.add(r.g);
     if (r.lord) {
-      r.hpMax = 1100; r.xp = 600; r.dano = 55; r.vel = 1.9;
+      r.hpMax = 1100; r.xp = 600; r.dano = 55; r.vel = 1.9; r.danoTiro = 40; r.cadencia = 3;
       r.lootEspecial = { nome: 'Coração de Dragão', icone: '❤️‍🔥' };
       mostraMensagem('🔥 Um DRAGON LORD pousou no pico da montanha!');
     } else {
-      r.hpMax = 220; r.xp = 120; r.dano = 22; r.vel = 1.6;
+      r.hpMax = 220; r.xp = 120; r.dano = 22; r.vel = 1.6; r.danoTiro = 18; r.cadencia = 4;
       r.lootEspecial = { nome: 'Escama de Dragão', icone: '🐲' };
       mostraMensagem('🐲 Um dragão voltou ao pico da montanha.');
     }
@@ -861,6 +932,56 @@ function reviveBicho(r) {
     r.g.position.set(b.minX + 3 + Math.random() * (b.maxX - b.minX - 6), r.y0, b.minZ + 3 + Math.random() * (b.maxZ - b.minZ - 6));
   }
   r.hp = r.hpMax; r.vivo = true; r.respawnAt = null; r.alvo = { x: r.g.position.x, z: r.g.position.z };
+}
+
+// =============================================================
+//  CONTA LOCAL / SAVE — cada NOME de personagem é uma "conta" salva no
+//  navegador (localStorage): nível, XP, ouro, mochila, posição e visual
+//  NÃO resetam mais. Auto-salva a cada 10s, ao fechar e ao morrer; o
+//  botão 💾 salva na hora. (Conta online de verdade = próximo passo,
+//  precisa de banco no servidor.)
+// =============================================================
+function salvaJogo() {
+  if (!jogoIniciado) return;
+  try {
+    localStorage.setItem('venor_conta_' + nomeJogador.trim().toLowerCase(), JSON.stringify({
+      v: 1, cores: { ...coresJogador },
+      x: avatar.position.x, z: avatar.position.z,
+      ouro, vida, hud: hud.estado(), mochila: inventario.estado(),
+      equip: Object.values(equipados).filter(Boolean),
+    }));
+  } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
+}
+function carregaJogo(nome) {
+  try {
+    const raw = localStorage.getItem('venor_conta_' + nome.trim().toLowerCase());
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    ouro = d.ouro || 0; vida = d.vida || VIDA_MAX;
+    Object.assign(coresJogador, d.cores || {});
+    montaAvatar();
+    if (typeof d.x === 'number' && typeof d.z === 'number') {
+      avatar.position.set(d.x, alturaTerreno(d.x, d.z), d.z);
+    }
+    hud.carrega(d.hud || {});
+    inventario.carrega(d.mochila || []);
+    (d.equip || []).forEach((it) => inventario.addItem({ ...it })); // equipamento volta pra mochila (re-equipe com 1 clique)
+    hud.ouro(ouro); hud.vida(vida, VIDA_MAX);
+    return true;
+  } catch (e) { return false; }
+}
+setInterval(salvaJogo, 10000);                       // auto-save a cada 10s
+window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualizar
+{ // botão 💾 (abaixo da mochila 🎒)
+  const b = document.createElement('div');
+  b.textContent = '💾';
+  b.title = 'Salvar agora';
+  b.style.cssText = 'position:fixed;top:70px;left:14px;width:48px;height:48px;z-index:41;display:none;'
+    + 'align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;'
+    + 'background:rgba(16,22,32,.8);border:1px solid #3a4654;border-radius:12px;';
+  b.addEventListener('pointerdown', (e) => { e.stopPropagation(); salvaJogo(); mostraMensagem('💾 Progresso salvo!'); });
+  document.body.appendChild(b);
+  window.__btnSalvar = b;
 }
 
 // =============================================================
@@ -1038,18 +1159,25 @@ criaSelecao({
   aoMudarCor: () => montaAvatar(),
   aoEntrar: (nome) => {
     nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI;
-    // espalha o nascimento pela praça (evita dois jogadores no mesmo ponto)
-    for (let i = 0; i < 16; i++) {
-      const a = Math.random() * Math.PI * 2, r = 7 + Math.random() * 6;
-      const tx = Math.cos(a) * r, tz = Math.sin(a) * r;
-      if (!colide(tx, tz)) { avatar.position.set(tx, 0, tz); break; }
-    }
     minimapa.mostra();
     inventario.mostra();
-    inventario.addItem({ nome: 'Tocha', icone: '🔦', slot: 'tocha', usavel: 'tocha' }); // clicar acende/apaga
-    inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
-    hud.mostra(); hud.vida(vida, VIDA_MAX); hud.ouro(ouro);
-    mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
+    hud.mostra();
+    const temConta = carregaJogo(nome); // CONTA LOCAL: mesmo nome = mesmo progresso
+    if (!temConta) {
+      // personagem NOVO: nasce na praça com o kit inicial
+      for (let i = 0; i < 16; i++) {
+        const a = Math.random() * Math.PI * 2, r = 7 + Math.random() * 6;
+        const tx = Math.cos(a) * r, tz = Math.sin(a) * r;
+        if (!colide(tx, tz)) { avatar.position.set(tx, 0, tz); break; }
+      }
+      inventario.addItem({ nome: 'Tocha', icone: '🔦', slot: 'tocha', usavel: 'tocha' }); // clicar acende/apaga
+      inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
+      hud.vida(vida, VIDA_MAX); hud.ouro(ouro);
+      mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
+    } else {
+      mostraMensagem(`💾 Bem-vindo de volta, ${nome}! Sua conta foi carregada.`);
+    }
+    if (window.__btnSalvar) window.__btnSalvar.style.display = 'flex';
     // CONTA DEV/GM: entrar com o nome "gm", "adm" ou "dev" libera os poderes
     if (['gm', 'adm', 'dev'].includes(nome.trim().toLowerCase())) {
       ativaGM();
@@ -1083,6 +1211,8 @@ function loop() {
     camera.lookAt(f.x, f.y + 1.7, f.z);
   } else {
     // --- modo JOGO ---
+    const pf = controles.pegaPinch(); // PINÇA de 2 dedos = zoom (igual scroll no PC)
+    if (pf !== 1) zoomDist = Math.max(5, Math.min(45, zoomDist * pf));
     const inp = controles.vetorMov();
     const cam = controles.cam;
     const correndo = controles.correndo();
@@ -1216,6 +1346,47 @@ function loop() {
       }
     }
   }
+  // BICHOS ATIRADORES (beholder mágico / dragão de fogo): miram e disparam
+  if (jogoIniciado) for (const r of ratos) {
+    if (!r.atira || !r.vivo || r.voando || r.corpse) continue;
+    if (Math.abs(r.g.position.y - avatar.position.y) > 8) continue;
+    const dT = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+    if (dT < 2.5 || dT > r.alcanceTiro) continue;
+    if (tempo > (r.proxTiro || 0)) {
+      r.proxTiro = tempo + (r.cadencia || 3);
+      r.g.rotation.y = Math.atan2(avatar.position.x - r.g.position.x, avatar.position.z - r.g.position.z);
+      disparaBicho(r);
+    }
+  }
+  // projéteis dos bichos voando → impacto (esquivou = erra!)
+  for (let i = projeteis.length - 1; i >= 0; i--) {
+    const p = projeteis[i]; p.t += dt / p.dur;
+    if (p.t < 1) { p.m.position.lerpVectors(p.de, p.ate, p.t); continue; }
+    scene.remove(p.m); projeteis.splice(i, 1);
+    const dI = Math.hypot(p.ate.x - avatar.position.x, p.ate.z - avatar.position.z);
+    if (dI < 1.9 && !gmImortal && jogoIniciado) {
+      vida -= p.dano; hud.vida(vida, VIDA_MAX);
+      mostraMensagem(p.fogo ? `🔥 Bola de fogo do dragão! (-${p.dano})` : `🔮 Rajada mágica do beholder! (-${p.dano})`);
+      if (vida <= 0) { morre(); }
+    }
+    if (p.fogo && Math.random() < 0.5) criaLavaTemp(p.ate.x, p.ate.z, alturaTerreno(p.ate.x, p.ate.z)); // fogo vira LAVA no chão
+  }
+  // lava temporária do dragão evapora
+  for (let i = camposTemp.length - 1; i >= 0; i--) {
+    if (tempo > camposTemp[i].expiraAt) { scene.remove(camposTemp[i].mesh); camposTemp.splice(i, 1); }
+  }
+  // GIANT SPIDER: quando caça alguém por perto, CHAMA FILHOTES (máx. 4 vivos)
+  if (jogoIniciado && aranhaMae.vivo && tempo > (aranhaMae.proxCria || 0)) {
+    const dM = Math.hypot(aranhaMae.g.position.x - avatar.position.x, aranhaMae.g.position.z - avatar.position.z);
+    if (dM < 20 && Math.abs(aranhaMae.g.position.y - avatar.position.y) < 6) {
+      aranhaMae.proxCria = tempo + 7;
+      if (ratos.filter((r) => r.filhote && r.vivo).length < 4) {
+        const f = addMonstro(criaAranhaPequena(aranhaMae.g.position.x + 2, aranhaMae.g.position.z + 2), 10, 3, 3, 2.8, false, aranhaMae.bounds, { veneno: true, filhote: true });
+        scene.add(f.g);
+        mostraMensagem('🕷️ A Aranha Gigante chamou um FILHOTE!');
+      }
+    }
+  }
   // flechas voando + explosões de runa
   for (let i = flechasVoando.length - 1; i >= 0; i--) {
     const f = flechasVoando[i]; f.t += dt * 5;
@@ -1244,7 +1415,7 @@ function loop() {
     }
     // CAMPOS DE CHÃO (Tibia): lava queima na hora; lodo do pântano envenena
     if (!gmImortal && noChao && !noEsgoto) {
-      for (const c of CAMPOS) {
+      for (const c of CAMPOS.concat(camposTemp)) { // fixos + lava do dragão
         if (Math.abs(avatar.position.y - c.y) > 2.5) continue;
         if (Math.hypot(avatar.position.x - c.x, avatar.position.z - c.z) > c.r) continue;
         if (c.tipo === 'lava') {

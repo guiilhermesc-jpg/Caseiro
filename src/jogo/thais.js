@@ -7,7 +7,7 @@
 //  parte (cidade.js / npcs.js). Devolve { grupo, colisores }.
 // =============================================================
 import * as THREE from 'three';
-import { mat, texturaPedra, VIDRO } from './construcoes.js';
+import { mat, texturaPedra, VIDRO, aplicaTexturaReal } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
   const { HX = 56, HZ = 50, ALT = 9, ESP = 2, gw = 8 } = opts; // proporção TIBIA: Thais é MAIOR que Venore
@@ -16,12 +16,16 @@ export function criaThais(cx, cz, opts = {}) {
   // colisor em coords do MUNDO (o grupo está transladado p/ cx,cz)
   const col = (lx, lz, w, d) => colisores.push({ minX: cx + lx - w / 2, maxX: cx + lx + w / 2, minZ: cz + lz - d / 2, maxZ: cz + lz + d / 2 });
 
-  const pedra = mat(0xcfc09a, 1), pedraEsc = mat(0xa9966f, 1), pedraClara = mat(0xe0d3b0, 1);
+  // muralha com textura REAL de blocos de castelo (gerada por IA)
+  const pedra = new THREE.MeshStandardMaterial({ color: 0xcfc09a, roughness: 1 });
+  aplicaTexturaReal(pedra, 'muralha', 6, 1.6, true);
+  const pedraEsc = mat(0xa9966f, 1), pedraClara = mat(0xe0d3b0, 1);
   const telha = mat(0xc0653a, 1), telhaT = mat(0x2f8d80, 1), madeira = mat(0x6e4a2a);
 
-  // piso de pedra calçada (dentro das muralhas)
-  const piso = new THREE.Mesh(new THREE.BoxGeometry(HX * 2 - 2, 0.12, HZ * 2 - 2),
-    new THREE.MeshStandardMaterial({ map: texturaPedra(11), roughness: 1 }));
+  // piso de pedra calçada (dentro das muralhas) — textura REAL quando carregar
+  const pisoMatT = new THREE.MeshStandardMaterial({ map: texturaPedra(11), roughness: 1 });
+  aplicaTexturaReal(pisoMatT, 'pedra', 14, 12);
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(HX * 2 - 2, 0.12, HZ * 2 - 2), pisoMatT);
   piso.position.y = 0.06; piso.receiveShadow = true; g.add(piso);
 
   // --- MURALHA com ameias ---

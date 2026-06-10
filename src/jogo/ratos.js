@@ -115,31 +115,117 @@ export function criaTroll(x, z) {
   return g;
 }
 
+// CYCLOPS — VERSÃO 50x: GIGANTE de UM OLHO estilo Tibia. ~7m de altura,
+// mandíbula com presas pra cima, tanga de couro, clava com cravos.
 export function criaCyclops(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.9 });
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.2, 1.2), corpoMat); torso.position.y = 2.6; torso.castShadow = true; g.add(torso);
-  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.1, 1.1), corpoMat); cabeca.position.y = 4.2; cabeca.castShadow = true; g.add(cabeca);
-  const olho = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), mat(0xe0d040)); olho.position.set(0, 4.3, 0.58); g.add(olho);
-  const pup = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), mat(0x101010)); pup.position.set(0, 4.3, 0.78); g.add(pup);
-  [-1.2, 1.2].forEach((ox) => { const geo = new THREE.BoxGeometry(0.5, 2.0, 0.5); geo.translate(0, -1.0, 0); const b = new THREE.Mesh(geo, corpoMat); b.position.set(ox, 3.5, 0); b.castShadow = true; g.add(b); });
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x9a7250, roughness: 0.85 });
+  const couro = mat(0x5a4226), osso = mat(0xeee0c0, 0.6);
+  // TORSO enorme (barrigudo) + peitoral
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(2.7, 2.9, 1.8), corpoMat);
+  torso.position.y = 3.9; torso.castShadow = true; g.add(torso);
+  const barriga = new THREE.Mesh(new THREE.SphereGeometry(1.3, 12, 10), corpoMat);
+  barriga.position.set(0, 3.3, 0.45); barriga.scale.set(1.1, 1, 0.8); g.add(barriga);
+  // TANGA de couro
+  const tanga = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.0, 1.6), couro);
+  tanga.position.y = 2.35; g.add(tanga);
+  // CABEÇA com UM OLHO gigante + presas inferiores pra cima (Tibia!)
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.5, 1.5), corpoMat);
+  cabeca.position.y = 6.1; cabeca.castShadow = true; g.add(cabeca);
+  const escl = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 12), mat(0xf0ece0, 0.4));
+  escl.position.set(0, 6.3, 0.72); g.add(escl);
+  const iris = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), mat(0x9a6a10));
+  iris.position.set(0, 6.3, 1.0); g.add(iris);
+  const pup = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(0x080808));
+  pup.position.set(0, 6.3, 1.14); g.add(pup);
+  const sob = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.22, 0.3), mat(0x6a4a30)); // sobrancelha única brava
+  sob.position.set(0, 6.78, 0.72); g.add(sob);
+  const queixo = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.5, 1.2), corpoMat);
+  queixo.position.set(0, 5.45, 0.25); g.add(queixo);
+  [-0.42, 0.42].forEach((ox) => { // presas inferiores PRA CIMA
+    const presa = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.55, 5), osso);
+    presa.position.set(ox, 5.85, 0.78); g.add(presa);
+  });
+  [-0.85, 0.85].forEach((ox) => { // orelhas grandes
+    const or = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 4), corpoMat);
+    or.position.set(ox, 6.35, 0); or.rotation.z = ox > 0 ? -1.3 : 1.3; g.add(or);
+  });
+  // BRAÇOS grossos + CLAVA com cravos na mão direita
+  [-1.75, 1.75].forEach((ox) => {
+    const geo = new THREE.BoxGeometry(0.75, 2.7, 0.75); geo.translate(0, -1.35, 0);
+    const b = new THREE.Mesh(geo, corpoMat); b.position.set(ox, 5.1, 0); b.castShadow = true; g.add(b);
+    const mao = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), corpoMat);
+    mao.position.set(ox, 2.3, 0); g.add(mao);
+  });
+  const clava = new THREE.Group(); clava.position.set(2.1, 2.3, 0.4); clava.rotation.z = 0.5;
+  const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 2.6, 8), couro);
+  cabo.position.y = 1.0; clava.add(cabo);
+  const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 8), mat(0x6e4a2a));
+  ponta.position.y = 2.4; ponta.scale.y = 1.25; clava.add(ponta);
+  for (let i = 0; i < 6; i++) { // cravos
+    const a = (i / 6) * Math.PI * 2;
+    const cravo = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.3, 4), mat(0xb8bcc4, 0.4));
+    cravo.position.set(Math.cos(a) * 0.6, 2.4, Math.sin(a) * 0.6);
+    cravo.rotation.z = -Math.cos(a) * 1.4; cravo.rotation.x = Math.sin(a) * 1.4; clava.add(cravo);
+  }
+  g.add(clava);
+  // PERNAS troncudas
   const patas = [];
-  [-0.5, 0.5].forEach((ox) => { const geo = new THREE.BoxGeometry(0.6, 1.6, 0.6); geo.translate(0, -0.8, 0); const p = new THREE.Mesh(geo, corpoMat); p.position.set(ox, 1.6, 0); p.castShadow = true; g.add(p); patas.push(p); });
-  const clava = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 2.2, 8), mat(0x6e4a2a)); clava.position.set(1.5, 3.0, 0.3); clava.rotation.z = 0.4; g.add(clava);
+  [-0.7, 0.7].forEach((ox) => {
+    const geo = new THREE.BoxGeometry(0.85, 2.0, 0.9); geo.translate(0, -1.0, 0);
+    const p = new THREE.Mesh(geo, corpoMat); p.position.set(ox, 2.0, 0); p.castShadow = true; g.add(p); patas.push(p);
+  });
   g.userData = { patas, corpoMat, tipo: 'monstro' };
   return g;
 }
 
+// GIANT SPIDER — VERSÃO 50x (Tibia): ENORME, feroz e rápida. Pernas
+// ARTICULADAS em arco (2 segmentos), quelíceras com presas, marca
+// vermelha no abdômen, 6 olhos em brasa. Cria filhotes na caça (main3d).
 export function criaAranhaGigante(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x2a1f2a, roughness: 0.7 });
-  const abdomen = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 10), corpoMat); abdomen.position.set(0, 0.9, -0.7); abdomen.scale.z = 1.3; abdomen.castShadow = true; g.add(abdomen);
-  const cefalo = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 10), corpoMat); cefalo.position.set(0, 0.8, 0.5); cefalo.castShadow = true; g.add(cefalo);
-  olhos(g, 0.2, 1.0, 0.95, 0.1, 0xc0202a);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x231423, roughness: 0.6 });
+  const escuro = mat(0x140a14);
+  // ABDÔMEN gigante com marca vermelha + cerdas
+  const abdomen = new THREE.Mesh(new THREE.SphereGeometry(1.9, 16, 12), corpoMat);
+  abdomen.position.set(0, 2.1, -1.7); abdomen.scale.set(1, 0.95, 1.35); abdomen.castShadow = true; g.add(abdomen);
+  const marca = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8),
+    new THREE.MeshStandardMaterial({ color: 0xc02020, emissive: 0x600808, emissiveIntensity: 0.4 }));
+  marca.position.set(0, 3.55, -1.7); marca.scale.set(1, 0.35, 1.6); g.add(marca);
+  for (let i = 0; i < 8; i++) { // cerdas espetadas no abdômen
+    const a = (i / 8) * Math.PI * 2;
+    const cerda = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.55, 4), escuro);
+    cerda.position.set(Math.cos(a) * 1.4, 2.6 + Math.sin(a * 2) * 0.4, -1.7 + Math.sin(a) * 1.6);
+    cerda.rotation.z = -Math.cos(a) * 1.2; g.add(cerda);
+  }
+  // CEFALOTÓRAX + QUELÍCERAS com presas curvas
+  const cefalo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 14, 12), corpoMat);
+  cefalo.position.set(0, 1.75, 0.9); cefalo.castShadow = true; g.add(cefalo);
+  [-0.32, 0.32].forEach((ox) => {
+    const quel = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.7, 6), escuro);
+    quel.position.set(ox, 1.25, 1.75); quel.rotation.x = 0.5; g.add(quel);
+    const presa = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.5, 5), mat(0xe8e0d0));
+    presa.position.set(ox, 0.8, 2.0); presa.rotation.x = Math.PI - 0.35; g.add(presa);
+  });
+  // 6 OLHOS em brasa (2 grandes + 4 menores)
+  const olhoMat = new THREE.MeshStandardMaterial({ color: 0xd02020, emissive: 0x900a0a, emissiveIntensity: 0.9 });
+  [[-0.3, 2.15, 0.15], [0.3, 2.15, 0.15], [-0.55, 2.0, 0.1], [0.55, 2.0, 0.1], [-0.18, 2.35, 0.08], [0.18, 2.35, 0.08]].forEach(([ox, oy, r]) => {
+    const o = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), olhoMat);
+    o.position.set(ox, oy, 1.78); g.add(o);
+  });
+  // 8 PERNAS ARTICULADAS em arco (fêmur sobe + tíbia desce — silhueta de aranha)
   const patas = [];
   for (const s of [-1, 1]) for (let i = 0; i < 4; i++) {
-    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 1.4, 5), corpoMat);
-    perna.position.set(s * 0.7, 0.8, 0.4 - i * 0.45); perna.rotation.z = s * 1.0; perna.castShadow = true; g.add(perna); patas.push(perna);
+    const perna = new THREE.Group();
+    perna.position.set(s * 0.9, 2.0, 0.8 - i * 0.85);
+    const aFrente = (i - 1.5) * 0.35; // pernas abrem em leque
+    const femur = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 2.2, 6), corpoMat);
+    femur.position.set(s * 0.95, 0.55, 0); femur.rotation.z = s * 1.05; femur.rotation.y = -s * aFrente; femur.castShadow = true; perna.add(femur);
+    const joelho = new THREE.Mesh(new THREE.SphereGeometry(0.14, 6, 6), escuro);
+    joelho.position.set(s * 1.9, 1.05, -Math.sin(aFrente) * 1.9 * s * s); perna.add(joelho);
+    const tibia = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.04, 2.4, 5), corpoMat);
+    tibia.position.set(s * 2.5, -0.05, joelho.position.z * 1.5); tibia.rotation.z = s * 0.55; tibia.rotation.y = -s * aFrente; tibia.castShadow = true; perna.add(tibia);
+    g.add(perna); patas.push(perna);
   }
   g.userData = { patas, corpoMat, tipo: 'monstro' };
   return g;
@@ -312,39 +398,57 @@ export function criaCaranguejo(x, z) {
   return g;
 }
 
-// BEHOLDER: olho flutuante com tentáculos-olho (clássico Tibia). Paira no ar.
+// BEHOLDER — VERSÃO 50x: GRANDE, imponente e assustador. Olho gigante com
+// pupila em fenda, bocarra cheia de presas, 8 tentáculos-olho e espinhos.
+// ATIRA rajadas mágicas no jogador (campo `atira` no main3d).
 export function criaBeholder(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x7a3a8a, roughness: 0.6 });
-  const Y0 = 1.9;
-  const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 16, 14), corpoMat);
-  corpo.position.y = Y0; corpo.castShadow = true; g.add(corpo);
-  // boca dentada (faixa inferior, vira p/ +Z)
-  const boca = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 0.2), mat(0x1a0a1a));
-  boca.position.set(0, Y0 - 0.55, 0.92); g.add(boca);
-  for (let i = 0; i < 5; i++) {
-    const dente = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 4), mat(0xe8e0d0));
-    dente.position.set(-0.36 + i * 0.18, Y0 - 0.5, 1.0); g.add(dente);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x6a2a7a, roughness: 0.55 });
+  const escuro = mat(0x2a1030);
+  const Y0 = 3.6; // paira ALTO
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(2.1, 18, 16), corpoMat);
+  corpo.position.y = Y0; corpo.scale.set(1, 0.94, 1); corpo.castShadow = true; g.add(corpo);
+  // BOCARRA: arco escuro com 2 fileiras de presas
+  const boca = new THREE.Mesh(new THREE.SphereGeometry(1.35, 14, 8, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.22), mat(0x140510));
+  boca.position.set(0, Y0 + 0.12, 0.86); g.add(boca);
+  for (let i = 0; i < 7; i++) {
+    const px = -0.9 + i * 0.3;
+    const dCima = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.34, 4), mat(0xe8e0d0));
+    dCima.position.set(px, Y0 - 0.62, 1.78 - Math.abs(px) * 0.35); dCima.rotation.x = Math.PI - 0.3; g.add(dCima);
+    const dBaixo = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.26, 4), mat(0xd8d0c0));
+    dBaixo.position.set(px + 0.12, Y0 - 1.05, 1.7 - Math.abs(px) * 0.35); dBaixo.rotation.x = 0.3; g.add(dBaixo);
   }
-  // grande olho central
-  const escl = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 12), mat(0xf0ece0));
-  escl.position.set(0, Y0 + 0.05, 0.68); g.add(escl);
-  const iris = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), mat(0xc02020));
-  iris.position.set(0, Y0 + 0.05, 1.02); g.add(iris);
-  const pup = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), mat(0x080808));
-  pup.position.set(0, Y0 + 0.05, 1.22); g.add(pup);
-  // tentáculos-olho (hastes com olhinhos) — animados como "patas"
-  const patas = [];
+  // OLHO CENTRAL gigante com pupila em FENDA (brilha)
+  const escl = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 14), mat(0xf0ece0, 0.4));
+  escl.position.set(0, Y0 + 0.55, 1.25); g.add(escl);
+  const iris = new THREE.Mesh(new THREE.SphereGeometry(0.58, 14, 12),
+    new THREE.MeshStandardMaterial({ color: 0xc02020, emissive: 0x801010, emissiveIntensity: 0.6 }));
+  iris.position.set(0, Y0 + 0.55, 1.85); g.add(iris);
+  const fenda = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.62, 0.1), mat(0x050505));
+  fenda.position.set(0, Y0 + 0.55, 2.3); g.add(fenda);
+  // sobrancelha brava (placa angulada sobre o olho)
+  const browL = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.22, 0.5), escuro);
+  browL.position.set(-0.55, Y0 + 1.35, 1.35); browL.rotation.z = -0.35; g.add(browL);
+  const browR = browL.clone(); browR.position.x = 0.55; browR.rotation.z = 0.35; g.add(browR);
+  // ESPINHOS na parte de baixo (queixo de pedra)
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2;
+    const esp = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.6, 5), escuro);
+    esp.position.set(Math.cos(a) * 1.2, Y0 - 1.85, Math.sin(a) * 1.2); esp.rotation.x = Math.PI; g.add(esp);
+  }
+  // 8 TENTÁCULOS-OLHO longos (animados como "patas")
+  const patas = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
     const stalk = new THREE.Group();
-    stalk.position.set(Math.cos(a) * 0.8, Y0 + 0.85, Math.sin(a) * 0.8);
-    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 6), corpoMat);
-    haste.position.y = 0.45; stalk.add(haste);
-    const bulbo = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), corpoMat);
-    bulbo.position.y = 0.95; stalk.add(bulbo);
-    const olhinho = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xe0d040));
-    olhinho.position.set(0, 0.98, 0.13); stalk.add(olhinho);
+    stalk.position.set(Math.cos(a) * 1.5, Y0 + 1.5, Math.sin(a) * 1.5);
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.7, 6), corpoMat);
+    haste.position.y = 0.85; haste.rotation.z = Math.cos(a) * 0.35; haste.rotation.x = -Math.sin(a) * 0.35; stalk.add(haste);
+    const bulbo = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 10), corpoMat);
+    bulbo.position.set(Math.cos(a) * 0.5, 1.75, Math.sin(a) * 0.5); stalk.add(bulbo);
+    const olhinho = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xe0d040, emissive: 0xa08000, emissiveIntensity: 0.5 }));
+    olhinho.position.set(Math.cos(a) * 0.62, 1.8, Math.sin(a) * 0.62); stalk.add(olhinho);
     stalk.castShadow = true; g.add(stalk); patas.push(stalk);
   }
   g.userData = { patas, corpoMat, tipo: 'monstro' };
