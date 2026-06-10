@@ -14,6 +14,9 @@ export function criaHUD() {
   vidaFill.style.cssText = 'height:100%;width:100%;background:linear-gradient(90deg,#c0392b,#e74c3c);transition:width .15s;';
   vidaBar.appendChild(vidaFill);
 
+  const ouroEl = document.createElement('div');
+  ouroEl.style.cssText = 'font-weight:bold;font-size:13px;color:#ffd23f;text-shadow:0 1px 3px #000;margin-bottom:2px;';
+  ouroEl.textContent = '🪙 0';
   const nivelEl = document.createElement('div');
   nivelEl.style.cssText = 'font-weight:bold;font-size:14px;text-shadow:0 1px 3px #000;';
   const barra = document.createElement('div');
@@ -23,7 +26,7 @@ export function criaHUD() {
   barra.appendChild(fill);
   const itensEl = document.createElement('div');
   itensEl.style.cssText = 'margin-top:5px;font-size:12px;text-shadow:0 1px 3px #000;max-width:200px;line-height:1.5;';
-  wrap.append(vidaEl, vidaBar, nivelEl, barra, itensEl);
+  wrap.append(vidaEl, vidaBar, ouroEl, nivelEl, barra, itensEl);
   document.body.appendChild(wrap);
 
   let nivel = 1, xp = 0, prox = 20;
@@ -38,5 +41,6 @@ export function criaHUD() {
     ganhaXP(n) { xp += n; while (xp >= prox) { xp -= prox; nivel++; prox = Math.round(prox * 1.5); } render(); },
     addItem(tipo) { itens[tipo] = (itens[tipo] || 0) + 1; render(); },
     vida(cur, max) { vidaEl.textContent = `❤️ Vida ${Math.max(0, Math.ceil(cur))}/${max}`; vidaFill.style.width = Math.max(0, (cur / max) * 100) + '%'; },
+    ouro(n) { ouroEl.textContent = `🪙 ${n}`; },
   };
 }

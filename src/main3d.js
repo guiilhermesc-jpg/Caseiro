@@ -95,6 +95,7 @@ const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); 
 let tochaOn = false;
 let vida = 100; const VIDA_MAX = 100; let defesa = 0; // defesa sobe ao equipar armadura
 const equipados = {}; // slot -> item de armadura
+let ouro = 0; // moeda do jogo (loot/pesca) — compra casas
 const MAT_METAL = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.6, roughness: 0.4 });
 
 // avatar (recriado quando muda a aparência na tela de seleção)
@@ -264,6 +265,27 @@ BUEIROS.forEach((bp, i) => {
   interativos.push(it);
 });
 
+// CASAS À VENDA (compra com ouro; depois personaliza o telhado)
+const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
+[{ x: 32, z: 3, casaIdx: 0 }, { x: -32, z: 3, casaIdx: 1 }].forEach((cv) => {
+  cv.custo = 15; cv.corIdx = 0;
+  const placa = new THREE.Group(); placa.position.set(cv.x, 0, cv.z);
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6), MAT_MADEIRA); poste.position.y = 0.9; placa.add(poste);
+  const tab = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 0.08), new THREE.MeshStandardMaterial({ color: 0xc0392b })); tab.position.y = 1.6; placa.add(tab);
+  scene.add(placa);
+  const it = { x: cv.x, z: cv.z, raio: 2.6, titulo: 'Casa', acao: `Comprar casa (${cv.custo} 🪙)` };
+  it.onAcao = () => {
+    if (!cv.comprada) {
+      if (ouro >= cv.custo) { ouro -= cv.custo; cv.comprada = true; it.acao = 'Personalizar telhado 🎨'; hud.ouro(ouro); tab.material = new THREE.MeshStandardMaterial({ color: 0x2e7d32 }); mostraMensagem('🏠 Casa comprada! Agora é sua — entre e use AÇÃO aqui pra mudar o telhado.'); }
+      else mostraMensagem(`Faltam moedas: ${ouro}/${cv.custo} 🪙. Lute e pesque pra juntar!`);
+    } else {
+      const casa = casas[cv.casaIdx];
+      if (casa) { cv.corIdx = (cv.corIdx + 1) % TELHADOS.length; casa.roof.material = new THREE.MeshStandardMaterial({ color: TELHADOS[cv.corIdx], roughness: 0.9 }); mostraMensagem('🎨 Telhado repintado!'); }
+    }
+  };
+  interativos.push(it);
+});
+
 let acessoAtual = 0;
 function desce(i = 0) {
   acessoAtual = i;
@@ -410,7 +432,10 @@ function corpseProximo() {
 }
 function saqueia(r) {
   let pegou = 0;
-  for (const it of (r.loot || [])) { if (inventario.addItem(it)) pegou++; }
+  for (const it of (r.loot || [])) {
+    if (it.nome === 'Moeda') { ouro += 1 + Math.floor(Math.random() * 3); hud.ouro(ouro); pegou++; }
+    else if (inventario.addItem(it)) pegou++;
+  }
   r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);
   mostraMensagem(pegou ? `Saqueou ${pegou} item(s) 🎒` : 'O corpo estava vazio.');
 }
@@ -515,7 +540,7 @@ criaSelecao({
     inventario.mostra();
     inventario.addItem({ nome: 'Tocha', icone: '🔦' }); // todo mundo começa com uma tocha
     inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
-    hud.mostra(); hud.vida(vida, VIDA_MAX);
+    hud.mostra(); hud.vida(vida, VIDA_MAX); hud.ouro(ouro);
     mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
