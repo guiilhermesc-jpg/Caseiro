@@ -18,7 +18,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
-import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao } from './jogo/ratos.js';
+import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
@@ -94,6 +94,10 @@ addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16)
 [[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2, 2.4, false, areaMon(aX, aZ, 18)));
 [[160, 8], [205, -10], [235, 18]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(x, z, 16)));
 [[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
+// BEHOLDERS (olhos flutuantes) no Vale dos Monstros — fortes, loot raro
+[[255, 95], [175, 120], [300, 70]].forEach(([x, z]) => {
+  ratos.push({ g: criaBeholder(x, z), hp: 70, hpMax: 70, xp: 35, dano: 12, vel: 1.4, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' } });
+});
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
@@ -409,18 +413,32 @@ function alternaTocha() {
 window.addEventListener('keydown', (e) => { if (e.code === 'KeyT') alternaTocha(); });
 
 const LOOT_TAB = [
-  { nome: 'Carne', icone: '🍖', ch: 0.5 },
-  { nome: 'Queijo', icone: '🧀', ch: 0.2 },
-  { nome: 'Moeda', icone: '🪙', ch: 0.25 },
+  { nome: 'Carne', icone: '🍖', ch: 0.45 },
+  { nome: 'Queijo', icone: '🧀', ch: 0.18 },
+  { nome: 'Moeda', icone: '🪙', ch: 0.30 },
   { nome: 'Cauda de rato', icone: '〰️', ch: 0.08 },
+  { nome: 'Osso', icone: '🦴', ch: 0.14 },
+  { nome: 'Couro', icone: '🟫', ch: 0.12 },
+  { nome: 'Erva', icone: '🌿', ch: 0.12 },
+  { nome: 'Frasco', icone: '⚗️', ch: 0.05 },
 ];
+// tesouros raros (gemas, joias, bolsa) — bichos fortes/boss e chance baixa nos comuns
+const LOOT_RARO = [
+  { nome: 'Rubi', icone: '🔴' }, { nome: 'Safira', icone: '🔵' }, { nome: 'Esmeralda', icone: '🟢' },
+  { nome: 'Pérola', icone: '⚪' }, { nome: 'Âmbar', icone: '🟠' }, { nome: 'Anel de Ouro', icone: '💍' },
+  { nome: 'Bolsa de Ouro', icone: '💰' },
+];
+const pickRaro = () => ({ ...LOOT_RARO[Math.floor(Math.random() * LOOT_RARO.length)] });
 function rollLoot(ehBoss) {
   const out = [];
-  LOOT_TAB.forEach((it) => { if (Math.random() < (ehBoss ? it.ch + 0.25 : it.ch)) out.push({ nome: it.nome, icone: it.icone }); });
+  LOOT_TAB.forEach((it) => { if (Math.random() < (ehBoss ? it.ch + 0.2 : it.ch)) out.push({ nome: it.nome, icone: it.icone }); });
   if (ehBoss) {
     out.push({ nome: 'Presa do Boss', icone: '🦷' });
-    if (Math.random() < 0.4) out.push({ ...ARMADURAS[Math.floor(Math.random() * ARMADURAS.length)] }); // dropa armadura
-    if (Math.random() < 0.3) out.push({ ...ARMAS[Math.floor(Math.random() * ARMAS.length)] }); // ou uma arma
+    if (Math.random() < 0.55) out.push(pickRaro());                                            // gema/joia
+    if (Math.random() < 0.4) out.push({ ...ARMADURAS[Math.floor(Math.random() * ARMADURAS.length)] }); // armadura
+    if (Math.random() < 0.3) out.push({ ...ARMAS[Math.floor(Math.random() * ARMAS.length)] });  // ou arma
+  } else if (Math.random() < 0.1) {
+    out.push(pickRaro()); // chance pequena de tesouro em bicho comum
   }
   return out;
 }
@@ -448,6 +466,7 @@ function mataBicho(r) {
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
   r.g.userData.corpoMat.emissive.setHex(0x000000);
   r.loot = rollLoot(r.boss || r.forte);
+  if (r.lootEspecial && Math.random() < 0.7) r.loot.push({ ...r.lootEspecial }); // drop único (ex.: Olho do Beholder)
   r.despawnAt = tempo + 30;          // some em 30s se não saquear
   const xp = r.xp || 5;
   hud.ganhaXP(xp);
@@ -466,6 +485,7 @@ function saqueia(r) {
   let pegou = 0;
   for (const it of (r.loot || [])) {
     if (it.nome === 'Moeda') { ouro += 1 + Math.floor(Math.random() * 3); hud.ouro(ouro); pegou++; }
+    else if (it.nome === 'Bolsa de Ouro') { ouro += 10 + Math.floor(Math.random() * 16); hud.ouro(ouro); pegou++; }
     else if (inventario.addItem(it)) pegou++;
   }
   r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);

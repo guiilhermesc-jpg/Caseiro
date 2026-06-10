@@ -174,6 +174,45 @@ export function criaEscorpiao(x, z) {
   return g;
 }
 
+// BEHOLDER: olho flutuante com tentáculos-olho (clássico Tibia). Paira no ar.
+export function criaBeholder(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x7a3a8a, roughness: 0.6 });
+  const Y0 = 1.9;
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 16, 14), corpoMat);
+  corpo.position.y = Y0; corpo.castShadow = true; g.add(corpo);
+  // boca dentada (faixa inferior, vira p/ +Z)
+  const boca = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 0.2), mat(0x1a0a1a));
+  boca.position.set(0, Y0 - 0.55, 0.92); g.add(boca);
+  for (let i = 0; i < 5; i++) {
+    const dente = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 4), mat(0xe8e0d0));
+    dente.position.set(-0.36 + i * 0.18, Y0 - 0.5, 1.0); g.add(dente);
+  }
+  // grande olho central
+  const escl = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 12), mat(0xf0ece0));
+  escl.position.set(0, Y0 + 0.05, 0.68); g.add(escl);
+  const iris = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), mat(0xc02020));
+  iris.position.set(0, Y0 + 0.05, 1.02); g.add(iris);
+  const pup = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), mat(0x080808));
+  pup.position.set(0, Y0 + 0.05, 1.22); g.add(pup);
+  // tentáculos-olho (hastes com olhinhos) — animados como "patas"
+  const patas = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const stalk = new THREE.Group();
+    stalk.position.set(Math.cos(a) * 0.8, Y0 + 0.85, Math.sin(a) * 0.8);
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 6), corpoMat);
+    haste.position.y = 0.45; stalk.add(haste);
+    const bulbo = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), corpoMat);
+    bulbo.position.y = 0.95; stalk.add(bulbo);
+    const olhinho = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xe0d040));
+    olhinho.position.set(0, 0.98, 0.13); stalk.add(olhinho);
+    stalk.castShadow = true; g.add(stalk); patas.push(stalk);
+  }
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
 // BOSS: cobra (rastejante) e crocodilo — maiores, mais vida/XP/loot.
 export function criaCobra(x, z) {
   const g = new THREE.Group(); g.position.set(x, Y, z);
