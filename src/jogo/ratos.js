@@ -351,43 +351,88 @@ export function criaBeholder(x, z) {
   return g;
 }
 
-// DRAGÃO (chefão): VERDE = dragão comum (estilo Tibia); lord=true = DRAGON
-// LORD vermelho, 5× mais forte, que raramente nasce no lugar do verde.
+// DRAGÃO (chefão) — VERSÃO 50x: GRANDE e detalhado (chifres curvos, mandíbula
+// com dentes, barriga blindada, asas com dedos, garras, cauda com lâmina).
+// VERDE = dragão comum (estilo Tibia); lord=true = DRAGON LORD vermelho 5×.
 export function criaDragao(x, z, lord = false) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpoMat = new THREE.MeshStandardMaterial({ color: lord ? 0x9a2a1a : 0x3a7a2a, roughness: 0.6 });
+  const s = lord ? 2.0 : 1.7; // ESCALA: dragão imponente (o antigo era pequeno)
+  const corpoMat = new THREE.MeshStandardMaterial({ color: lord ? 0x9a2a1a : 0x3a7a2a, roughness: 0.55 });
   const escuro = mat(lord ? 0x5a1810 : 0x24481a);
-  // corpo
-  const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.4, 14, 12), corpoMat);
-  corpo.position.set(0, 1.9, -0.3); corpo.scale.set(1, 0.9, 1.55); corpo.castShadow = true; g.add(corpo);
-  // pescoço (sobe e avança) + cabeça
-  for (let i = 0; i < 4; i++) {
-    const s = new THREE.Mesh(new THREE.SphereGeometry(0.62 - i * 0.07, 10, 8), corpoMat);
-    s.position.set(0, 2.3 + i * 0.45, 1.1 + i * 0.5); s.castShadow = true; g.add(s);
+  const barriga = mat(lord ? 0xd8a05a : 0xc8c07a, 0.7);
+  const osso = mat(0xe8e0c8, 0.6);
+  const olhoMat = new THREE.MeshStandardMaterial({ color: lord ? 0xff4a00 : 0xffd000, emissive: lord ? 0xff3000 : 0xcc9900, emissiveIntensity: 0.8 });
+
+  // CORPO musculoso + placas da barriga
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.4 * s, 16, 12), corpoMat);
+  corpo.position.set(0, 1.9 * s, -0.3 * s); corpo.scale.set(1, 0.92, 1.6); corpo.castShadow = true; g.add(corpo);
+  for (let i = 0; i < 5; i++) {
+    const placa = new THREE.Mesh(new THREE.BoxGeometry(0.95 * s, 0.3 * s, 0.42 * s), barriga);
+    placa.position.set(0, 0.95 * s, (1.1 - i * 0.62) * s); placa.rotation.x = 0.12; g.add(placa);
   }
-  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.62, 1.1), corpoMat); cabeca.position.set(0, 4.2, 3.2); cabeca.castShadow = true; g.add(cabeca);
-  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.4, 0.6), corpoMat); focinho.position.set(0, 4.1, 3.9); g.add(focinho);
-  [-0.24, 0.24].forEach((ox) => { const h = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.62, 6), escuro); h.position.set(ox, 4.75, 2.9); h.rotation.x = -0.5; g.add(h); });
-  [-0.24, 0.24].forEach((ox) => { const o = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(lord ? 0xff4a00 : 0xffd000)); o.position.set(ox, 4.35, 3.6); g.add(o); });
-  // ASAS (batem no loop via userData.asas)
+  // PESCOÇO em arco + CABEÇA com mandíbula e dentes
+  for (let i = 0; i < 5; i++) {
+    const seg = new THREE.Mesh(new THREE.SphereGeometry((0.66 - i * 0.06) * s, 10, 8), corpoMat);
+    seg.position.set(0, (2.3 + i * 0.5) * s, (1.0 + i * 0.42) * s); seg.castShadow = true; g.add(seg);
+  }
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.8 * s, 0.62 * s, 1.15 * s), corpoMat);
+  cabeca.position.set(0, 4.5 * s, 3.05 * s); cabeca.castShadow = true; g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.56 * s, 0.4 * s, 0.66 * s), corpoMat);
+  focinho.position.set(0, 4.42 * s, 3.85 * s); g.add(focinho);
+  const mandibula = new THREE.Mesh(new THREE.BoxGeometry(0.5 * s, 0.16 * s, 0.85 * s), escuro);
+  mandibula.position.set(0, 4.12 * s, 3.6 * s); mandibula.rotation.x = 0.22; g.add(mandibula); // boca entreaberta
+  for (let i = 0; i < 4; i++) [-1, 1].forEach((ld) => { // dentes
+    const dente = new THREE.Mesh(new THREE.ConeGeometry(0.045 * s, 0.16 * s, 4), osso);
+    dente.position.set(ld * 0.18 * s, 4.27 * s, (3.35 + i * 0.2) * s); dente.rotation.x = Math.PI; g.add(dente);
+  });
+  // narinas com brasa (Lord) ou verde-musgo
+  [-0.13, 0.13].forEach((ox) => { const n = new THREE.Mesh(new THREE.SphereGeometry(0.05 * s, 6, 6), escuro); n.position.set(ox * s, 4.5 * s, 4.16 * s); g.add(n); });
+  // CHIFRES curvos (2 segmentos angulados) + cristas da testa
+  [-1, 1].forEach((ld) => {
+    const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.11 * s, 0.6 * s, 6), osso);
+    c1.position.set(ld * 0.28 * s, 4.95 * s, 2.75 * s); c1.rotation.x = -0.7; c1.castShadow = true; g.add(c1);
+    const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.07 * s, 0.5 * s, 6), osso);
+    c2.position.set(ld * 0.3 * s, 5.3 * s, 2.5 * s); c2.rotation.x = -1.15; g.add(c2);
+    const sob = new THREE.Mesh(new THREE.BoxGeometry(0.22 * s, 0.07 * s, 0.3 * s), escuro);
+    sob.position.set(ld * 0.24 * s, 4.78 * s, 3.4 * s); g.add(sob);
+  });
+  // OLHOS que brilham
+  [-0.26, 0.26].forEach((ox) => { const o = new THREE.Mesh(new THREE.SphereGeometry(0.11 * s, 8, 8), olhoMat); o.position.set(ox * s, 4.62 * s, 3.5 * s); g.add(o); });
+  // ASAS GRANDES com dedos ósseos e membrana dupla (batem via userData.asas)
   const asas = [];
-  [-1, 1].forEach((s) => {
-    const asa = new THREE.Group(); asa.position.set(s * 1.1, 2.8, -0.3);
-    const membrana = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.08, 2.3), escuro); membrana.position.set(s * 1.6, 0, 0); membrana.castShadow = true; asa.add(membrana);
-    [-0.85, 0, 0.85].forEach((oz) => { const osso = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 3.0, 5), corpoMat); osso.rotation.z = Math.PI / 2; osso.position.set(s * 1.5, 0.05, oz); asa.add(osso); });
+  [-1, 1].forEach((ld) => {
+    const asa = new THREE.Group(); asa.position.set(ld * 1.15 * s, 3.0 * s, -0.3 * s);
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.07 * s, 2.2 * s, 6), corpoMat);
+    braco.rotation.z = ld * (Math.PI / 2 - 0.35); braco.position.set(ld * 1.0 * s, 0.35 * s, 0); asa.add(braco);
+    const membrana = new THREE.Mesh(new THREE.BoxGeometry(3.6 * s, 0.07 * s, 2.8 * s), escuro);
+    membrana.position.set(ld * 2.2 * s, 0.1 * s, -0.2 * s); membrana.rotation.z = ld * 0.12; membrana.castShadow = true; asa.add(membrana);
+    [-1.1, -0.1, 0.9].forEach((oz, i) => { // dedos da asa
+      const dedo = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * s, 0.03 * s, (3.4 - i * 0.5) * s, 5), corpoMat);
+      dedo.rotation.z = Math.PI / 2; dedo.position.set(ld * 2.1 * s, 0.16 * s, oz * s); asa.add(dedo);
+    });
     g.add(asa); asas.push(asa);
   });
-  // 4 patas
+  // 4 PATAS grossas com 3 GARRAS cada
   const patas = [];
-  [[-0.85, 0.7], [0.85, 0.7], [-0.85, -1.2], [0.85, -1.2]].forEach(([px, pz]) => {
-    const geo = new THREE.BoxGeometry(0.42, 1.3, 0.42); geo.translate(0, -0.65, 0);
-    const p = new THREE.Mesh(geo, corpoMat); p.position.set(px, 1.3, pz); p.castShadow = true; g.add(p); patas.push(p);
+  [[-0.95, 0.8], [0.95, 0.8], [-0.95, -1.3], [0.95, -1.3]].forEach(([px, pz]) => {
+    const geo = new THREE.BoxGeometry(0.5 * s, 1.45 * s, 0.5 * s); geo.translate(0, -0.72 * s, 0);
+    const p = new THREE.Mesh(geo, corpoMat); p.position.set(px * s, 1.45 * s, pz * s); p.castShadow = true; g.add(p); patas.push(p);
+    [-0.14, 0, 0.14].forEach((gx) => {
+      const garra = new THREE.Mesh(new THREE.ConeGeometry(0.06 * s, 0.24 * s, 4), osso);
+      garra.position.set(gx * s, -1.4 * s, 0.3 * s); garra.rotation.x = 1.25; p.add(garra);
+    });
   });
-  // cauda + ponta
-  for (let i = 0; i < 6; i++) { const t = new THREE.Mesh(new THREE.SphereGeometry(0.5 - i * 0.07, 8, 6), corpoMat); t.position.set(0, 1.5, -1.7 - i * 0.5); g.add(t); }
-  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 6), escuro); ponta.position.set(0, 1.5, -4.9); ponta.rotation.x = -Math.PI / 2; g.add(ponta);
-  // crista nas costas
-  for (let i = 0; i < 5; i++) { const e = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.55, 4), escuro); e.position.set(0, 2.9, 0.7 - i * 0.5); g.add(e); }
+  // CAUDA longa com lâmina na ponta + ESPINHOS do pescoço à cauda
+  for (let i = 0; i < 8; i++) {
+    const t = new THREE.Mesh(new THREE.SphereGeometry((0.52 - i * 0.05) * s, 8, 6), corpoMat);
+    t.position.set(0, (1.5 - i * 0.06) * s, (-1.8 - i * 0.55) * s); t.castShadow = true; g.add(t);
+  }
+  const lamina = new THREE.Mesh(new THREE.ConeGeometry(0.22 * s, 0.9 * s, 4), osso);
+  lamina.position.set(0, 1.1 * s, -6.2 * s); lamina.rotation.x = -Math.PI / 2; g.add(lamina);
+  for (let i = 0; i < 9; i++) {
+    const e = new THREE.Mesh(new THREE.ConeGeometry((0.16 - i * 0.008) * s, (0.6 - i * 0.03) * s, 4), escuro);
+    e.position.set(0, (3.0 - i * 0.14) * s, (0.8 - i * 0.62) * s); g.add(e);
+  }
   g.userData = { patas, asas, corpoMat, tipo: 'boss' };
   return g;
 }

@@ -15,9 +15,20 @@ function texturaGrama(rep = 60) {
   const x = c.getContext('2d');
   x.fillStyle = '#66924c'; x.fillRect(0, 0, 128, 128);
   const tons = ['#5d8744', '#6f9a52', '#5a8040', '#74a058', '#638e49', '#7aa85c'];
-  for (let i = 0; i < 1100; i++) {
+  for (let i = 0; i < 1400; i++) {
     x.fillStyle = tons[i % tons.length];
     x.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+  }
+  // manchas de terra e capim seco (quebram a repetição do verde)
+  for (let i = 0; i < 26; i++) {
+    x.fillStyle = i % 2 ? 'rgba(122,104,68,.18)' : 'rgba(160,170,90,.16)';
+    x.beginPath(); x.arc(Math.random() * 128, Math.random() * 128, 2 + Math.random() * 4, 0, Math.PI * 2); x.fill();
+  }
+  // florzinhas espalhadas (pontos coloridos sutis)
+  const flores = ['#e8e8e8', '#f2c14e', '#e85d75', '#9ab0ff'];
+  for (let i = 0; i < 40; i++) {
+    x.fillStyle = flores[i % flores.length];
+    x.fillRect(Math.random() * 128, Math.random() * 128, 1.6, 1.6);
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep);
@@ -43,7 +54,7 @@ export function criaCidade() {
   const sun = new THREE.DirectionalLight(0xfff6e6, 1.35);
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048); // sombras mais nítidas (só pesa no PC; mobile não usa sombra)
   const d = 100;
   sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
   sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
@@ -80,10 +91,14 @@ export function criaCidade() {
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 }));
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
 
-  // ruas em GRADE — finas e quase no nível do chão (evita o avatar "afundar")
-  const ruaMat = mat(0x595f66, 1);
-  const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMat); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); };
-  const faixaV = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 180), ruaMat); m.position.set(x, 0.02, 0); m.receiveShadow = true; scene.add(m); };
+  // ruas em GRADE — agora CALÇADAS de pedra (textura), quase no nível do chão
+  function matRua(rx, rz) {
+    const t = texturaPedra(1); t.repeat.set(rx, rz);
+    return new THREE.MeshStandardMaterial({ map: t, color: 0x9a9a98, roughness: 1 });
+  }
+  const ruaMatH = matRua(34, 1.6), ruaMatV = matRua(1.6, 34);
+  const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMatH); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); };
+  const faixaV = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 180), ruaMatV); m.position.set(x, 0.02, 0); m.receiveShadow = true; scene.add(m); };
   const ruas = [-48, -16, 16, 48];
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
@@ -192,9 +207,9 @@ export function criaCidade() {
 
   // === CRESCER VENORE: Bairro do Comércio (sul) + marcos únicos ===
   // ruas do bairro (conector ao sul + via principal) + praça
-  const viaConector = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 30), ruaMat);
+  const viaConector = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 30), matRua(1.6, 6));
   viaConector.position.set(0, 0.02, -85); viaConector.receiveShadow = true; scene.add(viaConector);
-  const viaBairro = new THREE.Mesh(new THREE.BoxGeometry(60, 0.1, 8), ruaMat);
+  const viaBairro = new THREE.Mesh(new THREE.BoxGeometry(60, 0.1, 8), matRua(11, 1.6));
   viaBairro.position.set(0, 0.02, -95); viaBairro.receiveShadow = true; scene.add(viaBairro);
   const pracaSul = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 22), pisoMat);
   pracaSul.position.set(0, 0.03, -95); pracaSul.receiveShadow = true; scene.add(pracaSul);
@@ -420,12 +435,23 @@ export function criaCidade() {
 
   // === MONTANHA DO DRAGÃO (escalável!) — rampa cônica até o platô do topo,
   // onde o dragão vive. A subida usa alturaTerreno() no main3d (mesmo perfil).
-  const MD = { x: 110, z: 300, r: 46, topo: 8, h: 34 };
+  const MD = { x: 110, z: 300, r: 46, topo: 12, h: 34 }; // platô largo (dragão GRANDE mora lá)
   const morro = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo, MD.r, MD.h, 28), mat(0x6e6a62, 1));
   morro.position.set(MD.x, MD.h / 2, MD.z); morro.castShadow = morro.receiveShadow = true;
   scene.add(morro); solidos.push(morro);
   const plato = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo + 0.8, MD.topo + 0.8, 0.5, 20), mat(0x55514a, 1));
   plato.position.set(MD.x, MD.h + 0.2, MD.z); scene.add(plato);
+  // poças de LAVA no platô (pisar QUEIMA — campos tratados no main3d)
+  const lavaMat2 = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
+  [[104, 296, 2.8], [116, 305, 2.4]].forEach(([lx, lz, lr]) => {
+    const poça = new THREE.Mesh(new THREE.CircleGeometry(lr, 16), lavaMat2);
+    poça.rotation.x = -Math.PI / 2; poça.position.set(lx, MD.h + 0.48, lz); scene.add(poça);
+  });
+  // ossadas de vítimas no platô (clima de covil)
+  [[106, 304], [115, 297]].forEach(([lx, lz]) => {
+    const ossada = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 0.25), mat(0xe8e0c8, 0.6));
+    ossada.position.set(lx, MD.h + 0.55, lz); ossada.rotation.y = Math.random() * 2; scene.add(ossada);
+  });
   // ossadas e pedras no pé da montanha (avisos de quem tentou subir)
   [[MD.x - MD.r - 3, MD.z + 6, 1.4], [MD.x + 4, MD.z + MD.r + 3, 1.2], [MD.x + MD.r + 2, MD.z - 5, 1.1]]
     .forEach(([x, z, s]) => add(criaPedra(x, z, s)));

@@ -213,7 +213,7 @@ export function criaTemploSagrado(x, z) {
 
   // BANCOS (2 colunas × 3 fileiras) virados pro altar + tapete central
   const mad = mat(0x6e4a2a);
-  for (const bx of [-3.2, 3.2]) for (let fz = -2; fz <= 6; fz += 4) {
+  for (const bx of [-3.8, 3.8]) for (let fz = -2; fz <= 6; fz += 4) { // corredor central largo (renascer confortável)
     const banco = new THREE.Group(); banco.position.set(bx, 0, fz);
     banco.add(meshBox(3.4, 0.16, 0.9, mad, 0, 0.62, 0));
     banco.add(meshBox(3.4, 0.8, 0.14, mad, 0, 1.0, 0.45));

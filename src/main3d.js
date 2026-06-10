@@ -135,16 +135,32 @@ const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1
 ratos.push(boss);
 // CRIATURAS DA SUPERFÍCIE (região selvagem entre Venore e a cidade distante)
 function areaMon(x, z, r) { return { minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r }; }
-function addMonstro(g, hp, xp, dano, vel, forte, b) {
-  ratos.push({ g, hp, hpMax: hp, xp, dano, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0 });
+function addMonstro(g, hp, xp, dano, vel, forte, b, extra) {
+  ratos.push({ g, hp, hpMax: hp, xp, dano, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, ...extra });
 }
+
+// CAMPOS DE CHÃO (estilo Tibia): pisar na LAVA queima; pisar no LODO do
+// pântano ENVENENA (dano contínuo por 8s). Aranhas/escorpiões/cobras também
+// envenenam ao morder.
+const CAMPOS = [
+  { tipo: 'lava', x: 40, z: 330, r: 7, y: 0 },     // lava do Covil do Dragão
+  { tipo: 'lava', x: 34, z: 324, r: 4, y: 0 },
+  { tipo: 'lava', x: 104, z: 296, r: 2.8, y: 34 }, // poças de lava no platô do Pico
+  { tipo: 'lava', x: 116, z: 305, r: 2.4, y: 34 },
+  { tipo: 'veneno', x: 225, z: -95, r: 8, y: 0 },  // poças do Pântano da Serpente
+  { tipo: 'veneno', x: 215, z: -89, r: 5, y: 0 },
+  { tipo: 'veneno', x: 234, z: -102, r: 6, y: 0 },
+  { tipo: 'veneno', x: 219, z: -105, r: 4, y: 0 },
+  { tipo: 'veneno', x: 236, z: -87, r: 4.5, y: 0 },
+];
+let envenenadoAte = 0, proxTickLava = 0, proxTickVeneno = 0;
 [[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14)));
 [[245, -20], [285, 30]].forEach(([x, z]) => addMonstro(criaCyclops(x, z), 80, 30, 15, 1.2, true, areaMon(x, z, 16)));
 const aX = 170, aZ = 95;
-addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16));
-[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2, 2.4, false, areaMon(aX, aZ, 18)));
+addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16), { veneno: true });
+[[aX - 5, aZ + 4], [aX + 6, aZ - 3], [aX - 3, aZ - 6], [aX + 4, aZ + 6]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 10, 3, 2, 2.4, false, areaMon(aX, aZ, 18), { veneno: true }));
 [[160, 8], [205, -10], [235, 18]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(x, z, 16)));
-[[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14)));
+[[140, -32], [185, 42], [225, -38]].forEach(([x, z]) => addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 14), { veneno: true }));
 // BEHOLDERS (olhos flutuantes) no Vale dos Monstros — fortes, loot raro
 [[255, 95], [175, 120], [300, 70]].forEach(([x, z]) => {
   ratos.push({ g: criaBeholder(x, z), hp: 70, hpMax: 70, xp: 35, dano: 12, vel: 1.4, forte: true, bounds: areaMon(x, z, 18), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Olho do Beholder', icone: '👁️' } });
@@ -170,7 +186,7 @@ const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1
 // cobras na lama do Pântano da Serpente
 [[220, -90], [230, -100], [214, -102]].forEach(([x, z]) => {
   const c = criaCobra(x, z); c.position.y = 0; // a cobra nasce no esgoto (y=-40); aqui vive na superfície
-  addMonstro(c, 28, 10, 8, 1.5, false, areaMon(225, -95, 16));
+  addMonstro(c, 28, 10, 8, 1.5, false, areaMon(225, -95, 16), { veneno: true });
 });
 // mais ladrões no acampamento bandido (além dos que já rondam a estrada)
 [[248, 46], [256, 52]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(252, 48, 14)));
@@ -771,13 +787,10 @@ function saqueia(r) {
   r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);
   mostraMensagem(pegou ? `Saqueou ${pegou} item(s) 🎒` : 'O corpo estava vazio.');
 }
-// CORPO CAÍDO: ao morrer a mochila fica no chão onde você caiu (volte pra recuperar!)
-let corpoCaido = null;
+// CORPOS CAÍDOS: ao morrer a mochila fica no chão onde você caiu, por 10
+// MINUTOS (cada morte deixa o SEU corpo — morrer de novo não apaga o anterior)
+const corposCaidos = [];
 function derrubaMochila(pos, itens) {
-  if (corpoCaido) { // um corpo por vez: o anterior se perde (igual Tibia raiz)
-    scene.remove(corpoCaido.mesh);
-    const i = interativos.indexOf(corpoCaido.it); if (i >= 0) interativos.splice(i, 1);
-  }
   const g = new THREE.Group(); g.position.copy(pos);
   const saco = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.65), MAT_MADEIRA);
   saco.position.y = 0.3; saco.rotation.z = 0.35; saco.castShadow = true; g.add(saco);
@@ -796,12 +809,12 @@ function derrubaMochila(pos, itens) {
       for (const item of itens) for (let q = 0; q < item.qtd; q++) { if (inventario.addItem(item)) dev++; }
       scene.remove(g);
       const ix = interativos.indexOf(it); if (ix >= 0) interativos.splice(ix, 1);
-      corpoCaido = null;
+      const ic = corposCaidos.findIndex((c) => c.it === it); if (ic >= 0) corposCaidos.splice(ic, 1);
       mostraMensagem(`🎒 Você recuperou ${dev} item(s)!`);
     },
   };
   interativos.push(it);
-  corpoCaido = { mesh: g, it };
+  corposCaidos.push({ mesh: g, it, expiraAt: tempo + 600 }); // o corpo dura 10 MINUTOS
 }
 // MORTE estilo Tibia: perde XP (pode descer de nível), derruba a mochila onde
 // caiu (dá pra voltar e recuperar) e RENASCE no Templo Sagrado de Venore.
@@ -1221,9 +1234,39 @@ function loop() {
         if (!gmImortal) { // GM imortal não toma dano
           vida -= Math.max(1, (r.dano || 5) - defesa);
           hud.vida(vida, VIDA_MAX);
+          if (r.veneno && Math.random() < 0.35 && tempo > envenenadoAte) { // mordida venenosa
+            envenenadoAte = tempo + 6;
+            mostraMensagem('🕷️ Você foi ENVENENADO pela mordida! (6s)');
+          }
           if (vida <= 0) { morre(); break; }
         }
       }
+    }
+    // CAMPOS DE CHÃO (Tibia): lava queima na hora; lodo do pântano envenena
+    if (!gmImortal && noChao && !noEsgoto) {
+      for (const c of CAMPOS) {
+        if (Math.abs(avatar.position.y - c.y) > 2.5) continue;
+        if (Math.hypot(avatar.position.x - c.x, avatar.position.z - c.z) > c.r) continue;
+        if (c.tipo === 'lava') {
+          if (tempo > proxTickLava) {
+            proxTickLava = tempo + 0.6;
+            vida -= 8; hud.vida(vida, VIDA_MAX);
+            mostraMensagem('🔥 A LAVA QUEIMA! (-8) Saia já!');
+            if (vida <= 0) morre();
+          }
+        } else if (tempo > envenenadoAte - 7) { // renova o veneno enquanto pisa
+          if (tempo > envenenadoAte) mostraMensagem('🟢 Você pisou no lodo VENENOSO! (8s de veneno)');
+          envenenadoAte = tempo + 8;
+        }
+        break;
+      }
+    }
+    // VENENO ativo: perde 2 de vida por segundo até passar o efeito
+    if (!gmImortal && tempo < envenenadoAte && tempo > proxTickVeneno) {
+      proxTickVeneno = tempo + 1;
+      vida -= 2; hud.vida(vida, VIDA_MAX);
+      mostraMensagem(`🟢 Veneno... (-2) ${Math.ceil(envenenadoAte - tempo)}s`);
+      if (vida <= 0) morre();
     }
     if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 1.5); hud.vida(vida, VIDA_MAX); } // regen lenta
   }
@@ -1238,7 +1281,15 @@ function loop() {
     tochaCarga = Math.min(1, tochaCarga + dt / 120);
   }
   if (pescandoAte > 0 && tempo > pescandoAte) resolvePesca(); // fisgada da pesca
-  // corpos somem em 30s; respawn calibrado (rato 25s, boss 60s)
+  // corpos SEUS (mochila derrubada) expiram em 10 minutos
+  for (let i = corposCaidos.length - 1; i >= 0; i--) {
+    if (tempo > corposCaidos[i].expiraAt) {
+      scene.remove(corposCaidos[i].mesh);
+      const ix = interativos.indexOf(corposCaidos[i].it); if (ix >= 0) interativos.splice(ix, 1);
+      corposCaidos.splice(i, 1);
+    }
+  }
+  // corpos de bicho somem em 30s; respawn calibrado (rato 25s, boss 60s)
   for (const r of ratos) {
     if (r.corpse && tempo > r.despawnAt) { r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25); }
     if (!r.vivo && !r.corpse && r.respawnAt && tempo > r.respawnAt) reviveBicho(r);
