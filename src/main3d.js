@@ -18,7 +18,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto } from './jogo/esgoto.js';
-import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao } from './jogo/ratos.js';
+import { criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 
 const container = document.getElementById('game');
@@ -109,6 +109,23 @@ addMonstro(criaAranhaGigante(aX, aZ), 100, 40, 9, 1.6, true, areaMon(aX, aZ, 16)
 // DRAGÃO (chefão D&D) guardando o Covil do Dragão, ao norte — muito forte, loot lendário
 const DRX = 40, DRZ = 305;
 ratos.push({ g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, bounds: areaMon(DRX, DRZ, 16), y0: 0, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' } });
+// FAUNA DO CAMINHO (cada região com seus bichos, estilo Tibia)
+// matilha de lobos rondando a ponte do rio + lobos na floresta oeste
+[[170, 14], [191, 16], [188, -18], [-96, 26]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
+// ursos na floresta e no sopé das montanhas (fortes)
+[[-104, 42], [72, 192]].forEach(([x, z]) => addMonstro(criaUrso(x, z), 55, 18, 11, 1.7, true, areaMon(x, z, 14)));
+// esqueletos no cemitério abandonado (saem da cova...)
+[[124, -56], [136, -64], [128, -67], [138, -55]].forEach(([x, z]) => addMonstro(criaEsqueleto(x, z), 30, 12, 7, 1.8, false, areaMon(130, -60, 14)));
+// orcs guardando as ruínas (norte e sudoeste)
+[[146, 246], [156, 254]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(150, 250, 14)));
+[[-184, -86], [-176, -94], [-180, -98]].forEach(([x, z]) => addMonstro(criaOrc(x, z), 35, 14, 8, 2.1, false, areaMon(-180, -90, 14)));
+// cobras na lama do Pântano da Serpente
+[[220, -90], [230, -100], [214, -102]].forEach(([x, z]) => {
+  const c = criaCobra(x, z); c.position.y = 0; // a cobra nasce no esgoto (y=-40); aqui vive na superfície
+  addMonstro(c, 28, 10, 8, 1.5, false, areaMon(225, -95, 16));
+});
+// mais ladrões no acampamento bandido (além dos que já rondam a estrada)
+[[248, 46], [256, 52]].forEach(([x, z]) => addMonstro(criaLadrao(x, z), 30, 12, 7, 2.2, false, areaMon(252, 48, 14)));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 18, 2); scene.add(luzTocha); // única luz do esgoto
@@ -171,6 +188,9 @@ const LUGARES_MAPA = [
   { nome: 'Porto', x: 45, z: 64 }, { nome: 'Farol', x: 66, z: 84 }, { nome: 'Ponte', x: 16, z: 80 },
   { nome: 'Thais', x: 320, z: 0 }, { nome: 'Templo', x: 320, z: 19 },
   { nome: 'Ruínas', x: 150, z: 250 }, { nome: 'Dragão', x: 40, z: 330 },
+  { nome: 'Rio Fundo', x: 180, z: 0 }, { nome: 'Torre', x: 122, z: -9 },
+  { nome: 'Fazenda', x: 105, z: 38 }, { nome: 'Cemitério', x: 130, z: -60 },
+  { nome: 'Pântano', x: 225, z: -95 }, { nome: 'Bandidos', x: 252, z: 48 },
 ];
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, alcance: 90 });
 const npcs = criaNPCs(scene, colide);
@@ -237,6 +257,13 @@ const customizar = criaCustomizar({
   aoMudarPet: (t) => trocaPet(t),
   getPet: () => petTipo,
 });
+// TABELA DE COMPRA dos mercadores (estilo Tibia: caçar → saquear → vender)
+const PRECOS = {
+  'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90,
+  'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
+  'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
+};
 function abreDialogo(npc) {
   // vira de frente pro jogador e pausa pra conversar
   npc.g.rotation.y = Math.atan2(avatar.position.x - npc.g.position.x, avatar.position.z - npc.g.position.z);
@@ -247,6 +274,26 @@ function abreDialogo(npc) {
     { texto: 'Novidades?', onClick: () => dialogo.abre(npc.nome, npc.falas.dica, opcoes) },
     { texto: 'Tchau', onClick: () => dialogo.fecha() },
   ];
+  // MERCADORES compram seus tesouros (loot de caça, gemas e peixes)
+  if (npc.prof === 'Mercador' || npc.prof === 'Mercadora') {
+    opcoes.splice(3, 0, { texto: '💰 Vender tesouros', onClick: () => {
+      const v = inventario.vendeItens(PRECOS);
+      if (v.itens) { ouro += v.ouro; hud.ouro(ouro); }
+      dialogo.abre(npc.nome, v.itens
+        ? `Negócio fechado! ${v.itens} item(s) por ${v.ouro} 🪙. Volte quando caçar mais!`
+        : 'Hmm... você não tem nada que me interesse. Caça, gemas e peixes pagam bem!', opcoes);
+    } });
+  }
+  // CURANDEIRA vende poção de vida
+  if (npc.prof === 'Curandeira') {
+    opcoes.splice(3, 0, { texto: '🧪 Comprar poção (8🪙)', onClick: () => {
+      if (ouro >= 8) {
+        ouro -= 8; hud.ouro(ouro);
+        inventario.addItem({ nome: 'Poção de Vida', icone: '🧪', slot: 'pocao', usavel: 'pocao' });
+        dialogo.abre(npc.nome, 'Aqui está. Clique nela na mochila pra beber (+35 ❤️).', opcoes);
+      } else dialogo.abre(npc.nome, `Custa 8 🪙 e você tem ${ouro}. Venda seu loot pro Otto!`, opcoes);
+    } });
+  }
   const saud = npc.humor === 'bom'
     ? `Saudações! Sou ${npc.nome}, ${npc.prof.toLowerCase()} de Venore. 😊`
     : `${npc.nome}, ${npc.prof.toLowerCase()}. O que você quer?`;
@@ -392,6 +439,12 @@ const ARMAS = [
 ];
 function aoEquipar(item) {
   if (item.usavel === 'tocha') { alternaTocha(); return false; } // acende/apaga, não consome
+  if (item.usavel === 'pocao') { // poção de vida: cura na hora (consome 1)
+    if (vida >= VIDA_MAX) { mostraMensagem('Você já está com a vida cheia. ❤️'); return false; }
+    vida = Math.min(VIDA_MAX, vida + 35); hud.vida(vida, VIDA_MAX);
+    mostraMensagem('🧪 Glub glub... +35 de vida! ❤️');
+    return true;
+  }
   if (item.arma) { // arma de mão
     armado = true; danoArma = item.dano; equipados.maoDir = item; poeArmaNaMao();
     inventario.equipa('maoDir', { nome: item.nome, icone: item.icone });
@@ -442,6 +495,7 @@ const LOOT_TAB = [
   { nome: 'Couro', icone: '🟫', ch: 0.12 },
   { nome: 'Erva', icone: '🌿', ch: 0.12 },
   { nome: 'Frasco', icone: '⚗️', ch: 0.05 },
+  { nome: 'Poção de Vida', icone: '🧪', ch: 0.07, slot: 'pocao', usavel: 'pocao' }, // clicar na mochila cura
 ];
 // tesouros raros (gemas, joias, bolsa) — bichos fortes/boss e chance baixa nos comuns
 const LOOT_RARO = [
@@ -452,7 +506,7 @@ const LOOT_RARO = [
 const pickRaro = () => ({ ...LOOT_RARO[Math.floor(Math.random() * LOOT_RARO.length)] });
 function rollLoot(ehBoss) {
   const out = [];
-  LOOT_TAB.forEach((it) => { if (Math.random() < (ehBoss ? it.ch + 0.2 : it.ch)) out.push({ nome: it.nome, icone: it.icone }); });
+  LOOT_TAB.forEach((it) => { if (Math.random() < (ehBoss ? it.ch + 0.2 : it.ch)) out.push({ ...it }); });
   if (ehBoss) {
     out.push({ nome: 'Presa do Boss', icone: '🦷' });
     if (Math.random() < 0.55) out.push(pickRaro());                                            // gema/joia
@@ -555,6 +609,13 @@ const DISTRITOS = [
   { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
   { nome: 'Terras do Dragão', x: 40, z: 300, raio: 45 },
   { nome: 'Covil do Dragão', x: 40, z: 330, raio: 22 },
+  { nome: 'Ponte do Rio Fundo', x: 180, z: 0, raio: 12 },
+  { nome: 'Rio Fundo', x: 180, z: -50, raio: 14 },
+  { nome: 'Torre de Vigia', x: 122, z: -9, raio: 11 },
+  { nome: 'Fazenda do Caminho', x: 105, z: 38, raio: 17 },
+  { nome: 'Cemitério Abandonado', x: 130, z: -60, raio: 17 },
+  { nome: 'Pântano da Serpente', x: 225, z: -95, raio: 26 },
+  { nome: 'Acampamento Bandido', x: 252, z: 48, raio: 15 },
 ];
 let localEl, localNome = '';
 function atualizaLocal() {

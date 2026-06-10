@@ -104,5 +104,18 @@ export function criaInventario({ aoEquipar } = {}) {
       if (mochila.length >= N_MOCHILA) return false;
       mochila.push({ ...item, qtd: 1 }); renderMochila(); return true; // guarda props (slot/defesa/id)
     },
+    // VENDE pro mercador: remove da mochila tudo que estiver na tabela {nome: preço}
+    // e devolve { ouro, itens } (estilo Tibia: caçar → saquear → vender).
+    vendeItens(precos) {
+      let ouro = 0, itens = 0;
+      for (let i = mochila.length - 1; i >= 0; i--) {
+        const it = mochila[i], preco = precos[it.nome];
+        if (!preco) continue;
+        ouro += preco * it.qtd; itens += it.qtd;
+        mochila.splice(i, 1);
+      }
+      if (itens) renderMochila();
+      return { ouro, itens };
+    },
   };
 }

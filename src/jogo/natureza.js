@@ -257,6 +257,181 @@ export function criaCarroca(x, z, rot = 0) {
   return { grupo: g, colisores: [{ minX: x - 1.8, maxX: x + 1.8, minZ: z - 1.2, maxZ: z + 1.2 }] };
 }
 
+// --- RIO (corre ao longo de Z; corta o caminho entre as cidades) com vão p/ ponte ---
+export function criaRio({ zIni, zFim, x, larg = 8, gapZ = null, gapW = 8 }) {
+  const g = new THREE.Group();
+  const comp = zFim - zIni, cz = (zIni + zFim) / 2;
+  const margem = new THREE.Mesh(new THREE.BoxGeometry(larg + 1.6, 0.06, comp), mat(0x7a6a4a, 1));
+  margem.position.set(x, 0.03, cz); margem.receiveShadow = true; g.add(margem);
+  const agua = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.06, comp), AGUA);
+  agua.position.set(x, 0.09, cz); g.add(agua);
+  const colisores = [];
+  if (gapZ == null) {
+    colisores.push({ minX: x - larg / 2, maxX: x + larg / 2, minZ: zIni, maxZ: zFim });
+  } else {
+    colisores.push({ minX: x - larg / 2, maxX: x + larg / 2, minZ: zIni, maxZ: gapZ - gapW / 2 });
+    colisores.push({ minX: x - larg / 2, maxX: x + larg / 2, minZ: gapZ + gapW / 2, maxZ: zFim });
+  }
+  return { grupo: g, colisores };
+}
+
+// --- PONTE DE PEDRA (atravessa o rio no sentido X; parapeitos guiam a travessia) ---
+export function criaPonteDePedra(x, z, comp = 12) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = mat(0x8a8276, 1), pedraEsc = mat(0x6a6258, 1);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.3, 5.4), pedra);
+  deck.position.y = 0.2; deck.castShadow = deck.receiveShadow = true; g.add(deck);
+  // arco por baixo (vão da água)
+  const arco = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 4.6, 12, 1, false, 0, Math.PI), pedraEsc);
+  arco.rotation.z = Math.PI / 2; arco.rotation.y = Math.PI / 2; arco.position.y = 0.1; g.add(arco);
+  const colisores = [];
+  [-2.6, 2.6].forEach((oz) => { // parapeitos com colisão (não cai na água)
+    const par = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.9, 0.4), pedraEsc);
+    par.position.set(0, 0.75, oz); par.castShadow = true; g.add(par);
+    colisores.push({ minX: x - comp / 2, maxX: x + comp / 2, minZ: z + oz - 0.2, maxZ: z + oz + 0.2 });
+  });
+  [[-comp / 2 + 0.4, -2.6], [comp / 2 - 0.4, -2.6], [-comp / 2 + 0.4, 2.6], [comp / 2 - 0.4, 2.6]].forEach(([px, pz]) => {
+    const pil = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.5, 0.7), pedra);
+    pil.position.set(px, 0.85, pz); pil.castShadow = true; g.add(pil);
+  });
+  return { grupo: g, colisores };
+}
+
+// --- TORRE DE VIGIA da estrada (posto de guarda; ameias + braseiro) ---
+export function criaTorreVigia(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = mat(0x8a8276, 1), pedraEsc = mat(0x6a6258, 1);
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 11, 10), pedra);
+  corpo.position.y = 5.5; corpo.castShadow = corpo.receiveShadow = true; g.add(corpo);
+  const topo = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 1.2, 10), pedraEsc);
+  topo.position.y = 11.6; g.add(topo);
+  for (let i = 0; i < 8; i++) { // ameias
+    const a = (i / 8) * Math.PI * 2;
+    const am = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 0.5), pedra);
+    am.position.set(Math.cos(a) * 2.5, 12.6, Math.sin(a) * 2.5); am.rotation.y = -a; g.add(am);
+  }
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.6, 0.3), mat(0x4a2f1a));
+  porta.position.set(0, 1.3, 2.5); g.add(porta);
+  [3.6, 6.4, 9.2].forEach((y) => { const seteira = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.9, 0.2), mat(0x14100c)); seteira.position.set(0, y, 2.45); g.add(seteira); });
+  // braseiro aceso no topo (farol da estrada)
+  const taca = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.4, 0.5, 8), pedraEsc); taca.position.y = 13.3; g.add(taca);
+  const fogo = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.9, 6), new THREE.MeshStandardMaterial({ color: 0xff8a2a, emissive: 0xff5a1a, emissiveIntensity: 1 }));
+  fogo.position.y = 13.9; g.add(fogo);
+  return { grupo: g, colisores: [{ minX: x - 2.4, maxX: x + 2.4, minZ: z - 2.4, maxZ: z + 2.4 }] };
+}
+
+// --- CEMITÉRIO abandonado (lápides, cruzes, cova aberta; clima Tibia) ---
+export function criaCemiterio(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = mat(0x7d786e, 1), pedraEsc = mat(0x5a564e, 1), terra = mat(0x3e3228, 1);
+  const chao = new THREE.Mesh(new THREE.BoxGeometry(26, 0.12, 20), mat(0x4e5743, 1));
+  chao.position.y = 0.05; chao.receiveShadow = true; g.add(chao);
+  const colisores = [];
+  // muretas (3 lados; entrada ao sul)
+  [[0, -10, 26, 0.6], [-13, 0, 0.6, 20], [13, 0, 0.6, 20]].forEach(([cx, cz, w, d]) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1.1, d), pedraEsc);
+    m.position.set(cx, 0.55, cz); m.castShadow = true; g.add(m);
+    colisores.push({ minX: x + cx - w / 2, maxX: x + cx + w / 2, minZ: z + cz - d / 2, maxZ: z + cz + d / 2 });
+  });
+  // portão de entrada (2 pilares + arco)
+  [[-2.2, 10], [2.2, 10]].forEach(([px, pz]) => { const pil = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.6, 0.8), pedra); pil.position.set(px, 1.3, pz); pil.castShadow = true; g.add(pil); });
+  const arco = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.5, 0.6), pedraEsc); arco.position.set(0, 2.8, 10); g.add(arco);
+  // lápides em fileiras (mistura pedra/cruz, algumas tortas)
+  for (let fx = -10; fx <= 10; fx += 4) for (let fz = -7; fz <= 5; fz += 4) {
+    if (Math.abs(fx) < 3 && fz > 3) continue; // corredor da entrada
+    const tipo = Math.random();
+    if (tipo < 0.5) {
+      const lap = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.3, 0.22), pedra);
+      lap.position.set(fx, 0.65, fz); lap.rotation.z = (Math.random() - 0.5) * 0.18; lap.castShadow = true; g.add(lap);
+      const topoL = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.22, 10, 1, false, 0, Math.PI), pedra);
+      topoL.rotation.z = Math.PI / 2; topoL.rotation.y = Math.PI / 2; topoL.position.set(fx, 1.3, fz); g.add(topoL);
+    } else {
+      const v = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.2, 0.18), pedra); v.position.set(fx, 0.7, fz); v.rotation.z = (Math.random() - 0.5) * 0.2; g.add(v);
+      const h = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.16, 0.18), pedra); h.position.set(fx, 1.0, fz); h.rotation.z = v.rotation.z; g.add(h);
+    }
+    const monte = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 2.0), terra); monte.position.set(fx, 0.12, fz + 1.2); g.add(monte);
+  }
+  // cova aberta (de onde os esqueletos saem...)
+  const cova = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 2.2), mat(0x0a0806, 1)); cova.position.set(7, 0.12, 6); g.add(cova);
+  return { grupo: g, colisores };
+}
+
+// --- PÂNTANO (poças verdes, névoa de juncos, troncos podres) ---
+export function criaPantano(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const lama = new THREE.MeshStandardMaterial({ color: 0x4a5a30, roughness: 0.4, metalness: 0.15, transparent: true, opacity: 0.9 });
+  const chao = new THREE.Mesh(new THREE.CircleGeometry(22, 24), mat(0x55603e, 1));
+  chao.rotation.x = -Math.PI / 2; chao.position.y = 0.04; chao.receiveShadow = true; g.add(chao);
+  [[0, 0, 8], [-10, 6, 5], [9, -7, 6], [-6, -10, 4], [11, 8, 4.5]].forEach(([px, pz, r]) => {
+    const poca = new THREE.Mesh(new THREE.CircleGeometry(r, 18), lama);
+    poca.rotation.x = -Math.PI / 2; poca.position.set(px, 0.1, pz); g.add(poca);
+  });
+  // troncos podres atravessados
+  [[-4, 3, 0.7], [6, 6, -0.4], [2, -9, 1.2]].forEach(([px, pz, rot]) => {
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 3.6, 7), mat(0x4a3a26, 1));
+    tr.position.set(px, 0.3, pz); tr.rotation.set(Math.PI / 2, 0, rot); tr.castShadow = true; g.add(tr);
+  });
+  return { grupo: g, colisores: [] };
+}
+
+// --- FAZENDA: plantação em fileiras + espantalho + cerca (vida rural no caminho) ---
+export function criaFazenda(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const colisores = [];
+  const terraM = mat(0x4a3526, 1), trigoM = mat(0xd8b04a, 1), mad = mat(0x6e4a2a);
+  // 5 fileiras de trigo (canteiro de terra + tufos dourados)
+  for (let i = 0; i < 5; i++) {
+    const fz = -8 + i * 4;
+    const leira = new THREE.Mesh(new THREE.BoxGeometry(18, 0.25, 1.6), terraM);
+    leira.position.set(0, 0.12, fz); leira.receiveShadow = true; g.add(leira);
+    for (let k = -8; k <= 8; k += 2) {
+      const tufo = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.26, 0.9 + Math.random() * 0.4, 5), trigoM);
+      tufo.position.set(k, 0.65, fz); g.add(tufo);
+    }
+  }
+  // cerca de madeira em volta (com porteira ao sul)
+  function cerca(cx, cz, w, d) {
+    const trave = new THREE.Mesh(new THREE.BoxGeometry(Math.max(w, 0.14), 0.14, Math.max(d, 0.14)), mad);
+    trave.position.set(cx, 0.85, cz); g.add(trave);
+    const trave2 = trave.clone(); trave2.position.y = 0.45; g.add(trave2);
+    colisores.push({ minX: x + cx - w / 2 - 0.1, maxX: x + cx + w / 2 + 0.1, minZ: z + cz - d / 2 - 0.1, maxZ: z + cz + d / 2 + 0.1 });
+  }
+  cerca(0, -11, 21, 0.1); cerca(-10.5, 0, 0.1, 22); cerca(10.5, 0, 0.1, 22);
+  cerca(-7, 11, 7, 0.1); cerca(7, 11, 7, 0.1); // vão da porteira no meio
+  for (let px = -10.5; px <= 10.5; px += 3.5) [[px, -11], [px, 11]].forEach(([cx, cz]) => {
+    if (cz > 0 && Math.abs(cx) < 3) return;
+    const poste = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.1, 0.18), mad); poste.position.set(cx, 0.55, cz); g.add(poste);
+  });
+  // ESPANTALHO (braços abertos, chapéu de palha, corvo no ombro)
+  const esp = new THREE.Group(); esp.position.set(0, 0, 0);
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.6, 6), mad); mastro.position.y = 1.3; esp.add(mastro);
+  const bracos = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.2, 6), mad); bracos.rotation.z = Math.PI / 2; bracos.position.y = 1.9; esp.add(bracos);
+  const camisa = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.4), mat(0x8a4632)); camisa.position.y = 1.6; esp.add(camisa);
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), trigoM); cab.position.y = 2.45; esp.add(cab);
+  const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 10), mat(0xc8a24e, 1)); aba.position.y = 2.66; esp.add(aba);
+  const copa = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 10), mat(0xc8a24e, 1)); copa.position.y = 2.88; esp.add(copa);
+  const corvo = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), mat(0x14141a)); corvo.position.set(0.8, 2.05, 0); corvo.scale.z = 1.5; esp.add(corvo);
+  g.add(esp);
+  colisores.push({ minX: x - 0.4, maxX: x + 0.4, minZ: z - 0.4, maxZ: z + 0.4 });
+  return { grupo: g, colisores };
+}
+
+// --- MARCO DE DISTÂNCIA (pedra de légua com a metragem; estilo estrada real) ---
+export function criaMarcoDistancia(x, z, texto) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
+  const c = cnv.getContext('2d');
+  c.fillStyle = '#8a8276'; c.fillRect(0, 0, 128, 128);
+  c.fillStyle = '#2e2a24'; c.font = 'bold 26px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  texto.split('\n').forEach((l, i) => c.fillText(l, 64, 48 + i * 30));
+  const pedra = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.3, 0.5),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnv), roughness: 1 }));
+  pedra.position.y = 0.6; pedra.rotation.z = (Math.random() - 0.5) * 0.08; pedra.castShadow = true; g.add(pedra);
+  const baseM = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.25, 0.7), mat(0x6a6258, 1));
+  baseM.position.y = 0.12; g.add(baseM);
+  return { grupo: g, colisores: [{ minX: x - 0.6, maxX: x + 0.6, minZ: z - 0.4, maxZ: z + 0.4 }] };
+}
+
 // --- árvore morta/carbonizada (cenário das terras do dragão) ---
 export function criaArvoreMorta(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

@@ -175,6 +175,105 @@ export function criaEscorpiao(x, z) {
   return g;
 }
 
+// LOBO: quadrúpede cinza, rápido, caça em bando (florestas e beira de estrada).
+export function criaLobo(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x6a6a70, roughness: 0.85 });
+  const escuro = mat(0x44444a);
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.5, 1.25), corpoMat);
+  corpo.position.y = 0.75; corpo.castShadow = true; g.add(corpo);
+  const peito = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.55, 0.5), corpoMat);
+  peito.position.set(0, 0.78, 0.5); g.add(peito);
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.4, 0.5), corpoMat);
+  cabeca.position.set(0, 1.05, 0.95); cabeca.castShadow = true; g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.3), escuro);
+  focinho.position.set(0, 0.98, 1.3); g.add(focinho);
+  [-0.14, 0.14].forEach((ox) => {
+    const or = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 4), escuro); or.position.set(ox, 1.32, 0.85); g.add(or);
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), mat(0xe0c020)); olho.position.set(ox * 0.8, 1.1, 1.2); g.add(olho);
+  });
+  const patas = [];
+  [[-0.2, 0.45], [0.2, 0.45], [-0.2, -0.45], [0.2, -0.45]].forEach(([px, pz]) => {
+    const geo = new THREE.BoxGeometry(0.14, 0.55, 0.14); geo.translate(0, -0.27, 0);
+    const p = new THREE.Mesh(geo, escuro); p.position.set(px, 0.55, pz); g.add(p); patas.push(p);
+  });
+  const rabo = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.55), escuro);
+  rabo.position.set(0, 0.85, -0.85); rabo.rotation.x = 0.45; g.add(rabo);
+  g.userData = { patas, rabo, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
+// URSO: parrudo e lento, bate forte (florestas e sopé das montanhas).
+export function criaUrso(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.9 });
+  const escuro = mat(0x3a2412);
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 1.8), corpoMat);
+  corpo.position.y = 1.0; corpo.castShadow = true; g.add(corpo);
+  const giba = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.4, 0.8), corpoMat); // corcova
+  giba.position.set(0, 1.6, -0.3); g.add(giba);
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.62, 0.66), corpoMat);
+  cabeca.position.set(0, 1.45, 1.15); cabeca.castShadow = true; g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.3), escuro);
+  focinho.position.set(0, 1.32, 1.55); g.add(focinho);
+  [-0.22, 0.22].forEach((ox) => {
+    const or = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), escuro); or.position.set(ox, 1.8, 1.0); g.add(or);
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), mat(0x141008)); olho.position.set(ox * 0.7, 1.52, 1.48); g.add(olho);
+  });
+  const patas = [];
+  [[-0.4, 0.6], [0.4, 0.6], [-0.4, -0.6], [0.4, -0.6]].forEach(([px, pz]) => {
+    const geo = new THREE.BoxGeometry(0.3, 0.6, 0.34); geo.translate(0, -0.3, 0);
+    const p = new THREE.Mesh(geo, escuro); p.position.set(px, 0.6, pz); g.add(p); patas.push(p);
+  });
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
+// ESQUELETO: morto-vivo do cemitério (ossos brancos, olheiras fundas).
+export function criaEsqueleto(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0xe6e0d0, roughness: 0.7 });
+  const sombra = mat(0x1a1a1a);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.32), corpoMat);
+  torso.position.y = 1.45; torso.castShadow = true; g.add(torso);
+  for (let i = 0; i < 3; i++) { // costelas marcadas
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.07, 0.36), sombra);
+    c.position.set(0, 1.25 + i * 0.22, 0); g.add(c);
+  }
+  const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.3), corpoMat); pelvis.position.y = 0.92; g.add(pelvis);
+  const cranio = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.52, 0.5), corpoMat);
+  cranio.position.y = 2.2; cranio.castShadow = true; g.add(cranio);
+  const queixo = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.4), corpoMat); queixo.position.set(0, 1.92, 0.04); g.add(queixo);
+  [-0.12, 0.12].forEach((ox) => { const olho = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.16, 0.06), sombra); olho.position.set(ox, 2.26, 0.26); g.add(olho); });
+  const nariz = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.06), sombra); nariz.position.set(0, 2.1, 0.26); g.add(nariz);
+  [-0.4, 0.4].forEach((ox) => { const geo = new THREE.BoxGeometry(0.13, 0.8, 0.13); geo.translate(0, -0.4, 0); const b = new THREE.Mesh(geo, corpoMat); b.position.set(ox, 1.85, 0); b.castShadow = true; g.add(b); });
+  const patas = [];
+  [-0.16, 0.16].forEach((ox) => { const geo = new THREE.BoxGeometry(0.15, 0.8, 0.15); geo.translate(0, -0.4, 0); const p = new THREE.Mesh(geo, corpoMat); p.position.set(ox, 0.82, 0); p.castShadow = true; g.add(p); patas.push(p); });
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
+// ORC: guerreiro verde com presas e machadinha (guarda as ruínas).
+export function criaOrc(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const corpoMat = new THREE.MeshStandardMaterial({ color: 0x4a7a2a, roughness: 0.85 });
+  const couro = mat(0x5a4226);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.0, 0.55), corpoMat);
+  torso.position.y = 1.35; torso.castShadow = true; g.add(torso);
+  const colete = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.6, 0.6), couro); colete.position.y = 1.2; g.add(colete);
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.6, 0.6), corpoMat);
+  cabeca.position.y = 2.2; cabeca.castShadow = true; g.add(cabeca);
+  olhos(g, 0.15, 2.28, 0.32, 0.06, 0xd03020);
+  [-0.14, 0.14].forEach((ox) => { const presa = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.18, 4), mat(0xeee0c0)); presa.position.set(ox, 2.0, 0.3); g.add(presa); });
+  [-0.6, 0.6].forEach((ox) => { const geo = new THREE.BoxGeometry(0.26, 0.9, 0.26); geo.translate(0, -0.45, 0); const b = new THREE.Mesh(geo, corpoMat); b.position.set(ox, 1.75, 0); b.castShadow = true; g.add(b); });
+  const patas = [];
+  [-0.24, 0.24].forEach((ox) => { const geo = new THREE.BoxGeometry(0.3, 0.85, 0.3); geo.translate(0, -0.42, 0); const p = new THREE.Mesh(geo, couro); p.position.set(ox, 0.85, 0); p.castShadow = true; g.add(p); patas.push(p); });
+  const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.0, 6), couro); cabo.position.set(0.75, 1.0, 0.15); g.add(cabo);
+  const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.06), mat(0xb8bcc4, 0.35)); lamina.position.set(0.75, 1.5, 0.15); g.add(lamina);
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
 // BEHOLDER: olho flutuante com tentáculos-olho (clássico Tibia). Paira no ar.
 export function criaBeholder(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

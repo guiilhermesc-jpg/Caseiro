@@ -47,11 +47,16 @@ const ROSTER = [
     falas: { trabalho: 'Caço nas terras selvagens entre as duas cidades.', dica: 'O ciclope do vale dá um bom couro — se você sobreviver a ele.' } },
   { nome: 'Bibi', prof: 'Aldeã', post: { x: 326, z: -10 }, home: { x: 332, z: -12 }, cor: 0xc05a7a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Nasci em Thais e nunca saí. Pra que sair de um lugar tão bonito?', dica: 'A fonte da praça nunca seca, dizem que é abençoada.' } },
+  // --- moradores do CAMINHO (entre as duas cidades) ---
+  { nome: 'Bruno', prof: 'Vigia da Estrada', post: { x: 122, z: -2 }, home: { x: 122, z: -6 }, cor: 0x2a3a6a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
+    falas: { trabalho: 'Vigio a estrada do alto da torre. O braseiro fica aceso a noite toda.', dica: 'Daqui até Thais são uns 165 passos. Cuidado na ponte: lobos rondam, e além do rio há bandidos.' } },
+  { nome: 'Gil', prof: 'Lavrador', post: { x: 105, z: 53 }, home: { x: 105, z: 50 }, cor: 0x8a6a2a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'Planto trigo nesta terra desde moleque. O espantalho? Chama-se Zé.', dica: 'Não vá ao cemitério depois do anoitecer. Os mortos lá não descansam.' } },
 ];
 
 // casas (residências) e quem trabalha à noite (lojistas/guarda continuam no posto)
 const HOMES = [[28, 28], [-28, 28], [28, -28], [-28, -28], [60, 6], [-60, 6], [6, 60], [6, -60], [34, 34], [-34, 34], [34, -34]];
-const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara']);
+const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno']);
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');

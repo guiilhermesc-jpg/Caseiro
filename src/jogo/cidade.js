@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
-import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao } from './natureza.js';
+import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia } from './natureza.js';
 import { criaCasaInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 
@@ -264,7 +264,48 @@ export function criaCidade() {
   add(criaCarroca(200, -12, -0.6));
   add(criaBarril(204, -16));
   // arvoredo ladeando a estrada (sombra na jornada)
-  [[100, -16], [140, 18], [175, -18], [255, 16], [270, -14]].forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+  [[100, -16], [140, 18], [167, -18], [255, 16], [270, -14]].forEach(([x, z], i) => add(i % 2 ? criaArvore(x, z) : criaPinheiro(x, z)));
+
+  // === RIO FUNDO — corta o caminho na METADE exata da viagem (x=180);
+  // a PONTE DE PEDRA é a única travessia (ponto estratégico, estilo Tibia)
+  add(criaRio({ zIni: -130, zFim: 70, x: 180, larg: 8, gapZ: 0, gapW: 8 }));
+  add(criaPonteDePedra(180, 0, 13));
+  [[176, 10], [185, -12], [177, -40], [184, 40], [176, 62]].forEach(([x, z]) => add(criaJunco(x, z)));
+  add(criaSalgueiro(172, 26)); add(criaSalgueiro(189, -58));
+  [[174, -90, 1.2], [187, 52, 1.0]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
+
+  // === TORRE DE VIGIA — guarda observa a estrada (1º terço do caminho)
+  add(criaTorreVigia(122, -9));
+  add(criaBandeira(126, -12, 0x2a5a9c));
+
+  // === FAZENDA DO CAMINHO — vida rural antes do rio (norte da estrada)
+  add(criaFazenda(105, 38));
+  add(criaPoco(93, 52));
+  add(criaCarroca(118, 50, 0.8));
+
+  // === CEMITÉRIO ABANDONADO — desvio sombrio ao sul (esqueletos à noite...)
+  add(criaCemiterio(130, -60));
+  add(criaPlaca(124, -46, 'Cemitério', 0));
+  [[120, -52], [142, -54], [138, -70]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
+
+  // === PÂNTANO DA SERPENTE — brejo a sudeste, além do rio (cobras!)
+  add(criaPantano(225, -95));
+  [[212, -86], [236, -90], [222, -108], [231, -82], [214, -104]].forEach(([x, z]) => add(criaJunco(x, z)));
+  [[208, -94], [238, -102]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
+  add(criaPlaca(213, -78, 'Pântano — cuidado', -0.4));
+
+  // === ACAMPAMENTO BANDIDO — covil dos ladrões da estrada (nordeste)
+  add(criaFogueira(252, 48));
+  add(criaBarraca(247, 52, 0.7, 0x3a3a42));
+  add(criaBarraca(258, 51, -0.5, 0x3a3a42));
+  add(criaBau(252, 43, 0.4));
+  add(criaCaixa(246, 46)); add(criaBarril(259, 45));
+
+  // === MARCOS DE DISTÂNCIA na estrada (metragem REAL calculada do mapa)
+  // praça de Venore fica em (0,0); portão de Thais em (286,0)
+  add(criaMarcoDistancia(110, -6, 'THAIS 176\nVENORE 110'));
+  add(criaMarcoDistancia(192, 6, 'THAIS 94\nVENORE 192'));
+  add(criaMarcoDistancia(240, 6, 'THAIS 46\nVENORE 240'));
 
   // === THAIS (cidade distante ENTRÁVEL) — muralha + portão + templo + praça ===
   add(criaThais(320, 0));
