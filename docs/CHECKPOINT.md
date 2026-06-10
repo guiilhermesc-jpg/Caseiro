@@ -143,6 +143,12 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 36. ✅ 🔄 **Rotações suaves** (`giraSuave` em avatar.js) no jogador/NPCs/monstros + 🎨 **textura de telha** em todos os telhados duas-águas.
 37. ℹ️ **Versão instalável (launcher tipo Rubinot)**: decisão = ficar no navegador durante o desenvolvimento; empacotar depois com **Electron/Tauri** (zero perda de código; o app embute o mesmo jogo + auto-update). Documentado pro maestro.
 
+**JÁ FEITO (8ª rodada — campos de chão, corpos 10min, dragão 50x, visual):**
+38. ✅ 🔥 **Campos de chão estilo Tibia** (`CAMPOS` no main3d): LAVA queima -8/0.6s (covil + 2 poças no platô do Pico), LODO do pântano envenena (8s, -2/s, renova pisando); **mordida venenosa** de aranha/escorpião/cobra (35%, 6s).
+39. ✅ ⏳ **Corpos da morte duram 10 MINUTOS** e cada morte deixa o seu (array `corposCaidos`); o "não renasceu" relatado era o baú na porta do templo (já corrigido); corredor do templo alargado.
+40. ✅ 🐲 **Dragão 50x**: escala 1.7× (Lord 2.0×), chifres curvos, mandíbula com dentes, barriga blindada, olhos brilhando, asas com dedos ósseos, garras, cauda com lâmina, espinhos; platô topo 8→12.
+41. ✅ 🎨 **Visual da vila**: ruas CALÇADAS (textura de pedra na grade toda), grama com manchas de terra/flores, sombras 2048 no PC.
+
 **PENDÊNCIAS / PRÓXIMOS:**
 - 🚀 **PUBLICAR**: o deploy continua sendo ação do maestro (bloqueio de segurança). Rodar: carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`.
 - 🔒 **Rotacionar token Cloudflare** (ação do maestro no painel: revogar antigo, gerar novo, atualizar `.env`).
