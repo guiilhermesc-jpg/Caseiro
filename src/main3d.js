@@ -196,7 +196,7 @@ const aranhaMae = addMonstro(criaAranhaGigante(aX, aZ), 300, 150, 20, 3.2, true,
 // DRAGÃO VERDE (estilo Tibia) no TOPO da Montanha do Dragão — suba a rampa pra
 // enfrentá-lo. De tempos em tempos ele VOA sobre Venore atrás de comida.
 const DRX = montanhaDragao.x, DRZ = montanhaDragao.z, DRY = montanhaDragao.h;
-const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 16, danoTiro: 18, cadencia: 4 };
+const dragao = { g: criaDragao(DRX, DRZ), hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.6, forte: true, boss: true, dragao: true, lord: false, bounds: areaMon(DRX, DRZ, montanhaDragao.topo - 1), y0: DRY, alvo: { x: DRX, z: DRZ }, pausa: Math.random() * 2, tempo: 0, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 16, danoTiro: 18, cadencia: 4, tiroAltura: 10.5 };
 dragao.g.position.y = DRY;
 ratos.push(dragao);
 const vooDragao = { ativo: false, t: 0, proximo: 45 + Math.random() * 50 }; // 1º voo logo no começo (pra você ver!)
@@ -833,7 +833,7 @@ aplicaTexturaReal(MAT_LAVA_CHAO, 'lava', 1.5, 1.5, true);
 function disparaBicho(r) {
   const fogo = r.atira === 'fogo';
   const m = new THREE.Mesh(new THREE.SphereGeometry(fogo ? 0.5 : 0.36, 10, 10), fogo ? MAT_PROJ_FOGO : MAT_PROJ_MAGIA);
-  const de = r.g.position.clone(); de.y += fogo ? 7.4 : 4.2; // sai da boca/olho
+  const de = r.g.position.clone(); de.y += r.tiroAltura ?? (fogo ? 7.4 : 4.2); // sai da boca/olho
   const ate = avatar.position.clone(); ate.y += 1.4;          // mira onde você ESTÁ (corre pra esquivar!)
   m.position.copy(de); scene.add(m);
   projeteis.push({ m, de, ate, t: 0, dur: Math.max(0.3, de.distanceTo(ate) / 22), dano: r.danoTiro || 10, fogo });
@@ -953,11 +953,11 @@ function reviveBicho(r) {
     r.g.position.y = DRY;
     scene.add(r.g);
     if (r.lord) {
-      r.hpMax = 1100; r.xp = 600; r.dano = 55; r.vel = 1.9; r.danoTiro = 40; r.cadencia = 3;
+      r.hpMax = 1100; r.xp = 600; r.dano = 55; r.vel = 1.9; r.danoTiro = 40; r.cadencia = 3; r.tiroAltura = 12.4;
       r.lootEspecial = { nome: 'Coração de Dragão', icone: '❤️‍🔥' };
       mostraMensagem('🔥 Um DRAGON LORD pousou no pico da montanha!');
     } else {
-      r.hpMax = 220; r.xp = 120; r.dano = 22; r.vel = 1.6; r.danoTiro = 18; r.cadencia = 4;
+      r.hpMax = 220; r.xp = 120; r.dano = 22; r.vel = 1.6; r.danoTiro = 18; r.cadencia = 4; r.tiroAltura = 10.5;
       r.lootEspecial = { nome: 'Escama de Dragão', icone: '🐲' };
       mostraMensagem('🐲 Um dragão voltou ao pico da montanha.');
     }

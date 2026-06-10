@@ -481,88 +481,171 @@ export function criaBeholder(x, z) {
   return g;
 }
 
-// DRAGÃO (chefão) — VERSÃO 50x: GRANDE e detalhado (chifres curvos, mandíbula
-// com dentes, barriga blindada, asas com dedos, garras, cauda com lâmina).
+// DRAGÃO low-poly premium: silhueta de RPG/miniatura, asa triangulada enorme,
+// pescoço em S, cabeça angular com chifres, sela e garras visíveis.
 // VERDE = dragão comum (estilo Tibia); lord=true = DRAGON LORD vermelho 5×.
 export function criaDragao(x, z, lord = false) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const s = lord ? 2.0 : 1.7; // ESCALA: dragão imponente (o antigo era pequeno)
-  const corpoMat = new THREE.MeshStandardMaterial({ color: lord ? 0x9a2a1a : 0x3a7a2a, roughness: 0.55 });
-  const escuro = mat(lord ? 0x5a1810 : 0x24481a);
-  const barriga = mat(lord ? 0xd8a05a : 0xc8c07a, 0.7);
-  const osso = mat(0xe8e0c8, 0.6);
-  const olhoMat = new THREE.MeshStandardMaterial({ color: lord ? 0xff4a00 : 0xffd000, emissive: lord ? 0xff3000 : 0xcc9900, emissiveIntensity: 0.8 });
+  const s = lord ? 2.18 : 1.86;
+  const corpoMat = new THREE.MeshStandardMaterial({
+    color: lord ? 0x8e2419 : 0x456f43,
+    roughness: 0.76,
+    metalness: 0.02,
+    flatShading: true,
+  });
+  const ventreMat = new THREE.MeshStandardMaterial({ color: lord ? 0xc58242 : 0xb7ad68, roughness: 0.82, flatShading: true });
+  const escuro = new THREE.MeshStandardMaterial({ color: lord ? 0x45100d : 0x203c2a, roughness: 0.9, flatShading: true });
+  const membranaMat = new THREE.MeshStandardMaterial({
+    color: lord ? 0x6d1c14 : 0xb08a30,
+    roughness: 0.72,
+    metalness: 0.0,
+    side: THREE.DoubleSide,
+    flatShading: true,
+  });
+  const osso = mat(0xf0e6c8, 0.55);
+  const couro = mat(0x7a4b28, 0.7);
+  const metal = new THREE.MeshStandardMaterial({ color: 0xc7a047, metalness: 0.35, roughness: 0.45, flatShading: true });
+  const olhoMat = new THREE.MeshStandardMaterial({ color: lord ? 0xff4a00 : 0xf5d14a, emissive: lord ? 0xff2500 : 0xb88500, emissiveIntensity: 0.9, roughness: 0.35 });
+  const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+  const facet = (r, material, x0, y0, z0, sx = 1, sy = 1, sz = 1) => {
+    const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), material);
+    m.position.set(x0, y0, z0); m.scale.set(sx, sy, sz); return add(m);
+  };
+  const box = (w, h, d, material, x0, y0, z0) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 1, 1, 1), material);
+    m.position.set(x0, y0, z0); return add(m);
+  };
+  const bone = (r1, r2, h, material, x0, y0, z0, rz = 0, rx = 0) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, 6), material);
+    m.position.set(x0, y0, z0); m.rotation.z = rz; m.rotation.x = rx; return add(m);
+  };
+  const cone = (r, h, material, x0, y0, z0, rx = 0, rz = 0) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 5), material);
+    m.position.set(x0, y0, z0); m.rotation.x = rx; m.rotation.z = rz; return add(m);
+  };
 
-  // CORPO musculoso + placas da barriga
-  const corpo = new THREE.Mesh(new THREE.SphereGeometry(1.4 * s, 16, 12), corpoMat);
-  corpo.position.set(0, 1.9 * s, -0.3 * s); corpo.scale.set(1, 0.92, 1.6); corpo.castShadow = true; g.add(corpo);
-  for (let i = 0; i < 5; i++) {
-    const placa = new THREE.Mesh(new THREE.BoxGeometry(0.95 * s, 0.3 * s, 0.42 * s), barriga);
-    placa.position.set(0, 0.95 * s, (1.1 - i * 0.62) * s); placa.rotation.x = 0.12; g.add(placa);
+  // Corpo em três massas facetadas: peito alto, caixa torácica e quadril.
+  facet(1.28 * s, corpoMat, 0, 2.35 * s, 0.8 * s, 0.95, 1.05, 1.18);
+  facet(1.48 * s, corpoMat, 0, 1.88 * s, -0.7 * s, 1.05, 0.86, 1.45);
+  facet(1.04 * s, corpoMat, 0, 1.65 * s, -2.12 * s, 0.92, 0.78, 1.05);
+
+  // Barriga segmentada no eixo do peito, como armadura natural.
+  for (let i = 0; i < 7; i++) {
+    const placa = box((0.85 - i * 0.035) * s, 0.18 * s, 0.42 * s, ventreMat, 0, (1.2 + i * 0.25) * s, (1.22 - i * 0.35) * s);
+    placa.rotation.x = 0.34;
   }
-  // PESCOÇO em arco + CABEÇA com mandíbula e dentes
-  for (let i = 0; i < 5; i++) {
-    const seg = new THREE.Mesh(new THREE.SphereGeometry((0.66 - i * 0.06) * s, 10, 8), corpoMat);
-    seg.position.set(0, (2.3 + i * 0.5) * s, (1.0 + i * 0.42) * s); seg.castShadow = true; g.add(seg);
-  }
-  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.8 * s, 0.62 * s, 1.15 * s), corpoMat);
-  cabeca.position.set(0, 4.5 * s, 3.05 * s); cabeca.castShadow = true; g.add(cabeca);
-  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.56 * s, 0.4 * s, 0.66 * s), corpoMat);
-  focinho.position.set(0, 4.42 * s, 3.85 * s); g.add(focinho);
-  const mandibula = new THREE.Mesh(new THREE.BoxGeometry(0.5 * s, 0.16 * s, 0.85 * s), escuro);
-  mandibula.position.set(0, 4.12 * s, 3.6 * s); mandibula.rotation.x = 0.22; g.add(mandibula); // boca entreaberta
-  for (let i = 0; i < 4; i++) [-1, 1].forEach((ld) => { // dentes
-    const dente = new THREE.Mesh(new THREE.ConeGeometry(0.045 * s, 0.16 * s, 4), osso);
-    dente.position.set(ld * 0.18 * s, 4.27 * s, (3.35 + i * 0.2) * s); dente.rotation.x = Math.PI; g.add(dente);
-  });
-  // narinas com brasa (Lord) ou verde-musgo
-  [-0.13, 0.13].forEach((ox) => { const n = new THREE.Mesh(new THREE.SphereGeometry(0.05 * s, 6, 6), escuro); n.position.set(ox * s, 4.5 * s, 4.16 * s); g.add(n); });
-  // CHIFRES curvos (2 segmentos angulados) + cristas da testa
+
+  // Sela/arnês para dar leitura de criatura de RPG domesticável.
+  const sela = box(0.92 * s, 0.18 * s, 0.9 * s, couro, 0, 3.24 * s, -0.28 * s);
+  sela.rotation.x = -0.08;
   [-1, 1].forEach((ld) => {
-    const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.11 * s, 0.6 * s, 6), osso);
-    c1.position.set(ld * 0.28 * s, 4.95 * s, 2.75 * s); c1.rotation.x = -0.7; c1.castShadow = true; g.add(c1);
-    const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.07 * s, 0.5 * s, 6), osso);
-    c2.position.set(ld * 0.3 * s, 5.3 * s, 2.5 * s); c2.rotation.x = -1.15; g.add(c2);
-    const sob = new THREE.Mesh(new THREE.BoxGeometry(0.22 * s, 0.07 * s, 0.3 * s), escuro);
-    sob.position.set(ld * 0.24 * s, 4.78 * s, 3.4 * s); g.add(sob);
+    const tira = box(0.09 * s, 0.95 * s, 0.12 * s, couro, ld * 0.52 * s, 2.75 * s, -0.25 * s);
+    tira.rotation.z = ld * 0.08;
+    box(0.24 * s, 0.08 * s, 0.2 * s, metal, ld * 0.72 * s, 2.18 * s, -0.25 * s);
   });
-  // OLHOS que brilham
-  [-0.26, 0.26].forEach((ox) => { const o = new THREE.Mesh(new THREE.SphereGeometry(0.11 * s, 8, 8), olhoMat); o.position.set(ox * s, 4.62 * s, 3.5 * s); g.add(o); });
-  // ASAS GRANDES com dedos ósseos e membrana dupla (batem via userData.asas)
+
+  // Pescoço longo em S: segmentos facetados sobem e avançam.
+  const neck = [
+    [0, 3.05, 1.35, 0.66],
+    [0, 3.62, 1.92, 0.58],
+    [0, 4.22, 2.42, 0.50],
+    [0, 4.82, 2.87, 0.44],
+  ];
+  neck.forEach(([nx, ny, nz, r], i) => {
+    const n = facet(r * s, corpoMat, nx * s, ny * s, nz * s, 0.85, 1.08, 0.95);
+    n.rotation.x = -0.18 - i * 0.04;
+  });
+
+  // Cabeça angular de dragão, com focinho comprido e mandíbula aberta.
+  const cabeca = box(0.96 * s, 0.72 * s, 1.05 * s, corpoMat, 0, 5.28 * s, 3.32 * s);
+  cabeca.rotation.x = -0.08;
+  const focinho = box(0.66 * s, 0.42 * s, 0.92 * s, corpoMat, 0, 5.14 * s, 4.12 * s);
+  focinho.rotation.x = -0.12;
+  const mandibula = box(0.58 * s, 0.18 * s, 0.92 * s, escuro, 0, 4.88 * s, 4.03 * s);
+  mandibula.rotation.x = 0.22;
+  [-1, 1].forEach((ld) => {
+    box(0.38 * s, 0.16 * s, 0.36 * s, escuro, ld * 0.39 * s, 5.38 * s, 3.1 * s); // bochecha/placa lateral
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.115 * s, 8, 8), olhoMat);
+    olho.position.set(ld * 0.34 * s, 5.32 * s, 3.95 * s); g.add(olho);
+    cone(0.08 * s, 0.36 * s, osso, ld * 0.21 * s, 4.99 * s, 4.55 * s, Math.PI); // dentes frontais
+  });
+  for (let i = 0; i < 5; i++) [-1, 1].forEach((ld) => {
+    const dente = cone(0.045 * s, 0.18 * s, osso, ld * 0.23 * s, 5.03 * s, (3.55 + i * 0.18) * s, Math.PI);
+    dente.rotation.z = ld * 0.12;
+  });
+
+  // Chifres longos para trás + espinhos no queixo.
+  [-1, 1].forEach((ld) => {
+    const h1 = cone(0.13 * s, 1.05 * s, osso, ld * 0.34 * s, 5.78 * s, 2.98 * s, -1.03, ld * 0.18);
+    h1.rotation.y = ld * 0.16;
+    const h2 = cone(0.085 * s, 0.78 * s, osso, ld * 0.48 * s, 5.7 * s, 3.2 * s, -0.82, ld * 0.34);
+    h2.rotation.y = ld * 0.28;
+    cone(0.055 * s, 0.32 * s, osso, ld * 0.28 * s, 4.66 * s, 3.82 * s, 0.25, ld * 0.2);
+  });
+
+  // Asas: membrana triangular real, não caixa. O grupo é animado no loop.
   const asas = [];
+  function criaMembrana(ld) {
+    const geo = new THREE.BufferGeometry();
+    const v = new Float32Array([
+      0, 0, 0,
+      ld * 5.25 * s, 1.18 * s, -0.45 * s,
+      ld * 4.42 * s, -1.28 * s, 1.15 * s,
+      0, 0, 0,
+      ld * 4.42 * s, -1.28 * s, 1.15 * s,
+      ld * 2.28 * s, -1.04 * s, 1.92 * s,
+      0, 0, 0,
+      ld * 2.28 * s, -1.04 * s, 1.92 * s,
+      ld * 1.02 * s, -0.58 * s, 1.24 * s,
+    ]);
+    geo.setAttribute('position', new THREE.BufferAttribute(v, 3));
+    geo.computeVertexNormals();
+    return new THREE.Mesh(geo, membranaMat);
+  }
   [-1, 1].forEach((ld) => {
-    const asa = new THREE.Group(); asa.position.set(ld * 1.15 * s, 3.0 * s, -0.3 * s);
-    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.07 * s, 2.2 * s, 6), corpoMat);
-    braco.rotation.z = ld * (Math.PI / 2 - 0.35); braco.position.set(ld * 1.0 * s, 0.35 * s, 0); asa.add(braco);
-    const membrana = new THREE.Mesh(new THREE.BoxGeometry(3.6 * s, 0.07 * s, 2.8 * s), escuro);
-    membrana.position.set(ld * 2.2 * s, 0.1 * s, -0.2 * s); membrana.rotation.z = ld * 0.12; membrana.castShadow = true; asa.add(membrana);
-    [-1.1, -0.1, 0.9].forEach((oz, i) => { // dedos da asa
-      const dedo = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * s, 0.03 * s, (3.4 - i * 0.5) * s, 5), corpoMat);
-      dedo.rotation.z = Math.PI / 2; dedo.position.set(ld * 2.1 * s, 0.16 * s, oz * s); asa.add(dedo);
+    const asa = new THREE.Group(); asa.position.set(ld * 0.95 * s, 3.3 * s, -0.55 * s);
+    const mem = criaMembrana(ld); mem.castShadow = true; mem.receiveShadow = true; asa.add(mem);
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * s, 0.12 * s, 5.45 * s, 6), corpoMat);
+    braco.position.set(ld * 2.62 * s, 0.58 * s, -0.22 * s); braco.rotation.z = ld * (Math.PI / 2 - 0.23); braco.rotation.y = ld * 0.09; asa.add(braco);
+    [[1.1, 1.7], [2.2, 2.18], [3.25, 2.25], [4.35, 1.7]].forEach(([dx, len], i) => {
+      const dedo = new THREE.Mesh(new THREE.CylinderGeometry(0.035 * s, 0.065 * s, len * s, 5), escuro);
+      dedo.position.set(ld * dx * s, (-0.18 - i * 0.18) * s, (0.42 + i * 0.32) * s);
+      dedo.rotation.z = ld * (Math.PI / 2 - 0.62 + i * 0.08);
+      dedo.rotation.x = 0.32 + i * 0.12;
+      asa.add(dedo);
     });
     g.add(asa); asas.push(asa);
   });
-  // 4 PATAS grossas com 3 GARRAS cada
+
+  // Pernas grossas, antebraços erguidos e garras grandes.
   const patas = [];
-  [[-0.95, 0.8], [0.95, 0.8], [-0.95, -1.3], [0.95, -1.3]].forEach(([px, pz]) => {
-    const geo = new THREE.BoxGeometry(0.5 * s, 1.45 * s, 0.5 * s); geo.translate(0, -0.72 * s, 0);
-    const p = new THREE.Mesh(geo, corpoMat); p.position.set(px * s, 1.45 * s, pz * s); p.castShadow = true; g.add(p); patas.push(p);
-    [-0.14, 0, 0.14].forEach((gx) => {
-      const garra = new THREE.Mesh(new THREE.ConeGeometry(0.06 * s, 0.24 * s, 4), osso);
-      garra.position.set(gx * s, -1.4 * s, 0.3 * s); garra.rotation.x = 1.25; p.add(garra);
+  [[-0.82, 0.92, 1.52], [0.82, 0.92, 1.52], [-1.02, -1.35, 1.28], [1.02, -1.35, 1.28]].forEach(([px, pz, h], pi) => {
+    const upper = bone(0.17 * s, 0.25 * s, h * s, corpoMat, px * s, (1.65 + h * 0.32) * s, pz * s, px > 0 ? -0.18 : 0.18, 0.08);
+    patas.push(upper);
+    const pe = box(0.52 * s, 0.2 * s, 0.78 * s, escuro, px * s, 0.32 * s, (pz + 0.18) * s);
+    pe.rotation.y = px > 0 ? -0.08 : 0.08;
+    [-0.18, 0, 0.18].forEach((gx) => {
+      const garra = cone(0.055 * s, 0.35 * s, osso, (px + gx) * s, 0.34 * s, (pz + 0.62) * s, 1.32);
+      garra.rotation.z = gx * 0.4;
     });
   });
-  // CAUDA longa com lâmina na ponta + ESPINHOS do pescoço à cauda
-  for (let i = 0; i < 8; i++) {
-    const t = new THREE.Mesh(new THREE.SphereGeometry((0.52 - i * 0.05) * s, 8, 6), corpoMat);
-    t.position.set(0, (1.5 - i * 0.06) * s, (-1.8 - i * 0.55) * s); t.castShadow = true; g.add(t);
+
+  // Cauda sinuosa longa, com segmentos facetados e lâmina no fim.
+  for (let i = 0; i < 11; i++) {
+    const zz = (-2.45 - i * 0.48) * s;
+    const xx = Math.sin(i * 0.72) * 0.22 * s;
+    const yy = (1.45 - i * 0.035) * s;
+    facet((0.45 - i * 0.025) * s, corpoMat, xx, yy, zz, 0.92, 0.74, 1.08);
   }
-  const lamina = new THREE.Mesh(new THREE.ConeGeometry(0.22 * s, 0.9 * s, 4), osso);
-  lamina.position.set(0, 1.1 * s, -6.2 * s); lamina.rotation.x = -Math.PI / 2; g.add(lamina);
-  for (let i = 0; i < 9; i++) {
-    const e = new THREE.Mesh(new THREE.ConeGeometry((0.16 - i * 0.008) * s, (0.6 - i * 0.03) * s, 4), escuro);
-    e.position.set(0, (3.0 - i * 0.14) * s, (0.8 - i * 0.62) * s); g.add(e);
+  cone(0.28 * s, 1.05 * s, osso, Math.sin(11 * 0.72) * 0.22 * s, 1.02 * s, -7.85 * s, -Math.PI / 2);
+
+  // Cristas serrilhadas do crânio até a cauda.
+  for (let i = 0; i < 15; i++) {
+    const zc = (2.0 - i * 0.55) * s;
+    const yc = (4.1 - Math.min(i, 7) * 0.32 - Math.max(0, i - 7) * 0.06) * s;
+    cone((0.18 - i * 0.006) * s, (0.55 - i * 0.018) * s, escuro, 0, yc, zc, 0.08);
   }
+
   g.userData = { patas, asas, corpoMat, tipo: 'boss' };
   return g;
 }

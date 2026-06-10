@@ -213,6 +213,7 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
 - ✅ **Vidros não viram lâmpadas**: material `VIDRO` perdeu o emissivo alto que fazia casas/rostos clarearem demais com bloom.
 - ✅ **Thais destravada de verdade**: muralha/portão maiores, ruas internas mais largas, plataforma do templo caminhável, casas decorativas mais estreitas e casas entráveis reposicionadas fora de prédios sobrepostos.
 - ✅ **Validação geométrica automatizada local**: busca em grade confirmou rota livre do portão de Thais até praça, casas laterais, norte e sul com raio do jogador.
+- ✅ **Dragão low-poly premium original**: substituído o dragão “caixote” por uma silhueta inspirada em RPG/Unity low-poly (sem copiar asset pago): corpo facetado, pescoço em S, cabeça angular, chifres longos, sela, asas trianguladas enormes, dedos da asa, garras, cauda sinuosa e fogo saindo da boca.
 
 ## 10. DIÁRIO (marcos recentes)
 Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
