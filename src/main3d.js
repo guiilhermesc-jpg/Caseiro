@@ -67,6 +67,16 @@ renderer.toneMappingExposure = 0.84; // pastel premium (bloom 1.0 segura os esto
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
+// SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
+// se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
+const VERSAO = 'v18';
+{
+  const selo = document.createElement('div');
+  selo.textContent = VERSAO;
+  selo.style.cssText = 'position:fixed;bottom:4px;left:6px;z-index:90;font:bold 11px Arial;'
+    + 'color:rgba(255,255,255,.45);text-shadow:0 1px 2px #000;pointer-events:none;';
+  document.body.appendChild(selo);
+}
 renderer.domElement.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   mostraMensagem('⚠️ O 3D perdeu o contexto no aparelho. Recarregue a página; reduzi a carga mobile nesta versão.');
