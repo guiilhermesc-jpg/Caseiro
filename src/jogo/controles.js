@@ -30,6 +30,7 @@ export function criaControles(dom) {
   }, { passive: false });
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('dblclick', (e) => e.preventDefault());
+  dom.addEventListener('contextmenu', (e) => e.preventDefault());
 
   window.addEventListener('keydown', (e) => {
     teclas[e.code] = true;
@@ -61,9 +62,13 @@ export function criaControles(dom) {
 
   dom.addEventListener('pointerdown', (e) => {
     const touch = e.pointerType === 'touch';
+    if (touch) e.preventDefault();
+    try { dom.setPointerCapture(e.pointerId); } catch (_) {}
     if (touch) toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (touch && !joy.ativo && toques.size === 2) { // virou pinça: solta a câmera
+    if (touch && toques.size === 2) { // virou pinca: solta joystick e camera
+      joy.ativo = false; joy.id = null; joy.dx = 0; joy.dz = 0; escondeJoy();
       look.ativo = false;
+      look.id = null;
       const [a, b] = [...toques.values()];
       pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
       return;
@@ -76,8 +81,9 @@ export function criaControles(dom) {
     }
   });
   dom.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') e.preventDefault();
     if (toques.has(e.pointerId)) toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (!joy.ativo && toques.size === 2 && pinchDist > 0) { // pinça ativa
+    if (toques.size === 2 && pinchDist > 0) { // pinca ativa
       const [a, b] = [...toques.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
       if (d > 10) { pinchFator *= pinchDist / d; pinchDist = d; }
@@ -98,12 +104,14 @@ export function criaControles(dom) {
   });
   const up = (e) => {
     toques.delete(e.pointerId);
+    try { dom.releasePointerCapture(e.pointerId); } catch (_) {}
     if (toques.size < 2) pinchDist = 0;
     if (joy.id === e.pointerId) { joy.ativo = false; joy.dx = 0; joy.dz = 0; escondeJoy(); }
     if (look.id === e.pointerId) { look.ativo = false; }
   };
   dom.addEventListener('pointerup', up);
   dom.addEventListener('pointercancel', up);
+  dom.addEventListener('lostpointercapture', up);
 
   // BOTÕES compactos com ÍCONE (alinhados em arco no canto inferior direito)
   function botao(icone, titulo, css, onTap) {

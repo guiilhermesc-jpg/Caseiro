@@ -36,7 +36,11 @@ const ehMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 // de hardware), mostra um aviso claro em vez de tela preta e muda.
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: !ehMobile, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({
+    antialias: !ehMobile,
+    powerPreference: 'high-performance',
+    precision: ehMobile ? 'mediump' : 'highp',
+  });
 } catch (e) {
   container.innerHTML = '<div style="position:fixed;inset:0;display:flex;align-items:center;'
     + 'justify-content:center;padding:24px;font-family:Arial,sans-serif;color:#e6edf5;text-align:center;">'
@@ -52,7 +56,7 @@ try {
     + '</div></div>';
   throw e; // interrompe o resto da inicialização
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, ehMobile ? 1.4 : 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehMobile ? 1.08 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa muito)
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -61,6 +65,13 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.74; // premium sem "lavar" o céu/roupas/grama de branco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  mostraMensagem('⚠️ O 3D perdeu o contexto no aparelho. Recarregue a página; reduzi a carga mobile nesta versão.');
+});
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  mostraMensagem('3D restaurado. Pode continuar jogando.');
+});
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
 
@@ -1234,10 +1245,17 @@ criaSelecao({
 // PRÉ-COMPILA todos os shaders agora (no carregamento). Sem isto, o three.js
 // compila o shader de cada material novo na PRIMEIRA vez que ele aparece na
 // tela — era a "travada do nada" ao explorar o mapa.
-// (esgoto visível durante o compile p/ a 1ª descida não engasgar)
-esgoto.grupo.visible = true;
-renderer.compile(scene, camera);
-esgoto.grupo.visible = false;
+// No celular, compilar o mapa inteiro de uma vez pode derrubar o WebGL; fazemos
+// aquecimento leve/assíncrono e deixamos o primeiro frame entrar sem travar.
+if (!ehMobile) {
+  esgoto.grupo.visible = true; // inclui o subsolo no aquecimento do PC
+  renderer.compile(scene, camera);
+  esgoto.grupo.visible = false;
+} else if (renderer.compileAsync) {
+  const vis = esgoto.grupo.visible;
+  esgoto.grupo.visible = false;
+  renderer.compileAsync(scene, camera).catch(() => {}).finally(() => { esgoto.grupo.visible = vis; });
+}
 
 const relogio = new THREE.Clock();
 let tempo = 0;
@@ -1534,6 +1552,14 @@ function loop() {
 window.addEventListener('error', (ev) => {
   console.error('Erro global:', ev.message);
   if (!erroAvisado) { erroAvisado = true; mostraMensagem('⚠️ Erro: ' + ev.message + ' — me mande um print!'); }
+});
+window.addEventListener('unhandledrejection', (ev) => {
+  console.error('Promessa rejeitada:', ev.reason);
+  if (!erroAvisado) {
+    erroAvisado = true;
+    const msg = ev.reason && ev.reason.message ? ev.reason.message : ev.reason;
+    mostraMensagem('⚠️ Erro interno: ' + msg + ' — me mande um print!');
+  }
 });
 loop();
 

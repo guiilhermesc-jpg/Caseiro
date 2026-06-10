@@ -177,10 +177,12 @@ export function criaCidade() {
 
   // praça: fonte central + bancos + postes nas esquinas
   add(criaFonte(0, 0));
-  add(criaBanco(0, 8, Math.PI));
-  add(criaBanco(0, -8, 0));
-  add(criaBanco(8, 0, -Math.PI / 2));
-  add(criaBanco(-8, 0, Math.PI / 2));
+  // Bancos nos cantos da praca: o corredor central fica livre para templo,
+  // hospital, escola e delegacia, principalmente no joystick do celular.
+  add(criaBanco(-9, 8, Math.PI / 2));
+  add(criaBanco(9, 8, -Math.PI / 2));
+  add(criaBanco(-9, -8, Math.PI / 2));
+  add(criaBanco(9, -8, -Math.PI / 2));
 
   // marcos (virados PARA a praça)
   const marcos = [
@@ -241,14 +243,14 @@ export function criaCidade() {
   [[16, 40], [24, 48], [40, 24], [-16, 40], [-24, 48], [-40, 24], [40, -24], [-40, -24]]
     .forEach(([x, z]) => { add(criaBarril(x, z)); add(criaCaixa(x + 1.3, z + 0.2)); });
   // ITENS VALIOSOS (ganchos de quest futura)
-  add(criaBau(9, -18, 0.4));         // tesouro ao LADO do templo (a porta fica LIVRE)
+  add(criaBau(12, -18, 0.4));        // tesouro ao LADO do templo (corredor central livre)
   add(criaCristal(0, 21));           // cristal arcano à frente da escola (fora do colisor)
 
-  // CASAS ENTRÁVEIS (porta aberta, telhado some ao entrar) — perto da praça.
-  // ⚠️ A porta vira pra RUA (leste/oeste): antes abria de frente pro colisor
-  // do hospital/delegacia e o jogador TRAVAVA ali sem entender o porquê.
-  add(criaCasaInterior(38, 0, { frente: 'leste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
-  add(criaCasaInterior(-38, 0, { frente: 'oeste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
+  // CASAS ENTRÁVEIS (porta aberta, telhado some ao entrar) — em lotes livres.
+  // Antes ficavam em (±38, 0), sobrepondo hospital/delegacia e criando
+  // "travadas" invisiveis na rota da praca. Agora ficam fora dos marcos.
+  add(criaCasaInterior(78, 24, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
+  add(criaCasaInterior(-78, 24, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
   // LOJAS estilo Tibia (cada NPC com sua finalidade — runas, arco & flecha, forja)
   add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldra
   add(criaPlaca(-26, 14, 'Runas — Eldra', Math.PI / 2));
@@ -258,7 +260,7 @@ export function criaCidade() {
 
   // placas de rua (estilo Tibia)
   add(criaPlaca(20, 6, 'Rua do Mercado', -Math.PI / 2));
-  add(criaPlaca(4, -18, 'Templo Sagrado', 0));
+  add(criaPlaca(-10, -19, 'Templo Sagrado', Math.PI / 2));
   add(criaPlaca(-2, 18, 'Largo da Escola', Math.PI));
   add(criaPlaca(-20, 5, 'Rua do Ferreiro', Math.PI / 2));
 

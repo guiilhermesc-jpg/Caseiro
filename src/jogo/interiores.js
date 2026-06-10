@@ -157,7 +157,7 @@ function meshBox(w, h, d, material, x, y, z) {
 //  lá dentro. Telhado some ao entrar. Cruz vermelha na fachada.
 // =============================================================
 export function criaHospitalInterior(x, z) {
-  const larg = 13, prof = 16, alt = 7, gw = 4.2, t = 0.4;
+  const larg = 13, prof = 16, alt = 7, gw = 5.2, t = 0.4;
   const hx = larg / 2, hz = prof / 2;
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const parede = mat(0xeef0f2), branco = mat(0xf8f8f8, 0.8), mad = mat(0x8a6a44);
@@ -246,7 +246,7 @@ export function criaHospitalInterior(x, z) {
 //  Porta (vão largo) virada pra praça; telhado+torre somem ao entrar.
 // =============================================================
 export function criaTemploSagrado(x, z) {
-  const larg = 16, prof = 20, alt = 6.5, gw = 5, t = 0.4;
+  const larg = 16, prof = 20, alt = 6.5, gw = 6.4, t = 0.4;
   const hx = larg / 2, hz = prof / 2;
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const pedra = mat(0xded8c8), pedraEsc = mat(0xb8b0a0, 1), ouroM = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.75, roughness: 0.3 });
@@ -304,7 +304,7 @@ export function criaTemploSagrado(x, z) {
 
   // BANCOS (2 colunas × 3 fileiras) virados pro altar + tapete central
   const mad = mat(0x6e4a2a);
-  for (const bx of [-3.8, 3.8]) for (let fz = -2; fz <= 6; fz += 4) { // corredor central largo (renascer confortável)
+  for (const bx of [-4.7, 4.7]) for (let fz = -2; fz <= 6; fz += 4) { // corredor central largo (renascer confortavel)
     const banco = new THREE.Group(); banco.position.set(bx, 0, fz);
     banco.add(meshBox(3.4, 0.16, 0.9, mad, 0, 0.62, 0));
     banco.add(meshBox(3.4, 0.8, 0.14, mad, 0, 1.0, 0.45));
@@ -353,6 +353,6 @@ export function criaTemploSagrado(x, z) {
     grupo: g, colisores,
     animados: [{ mesh: cristal, pulsa: cristalMat, gira: 0.8, fase: 0 }],
     casa: { roof, box, px: x, pz: z + hz, aberta: true }, // sem porta: o templo é sempre aberto
-    interativo: { x, z: z - hz + 4, raio: 3.2, titulo: '⛪ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
+    interativo: { x, z: z - hz + 4, raio: 4.2, titulo: '⛪ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
   };
 }

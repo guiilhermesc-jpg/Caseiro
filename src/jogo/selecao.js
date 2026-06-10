@@ -71,7 +71,18 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   btn.style.cssText = 'width:100%;margin-top:8px;padding:14px;border:none;border-radius:10px;background:#3a7a4a;color:#fff;font-size:17px;font-weight:bold;cursor:pointer;';
   btn.onmouseenter = () => { btn.style.background = '#479158'; };
   btn.onmouseleave = () => { btn.style.background = '#3a7a4a'; };
-  btn.onclick = () => { ov.remove(); aoEntrar((inp.value || 'Sobrevivente').trim().slice(0, 16)); };
+  let entrando = false;
+  const entrar = () => {
+    if (entrando) return;
+    entrando = true;
+    btn.disabled = true;
+    btn.style.opacity = '0.75';
+    ov.remove();
+    aoEntrar((inp.value || 'Sobrevivente').trim().slice(0, 16));
+  };
+  btn.addEventListener('pointerup', (e) => { e.preventDefault(); e.stopPropagation(); entrar(); });
+  btn.addEventListener('click', (e) => { e.preventDefault(); entrar(); });
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') entrar(); });
   painel.appendChild(btn);
 
   const dica = document.createElement('p');
