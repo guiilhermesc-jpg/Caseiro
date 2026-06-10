@@ -13,6 +13,14 @@ export function criaHUD() {
   const vidaFill = document.createElement('div');
   vidaFill.style.cssText = 'height:100%;width:100%;background:linear-gradient(90deg,#c0392b,#e74c3c);transition:width .15s;';
   vidaBar.appendChild(vidaFill);
+  // barra de MANA (magias estilo Tibia)
+  const manaEl = document.createElement('div');
+  manaEl.style.cssText = 'font-weight:bold;font-size:13px;text-shadow:0 1px 3px #000;color:#9fc6ff;';
+  const manaBar = document.createElement('div');
+  manaBar.style.cssText = 'width:170px;height:10px;background:rgba(0,0,0,.55);border:1px solid #3a4654;border-radius:6px;margin:2px 0 5px;overflow:hidden;';
+  const manaFill = document.createElement('div');
+  manaFill.style.cssText = 'height:100%;width:100%;background:linear-gradient(90deg,#2a5adf,#4aa0f0);transition:width .15s;';
+  manaBar.appendChild(manaFill);
 
   const ouroEl = document.createElement('div');
   ouroEl.style.cssText = 'font-weight:bold;font-size:13px;color:#ffd23f;text-shadow:0 1px 3px #000;margin-bottom:2px;';
@@ -26,7 +34,7 @@ export function criaHUD() {
   barra.appendChild(fill);
   const itensEl = document.createElement('div');
   itensEl.style.cssText = 'margin-top:5px;font-size:12px;text-shadow:0 1px 3px #000;max-width:200px;line-height:1.5;';
-  wrap.append(vidaEl, vidaBar, ouroEl, nivelEl, barra, itensEl);
+  wrap.append(vidaEl, vidaBar, manaEl, manaBar, ouroEl, nivelEl, barra, itensEl);
   document.body.appendChild(wrap);
 
   let nivel = 1, xp = 0, prox = 20;
@@ -53,6 +61,7 @@ export function criaHUD() {
     },
     addItem(tipo) { itens[tipo] = (itens[tipo] || 0) + 1; render(); },
     vida(cur, max) { vidaEl.textContent = `❤️ Vida ${Math.max(0, Math.ceil(cur))}/${max}`; vidaFill.style.width = Math.max(0, (cur / max) * 100) + '%'; },
+    mana(cur, max) { manaEl.textContent = `🔮 Mana ${Math.max(0, Math.floor(cur))}/${max}`; manaFill.style.width = Math.max(0, (cur / max) * 100) + '%'; },
     ouro(n) { ouroEl.textContent = `🪙 ${n}`; },
     // SAVE: exporta/restaura nível e XP (conta local do jogador)
     estado() { return { nivel, xp, prox }; },

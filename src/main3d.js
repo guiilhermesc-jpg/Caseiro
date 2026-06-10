@@ -26,6 +26,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 
 const container = document.getElementById('game');
 // celular/tablet → modo leve (sem sombras, menos luz, menos pixels) p/ fluidez
@@ -242,7 +243,11 @@ new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   modelo.position.x -= centro.x; modelo.position.z -= centro.z;
   modelo.position.y -= cx2.min.y;
   modelo.traverse((o) => {
-    if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } // skinned some com culling errado
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.frustumCulled = false; // skinned some com culling errado
+      o.raycast = () => {};    // FORA do raycast: osso nulo do GLB quebrava o clique ("matrixWorld" null)
+    }
   });
   modeloDragaoGLB = modelo;
   aplicaModeloDragao();
@@ -253,6 +258,37 @@ new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   }
   mostraMensagem('🐲 Dragão 3D profissional carregado!');
 }, undefined, () => { /* sem arquivo: segue o dragão padrão */ });
+
+// DRAGÕES REGIONAIS (dragao2.glb): um AZULADO perto de Thais ("Dragão Ancião")
+// e um verde-natural perto de Venore — guardam território no chão (sem voo).
+new GLTFLoader().load('modelos/dragao2.glb', (gltf) => {
+  const base = gltf.scene;
+  const cb1 = new THREE.Box3().setFromObject(base);
+  const tamB = new THREE.Vector3(); cb1.getSize(tamB);
+  base.scale.setScalar(10 / (Math.max(tamB.x, tamB.y, tamB.z) || 1));
+  const cb2 = new THREE.Box3().setFromObject(base);
+  const centroB = new THREE.Vector3(); cb2.getCenter(centroB);
+  base.position.x -= centroB.x; base.position.z -= centroB.z;
+  base.position.y -= cb2.min.y;
+  [
+    { x: 470, z: 70, tinta: 0x2a4a8a, nomeMsg: '🐲 Um Dragão Ancião azulado guarda os arredores de Thais...' },
+    { x: -70, z: 132, tinta: null, nomeMsg: '🐲 Um dragão ronda as colinas ao norte de Venore!' },
+  ].forEach(({ x, z, tinta, nomeMsg }) => {
+    const inst = cloneSkinned(base);
+    inst.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true; o.frustumCulled = false;
+        o.raycast = () => {}; // mesmo guard do matrixWorld
+        if (tinta && o.material) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(tinta), 0.45); }
+      }
+    });
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.add(inst);
+    g.userData = { tipo: 'boss' };
+    ratos.push({ g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 });
+    scene.add(g);
+  });
+  mostraMensagem('🐲 Dragões regionais chegaram (Thais e Venore)!');
+}, undefined, () => {});
 // FAUNA DO CAMINHO (cada região com seus bichos, estilo Tibia)
 // matilha de lobos rondando a ponte do rio + lobos na floresta oeste
 [[170, 14], [191, 16], [188, -18], [-96, 26]].forEach(([x, z]) => addMonstro(criaLobo(x, z), 20, 7, 5, 2.6, false, areaMon(x, z, 15)));
@@ -475,7 +511,10 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   if (Math.hypot(e.clientX - ini.x, e.clientY - ini.y) > 8 || performance.now() - ini.t > 350) return;
   const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   rayTap.setFromCamera(ndc, camera);
-  for (const h of rayTap.intersectObjects(scene.children, true)) {
+  let hitsTap = [];
+  try { hitsTap = rayTap.intersectObjects(scene.children, true); }
+  catch (err) { console.error('raycast do clique:', err); hitsTap = []; } // GLB com osso nulo não derruba o clique
+  for (const h of hitsTap) {
     const alvo = achaTipo(h.object);
     if (!alvo) continue;
     const tipo = alvo.userData.tipo;
@@ -1161,6 +1200,113 @@ function ativaGM() {
   });
 }
 
+// =============================================================
+//  MAGIAS (estilo Tibia) + BARRA estilo Diablo
+//  Desbloqueiam por NÍVEL, custam MANA (regenera), têm cooldown.
+//  Operacional nas DUAS plataformas: teclas 1-5 no PC, toque nos
+//  slots no celular — o cálculo de dano/cura é o MESMO.
+// =============================================================
+let mana = 50; const MANA_MAX = 50;
+let escudoAte = 0, escudoHP = 0, luxAte = 0, manaMostrada = -1, proxAttBarra = 0;
+const luzLux = new THREE.PointLight(0xcfe2ff, 0, 30, 2); scene.add(luzLux);
+const cdMagias = {};
+const MAGIAS = [
+  { id: 'lux', nome: 'Lux', icone: '💡', nivel: 1, mana: 5, cd: 5, desc: 'Luz mágica por 60s (melhor que tocha)' },
+  { id: 'exura', nome: 'Exura', icone: '💚', nivel: 2, mana: 15, cd: 4, desc: 'Cura +40 de vida' },
+  { id: 'exori', nome: 'Exori', icone: '💥', nivel: 3, mana: 20, cd: 6, desc: 'Golpe em ÁREA: 25 de dano em volta' },
+  { id: 'utamo', nome: 'Utamo', icone: '🔵', nivel: 4, mana: 25, cd: 20, desc: 'ESCUDO: absorve 40 de dano por 20s' },
+  { id: 'flam', nome: 'Exori Flam', icone: '🔥', nivel: 5, mana: 25, cd: 8, desc: 'BOLA DE FOGO no alvo (35, alcance 14)' },
+];
+// DANO CENTRALIZADO (mesmo cálculo em todo lugar): Utamo absorve primeiro.
+// Devolve true se o golpe MATOU o jogador.
+function recebeDano(n) {
+  if (gmImortal || n <= 0) return false;
+  if (tempo < escudoAte && escudoHP > 0) {
+    const abs = Math.min(escudoHP, n);
+    escudoHP -= abs; n -= abs;
+    if (escudoHP <= 0) mostraMensagem('🔵 Seu escudo mágico se desfez!');
+    if (n <= 0) return false;
+  }
+  vida -= n; hud.vida(vida, VIDA_MAX);
+  if (vida <= 0) { morre(); return true; }
+  return false;
+}
+// alvo mais próximo em QUALQUER direção (magias não exigem mirar)
+function alvoMaisProximo(alc) {
+  let melhor = null, melhorD = alc;
+  for (const r of ratos) {
+    if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
+    const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+    if (d < melhorD) { melhorD = d; melhor = r; }
+  }
+  return melhor;
+}
+function lancaMagia(m) {
+  if (!jogoIniciado) return;
+  if (hud.estado().nivel < m.nivel) { mostraMensagem(`🔒 ${m.nome} desbloqueia no nível ${m.nivel}!`); return; }
+  if (tempo < (cdMagias[m.id] || 0)) { mostraMensagem(`⏳ ${m.nome} recarregando (${Math.ceil(cdMagias[m.id] - tempo)}s)`); return; }
+  if (mana < m.mana) { mostraMensagem(`🔮 Sem mana (${Math.floor(mana)}/${m.mana}) — ela regenera com o tempo.`); return; }
+  if (m.id === 'lux') {
+    luxAte = tempo + 60;
+    mostraMensagem('💡 Lux! Uma luz mágica te envolve por 60s.');
+  } else if (m.id === 'exura') {
+    if (vida >= VIDA_MAX) { mostraMensagem('Vida já cheia. ❤️'); return; }
+    vida = Math.min(VIDA_MAX, vida + 40); hud.vida(vida, VIDA_MAX);
+    mostraMensagem('💚 Exura! +40 de vida.');
+  } else if (m.id === 'exori') {
+    let acertou = 0;
+    for (const r of ratos) {
+      if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
+      if (Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z) > 4.5) continue;
+      r.hp -= 25; r.piscar = 0.2; if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0x882020);
+      if (r.hp <= 0) mataBicho(r);
+      acertou++;
+    }
+    explosaoFogo();
+    mostraMensagem(acertou ? `💥 Exori! ${acertou} bicho(s) atingido(s) (-25)` : '💥 Exori! ...nenhum alvo por perto.');
+  } else if (m.id === 'utamo') {
+    escudoAte = tempo + 20; escudoHP = 40;
+    mostraMensagem('🔵 Utamo Vita! Escudo mágico absorve 40 de dano (20s).');
+  } else if (m.id === 'flam') {
+    const alvo = alvoMaisProximo(14);
+    if (!alvo) { mostraMensagem('🔥 Exori Flam... sem alvo no alcance (14).'); return; }
+    giraSuave(avatar, Math.atan2(alvo.g.position.x - avatar.position.x, alvo.g.position.z - avatar.position.z), 1);
+    const mFogo = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), MAT_PROJ_FOGO);
+    const de = avatar.position.clone(); de.y += 2.0;
+    const ate = alvo.g.position.clone(); ate.y += 1.4;
+    mFogo.position.copy(de); scene.add(mFogo);
+    flechasVoando.push({ m: mFogo, de, ate, t: 0 }); // visual voa; dano aplicado já
+    alvo.hp -= 35; alvo.piscar = 0.2; if (alvo.g.userData.corpoMat) alvo.g.userData.corpoMat.emissive.setHex(0xa03010);
+    if (alvo.hp <= 0) mataBicho(alvo);
+    else mostraMensagem(`🔥 Exori Flam! (-35, vida ${Math.max(0, alvo.hp)})`);
+  }
+  mana -= m.mana; cdMagias[m.id] = tempo + m.cd;
+  hud.mana(mana, MANA_MAX);
+}
+// BARRA DE MAGIAS (estilo Diablo): slots clicáveis no centro-inferior
+const slotsMagia = [];
+const barraMagias = document.createElement('div');
+barraMagias.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:42;display:none;gap:7px;';
+document.body.appendChild(barraMagias);
+MAGIAS.forEach((m, i) => {
+  const s = document.createElement('div');
+  s.style.cssText = 'position:relative;width:54px;height:54px;border-radius:10px;background:rgba(12,18,28,.85);'
+    + 'border:2px solid #3a4654;display:flex;align-items:center;justify-content:center;font-size:24px;'
+    + 'cursor:pointer;user-select:none;touch-action:none;box-shadow:0 3px 10px rgba(0,0,0,.4);';
+  s.innerHTML = `<span>${m.icone}</span>`
+    + `<span style="position:absolute;top:1px;left:5px;font:bold 10px Arial;color:#9fb0c0;">${i + 1}</span>`
+    + '<span class="cd" style="position:absolute;left:0;bottom:0;width:100%;height:0;background:rgba(8,12,18,.78);border-radius:0 0 8px 8px;pointer-events:none;"></span>'
+    + '<span class="lk" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(8,10,14,.72);border-radius:8px;">🔒</span>';
+  s.title = `${m.nome} — ${m.desc} (nível ${m.nivel} · ${m.mana} mana · ${m.cd}s)`;
+  s.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); lancaMagia(m); });
+  s.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+  barraMagias.appendChild(s); slotsMagia.push(s);
+});
+window.addEventListener('keydown', (e) => {
+  const k = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4 }[e.code];
+  if (k !== undefined && jogoIniciado) lancaMagia(MAGIAS[k]);
+});
+
 // NOMES DE LUGARES (estilo Tibia) — mostra o bairro/rua onde você está
 const DISTRITOS = [
   { nome: 'Praça Central de Venore', x: 0, z: 0, raio: 18 },
@@ -1285,6 +1431,8 @@ criaSelecao({
       mostraMensagem(`💾 Bem-vindo de volta, ${nome}! Sua conta foi carregada.`);
     }
     if (window.__btnSalvar) window.__btnSalvar.style.display = 'flex';
+    barraMagias.style.display = 'flex'; // barra de magias estilo Diablo (teclas 1-5 / toque)
+    hud.mana(mana, MANA_MAX);
     // CONTA DEV/GM: entrar com o nome "gm", "adm" ou "dev" libera os poderes
     if (['gm', 'adm', 'dev'].includes(nome.trim().toLowerCase())) {
       ativaGM();
@@ -1483,10 +1631,9 @@ function passo() {
     if (p.t < 1) { p.m.position.lerpVectors(p.de, p.ate, p.t); continue; }
     scene.remove(p.m); projeteis.splice(i, 1);
     const dI = Math.hypot(p.ate.x - avatar.position.x, p.ate.z - avatar.position.z);
-    if (dI < 1.9 && !gmImortal && jogoIniciado) {
-      vida -= p.dano; hud.vida(vida, VIDA_MAX);
+    if (dI < 1.9 && jogoIniciado) {
       mostraMensagem(p.fogo ? `🔥 Bola de fogo do dragão! (-${p.dano})` : `🔮 Rajada mágica do beholder! (-${p.dano})`);
-      if (vida <= 0) { morre(); }
+      recebeDano(p.dano); // Utamo absorve primeiro
     }
     if (p.fogo && Math.random() < 0.5) criaLavaTemp(p.ate.x, p.ate.z, alturaTerreno(p.ate.x, p.ate.z)); // fogo vira LAVA no chão
   }
@@ -1522,13 +1669,11 @@ function passo() {
       if (r.vivo && r.contato && tempo > (r.proxAtaque || 0)) {
         r.proxAtaque = tempo + 1.1;
         if (!gmImortal) { // GM imortal não toma dano
-          vida -= Math.max(1, (r.dano || 5) - defesa);
-          hud.vida(vida, VIDA_MAX);
           if (r.veneno && Math.random() < 0.35 && tempo > envenenadoAte) { // mordida venenosa
             envenenadoAte = tempo + 6;
             mostraMensagem('🕷️ Você foi ENVENENADO pela mordida! (6s)');
           }
-          if (vida <= 0) { morre(); break; }
+          if (recebeDano(Math.max(1, (r.dano || 5) - defesa))) break; // Utamo absorve primeiro
         }
       }
     }
@@ -1541,9 +1686,8 @@ function passo() {
         if (c.tipo === 'lava') {
           if (tempo > proxTickLava) {
             proxTickLava = tempo + 0.6;
-            vida -= 8; hud.vida(vida, VIDA_MAX);
             mostraMensagem('🔥 A LAVA QUEIMA! (-8) Saia já!');
-            if (vida <= 0) morre();
+            recebeDano(8);
           }
         } else if (tempo > envenenadoAte - 7) { // renova o veneno enquanto pisa
           if (tempo > envenenadoAte) mostraMensagem('🟢 Você pisou no lodo VENENOSO! (8s de veneno)');
@@ -1555,11 +1699,27 @@ function passo() {
     // VENENO ativo: perde 2 de vida por segundo até passar o efeito
     if (!gmImortal && tempo < envenenadoAte && tempo > proxTickVeneno) {
       proxTickVeneno = tempo + 1;
-      vida -= 2; hud.vida(vida, VIDA_MAX);
       mostraMensagem(`🟢 Veneno... (-2) ${Math.ceil(envenenadoAte - tempo)}s`);
-      if (vida <= 0) morre();
+      recebeDano(2);
     }
     if (vida < VIDA_MAX) { vida = Math.min(VIDA_MAX, vida + dt * 1.5); hud.vida(vida, VIDA_MAX); } // regen lenta
+    // MANA regenera + LUX te acompanha + barra de magias (cadeado/cooldown)
+    mana = Math.min(MANA_MAX, mana + dt * 0.9);
+    if (Math.floor(mana) !== manaMostrada) { manaMostrada = Math.floor(mana); hud.mana(mana, MANA_MAX); }
+    if (tempo < luxAte) {
+      luzLux.intensity = 1.8;
+      luzLux.position.set(avatar.position.x, avatar.position.y + 2.8, avatar.position.z);
+    } else luzLux.intensity = 0;
+    if (tempo > proxAttBarra) {
+      proxAttBarra = tempo + 0.15;
+      const nv = hud.estado().nivel;
+      MAGIAS.forEach((mg, i) => {
+        const s = slotsMagia[i];
+        s.querySelector('.lk').style.display = nv >= mg.nivel ? 'none' : 'flex';
+        const resta = (cdMagias[mg.id] || 0) - tempo;
+        s.querySelector('.cd').style.height = resta > 0 ? Math.min(100, (resta / mg.cd) * 100) + '%' : '0';
+      });
+    }
   }
   // TOCHA: ilumina FORTE quando nova e vai QUEIMANDO (raio/força encolhem);
   // apagada, ela "descansa" e recupera. (~4 min acesa até ficar fraca)
