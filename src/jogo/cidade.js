@@ -315,8 +315,8 @@ export function criaCidade() {
   // BIOMA floresta (oeste): pinheiros + árvores de copa + cogumelos + pedras
   [[-82, 0], [-92, 18], [-78, -22], [-95, -8], [-86, 34], [-80, -40], [-93, 42], [-88, -28]]
     .forEach(([x, z]) => add(criaPinheiro(x, z)));
-  [[-86, 10], [-90, -16], [-80, 26], [-94, 6], [-84, -34], [-90, 50]]
-    .forEach(([x, z]) => add(criaArvore(x, z)));
+  [[-86, 10], [-90, -16], [-80, 38], [-94, 6], [-84, -34], [-90, 50]]
+    .forEach(([x, z]) => add(criaArvore(x, z))); // (-80,26 caía DENTRO da casa entrável nova)
   [[-83, 4], [-88, 22], [-85, -12], [-91, 30]].forEach(([x, z]) => add(criaCogumelo(x, z)));
   [[-80, 14, 1.4], [-94, -2, 1.1], [-86, -46, 1.2]].forEach(([x, z, s]) => add(criaPedra(x, z, s)));
   // BIOMA campo florido (leste/sul): flores variadas + pedras
@@ -337,7 +337,7 @@ export function criaCidade() {
     add(criaFlorAlta(x + 3, z + r * 0.7, 0x6ab0ff));
   });
   // === CAMINHO DE THAIS (a leste) — VIAGEM LONGA DE VERDADE (portão a x=504)
-  add(criaEstrada(72, 504, 0, 8));               // estrada até o portão de Thais
+  add(criaEstrada(72, 500, 0, 8));               // estrada até o portão de Thais (muralha HX=60 → portão em x=500)
   add(criaPlaca(74, -7, '→ THAIS'));
   add(criaPlaca(150, 7, 'THAIS  ⟶', Math.PI));
   add(criaPlaca(230, -7, '→ THAIS'));
@@ -405,12 +405,12 @@ export function criaCidade() {
 
   // === MARCOS DE DISTÂNCIA na estrada (metragem REAL calculada do mapa)
   // praça de Venore fica em (0,0); portão de Thais em (504,0)
-  add(criaMarcoDistancia(110, -6, 'THAIS 394\nVENORE 110'));
-  add(criaMarcoDistancia(192, 6, 'THAIS 312\nVENORE 192'));
-  add(criaMarcoDistancia(240, 6, 'THAIS 264\nVENORE 240'));
-  add(criaMarcoDistancia(320, -6, 'THAIS 184\nVENORE 320'));
-  add(criaMarcoDistancia(420, 6, 'THAIS 84\nVENORE 420'));
-  add(criaMarcoDistancia(490, -6, 'THAIS 14\nVENORE 490'));
+  add(criaMarcoDistancia(110, -6, 'THAIS 390\nVENORE 110'));
+  add(criaMarcoDistancia(192, 6, 'THAIS 308\nVENORE 192'));
+  add(criaMarcoDistancia(240, 6, 'THAIS 260\nVENORE 240'));
+  add(criaMarcoDistancia(320, -6, 'THAIS 180\nVENORE 320'));
+  add(criaMarcoDistancia(420, 6, 'THAIS 80\nVENORE 420'));
+  add(criaMarcoDistancia(490, -6, 'THAIS 10\nVENORE 490'));
 
   // === PRAIA DO SUL + MAR (novo bioma: areia, coqueiros, conchas e caranguejos)
   const areiaMat = new THREE.MeshStandardMaterial({ color: 0xd9c692, roughness: 1 });
@@ -441,7 +441,9 @@ export function criaCidade() {
   // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
   add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80 }));
-  add(criaCasaInterior(528, 0, { frente: 'leste', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
+  // (528,0 bloqueava a rota portão→chafariz; ao lado colide com o casario —
+  // posição calculada livre: sul da via, porta pro norte voltada pra rua)
+  add(criaCasaInterior(524, -14, { frente: 'norte', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
   add(criaCasaInterior(592, 0, { frente: 'oeste', cor: 0xdccfae, corTelhado: 0x2f8d80 }));
   // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro) — frentes livres
   add(criaBarraca(550, 7, 0, 0xc0653a));
