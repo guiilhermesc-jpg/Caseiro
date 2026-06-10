@@ -145,6 +145,11 @@ export function criaCidade() {
   // CASAS ENTRÁVEIS (porta abre na AÇÃO, telhado some ao entrar) — perto da praça
   add(criaCasaInterior(38, 0, { frente: 'oeste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
   add(criaCasaInterior(-38, 0, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
+  // placas de rua (estilo Tibia)
+  add(criaPlaca(20, 6, 'Rua do Mercado', -Math.PI / 2));
+  add(criaPlaca(2, -18, 'Largo da Igreja', 0));
+  add(criaPlaca(-2, 18, 'Largo da Escola', Math.PI));
+  add(criaPlaca(-20, 5, 'Rua do Ferreiro', Math.PI / 2));
 
   // === NATUREZA / BIOMAS (mundo expandido) ===
   // lago ao norte + riacho com ponte na rua x=16
