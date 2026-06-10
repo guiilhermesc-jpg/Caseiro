@@ -93,20 +93,46 @@ export function criaPredio(opts) {
   g.position.set(x, 0, z);
   g.rotation.y = rot;
 
+  const madeira = mat(0x5a4632), pedraBase = mat(0x6f675c), portaMat = mat(0x4a2f1a);
+  const FB = 0.7; // altura do alicerce
+
+  // alicerce de pedra (assenta a casa no chão; quebra o "caixote")
+  const base = new THREE.Mesh(new THREE.BoxGeometry(larg + 0.4, FB, prof + 0.4), pedraBase);
+  base.position.y = FB / 2; base.receiveShadow = true; g.add(base);
+  // corpo (sobre o alicerce)
   const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), mat(cor));
-  corpo.position.y = alt / 2; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
+  corpo.position.y = FB + alt / 2; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
+  const topo = FB + alt; // topo das paredes
+  // enxaimel: viga horizontal (divisória de andar) + montantes de canto (look medieval)
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(larg + 0.08, 0.28, prof + 0.08), madeira);
+  faixa.position.y = FB + alt * 0.52; g.add(faixa);
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, alt, 0.3), madeira);
+    post.position.set(sx * larg / 2, FB + alt / 2, sz * prof / 2); post.castShadow = true; g.add(post);
+  });
+  // telhado de duas águas + cumeeira
+  g.add(telhadoDuasAguas(larg, prof, Math.max(2.6, alt * 0.45), corTelhado, topo));
+  // chaminé com fumeiro
+  const chamine = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.0, 0.8), pedraBase);
+  chamine.position.set(larg * 0.28, topo + 1.5, -prof * 0.18); chamine.castShadow = true; g.add(chamine);
+  const chTopo = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 1.0), madeira);
+  chTopo.position.set(larg * 0.28, topo + 2.6, -prof * 0.18); g.add(chTopo);
 
-  g.add(telhadoDuasAguas(larg, prof, Math.max(2.4, alt * 0.42), corTelhado, alt));
-
-  const porta = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.2, 0.25), mat(0x3a2a1a));
-  porta.position.set(0, 1.6, prof / 2 + 0.02); g.add(porta);
+  // PORTA (frente +Z) com batentes, verga, degrau de pedra e maçaneta
+  const fz = prof / 2;
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 0.2), portaMat);
+  porta.position.set(0, FB + 1.5, fz + 0.04); g.add(porta);
+  [-0.92, 0.92].forEach((ox) => { const bat = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.3, 0.36), madeira); bat.position.set(ox, FB + 1.55, fz + 0.05); g.add(bat); });
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.32, 0.38), madeira); verga.position.set(0, FB + 3.25, fz + 0.05); g.add(verga);
+  const degrau = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.25, 0.8), pedraBase); degrau.position.set(0, 0.32, fz + 0.5); degrau.receiveShadow = true; g.add(degrau);
+  const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xd9a522, 0.3)); macaneta.position.set(0.5, FB + 1.5, fz + 0.16); g.add(macaneta);
 
   if (janelas) {
     const estilo = () => ({ cruz: true, shutters: Math.random() < 0.5, floreira: Math.random() < 0.35 });
-    const yJ = Math.min(alt * 0.6, alt - 1.4);
+    const yJ = Math.min(FB + alt * 0.55, topo - 1.4);
     // frente
     [-larg * 0.28, larg * 0.28].forEach((jx) => {
-      const j = criaJanela(estilo()); j.position.set(jx, yJ, prof / 2 + 0.07); g.add(j);
+      const j = criaJanela(estilo()); j.position.set(jx, yJ, fz + 0.07); g.add(j);
     });
     // laterais (prédios mais fundos ganham janelas nos lados)
     if (prof >= 9) {
