@@ -74,15 +74,18 @@ Cidade Venore + biomas + **mundo ampliado** (lagos, floresta, montanhas, estrada
   Aceleração de Hardware no Chrome (o Edge funciona). Sempre que publico, no PC dar **Ctrl+Shift+R**.
 
 ## 8. FILA DE PEDIDOS
-**FEITO recentemente:** 🎣 pesca (espécies reais) · 🏠 casas compráveis + personalizar telhado ·
-❤️ vida do jogador + bichos perseguem/atacam + morte/respawn · 🛡️ armaduras dropáveis
-(equipam pela mochila, aparecem no corpo, dão defesa) · 🪙 ouro (do loot, compra casas).
+**FEITO recentemente:** 🎣 pesca · 🏠 casas compráveis+personalizar · ❤️ vida+bichos atacam+morte ·
+🛡️ armaduras dropáveis (equipam clicando na mochila, aparecem no corpo, defesa) · 🪙 ouro ·
+🔦 tocha clicável na mochila (item usável) · 🌙 NPCs voltam pra casa à noite (lojistas/guarda ficam) ·
+🚪 entrada nas casas conserta da (porta abre sozinha ao chegar + marcador 🏠) · sexo/raça só na criação ·
+📍 nomes de lugares (Praça/Rua/Caminho de Thais/Esgoto) · 🐉 bichos novos (ladrão, escorpião) ·
+⛰️ montanhas com relevo · ⚡ otimização **mobile** (sem sombras/luzes) e **PC** (anti-oclusão só perto).
 **PRÓXIMOS:**
 1. 🏰 **Thais (cidade distante) entrável** + mais conteúdo no caminho.
-2. 🐉 **Mais bichos** (beholder, ladrões/"Hauter") + mais variedade de loot/armas.
-3. 🚪 Porta que **bloqueia** de verdade; túneis sob cada rua.
-4. ⚡ **Otimização mobile** (juntar geometrias; reduzir luzes à noite se pesar).
-5. 🔒 Rotacionar o token Cloudflare.
+2. 🏙️ **Crescer a cidade** + detalhes únicos/personalidade + **nomes de rua no minimapa**.
+3. 🐉 Mais bichos (beholder) + variedade de loot/armas (espadas etc.).
+4. 🚪 Porta que **bloqueia** quando fechada; túneis sob cada rua.
+5. ⚡ Mais otimização se pesar (instancing/merge de geometrias) · 🔒 rotacionar token Cloudflare.
 
 ## 9. DIÁRIO (marcos recentes)
 Multiplayer (Railway) → minimapa → biomas/riacho → interiores → ação/inventário →
