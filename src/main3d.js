@@ -696,7 +696,9 @@ function loop() {
     const dir = desejada.clone().sub(foco);
     const distMax = dir.length(); dir.normalize();
     raycaster.set(foco, dir); raycaster.far = distMax;
-    const hits = raycaster.intersectObjects(solidos, true);
+    // anti-oclusão só contra o que está PERTO (no esgoto, só a sala) — evita raycast no mundo todo
+    const occ = noEsgoto ? [esgoto.grupo] : solidos.filter((s) => s.position.distanceToSquared(avatar.position) < 500);
+    const hits = raycaster.intersectObjects(occ, true);
     let dist = distMax;
     if (hits.length && hits[0].distance < distMax) dist = Math.max(3, hits[0].distance - 0.6);
     const posCam = foco.clone().add(dir.multiplyScalar(dist));

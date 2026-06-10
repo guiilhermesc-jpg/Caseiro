@@ -42,8 +42,8 @@ export function criaCidade() {
   const sun = new THREE.DirectionalLight(0xfff6e6, 1.35);
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  const d = 145;
+  sun.shadow.mapSize.set(1024, 1024);
+  const d = 100;
   sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
   sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 420;
