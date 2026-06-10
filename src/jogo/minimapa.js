@@ -10,7 +10,7 @@ const MARCO_COR = {
 };
 const corHex = (c) => '#' + ((c >>> 0) & 0xffffff).toString(16).padStart(6, '0');
 
-export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], alcance = 90 }) {
+export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], lojas = [], alcance = 90 }) {
   const TAM = 150;
   const cnv = document.createElement('canvas');
   cnv.width = TAM; cnv.height = TAM;
@@ -90,6 +90,17 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
       ctx.fillRect(sx(m.x) - 4.5, sy(m.z) - 4.5, 9, 9);
       ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.5)';
       ctx.strokeRect(sx(m.x) - 4.5, sy(m.z) - 4.5, 9, 9);
+    }
+
+    // LOJAS com ícone (estilo Tibia: ⚒️ ferreiro, ✨ runas, 🏹 arco, 🧪 poções, 💰 mercador)
+    if (lojas.length) {
+      ctx.font = '11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (const L of lojas) {
+        if (!perto(L.x, L.z, alc)) continue;
+        const px = sx(L.x), py = sy(L.z);
+        if (px < 7 || px > TAM - 7 || py < 7 || py > TAM - 7) continue;
+        ctx.fillText(L.icone, px, py);
+      }
     }
 
     // rótulos de ruas/lugares (nomes), só os próximos e dentro do quadro

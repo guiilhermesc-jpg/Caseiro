@@ -56,11 +56,16 @@ export function criaEsgoto() {
   // Os 2 últimos sobem nos bueiros de THAIS (a rede de esgoto liga as cidades!)
   const acessos = [{ x: 16, z: -16 }, { x: -16, z: 16 }, { x: 48, z: 16 }, { x: -48, z: -16 }, { x: 16, z: 16 }, { x: -16, z: -16 }, { x: -48, z: 16 }];
   acessos.forEach((a) => {
+    // CORDA pendurada (estilo Tibia: sobe/desce de corda) no lugar da escada
     const esc = new THREE.Group(); esc.position.set(a.x, Y, a.z);
-    for (let i = 0; i < 5; i++) {
-      const deg = new THREE.Mesh(new THREE.BoxGeometry(2, 0.3, 0.6), mat(0x6a6258, 1));
-      deg.position.set(0, 0.15 + i * 0.5, -0.8 + i * 0.5); deg.castShadow = true; esc.add(deg);
+    const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt - 0.2, 6), mat(0x9a7a44, 1));
+    corda.position.y = (alt - 0.2) / 2; esc.add(corda);
+    for (let i = 1; i <= 4; i++) { // nós de apoio pra escalar
+      const no = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.04, 6, 10), mat(0x6e5228, 1));
+      no.position.y = i * (alt / 5); no.rotation.x = Math.PI / 2; esc.add(no);
     }
+    const argola = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 6, 12), mat(0x3a3a3a, 1));
+    argola.position.y = alt - 0.12; argola.rotation.x = Math.PI / 2; esc.add(argola); // presa no teto/bueiro
     g.add(esc);
     // CLARIDADE da entrada: feixe de luz do dia descendo pelo bueiro + luz real
     const feixe = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.6, alt, 12, 1, true),

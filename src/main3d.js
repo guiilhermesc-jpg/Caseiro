@@ -382,7 +382,22 @@ const LUGARES_MAPA = [
   { nome: 'Pântano', x: 225, z: -95 }, { nome: 'Bandidos', x: 252, z: 48 },
   { nome: 'Praia', x: 0, z: -218 },
 ];
-const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, alcance: 90 });
+// LOJAS identificadas (estilo Tibia): ícone no MINIMAPA + marcador flutuante na cena
+const LOJAS_MAPA = [
+  { x: 17, z: 11, icone: '💰' },   // Otto (mercador — compra tudo)
+  { x: -17, z: 11, icone: '⚒️' },  // Bram (forja: armas; compra couro/osso/presas)
+  { x: -22, z: 17, icone: '✨' },  // Eldra (runas; compra erva/frasco/relíquias)
+  { x: 22, z: -15, icone: '🏹' },  // Falk (arco & flecha; compra couro/seda)
+  { x: 32, z: 0, icone: '🧪' },    // Sira (poções, dentro do hospital; compra ervas)
+  { x: 552, z: 10, icone: '💰' },  // Yara (mercadora de Thais)
+];
+const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, lojas: LOJAS_MAPA, alcance: 90 });
+LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
+  const cnvL = document.createElement('canvas'); cnvL.width = 128; cnvL.height = 128;
+  const cL = cnvL.getContext('2d'); cL.font = '88px Arial'; cL.textAlign = 'center'; cL.textBaseline = 'middle'; cL.fillText(L.icone, 64, 70);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnvL), transparent: true, depthTest: false }));
+  sp.scale.set(1.9, 1.9, 1); sp.position.set(L.x, 5.4, L.z); sp.renderOrder = 996; scene.add(sp);
+});
 const npcs = criaNPCs(scene, colide);
 const inventario = criaInventario({ aoEquipar: (item) => aoEquipar(item) });
 
@@ -457,6 +472,34 @@ const PRECOS = {
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
+// ESTOQUE REGIONAL: o que você vende pra cada NPC fica registrado (e salvo);
+// ao atingir a meta, a OFERTA RARA dele entra na loja pra sempre.
+const economia = {}; // nomeNpc -> { total, liberadas: [] }
+function registraVenda(npc, qtd) {
+  const e = economia[npc.nome] || (economia[npc.nome] = { total: 0, liberadas: [] });
+  e.total += qtd;
+  const novas = [];
+  (npc.ofertas || []).forEach((of) => {
+    if (e.total >= of.precisa && !e.liberadas.includes(of.item.nome)) {
+      e.liberadas.push(of.item.nome);
+      npc.loja = npc.loja || [];
+      npc.loja.push({ ...of.item });
+      novas.push(`${of.item.icone} ${of.item.nome}`);
+    }
+  });
+  return novas;
+}
+function restauraEconomia() { // pós-load: reinjeta as ofertas já liberadas
+  for (const n of npcs) {
+    const e = economia[n.nome];
+    if (!e || !n.ofertas) continue;
+    n.ofertas.forEach((of) => {
+      if (e.liberadas.includes(of.item.nome) && !(n.loja || []).some((it) => it.nome === of.item.nome)) {
+        n.loja = n.loja || []; n.loja.push({ ...of.item });
+      }
+    });
+  }
+}
 function abreDialogo(npc) {
   // vira de frente pro jogador e pausa pra conversar
   npc.g.rotation.y = Math.atan2(avatar.position.x - npc.g.position.x, avatar.position.z - npc.g.position.z);
@@ -467,14 +510,24 @@ function abreDialogo(npc) {
     { texto: 'Novidades?', onClick: () => dialogo.abre(npc.nome, npc.falas.dica, opcoes) },
     { texto: 'Tchau', onClick: () => dialogo.fecha() },
   ];
-  // MERCADORES compram seus tesouros (loot de caça, gemas e peixes)
-  if (npc.prof === 'Mercador' || npc.prof === 'Mercadora') {
-    opcoes.splice(3, 0, { texto: '💰 Vender tesouros', onClick: () => {
-      const v = inventario.vendeItens(PRECOS);
-      if (v.itens) { ouro += v.ouro; hud.ouro(ouro); }
-      dialogo.abre(npc.nome, v.itens
-        ? `Negócio fechado! ${v.itens} item(s) por ${v.ouro} 🪙. Volte quando caçar mais!`
-        : 'Hmm... você não tem nada que me interesse. Caça, gemas e peixes pagam bem!', opcoes);
+  // ECONOMIA CIRCULAR (estilo Tibia): mercadores compram TUDO; lojistas
+  // compram a CATEGORIA deles (couro→ferreiro, erva→curandeira, seda→runas)
+  // e o que você vende ABASTECE o NPC → destrava OFERTAS RARAS na loja dele!
+  const ehMercador = npc.prof === 'Mercador' || npc.prof === 'Mercadora';
+  if (ehMercador || npc.compra) {
+    const tabela = ehMercador ? PRECOS : Object.fromEntries(npc.compra.filter((n) => PRECOS[n]).map((n) => [n, PRECOS[n]]));
+    opcoes.splice(opcoes.length - 1, 0, { texto: ehMercador ? '💰 Vender tesouros' : '💰 Vender materiais', onClick: () => {
+      const v = inventario.vendeItens(tabela);
+      if (v.itens) {
+        ouro += v.ouro; hud.ouro(ouro);
+        const novas = registraVenda(npc, v.itens);
+        dialogo.abre(npc.nome, `Negócio fechado! ${v.itens} item(s) por ${v.ouro} 🪙.`
+          + (novas.length ? ` ✨ Com o material que você trouxe, ${novas.join(' e ')} AGORA À VENDA aqui!` : ' Continue me abastecendo que eu consigo coisa RARA.'), opcoes);
+      } else {
+        dialogo.abre(npc.nome, ehMercador
+          ? 'Hmm... você não tem nada que me interesse. Caça, gemas e peixes pagam bem!'
+          : `Procuro por: ${npc.compra.join(', ')}. Traga da caça que eu pago bem — e libero itens raros na loja!`, opcoes);
+      }
     } });
   }
   // LOJA do NPC (estilo Tibia: cada vendedor tem sua mercadoria — armas na
@@ -584,8 +637,15 @@ BUEIROS.forEach((bp, i) => {
   aro.position.y = 0.12; b.add(aro);
   const buraco = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.12, 16), new THREE.MeshStandardMaterial({ color: 0x080808 }));
   buraco.position.y = 0.2; b.add(buraco);
+  // CORDA amarrada numa estaca, caindo no buraco (analogia do Tibia)
+  const estaca = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 6), MAT_MADEIRA);
+  estaca.position.set(1.35, 0.45, 0); estaca.rotation.z = -0.15; b.add(estaca);
+  const cordaB = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.5, 6), new THREE.MeshStandardMaterial({ color: 0x9a7a44, roughness: 1 }));
+  cordaB.position.set(0.62, 0.5, 0); cordaB.rotation.z = 1.05; b.add(cordaB); // da estaca até a boca do buraco
+  const rolinho = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.05, 6, 12), new THREE.MeshStandardMaterial({ color: 0x8a6a3a, roughness: 1 }));
+  rolinho.position.set(1.32, 0.92, 0); rolinho.rotation.x = Math.PI / 2; b.add(rolinho); // rolo de corda na estaca
   scene.add(b);
-  interativos.push({ x: bp.x, z: bp.z, raio: 2.4, titulo: '🕳️ Bueiro', acao: 'Descer ao esgoto 🕳️', msg: 'Escuro lá embaixo...', onAcao: () => desce(i) });
+  interativos.push({ x: bp.x, z: bp.z, raio: 2.4, titulo: '🕳️ Bueiro', acao: 'Descer pela corda 🪢', msg: 'Escuro lá embaixo...', onAcao: () => desce(i) });
 });
 [[26, 24], [-22, 26], [26, -22], [10, 54], [54, 10]].forEach(([gx, gz]) => {
   const grp = new THREE.Group(); grp.position.set(gx, 0, gz);
@@ -654,14 +714,14 @@ function desce(i = 0) {
   avatar.position.set(a.x, -40, a.z + (a.z > 0 ? -3 : 3)); vy = 0; noChao = true;
   hemi.intensity = 0.08; sun.intensity = 0.05; // ESGOTO ESCURO — acenda a tocha (T)
   minimapa.esconde();
-  mostraMensagem(tochaOn ? 'Você desce ao esgoto. 🐀' : 'Está escuro! Acenda a tocha — tecla T 🔦');
+  mostraMensagem(tochaOn ? 'Você desce pela corda. 🪢🐀' : 'Está escuro! Acenda a tocha — tecla T 🔦');
 }
 function sobe(i = acessoAtual) {
   esgoto.grupo.visible = false;
   chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false;
   const b = BUEIROS[i] || BUEIROS[0];
   avatar.position.set(b.x, 0, b.z + 2.5); vy = 0; noChao = true;
-  minimapa.mostra(); mostraMensagem('Você volta à superfície. ☀️'); // luz volta pelo ciclo dia/noite
+  minimapa.mostra(); mostraMensagem('Você sobe pela corda de volta à superfície. 🪢☀️'); // luz volta pelo ciclo dia/noite
 }
 
 // CICLO DIA/NOITE (discreto): muda sol/ambiente/céu/neblina e acende os lampiões
@@ -786,6 +846,25 @@ function aoEquipar(item) {
     mostraMensagem('✨ Runa de Cura! +50 ❤️');
     return true;
   }
+  if (item.usavel === 'pocaoGrande') { // poção grande (oferta rara da Sira): +80
+    if (vida >= VIDA_MAX) { mostraMensagem('Você já está com a vida cheia. ❤️'); return false; }
+    vida = Math.min(VIDA_MAX, vida + 80); hud.vida(vida, VIDA_MAX);
+    mostraMensagem('🧉 GOLE GRANDE! +80 de vida! ❤️');
+    return true;
+  }
+  if (item.usavel === 'runaExplosiva') { // runa explosiva (oferta rara da Eldra): 50 em área 6
+    let acertou = 0;
+    for (const r of ratos) {
+      if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
+      if (Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z) > 6) continue;
+      r.hp -= 50; r.piscar = 0.2; if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0xa03010);
+      if (r.hp <= 0) mataBicho(r);
+      acertou++;
+    }
+    explosaoFogo();
+    mostraMensagem(acertou ? `💣 RUNA EXPLOSIVA! ${acertou} bicho(s) devastado(s) (-50)` : '💣 BOOM... sem alvos por perto.');
+    return true;
+  }
   if (item.usavel === 'runaFogo') { // runa de fogo: explosão queima TODOS por perto
     let acertou = 0;
     for (const r of ratos) {
@@ -872,7 +951,7 @@ function rollLoot(ehBoss) {
   }
   return out;
 }
-function alcanceAtaque() { return (equipados.maoDir && equipados.maoDir.arco) ? 14 : 2.6; } // arco atira de LONGE
+function alcanceAtaque() { return (equipados.maoDir && equipados.maoDir.arco) ? (equipados.maoDir.alcance || 14) : 2.6; } // Arco Longo alcança 18
 function alvoRato(alcance = 2.6) {
   const fx = Math.sin(avatar.rotation.y), fz = Math.cos(avatar.rotation.y);
   let melhor = null, melhorD = alcance;
@@ -929,7 +1008,7 @@ function explosaoFogo() {
 function atacar() {
   const dano = danoArma;
   if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: tiro à distância (gasta 1 flecha)
-    const melhor = alvoRato(14);
+    const melhor = alvoRato(alcanceAtaque());
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
     if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (Venore) ou Yara (Thais). ➹'); return; }
     disparaFlecha(melhor);
@@ -1095,6 +1174,7 @@ function salvaJogo() {
       x: avatar.position.x, z: avatar.position.z,
       ouro, vida, hud: hud.estado(), mochila: inventario.estado(),
       equip: Object.values(equipados).filter(Boolean),
+      economia, // estoque regional dos NPCs (ofertas raras liberadas)
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1112,6 +1192,8 @@ function carregaJogo(nome) {
     hud.carrega(d.hud || {});
     inventario.carrega(d.mochila || []);
     (d.equip || []).forEach((it) => inventario.addItem({ ...it })); // equipamento volta pra mochila (re-equipe com 1 clique)
+    Object.assign(economia, d.economia || {});
+    restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
     hud.ouro(ouro); hud.vida(vida, VIDA_MAX);
     return true;
   } catch (e) { return false; }
@@ -1519,7 +1601,7 @@ function passo() {
     // DICA de ação (Roblox-style): o que a tecla E / botão AÇÃO faz aqui perto
     let dica = null;
     if (noEsgoto) {
-      for (const a of esgoto.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir 🪜'; break; } }
+      for (const a of esgoto.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir pela corda 🪢'; break; } }
       if (!dica) { const itE = achaInterativo(); if (itE) dica = itE.acao || itE.titulo; }
       if (!dica && corpseProximo()) dica = 'Saquear o corpo 💀';
       if (!dica && alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';
