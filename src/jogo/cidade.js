@@ -6,6 +6,21 @@ import * as THREE from 'three';
 import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 
+// textura procedural de grama (granulado de tons de verde) — dá vida ao chão
+function texturaGrama() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = '#66924c'; x.fillRect(0, 0, 128, 128);
+  const tons = ['#5d8744', '#6f9a52', '#5a8040', '#74a058', '#638e49', '#7aa85c'];
+  for (let i = 0; i < 1100; i++) {
+    x.fillStyle = tons[i % tons.length];
+    x.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(60, 60);
+  return t;
+}
+
 export function criaCidade() {
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0xcfe0ee, 160, 380);
@@ -32,7 +47,7 @@ export function criaCidade() {
   scene.add(sun);
 
   // grama
-  const grama = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), mat(0x66924c, 1));
+  const grama = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ map: texturaGrama(), roughness: 1 }));
   grama.rotation.x = -Math.PI / 2; grama.receiveShadow = true; scene.add(grama);
 
   // ruas em GRADE — finas e quase no nível do chão (evita o avatar "afundar")
@@ -45,7 +60,7 @@ export function criaCidade() {
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), mat(0x9a9082, 1));
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
-  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [];
+  const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [];
   const add = (res) => {
     scene.add(res.grupo); solidos.push(res.grupo);
     if (res.colisores) res.colisores.forEach((c) => obstaculos.push(c));
@@ -54,6 +69,7 @@ export function criaCidade() {
     if (res.gotas) res.gotas.forEach((dg) => fonteGotas.push(dg));
     if (res.luz) postes.push({ luz: res.luz, lumMat: res.lumMat });
     if (res.animados) res.animados.forEach((a) => animados.push(a));
+    if (res.interativo) interativos.push(res.interativo);
   };
 
   // praça: fonte central + bancos + postes nas esquinas
@@ -135,5 +151,5 @@ export function criaCidade() {
     scene.add(nv); nuvens.push(nv);
   }
 
-  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados };
+  return { scene, sun, hemi, skyMat, obstaculos, solidos, aguas, postes, nuvens, fonteGotas, ruas, marcos, animados, interativos };
 }

@@ -15,9 +15,13 @@ export function criaControles(dom) {
 
   const joy = { ativo: false, id: null, baseX: 0, baseY: 0, dx: 0, dz: 0 };
   const look = { ativo: false, id: null, lastX: 0, lastY: 0 };
-  let correrToggle = false, abaixarToggle = false, pularFlag = false;
+  let correrToggle = false, abaixarToggle = false, pularFlag = false, agirFlag = false;
 
-  window.addEventListener('keydown', (e) => { teclas[e.code] = true; if (e.code === 'Space') pularFlag = true; });
+  window.addEventListener('keydown', (e) => {
+    teclas[e.code] = true;
+    if (e.code === 'Space') pularFlag = true;
+    if (e.code === 'KeyE') agirFlag = true;
+  });
   window.addEventListener('keyup', (e) => { teclas[e.code] = false; });
 
   // joystick visual
@@ -85,6 +89,11 @@ export function criaControles(dom) {
     abaixarToggle = !abaixarToggle;
     b.style.background = abaixarToggle ? 'rgba(120,180,255,.42)' : 'rgba(255,255,255,.16)';
   });
+  const btnAcao = botao('AÇÃO', 'right:122px;bottom:96px;width:80px;height:80px;background:rgba(230,180,60,.30);border-color:rgba(255,210,90,.7);', () => { agirFlag = true; });
+  btnAcao.addEventListener('pointerdown', () => {
+    btnAcao.style.background = 'rgba(255,210,90,.55)';
+    setTimeout(() => { btnAcao.style.background = 'rgba(230,180,60,.30)'; }, 120);
+  });
 
   function vetorMov() {
     let x = 0, z = 0;
@@ -102,6 +111,7 @@ export function criaControles(dom) {
     vetorMov,
     cam,
     querPular: () => { if (pularFlag) { pularFlag = false; return true; } return false; },
+    querAgir: () => { if (agirFlag) { agirFlag = false; return true; } return false; },
     correndo: () => !!(teclas['ShiftLeft'] || teclas['ShiftRight'] || correrToggle),
     abaixado: () => !!(teclas['KeyC'] || abaixarToggle),
   };

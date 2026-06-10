@@ -14,6 +14,7 @@ import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
+import { criaInventario } from './jogo/inventario.js';
 
 const container = document.getElementById('game');
 
@@ -49,7 +50,7 @@ container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 320);
 
-const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados } = criaCidade();
+const { scene, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos } = criaCidade();
 const raycaster = new THREE.Raycaster();
 const RAIO_AVATAR = 0.7;
 function colide(x, z) {
@@ -97,6 +98,32 @@ scene.add(gato);
 const controles = criaControles(renderer.domElement);
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, limite: CONFIG3D.limiteMundo });
 const npcs = criaNPCs(scene, colide, 6);
+const inventario = criaInventario();
+
+// --- mensagens (toast) + ação/interação ---
+let gesto = 0;
+let msgEl, msgTimer;
+function mostraMensagem(txt) {
+  if (!msgEl) {
+    msgEl = document.createElement('div');
+    msgEl.style.cssText = 'position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:45;'
+      + 'background:rgba(16,22,32,.92);border:1px solid #3a4654;border-radius:10px;padding:10px 16px;'
+      + 'color:#eef3f8;font:14px Arial;max-width:80vw;text-align:center;pointer-events:none;transition:opacity .3s;';
+    document.body.appendChild(msgEl);
+  }
+  msgEl.textContent = txt;
+  msgEl.style.opacity = '1';
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { msgEl.style.opacity = '0'; }, 2600);
+}
+function achaInterativo() {
+  let melhor = null, melhorD = Infinity;
+  for (const it of interativos) {
+    const d = Math.hypot(it.x - avatar.position.x, it.z - avatar.position.z);
+    if (d <= it.raio && d < melhorD) { melhorD = d; melhor = it; }
+  }
+  return melhor;
+}
 
 criaSelecao({
   cores: coresJogador,
@@ -110,6 +137,7 @@ criaSelecao({
       if (!colide(tx, tz)) { avatar.position.set(tx, 0, tz); break; }
     }
     minimapa.mostra();
+    inventario.mostra();
     if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
   },
 });
@@ -161,6 +189,18 @@ function loop() {
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
     animaAvatar(avatar, movendo && noChao, tempo, correndo);
     ultimoAnim = { mov: movendo && noChao, corr: correndo, abx: abaixado };
+
+    // AÇÃO: gesto do braço + interação com item próximo
+    if (controles.querAgir()) {
+      gesto = 1;
+      const alvo = achaInterativo();
+      if (alvo) mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+    }
+    if (gesto > 0) {
+      gesto = Math.max(0, gesto - dt * 3);
+      const p = avatar.userData.partes;
+      if (p) p.bracoDir.rotation.x = -Math.sin((1 - gesto) * Math.PI) * 1.6;
+    }
 
     // câmera orbital + anti-oclusão
     const alvo = avatar.position;
