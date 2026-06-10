@@ -101,6 +101,7 @@ let tochaOn = false;
 let vida = 100; const VIDA_MAX = 100; let defesa = 0; // defesa sobe ao equipar armadura
 const equipados = {}; // slot -> item de armadura
 let ouro = 0; // moeda do jogo (loot/pesca) — compra casas
+let danoArma = 2; // 2 = mãos · 5 = graveto · espadas etc. sobem
 const MAT_METAL = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.6, roughness: 0.4 });
 
 // avatar (recriado quando muda a aparência na tela de seleção)
@@ -330,12 +331,15 @@ function aplicaDiaNoite(dt) {
   }
 }
 function poeArmaNaMao() {
-  const p = avatar.userData.partes; if (!p || p.bracoDir.getObjectByName('arma')) return;
-  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA);
-  stick.name = 'arma'; stick.position.set(0, -1.0, 0.18); stick.rotation.x = 0.4; p.bracoDir.add(stick);
+  const p = avatar.userData.partes; if (!p) return;
+  const old = p.bracoDir.getObjectByName('arma'); if (old) p.bracoDir.remove(old);
+  let m;
+  if (danoArma > 6) { m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.06), MAT_METAL); m.position.set(0, -1.4, 0.18); } // espada/machado
+  else { m = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.2, 6), MAT_MADEIRA); m.position.set(0, -1.0, 0.18); m.rotation.x = 0.4; } // graveto
+  m.name = 'arma'; p.bracoDir.add(m);
 }
 function equipaGraveto() {
-  if (armado) return; armado = true; poeArmaNaMao();
+  if (armado) return; armado = true; danoArma = 5; poeArmaNaMao();
   inventario.equipa('maoDir', { nome: 'Graveto', icone: '🪵' });
   mostraMensagem('Pegou um graveto! Seus golpes agora dão 5. ⚔️');
 }
@@ -348,8 +352,18 @@ const ARMADURAS = [
   { id: 'amuleto', nome: 'Amuleto', icone: '📿', slot: 'colar', defesa: 2 },
   { id: 'aneldef', nome: 'Anel de Defesa', icone: '💍', slot: 'anel', defesa: 1 },
 ];
+const ARMAS = [
+  { nome: 'Adaga', icone: '🗡️', slot: 'maoDir', dano: 8, arma: true },
+  { nome: 'Espada', icone: '⚔️', slot: 'maoDir', dano: 12, arma: true },
+  { nome: 'Machado', icone: '🪓', slot: 'maoDir', dano: 16, arma: true },
+];
 function aoEquipar(item) {
   if (item.usavel === 'tocha') { alternaTocha(); return false; } // acende/apaga, não consome
+  if (item.arma) { // arma de mão
+    armado = true; danoArma = item.dano; equipados.maoDir = item; poeArmaNaMao();
+    inventario.equipa('maoDir', { nome: item.nome, icone: item.icone });
+    mostraMensagem(`Empunhou ${item.nome} (dano ${item.dano}) ⚔️`); return true;
+  }
   const slot = item.slot;
   if (equipados[slot]) { defesa -= equipados[slot].defesa || 0; inventario.addItem(equipados[slot]); }
   equipados[slot] = item; defesa += item.defesa || 0;
@@ -397,7 +411,8 @@ function rollLoot(ehBoss) {
   LOOT_TAB.forEach((it) => { if (Math.random() < (ehBoss ? it.ch + 0.25 : it.ch)) out.push({ nome: it.nome, icone: it.icone }); });
   if (ehBoss) {
     out.push({ nome: 'Presa do Boss', icone: '🦷' });
-    if (Math.random() < 0.45) out.push({ ...ARMADURAS[Math.floor(Math.random() * ARMADURAS.length)] }); // dropa armadura
+    if (Math.random() < 0.4) out.push({ ...ARMADURAS[Math.floor(Math.random() * ARMADURAS.length)] }); // dropa armadura
+    if (Math.random() < 0.3) out.push({ ...ARMAS[Math.floor(Math.random() * ARMAS.length)] }); // ou uma arma
   }
   return out;
 }
@@ -413,7 +428,7 @@ function alvoRato() {
   return melhor;
 }
 function atacar() {
-  const dano = armado ? 5 : 2;
+  const dano = danoArma;
   const melhor = alvoRato();
   if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
   melhor.hp -= dano; melhor.piscar = 0.15; melhor.g.userData.corpoMat.emissive.setHex(0x882020);

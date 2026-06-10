@@ -20,10 +20,10 @@ export function criaCasaInterior(x, z, opts = {}) {
   chao.position.y = 0.05; chao.receiveShadow = true; g.add(chao);
 
   // segmento de parede (caixa) + colisor em coords do mundo
-  function muro(cx, cz, w, d) {
+  function muro(cx, cz, w, d, semCol) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), paredeMat);
     m.position.set(cx, alt / 2, cz); m.castShadow = true; m.receiveShadow = true; g.add(m);
-    colisores.push({ minX: x + cx - w / 2, maxX: x + cx + w / 2, minZ: z + cz - d / 2, maxZ: z + cz + d / 2 });
+    if (!semCol) colisores.push({ minX: x + cx - w / 2, maxX: x + cx + w / 2, minZ: z + cz - d / 2, maxZ: z + cz + d / 2 });
   }
   function ladoCheio(lado) {
     if (lado === 'sul') muro(0, -hz, larg, t);
@@ -35,14 +35,14 @@ export function criaCasaInterior(x, z, opts = {}) {
     const vert = alt - 2.6; // verga acima da porta
     if (lado === 'sul' || lado === 'norte') {
       const cz = lado === 'sul' ? -hz : hz, seg = (larg - gw) / 2;
-      muro(-(gw / 2 + seg / 2), cz, seg, t);
-      muro(gw / 2 + seg / 2, cz, seg, t);
+      muro(-(gw / 2 + seg / 2), cz, seg, t, true); // sem colisão = entra fácil pela frente
+      muro(gw / 2 + seg / 2, cz, seg, t, true);
       const verga = new THREE.Mesh(new THREE.BoxGeometry(gw, vert, t), paredeMat);
       verga.position.set(0, alt - vert / 2, cz); g.add(verga);
     } else {
       const cx = lado === 'oeste' ? -hx : hx, seg = (prof - gw) / 2;
-      muro(cx, -(gw / 2 + seg / 2), t, seg);
-      muro(cx, gw / 2 + seg / 2, t, seg);
+      muro(cx, -(gw / 2 + seg / 2), t, seg, true);
+      muro(cx, gw / 2 + seg / 2, t, seg, true);
       const verga = new THREE.Mesh(new THREE.BoxGeometry(t, vert, gw), paredeMat);
       verga.position.set(cx, alt - vert / 2, 0); g.add(verga);
     }
