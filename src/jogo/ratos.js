@@ -652,6 +652,83 @@ export function criaDragao(x, z, lord = false) {
   return g;
 }
 
+// DRAKARI: raca draconica de obsidiana. Humanoides altos, com focinho,
+// chifres, cauda e armas rituais. `elite=true` cria a versao sacerdotal/guarda.
+export function criaDrakari(x, z, elite = false) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const s = elite ? 1.18 : 1;
+  const corpoMat = new THREE.MeshStandardMaterial({
+    color: elite ? 0x53304f : 0x2f473c,
+    roughness: 0.78,
+    metalness: 0.04,
+    flatShading: true,
+  });
+  const ventre = new THREE.MeshStandardMaterial({ color: elite ? 0xb47a38 : 0x7b8a52, roughness: 0.85, flatShading: true });
+  const obsidiana = new THREE.MeshStandardMaterial({ color: 0x17161c, roughness: 0.55, metalness: 0.22, flatShading: true });
+  const osso = mat(0xe4dcc3, 0.55);
+  const bronze = new THREE.MeshStandardMaterial({ color: elite ? 0xd1a64a : 0x9a7230, metalness: 0.38, roughness: 0.42, flatShading: true });
+  const olho = new THREE.MeshStandardMaterial({ color: 0xff5a2a, emissive: 0xff2600, emissiveIntensity: elite ? 0.9 : 0.55 });
+  const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+  const meshBox = (w, h, d, material, x0, y0, z0) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w * s, h * s, d * s), material);
+    m.position.set(x0 * s, y0 * s, z0 * s); return add(m);
+  };
+  const cyl = (r1, r2, h, material, x0, y0, z0, rz = 0, rx = 0) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r1 * s, r2 * s, h * s, 6), material);
+    m.position.set(x0 * s, y0 * s, z0 * s); m.rotation.z = rz; m.rotation.x = rx; return add(m);
+  };
+  const cone = (r, h, material, x0, y0, z0, rx = 0, rz = 0) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r * s, h * s, 5), material);
+    m.position.set(x0 * s, y0 * s, z0 * s); m.rotation.x = rx; m.rotation.z = rz; return add(m);
+  };
+
+  meshBox(0.92, 1.28, 0.55, corpoMat, 0, 1.58, 0);
+  meshBox(1.02, 0.62, 0.6, ventre, 0, 1.24, 0.04);
+  meshBox(0.76, 0.46, 0.56, corpoMat, 0, 2.36, 0.14);
+  const focinho = meshBox(0.5, 0.28, 0.56, corpoMat, 0, 2.28, 0.56);
+  focinho.rotation.x = -0.1;
+  [-1, 1].forEach((ld) => {
+    const o = new THREE.Mesh(new THREE.SphereGeometry(0.055 * s, 8, 8), olho);
+    o.position.set(ld * 0.18 * s, 2.42 * s, 0.84 * s); g.add(o);
+    cone(0.08, elite ? 0.58 : 0.42, osso, ld * 0.22, 2.74, 0.0, -1.0, ld * 0.28);
+    cone(0.045, 0.22, osso, ld * 0.14, 2.13, 0.88, Math.PI);
+  });
+  for (let i = 0; i < 5; i++) cone(0.05, 0.22, obsidiana, 0, 2.62 - i * 0.28, -0.2 - i * 0.18, 0.15);
+
+  const patas = [];
+  [-0.23, 0.23].forEach((ox) => {
+    const p = cyl(0.12, 0.16, 0.9, corpoMat, ox, 0.65, 0, ox > 0 ? -0.08 : 0.08);
+    patas.push(p);
+    meshBox(0.28, 0.14, 0.48, obsidiana, ox, 0.13, 0.18);
+  });
+  [-0.68, 0.68].forEach((ox) => {
+    const braco = cyl(0.1, 0.14, 1.05, corpoMat, ox, 1.75, 0, ox > 0 ? -0.24 : 0.24);
+    patas.push(braco);
+  });
+
+  const haste = cyl(0.035, 0.045, elite ? 2.7 : 2.25, obsidiana, 0.92, 1.3, 0.22, 0.05);
+  haste.rotation.x = 0.04;
+  cone(0.16, 0.42, bronze, 0.92, elite ? 2.78 : 2.52, 0.22, 0);
+  const escudo = new THREE.Mesh(new THREE.CylinderGeometry(0.38 * s, 0.48 * s, 0.12 * s, 7), obsidiana);
+  escudo.position.set(-0.84 * s, 1.48 * s, 0.22 * s); escudo.rotation.z = Math.PI / 2; escudo.rotation.y = 0.28; add(escudo);
+  meshBox(0.12, 0.12, 0.12, bronze, -0.84, 1.48, 0.64);
+
+  for (let i = 0; i < 5; i++) {
+    const seg = new THREE.Mesh(new THREE.DodecahedronGeometry((0.22 - i * 0.025) * s, 0), corpoMat);
+    seg.position.set(Math.sin(i * 0.8) * 0.12 * s, (0.9 - i * 0.05) * s, (-0.48 - i * 0.34) * s);
+    seg.scale.set(1, 0.78, 1.16); add(seg);
+  }
+  if (elite) {
+    const gema = new THREE.Mesh(new THREE.OctahedronGeometry(0.2 * s, 0),
+      new THREE.MeshStandardMaterial({ color: 0xff5a2a, emissive: 0xff2600, emissiveIntensity: 0.8, roughness: 0.35 }));
+    gema.position.set(0, 0.75 * s, -2.18 * s); g.add(gema);
+    meshBox(1.1, 0.16, 0.72, bronze, 0, 2.02, 0.05);
+  }
+
+  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  return g;
+}
+
 // BOSS: cobra (rastejante) e crocodilo — maiores, mais vida/XP/loot.
 export function criaCobra(x, z) {
   const g = new THREE.Group(); g.position.set(x, Y, z);

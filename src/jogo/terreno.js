@@ -25,6 +25,9 @@ const RETS = [
   [492, -74, 642, 70],       // Thais (muralha + casario + praça)
   [-424, -150, -236, 92],    // VENORE, a Cidade Mercante (RV4.1: distrito norte + armazéns + brejo)
   [-258, -52, -82, -8],      // Estrada do Pântano (vilarejo → Venore)
+  [-552, -48, -414, -12],    // Estrada das Cinzas (Venore -> Noctaria)
+  [-690, -82, -548, 24],     // Noctaria, a Cidadela da Vigilia
+  [-780, -74, -692, 18],     // Santuario da Lua Partida / Fenda
 ];
 // círculos planos [cx, cz, raio]
 const CIRCS = [
@@ -33,10 +36,11 @@ const CIRCS = [
   [225, -95, 28],   // Pântano da Serpente
   [40, 330, 46],    // Covil do Dragão
   [110, 300, 58],   // Montanha do Dragão (perfil próprio em alturaTerreno)
+  [-742, -30, 42],  // arena sombria da Lua Partida
 ];
 // o relevo morre suavemente nas bordas do mundo (a malha do chão cobre
 // exatamente esta região; fora dela o plano-horizonte é raso)
-export const REGIAO = { minX: -430, maxX: 830, minZ: -490, maxZ: 490 };
+export const REGIAO = { minX: -900, maxX: 830, minZ: -490, maxZ: 490 };
 
 const BORDA = 18; // metros de rampa entre o plano e a colina
 

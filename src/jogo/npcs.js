@@ -165,13 +165,34 @@ const ROSTER = [
       { nome: 'Virotes (12)', icone: '🏹', preco: 15, pacote: { nome: 'Virote', icone: '🏹', qtd: 12 } },
       { nome: 'Capa do Viajante', icone: '🧥', preco: 120, slot: 'tronco', defesa: 4 },
     ] },
+  // --- NOCTARIA, a Cidadela da Vigilia (RV6.0) ---
+  { nome: 'Nerion', prof: 'Vigia da Fenda', post: { x: -618, z: -9 }, home: { x: -620, z: 8 }, cor: 0x4a3a6a, humor: 'mau', sexo: 'homem', tipo: 'mago',
+    falas: { trabalho: 'Guardo a Casa da Vigília. A oeste fica a Fenda; a leste, gente que ainda quer viver.', dica: 'Noctaria não foi feita para iniciante. Se os Drakari te enxergarem sem preparo, você vira cinza.' } },
+  { nome: 'Calder', prof: 'Ferreiro Sombrio', post: { x: -590, z: -52 }, home: { x: -586, z: -52 }, cor: 0x5a4a42, humor: 'mau', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'Forjo ferro com pó de obsidiana. Lindo, pesado e caro.', dica: 'Escama Drakari e Fragmento de Obsidiana compram meu respeito. O resto compra prego.' },
+    loja: [
+      { nome: 'Espada de Obsidiana', icone: '🗡️', preco: 720, slot: 'maoDir', dano: 30, arma: true },
+      { nome: 'Escudo Noturno', icone: '🛡️', preco: 520, slot: 'maoEsq', defesa: 8 },
+    ],
+    compra: ['Escama Drakari', 'Fragmento de Obsidiana', 'Coração de Obsidiana', 'Presa do Boss'],
+    ofertas: [{ precisa: 12, item: { nome: 'Machado da Vigília', icone: '🪓', preco: 980, slot: 'maoDir', dano: 34, arma: true } }] },
+  { nome: 'Mira Noctar', prof: 'Mercadora', post: { x: -588, z: -10 }, home: { x: -586, z: -8 }, cor: 0x7a5a2a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Vendo provisão para quem insiste em atravessar o Ermo das Cinzas.', dica: 'Leve poções, flechas e paciência. O santuário pune pressa.' },
+    loja: [
+      { nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' },
+      { nome: 'Poção Grande', icone: '🧉', preco: 22, slot: 'pocao', usavel: 'pocaoGrande' },
+      { nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } },
+      { nome: 'Virotes (12)', icone: '🏹', preco: 18, pacote: { nome: 'Virote', icone: '🏹', qtd: 12 } },
+    ],
+    compra: ['Rubi', 'Safira', 'Esmeralda', 'Âmbar', 'Anel de Ouro'] },
 ];
 
 // casas (residências) — pontos LIVRES na rua em frente às casas (os antigos
 // caíam DENTRO dos prédios e o NPC andava contra a parede a noite inteira!)
 const HOMES = [[24, 24], [-24, 24], [24, -24], [-24, -24], [56, 8], [-56, 8], [8, 56], [8, -56], [24, 40], [-24, 40], [40, -24]];
 const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias', 'Eldra', 'Falk',
-  'Anselmo', 'Berta', 'Grom', 'Ilda', 'Capitã Mara', 'Tessa', 'Ulric', 'Hela']); // lojistas/templo/guarda viram a noite no posto
+  'Anselmo', 'Berta', 'Grom', 'Ilda', 'Capitã Mara', 'Tessa', 'Ulric', 'Hela',
+  'Nerion', 'Calder', 'Mira Noctar']); // lojistas/templo/guarda viram a noite no posto
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');

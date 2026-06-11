@@ -20,7 +20,7 @@ import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaAudio } from './jogo/audio.js';
-import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
+import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -72,13 +72,13 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.9 (v44)';
-{ // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
+const VERSAO = 'RV6.0 (v45)';
+{ // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
   titulo.innerHTML = 'VENOR'
     + '<div style="font-size:15px;letter-spacing:6px;color:#e8d9a0;margin-top:2px;">ERA DOS DRAGÕES</div>'
-    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">— PATCH 1 —</div>';
+    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">— PATCH 2 —</div>';
   titulo.style.cssText = 'position:fixed;top:7%;left:50%;transform:translateX(-50%);z-index:36;'
     + 'font:bold 54px Georgia,serif;letter-spacing:10px;color:#f4e9c8;text-align:center;'
     + 'text-shadow:0 2px 6px #000,0 0 28px rgba(217,165,34,.45);pointer-events:none;';
@@ -274,6 +274,10 @@ const CAMPOS = [
   { tipo: 'veneno', x: 234, z: -102, r: 6, y: 0 },
   { tipo: 'veneno', x: 219, z: -105, r: 4, y: 0 },
   { tipo: 'veneno', x: 236, z: -87, r: 4.5, y: 0 },
+  { tipo: 'lava', x: -747, z: -32, r: 4.2, y: 0 },   // Fenda da Lua Partida
+  { tipo: 'lava', x: -737, z: -25, r: 3.4, y: 0 },
+  { tipo: 'veneno', x: -716, z: -58, r: 5.2, y: 0 }, // cinza toxica do ermo
+  { tipo: 'veneno', x: -770, z: -54, r: 4.6, y: 0 },
 ];
 let envenenadoAte = 0, proxTickLava = 0, proxTickVeneno = 0;
 [[150, 30], [185, -25], [215, 45], [250, 10]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14), { especie: 'troll' }));
@@ -417,6 +421,9 @@ const MODELOS_MONSTROS = [
   { arquivo: 'escorpiao', especie: 'escorpiao', tam: 2 },
   { arquivo: 'ladrao', especie: 'ladrao', tam: 3.1 },
   { arquivo: 'cobra', especie: 'cobra', tam: 2.6 },
+  { arquivo: 'drakari', especie: 'drakari', tam: 3.8 },
+  { arquivo: 'drakari', especie: 'drakariElite', tam: 4.6 },
+  { arquivo: 'drakari', especie: 'arconteDrakari', tam: 8.4 },
 ];
 const baseGLBPorEspecie = {}; // espécie -> base pronta (spawns novos também vestem)
 function preparaBaseGLB(gltf, tam) {
@@ -530,6 +537,24 @@ const ESQUELETOS_NOTURNOS = [];
   const tecela = criaAranhaGigante(-146, -67); tecela.scale.setScalar(0.8);
   addMonstro(tecela, 180, 55, 14, 2.6, true, areaMon(-146, -66, 12), { veneno: true, especie: 'aranha', lootEspecial: { nome: 'Seda de Aranha', icone: '🕸️' } });
 }
+// NOCTARIA / ERMO DAS CINZAS (RV6.0): Drakari sao a primeira raca inimiga
+// organizada do jogo. Batedores caçam na estrada; elites protegem a Fenda.
+[
+  [-522, -34, false], [-548, -48, false], [-575, -20, false],
+  [-666, -70, false], [-690, -10, false], [-716, -56, true],
+  [-734, -4, true], [-770, -36, true],
+].forEach(([x, z, elite]) => {
+  const d = criaDrakari(x, z, elite);
+  if (elite) d.scale.setScalar(1.18);
+  addMonstro(d, elite ? 190 : 110, elite ? 90 : 55, elite ? 24 : 17, elite ? 2.05 : 2.35, elite, areaMon(x, z, elite ? 20 : 18), {
+    especie: elite ? 'drakariElite' : 'drakari',
+    atira: elite ? 'magia' : null,
+    alcanceTiro: elite ? 15 : 0,
+    danoTiro: elite ? 15 : 0,
+    cadencia: elite ? 3.0 : 0,
+    lootEspecial: { nome: elite ? 'Fragmento de Obsidiana' : 'Escama Drakari', icone: elite ? '💠' : '🐉' },
+  });
+});
 { // REI ESQUELETO: boss do trono — dropa a COROA ANTIGA (vale 250🪙)
   const rei = criaEsqueleto(-350, -10); rei.position.y = -40; rei.scale.setScalar(1.75);
   addMonstro(rei, 320, 90, 24, 1.4, true, areaMon(-348, -10, 11), {
@@ -609,6 +634,8 @@ const LUGARES_MAPA = [
   { nome: 'Fazenda', x: 105, z: 38 }, { nome: 'Cemitério', x: 130, z: -60 },
   { nome: 'Pântano', x: 225, z: -95 }, { nome: 'Bandidos', x: 252, z: 48 },
   { nome: 'Praia', x: 0, z: -218 },
+  { nome: 'Noctaria', x: -620, z: -30 }, { nome: 'Ermo das Cinzas', x: -690, z: -50 },
+  { nome: 'Lua Partida', x: -742, z: -30 },
 ];
 // LOJAS identificadas (estilo Tibia): ícone no MINIMAPA + marcador flutuante na cena
 const LOJAS_MAPA = [
@@ -618,6 +645,8 @@ const LOJAS_MAPA = [
   { x: 22, z: -15, icone: '🏹' },  // Falk (arco & flecha; compra couro/seda)
   { x: 32, z: 0, icone: '🧪' },    // Sira (poções, dentro do hospital; compra ervas)
   { x: 552, z: 10, icone: '💰' },  // Yara (mercadora de Thais)
+  { x: -590, z: -52, icone: '⚒️' }, // Calder (forja sombria de Noctaria)
+  { x: -588, z: -10, icone: '💰' },  // Mira Noctar (suprimentos)
 ];
 const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, lojas: LOJAS_MAPA, alcance: 90 });
 LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
@@ -684,6 +713,7 @@ const NOMES_CHEFES = {
   trollAnciao: 'Troll Ancião',
   aranha: 'Aranha Tecelã',
   cobra: 'Guardião do Esgoto',
+  arconteDrakari: 'Arconte Drakari',
 };
 function nomeChefe(r) {
   if (!r) return 'Chefe';
@@ -877,6 +907,16 @@ const QUESTS = [
   { id: 'cacaDragao', npc: 'Dorian', tipo: 'matar', especie: 'dragao', meta: 1,
     titulo: 'A Caça ao Dragão', pede: 'Os dragões voltaram a dominar estas terras — o do Pico cospe fogo até sobre Venore. Derrote UM dragão e Thais te honrará com o ELMO DO DRAGÃO.',
     fala: 'O dragão ainda voa?', recompensa: { ouro: 150, xp: 100, item: { nome: 'Elmo do Dragão', icone: '🐲', slot: 'cabeca', defesa: 6 } } },
+  // RV6.0: primeira questline de alto nivel em Noctaria.
+  { id: 'batedoresDrakari', npc: 'Nerion', nivel: 6, tipo: 'matar', especie: 'drakari', meta: 3,
+    titulo: 'Batedores de Obsidiana', pede: 'Os Drakari testam nossos portões todas as noites. Mate 3 batedores no Ermo das Cinzas e volte vivo. Se você ainda é fraco, não saia da estrada.',
+    fala: 'Os batedores ainda rondam?', recompensa: { ouro: 120, xp: 110 } },
+  { id: 'guardasDaFenda', npc: 'Nerion', requer: 'batedoresDrakari', nivel: 9, tipo: 'matar', especie: 'drakariElite', meta: 2,
+    titulo: 'Guardas da Fenda', pede: 'Agora você viu o tamanho do problema. Dois guardas elite protegem o Santuário da Lua Partida. Derrube-os para quebrar a primeira camada do selo.',
+    fala: 'A primeira camada caiu?', recompensa: { ouro: 180, xp: 170, item: { nome: 'Fragmento de Obsidiana', icone: '💠' } } },
+  { id: 'arconteLuaPartida', npc: 'Nerion', requer: 'guardasDaFenda', nivel: 12, tipo: 'matar', especie: 'arconteDrakari', meta: 1, invoca: 'arconteDrakari',
+    titulo: 'A Lua Partida', pede: 'A Fenda respondeu. O Arconte Drakari vai acordar no santuário a oeste. Ele é o grande desafio desta era: fogo negro, magia e muita vida. Vá apenas se estiver pronto.',
+    fala: 'O Arconte ainda respira?', recompensa: { ouro: 420, xp: 360, item: { nome: 'Selo da Lua Partida', icone: '🌑', slot: 'anel', defesa: 7 } } },
 ];
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 // GUILDA DE VENORE (RV4.2): 2 dragões abatidos = entrada + Manto da Guilda
@@ -900,6 +940,7 @@ const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
   'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500, 'Cristal do Pico': 150,
+  'Escama Drakari': 70, 'Fragmento de Obsidiana': 140, 'Coração de Obsidiana': 650,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -945,11 +986,17 @@ function abreDialogo(npc) {
   const q = questDe(npc);
   if (q) {
     const e = questEstado[q.id] || (questEstado[q.id] = { aceita: false, prog: 0, feita: false });
-    const rotulo = !e.aceita ? `📜 Missão: ${q.titulo}` : `📜 ${q.titulo} (${progressoQuest(q, e)}/${q.meta})`;
+    const rotulo = !e.aceita ? `📜 Missão: ${q.titulo}${q.nivel ? ` (nível ${q.nivel}+)` : ''}` : `📜 ${q.titulo} (${progressoQuest(q, e)}/${q.meta})`;
     opcoes.splice(opcoes.length - 1, 0, { texto: rotulo, onClick: () => {
       if (!e.aceita) {
+        const nivelAtual = hud.estado().nivel || 1;
+        if (q.nivel && nivelAtual < q.nivel) {
+          dialogo.abre(npc.nome, `Volte no nível ${q.nivel}. Esta missão é feita para personagem preparado; hoje você está no nível ${nivelAtual}.`, opcoes);
+          return;
+        }
         e.aceita = true; salvaJogo();
         if (q.invoca === 'vorag') invocaVorag(); // RV5.3: a Ossada se ergue AGORA
+        if (q.invoca === 'arconteDrakari') invocaArconteDrakari(); // RV6.0: a Fenda acorda sob demanda
         dialogo.abre(npc.nome, `${q.pede} (são ${q.meta} no total — eu anoto aqui)`, opcoes);
         return;
       }
@@ -1790,6 +1837,7 @@ const RAROS = {
   orcWarlord: { chance: 0.08, item: { nome: 'Machado do Senhor da Guerra', icone: '🪓', slot: 'maoDir', dano: 28, arma: true } },
   vorag: { chance: 0.15, item: { nome: 'Presa de Vorag', icone: '🦴', slot: 'colar', defesa: 6 } },
   trollAnciao: { chance: 0.08, item: { nome: 'Clava de Magma', icone: '🌋', slot: 'maoDir', dano: 24, arma: true } },
+  arconteDrakari: { chance: 0.16, item: { nome: 'Lâmina da Lua Partida', icone: '🗡️', slot: 'maoDir', dano: 38, arma: true } },
 };
 // === VORAG, O PRIMEIRO (RV5.3): o finale da lore — a Ossada SE ERGUE ===
 // Invocado ao aceitar "O Terceiro Sinal" (e re-invocado no load, se a
@@ -1813,6 +1861,31 @@ function invocaVorag() {
   scene.add(r.g);
   sons.dor();
   mostraMensagem('🦴 A OSSADA SE ERGUE! Vorag, o Primeiro, renasceu no campo a leste — o Terceiro Sinal se cumpriu!');
+}
+// ARCONTE DRAKARI (RV6.0): boss final da primeira cadeia de Noctaria.
+// Nasce somente quando o jogador aceita "A Lua Partida" e continua salvo.
+let arconteInvocado = false;
+function invocaArconteDrakari() {
+  if (arconteInvocado) return;
+  arconteInvocado = true;
+  const g = criaDrakari(-742, -30, true);
+  g.scale.setScalar(2.15);
+  g.traverse((o) => {
+    if (o.isMesh && o.material && o.material.emissive) {
+      o.material = o.material.clone();
+      o.material.emissive.setHex(0x6a160c);
+      o.material.emissiveIntensity = Math.max(o.material.emissiveIntensity || 0, 0.45);
+    }
+  });
+  const r = addMonstro(g, 1250, 620, 44, 1.55, true, areaMon(-742, -30, 24), {
+    boss: true, especie: 'arconteDrakari',
+    atira: 'fogo', alcanceTiro: 22, danoTiro: 34, cadencia: 3.1, tiroAltura: 6.6,
+    lootEspecial: { nome: 'Coração de Obsidiana', icone: '🫀' },
+  });
+  scene.add(r.g);
+  aplicaGLBEm(r);
+  sons.dor();
+  mostraMensagem('🌑 A LUA PARTIDA SE ABRE! O Arconte Drakari acordou no santuário a oeste de Noctaria.');
 }
 // BARRA DE VIDA flutuante (RV5.5): aparece sobre o bicho ao ser ferido e
 // some sozinha em 4s — jogabilidade de verdade, sem ler número em texto
@@ -2028,6 +2101,7 @@ function salvaJogo() {
       dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
       bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
       vorag: voragInvocado, // a Ossada erguida não volta a dormir
+      arconte: arconteInvocado, // o Arconte despertado também continua no mundo
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -2052,6 +2126,7 @@ function carregaJogo(nome) {
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
     if (d.vorag) invocaVorag(); // a Ossada erguida continua erguida
+    if (d.arconte || ((questEstado.arconteLuaPartida || {}).aceita && !(questEstado.arconteLuaPartida || {}).feita)) invocaArconteDrakari();
     (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
@@ -2127,6 +2202,8 @@ function ativaGM() {
   B('🌀 Ir: Thais', () => tpGM(560, -8));
   B('🌀 Ir: Pico do Dragão', () => tpGM(110, 300));
   B('🌀 Ir: Praia', () => tpGM(0, -208));
+  B('🌑 Ir: Noctaria', () => tpGM(-620, -30));
+  B('🌑 Ir: Lua Partida', () => tpGM(-742, -30));
   B('❤️ Curar tudo', () => { vida = VIDA_MAX; hud.vida(vida, VIDA_MAX); mostraMensagem('❤️ GM: vida cheia'); });
   B('🪙 +100 de ouro', () => { ouro += 100; hud.ouro(ouro); });
   B('⭐ +100 de XP', () => hud.ganhaXP(100));
@@ -2276,6 +2353,10 @@ const DISTRITOS = [
   { nome: 'Brejo Profundo', x: -278, z: -126, raio: 26 },
   { nome: 'VENORE — Cidade Mercante', x: -330, z: -20, raio: 112 },
   { nome: 'Estrada do Pântano', x: -168, z: -30, raio: 80 },
+  { nome: 'Estrada das Cinzas', x: -510, z: -30, raio: 74 },
+  { nome: 'Noctaria, Cidadela da Vigília', x: -620, z: -30, raio: 78 },
+  { nome: 'Ermo das Cinzas', x: -690, z: -52, raio: 58 },
+  { nome: 'Santuário da Lua Partida', x: -742, z: -30, raio: 44 },
   // Vilarejo de Venor (a antiga cidadezinha onde tudo começou)
   { nome: 'Praça do Vilarejo de Venor', x: 0, z: 0, raio: 18 },
   { nome: 'Rua do Mercado', x: 16, z: 0, raio: 16 },
@@ -2786,7 +2867,7 @@ function passo() {
     }
     const dI = Math.hypot(p.ate.x - avatar.position.x, p.ate.z - avatar.position.z);
     if (dI < 1.9 && jogoIniciado) {
-      mostraMensagem(p.fogo ? `🔥 Bola de fogo do dragão! (-${p.dano})` : `🔮 Rajada mágica do beholder! (-${p.dano})`);
+      mostraMensagem(p.fogo ? `🔥 Bola de fogo! (-${p.dano})` : `🔮 Rajada mágica! (-${p.dano})`);
       recebeDano(p.dano); // Utamo absorve primeiro
     }
     if (p.fogo && Math.random() < 0.5) criaLavaTemp(p.ate.x, p.ate.z, alturaTerreno(p.ate.x, p.ate.z)); // fogo vira LAVA no chão

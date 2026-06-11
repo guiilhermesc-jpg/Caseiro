@@ -170,20 +170,30 @@ export function criaCidade() {
   }
   const matoMat = new THREE.MeshStandardMaterial({ map: texturaMato(), transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 1 });
   const matoGeo = new THREE.PlaneGeometry(1.7, 1.25); matoGeo.translate(0, 0.55, 0);
+  const randX = () => REGIAO.minX + Math.random() * (REGIAO.maxX - REGIAO.minX);
+  const randZ = () => REGIAO.minZ + Math.random() * (REGIAO.maxZ - REGIAO.minZ);
+  function bloqueiaVegetacao(px, pz) {
+    if (Math.abs(px) < 78 && Math.abs(pz) < 78) return true;     // vila central
+    if (px > 60 && px < 620 && Math.abs(pz) < 15) return true;   // estrada para Thais
+    if (pz < -178) return true;                                  // praia/mar
+    if (Math.abs(px) < 42 && pz < -70) return true;              // bairro sul/trilha
+    if (Math.hypot(px - 110, pz - 300) < 52) return true;        // Montanha do Dragão
+    if (px > 498) return true;                                   // Thais
+    if (px < -232 && pz > -152 && pz < 94) return true;          // Venore capital
+    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) return true; // Estrada do Pântano
+    if (px > -565 && px < -414 && Math.abs(pz + 30) < 12) return true; // Estrada das Cinzas
+    if (px > -704 && px < -536 && pz > -94 && pz < 34) return true; // Noctaria
+    if (px > -752 && px < -682 && Math.abs(pz + 30) < 10) return true; // trilha da Fenda
+    if (Math.hypot(px + 742, pz + 30) < 46) return true;         // Santuário da Lua Partida
+    return false;
+  }
   const N_MATO = 700, dummyM = new THREE.Object3D(); // 2× mais denso (refs premium) — seguem 2 draw calls
   const mato1 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   const mato2 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   let mi = 0;
   for (let tent = 0; tent < 16000 && mi < N_MATO; tent++) {
-    const px = (Math.random() - 0.5) * 760, pz = (Math.random() - 0.5) * 560;
-    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;     // fora da cidade
-    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;   // fora da estrada
-    if (pz < -178) continue;                                  // fora da praia/mar
-    if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
-    if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
-    if (px > 498) continue;                                   // fora de Thais
-    if (px < -232 && pz > -152 && pz < 94) continue;          // fora de VENORE (capital expandida)
-    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue; // fora da Estrada do Pântano
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz)) continue;
     dummyM.position.set(px, alturaColinas(px, pz), pz); // tufos assentam na colina
     dummyM.rotation.y = Math.random() * Math.PI;
     dummyM.scale.setScalar(0.7 + Math.random() * 0.9);
@@ -961,61 +971,158 @@ export function criaCidade() {
     });
   }
 
+  // ============================================================
+  //  NOCTARIA + ERMO DAS CINZAS (RV6.0)
+  //  Cidade-fortaleza sombria a oeste de Venore, com uma região inteira
+  //  de progressão alta culminando no Santuário da Lua Partida.
+  // ============================================================
+  add(criaEstrada(-552, -424, -30, 8)); // prolonga a rota oeste de Venore
+  add(criaEstrada(-742, -690, -30, 7)); // trilha final até a Fenda
+  add(criaPlaca(-430, -23, 'NOCTARIA <-', Math.PI));
+  add(criaPlaca(-552, -22, 'Noctaria - perigo'));
+  add(criaMarcoDistancia(-506, -38, 'NOCTARIA 110\nVENORE 80'));
+  add(criaMarcoDistancia(-650, -20, 'FENDA 90\nVENORE 230'));
+  {
+    const NX = -620, NZ = -30;
+    const cinzaMat = new THREE.MeshStandardMaterial({ color: 0x343238, roughness: 1 });
+    aplicaTexturaReal(cinzaMat, 'terra', 22, 14);
+    const calcadaNoite = new THREE.MeshStandardMaterial({ color: 0x4d4650, roughness: 1, map: texturaPedra(5) });
+    const pedraEscura = mat(0x2a2730, 1);
+    const pedraClara = mat(0x58505a, 1);
+    const brasaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff2600, emissiveIntensity: 0.75, roughness: 0.6 });
+
+    const cidadeChao = new THREE.Mesh(new THREE.BoxGeometry(142, 0.08, 106), cinzaMat);
+    cidadeChao.position.set(NX, 0.035, NZ - 3); cidadeChao.receiveShadow = true; scene.add(cidadeChao);
+    const ruaNoctH = new THREE.Mesh(new THREE.BoxGeometry(126, 0.1, 7.2), matRua(24, 1.2));
+    ruaNoctH.position.set(NX, 0.08, NZ); ruaNoctH.receiveShadow = true; scene.add(ruaNoctH);
+    const ruaNoctV = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.1, 78), matRua(1.2, 15));
+    ruaNoctV.position.set(NX, 0.08, NZ - 5); ruaNoctV.receiveShadow = true; scene.add(ruaNoctV);
+    const pracaNoct = new THREE.Mesh(new THREE.BoxGeometry(30, 0.12, 24), calcadaNoite);
+    pracaNoct.position.set(NX, 0.1, NZ - 4); pracaNoct.receiveShadow = true; scene.add(pracaNoct);
+
+    function muroNoct(x, z, w, d) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, 5.8, d), pedraEscura);
+      m.position.set(x, 2.9, z); m.castShadow = m.receiveShadow = true; scene.add(m); solidos.push(m);
+      obstaculos.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
+    }
+    function torreNoct(x, z) {
+      const t = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.8, 11, 8), pedraEscura);
+      t.position.set(x, 5.5, z); t.castShadow = t.receiveShadow = true; scene.add(t); solidos.push(t);
+      const c = new THREE.Mesh(new THREE.ConeGeometry(4.1, 4.5, 8), mat(0x1b1720, 1));
+      c.position.set(x, 13.2, z); c.castShadow = true; scene.add(c); solidos.push(c);
+      obstaculos.push({ minX: x - 3.4, maxX: x + 3.4, minZ: z - 3.4, maxZ: z + 3.4 });
+    }
+    muroNoct(NX, 23, 140, 4);
+    muroNoct(NX, -83, 140, 4);
+    muroNoct(-690, -58, 4, 46); muroNoct(-690, -2, 4, 46);
+    muroNoct(-550, -58, 4, 46); muroNoct(-550, -2, 4, 46);
+    [[-690, 23], [-550, 23], [-690, -83], [-550, -83]].forEach(([x, z]) => torreNoct(x, z));
+    add(criaPlaca(-548, -20, 'NOCTARIA', -Math.PI / 2));
+  add(criaPlaca(-692, -20, 'SANTUÁRIO DA LUA PARTIDA', Math.PI / 2));
+
+    const ob = new THREE.Group(); ob.position.set(NX, 0, NZ - 4);
+    const baseOb = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 0.8, 8), pedraClara);
+    baseOb.position.y = 0.4; ob.add(baseOb);
+    const corpoOb = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.15, 8.4, 5), pedraEscura);
+    corpoOb.position.y = 4.8; corpoOb.castShadow = true; ob.add(corpoOb);
+    const pontaOb = new THREE.Mesh(new THREE.OctahedronGeometry(1.25, 0),
+      new THREE.MeshStandardMaterial({ color: 0x9bd1ff, emissive: 0x244a82, emissiveIntensity: 0.5, roughness: 0.35 }));
+    pontaOb.position.y = 9.5; ob.add(pontaOb);
+    scene.add(ob); solidos.push(ob);
+    obstaculos.push({ minX: NX - 2.5, maxX: NX + 2.5, minZ: NZ - 6.5, maxZ: NZ - 1.5 });
+    interativos.push({
+      x: NX, z: NZ - 4, raio: 4.2,
+      titulo: 'Obelisco da Vigília',
+      acao: 'Ler as runas da Noite',
+      msg: 'As runas falam dos Drakari: uma raça antiga que trocou sangue por obsidiana e guarda a Fenda para acordar seu Arconte.',
+    });
+
+    add(criaCasaInterior(-662, -58, { frente: 'leste', cor: 0x70666a, corTelhado: 0x25202a }));
+    add(criaCasaInterior(-662, 0, { frente: 'leste', cor: 0x625b62, corTelhado: 0x1d1a22 }));
+    add(criaCasaInterior(-586, -52, { frente: 'oeste', cor: 0x6a625c, corTelhado: 0x2a2422, forja: true }));
+    add(criaCasaInterior(-586, -8, { frente: 'oeste', cor: 0x72685c, corTelhado: 0x2d2a1e, loja: true }));
+    add(criaPredio({ x: -620, z: 8, larg: 20, prof: 12, alt: 10, cor: 0x5a5360, corTelhado: 0x1d1722, rot: Math.PI }));
+    add(criaPlaca(-608, 0, 'Casa da Vigília', Math.PI));
+    add(criaPredio({ x: -620, z: -64, larg: 18, prof: 11, alt: 8, cor: 0x4f4a42, corTelhado: 0x201b18, rot: 0 }));
+    add(criaPlaca(-610, -56, 'Alojamento dos Guardas', 0));
+    [[-640, -18], [-600, -18], [-640, -44], [-600, -44], [-674, -30], [-566, -30], [-620, 14]]
+      .forEach(([x, z]) => add(criaPoste(x, z)));
+    [[-635, -12, 0x5a2a8a], [-605, -12, 0x8a2a1a], [-635, -50, 0x222a5a], [-605, -50, 0x8a6a2a]]
+      .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
+    add(criaFogueira(-642, -64));
+    add(criaBarraca(-646, -68, -0.4, 0x3a303a));
+    add(criaBarril(-580, -18)); add(criaCaixa(-578, -14)); add(criaPoco(-606, -64));
+
+    [[-496, -56, 24], [-570, -76, 30], [-700, -62, 26], [-730, 4, 30], [-760, -58, 24]]
+      .forEach(([mx, mz, r]) => {
+        const mancha = new THREE.Mesh(new THREE.CircleGeometry(r, 18),
+          new THREE.MeshStandardMaterial({ color: 0x211f22, transparent: true, opacity: 0.34, roughness: 1, depthWrite: false }));
+        mancha.rotation.x = -Math.PI / 2; mancha.position.set(mx, 0.11, mz); scene.add(mancha);
+      });
+    [[-522, -52], [-548, -64], [-574, -78], [-700, -8], [-716, -60], [-744, -68], [-768, -20],
+     [-506, -10], [-610, -92], [-660, 18], [-726, 14], [-784, -46]]
+      .forEach(([x, z]) => add(criaArvoreMorta(x, z)));
+    [[-535, -44, 1.1], [-610, -74, 1.4], [-686, -50, 1.2], [-720, 10, 1.3], [-770, -62, 1.5], [-742, -8, 1.1]]
+      .forEach(([x, z, s]) => pedr(x, z, s));
+    add(criaRuinas(-706, -54));
+    add(criaRuinas(-736, 8));
+    add(criaCranioDragao(-710, -14));
+
+    const sant = new THREE.Group(); sant.position.set(-742, 0, -30);
+    const disco = new THREE.Mesh(new THREE.CylinderGeometry(35, 37, 0.45, 28), pedraEscura);
+    disco.position.y = 0.22; disco.receiveShadow = true; sant.add(disco);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.05, 8 + (i % 2) * 2.2, 6), pedraClara);
+      pilar.position.set(Math.cos(a) * 25, 4.2 + (i % 2) * 1.1, Math.sin(a) * 25);
+      pilar.rotation.z = Math.sin(a) * 0.08; pilar.castShadow = true; sant.add(pilar);
+      obstaculos.push({ minX: -742 + pilar.position.x - 1.1, maxX: -742 + pilar.position.x + 1.1,
+        minZ: -30 + pilar.position.z - 1.1, maxZ: -30 + pilar.position.z + 1.1 });
+    }
+    const fenda = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.55, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0x1b1018, emissive: 0x7a1f2a, emissiveIntensity: 0.65, roughness: 0.7 }));
+    fenda.rotation.x = -Math.PI / 2; fenda.position.y = 0.68; sant.add(fenda);
+    [[-5, -2], [5, 3], [0, 6]].forEach(([ox, oz], i) => {
+      const br = new THREE.Mesh(new THREE.CircleGeometry(1.8 + i * 0.45, 14), brasaMat);
+      br.rotation.x = -Math.PI / 2; br.position.set(ox, 0.72, oz); sant.add(br);
+    });
+    scene.add(sant); solidos.push(sant);
+    interativos.push({
+      x: -742, z: -30, raio: 8,
+      titulo: 'Santuário da Lua Partida',
+      acao: 'Examinar o selo',
+      msg: 'O selo pulsa em vermelho. Sem a sequência da Vigília, este lugar só oferece morte: Drakari, fogo negro e um Arconte ainda preso.',
+    });
+    add(criaPlaca(-742, -72, 'Santuário da Lua Partida - nível alto', 0));
+  }
+
   // MOITAS espalhadas pelo campo (refs premium: sub-bosque denso) — sem
   // colisor (atravessável, estilo capim alto do Tibia), 2 draw calls
   VEG.moitas = [];
   for (let tent = 0; tent < 12000 && VEG.moitas.length < 120; tent++) {
-    const px = (Math.random() - 0.5) * 880, pz = (Math.random() - 0.5) * 640;
-    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;     // fora da cidade
-    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;   // fora da estrada
-    if (pz < -178) continue;                                  // fora da praia/mar
-    if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
-    if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
-    if (px > 498) continue;                                   // fora de Thais
-    if (px < -232 && pz > -152 && pz < 94) continue;          // fora de VENORE (capital expandida)
-    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue; // fora da Estrada do Pântano
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz)) continue;
     VEG.moitas.push([px, pz, 0.8 + Math.random() * 0.9]);
   }
   // CAPIM 3D (RV4.0): tufos SÓLIDOS misturados aos cartazes de mato —
   // profundidade real no chão do mundo inteiro (3 draw calls)
   VEG.capim = [];
   for (let tent = 0; tent < 20000 && VEG.capim.length < 260; tent++) {
-    const px = (Math.random() - 0.5) * 900, pz = (Math.random() - 0.5) * 640;
-    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;
-    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;
-    if (pz < -178) continue;
-    if (Math.abs(px) < 42 && pz < -70) continue;
-    if (Math.hypot(px - 110, pz - 300) < 52) continue;
-    if (px > 498) continue;
-    if (px < -240 && pz > -120 && pz < 60) continue;
-    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz)) continue;
     VEG.capim.push([px, pz, 0.8 + Math.random() * 1.0]);
   }
   // FLORES 3D + SEIXOS soltos (RV5.4): o campo deixa de ser papel de parede —
   // flores de pétalas de verdade e pedrinhas espalhadas (instanciado, ~6 draw calls)
   VEG.flores = []; VEG.seixos = [];
   for (let tent = 0; tent < 24000 && VEG.flores.length < 260; tent++) {
-    const px = (Math.random() - 0.5) * 880, pz = (Math.random() - 0.5) * 640;
-    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;
-    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;
-    if (pz < -178) continue;
-    if (Math.abs(px) < 42 && pz < -70) continue;
-    if (Math.hypot(px - 110, pz - 300) < 52) continue;
-    if (px > 498) continue;
-    if (px < -232 && pz > -152 && pz < 94) continue;
-    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz)) continue;
     VEG.flores.push([px, pz, 0.85 + Math.random() * 0.7]);
   }
   for (let tent = 0; tent < 18000 && VEG.seixos.length < 170; tent++) {
-    const px = (Math.random() - 0.5) * 900, pz = (Math.random() - 0.5) * 640;
-    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;
-    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;
-    if (pz < -178) continue;
-    if (Math.abs(px) < 42 && pz < -70) continue;
-    if (Math.hypot(px - 110, pz - 300) < 52) continue;
-    if (px > 498) continue;
-    if (px < -232 && pz > -152 && pz < 94) continue;
-    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz)) continue;
     VEG.seixos.push([px, pz, 0.2 + Math.random() * 0.18]);
   }
   // BIOMAS (RV5.6): juncos abraçam TODA água, cogumelos nascem no pé das
