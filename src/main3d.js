@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.8 (v33)';
+const VERSAO = 'RV4.9 (v34)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -762,7 +762,7 @@ const customizar = criaCustomizar({
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
-  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -1065,6 +1065,65 @@ function abreCofre() {
   it.onAcao = () => abreCofre();
   interativos.push(it);
 }
+
+// =============================================================
+//  LORE DE VENOR (RV4.9) · 6 TOMOS espalhados pelo mundo contam a
+//  ERA DOS DRAGÕES — história ORIGINAL nossa, amarrando tudo que
+//  existe no mapa (Ossada, Rei Esqueleto, ovos do Pico, pântano...).
+//  Cada livro abre no diálogo com "páginas" (Continuar lendo →).
+// =============================================================
+const TOMOS = [
+  { x: 4, z: 26, lugar: 'Escola do Vilarejo', titulo: '📕 Crônica da Fundação', paginas: [
+    'Antes das muralhas, antes do templo, havia só um poço e quatro famílias teimosas. Chamaram o lugar de VENOR, palavra antiga para "ficar". Os dragões já dominavam os céus naquele tempo — e mesmo assim, ninguém partiu.',
+    'O vilarejo cresceu devagar, como cresce o que é teimoso: uma praça, um mercado, um sino. Quando perguntavam ao velho fundador por que erguer casas sob a sombra de asas, ele respondia: "porque é nossa".',
+    'Dizem que o chafariz da praça nunca secou. Os mais antigos juram que é porque a água lembra de quem ficou.' ] },
+  { x: -388, z: 12, lugar: 'Catedral de Venore', titulo: '📗 A Era dos Dragões', paginas: [
+    'No princípio desta era, os dragões não eram lenda: eram o CLIMA. Escureciam o meio-dia, e colheita era o que sobrava depois que passavam. A Ossada que jaz no campo a leste pertenceu a Vorag, o primeiro a cair.',
+    'Foi a queda de Vorag que ensinou aos homens a palavra "possível". Dela nasceram as ordens de caçadores, e das ordens, as guildas. O Salão que hoje vês no Largo é neto daquele osso.',
+    'Mas lembra, leitor: caçamos os dragões até as montanhas, não até o fim. No Pico, um ninho ainda guarda três ovos. A Catedral reza para que nunca esqueçamos — e para que eles não lembrem de nós.' ] },
+  { x: -340, z: -6, y: -40, lugar: 'Catacumbas (junto ao trono)', titulo: '📘 O Último Rei', paginas: [
+    'Aqui jaz — e não descansa — Ossivaldo II, o Último Rei de Venore Antiga. Em vida, taxou até a chuva; em morte, sentou-se de novo no trono e nunca mais se levantou.',
+    'Quando o pântano engoliu a primeira Venore, o rei recusou-se a partir com o povo. "Um rei não abandona o cofre", disse. O cofre, como sabes, está um andar abaixo. A coroa, ele usa até hoje.',
+    'Se leres isto à luz de tocha, com os guardiões acordados ao redor: foge. Se já os venceste: a sacerdotisa Hela paga bem pela paz deles.' ] },
+  { x: -290, z: -54, lugar: 'Torre do Depósito', titulo: '📙 Cartas de um Mercador', paginas: [
+    '"Querida Ema: o brejo é horrível, o ar morde, e eu nunca vi tanto OURO em toda a minha vida. Vamos ficar." — assim começa a primeira carta de Anselmo, o Velho, avô do atual.',
+    'A nova Venore nasceu da teimosia dos mercadores: se o pântano engoliu a cidade antiga, a nova andaria POR CIMA dele. Canal, calçadão, barcas — a água que nos venceu virou estrada.',
+    'A última carta termina assim: "construímos a torre alta não pela vaidade, mas para que quem fugiu veja de longe que voltamos. O relógio atrasa cinco minutos. Deixei assim. É o tempo que um mercador honesto deve ao passado."' ] },
+  { x: 124, z: -4, lugar: 'Torre de Vigia', titulo: '📒 Diário do Vigia', paginas: [
+    'Dia 1: a estrada para Thais é longa, e o braseiro é meu único colega. Lobos na ponte, de novo. Conto-os como quem conta ovelhas, mas ao contrário: quando termino, é que não durmo.',
+    'Dia 40: passou um viajante a cavalo de BURRO, rindo, mais rápido que a guarda inteira. Anotei: arranjar um burro.',
+    'Dia 113: à noite o dragão voou para o lado de Venor cuspindo brasa. O céu ficou bonito e errado ao mesmo tempo. Reacendi o braseiro. Enquanto houver luz na torre, a estrada tem dono.' ] },
+  { x: 154, z: 246, lugar: 'Ruínas Antigas', titulo: '📓 Fragmento Profético', paginas: [
+    '...e quando a coroa voltar a brilhar sob a terra, e a seda voltar a cobrir a floresta, sabei: é o TERCEIRO SINAL. (o resto da página está queimado)',
+    '...três ovos ao calor da lava, pacientes como só a pedra. O primeiro a nascer chamará os outros. O que dorme no covil do norte é apenas o avô deles...',
+    '...não temais o fogo no céu. Temei o dia em que ele POUSAR. (aqui o fragmento termina; alguém rabiscou embaixo, com letra recente: "contar pra Hela?")' ] },
+];
+const MAT_LIVRO = new THREE.MeshStandardMaterial({ color: 0x7a3a2a, roughness: 0.7 });
+const MAT_PEDESTAL = new THREE.MeshStandardMaterial({ color: 0x6f675c, roughness: 1 });
+TOMOS.forEach((tomo) => {
+  // livrinho físico sobre um pedestal baixinho
+  const gL = new THREE.Group(); gL.position.set(tomo.x, (tomo.y || 0), tomo.z);
+  const ped = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.9, 0.5), MAT_PEDESTAL);
+  ped.position.y = 0.45; gL.add(ped);
+  const livro = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.09, 0.38), MAT_LIVRO);
+  livro.position.y = 0.95; livro.rotation.y = 0.4; gL.add(livro);
+  const paginaM = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.04, 0.32), new THREE.MeshStandardMaterial({ color: 0xeee6cc, roughness: 0.9 }));
+  paginaM.position.y = 1.0; paginaM.rotation.y = 0.4; gL.add(paginaM);
+  if (!tomo.y) gL.position.y = alturaTerreno(tomo.x, tomo.z);
+  scene.add(gL);
+  const it = { x: tomo.x, z: tomo.z, y: tomo.y || 0, raio: 2.6, titulo: tomo.titulo, acao: `Ler ${tomo.titulo}` };
+  it.onAcao = () => {
+    let pag = 0;
+    const mostra = () => {
+      const ops = [];
+      if (pag < tomo.paginas.length - 1) ops.push({ texto: 'Continuar lendo →', onClick: () => { pag++; mostra(); } });
+      ops.push({ texto: 'Fechar o livro', onClick: () => dialogo.fecha() });
+      dialogo.abre(`${tomo.titulo} (${pag + 1}/${tomo.paginas.length})`, tomo.paginas[pag], ops);
+    };
+    mostra();
+  };
+  interativos.push(it);
+});
 
 // === COLETÁVEIS pelo mundo (colher → vender no mercador → renascem em 90s) ===
 const TIPOS_COLETA = {
@@ -1516,12 +1575,27 @@ function atacar() {
   if (melhor.hp <= 0) mataBicho(melhor);
   else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
 }
+// === RARIDADES (RV4.9): cada chefe guarda UM tesouro lendário — chance
+// baixa, aviso ✨ na tela, e cada um amarra na LORE dos tomos
+const RAROS = {
+  reiEsqueleto: { chance: 0.06, item: { nome: 'Lâmina da Era Antiga', icone: '🗡️', slot: 'maoDir', dano: 22, arma: true } },
+  aranha: { chance: 0.08, item: { nome: 'Manto de Seda', icone: '🧥', slot: 'tronco', defesa: 6 } },
+  dragao: { chance: 0.07, item: { nome: 'Égide do Dragão', icone: '🛡️', slot: 'maoEsq', defesa: 7 } },
+  beholder: { chance: 0.1, item: { nome: 'Olho Lapidado', icone: '🔮' } },
+  cobra: { chance: 0.02, item: { nome: 'Dente do Profundo', icone: '🦷', slot: 'colar', defesa: 3 } },
+};
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
   if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0x000000);
   r.loot = rollLoot(r.boss || r.forte);
   if (r.lootEspecial && Math.random() < 0.7) r.loot.push({ ...r.lootEspecial }); // drop único (ex.: Olho do Beholder)
+  const raroDef = RAROS[r.especie];
+  if (raroDef && Math.random() < raroDef.chance) {
+    r.loot.push({ ...raroDef.item });
+    sons.tesouro();
+    setTimeout(() => mostraMensagem(`✨ DROP RARO! ${raroDef.item.icone} ${raroDef.item.nome} caiu no corpo — SAQUEIE!`), 900);
+  }
   r.despawnAt = tempo + 30;          // some em 30s se não saquear
   const xp = r.xp || 5;
   hud.ganhaXP(xp);
