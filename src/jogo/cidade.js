@@ -215,9 +215,62 @@ export function criaCidade() {
     aplicaTexturaReal(m, 'pedra', rx, rz); // calçamento REAL quando carregar
     return m;
   }
+  const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x655f57, roughness: 1, flatShading: true });
+  const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x423d38, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false });
+  const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x24211f, roughness: 0.9, metalness: 0.05 });
+  function detalhaRua(cx, cz, w, d, y = 0.095) {
+    const horizontal = w >= d;
+    const guiaGeo = horizontal ? new THREE.BoxGeometry(w, 0.04, 0.28) : new THREE.BoxGeometry(0.28, 0.04, d);
+    const guiaOffsets = horizontal ? [[0, d / 2 + 0.1], [0, -d / 2 - 0.1]] : [[w / 2 + 0.1, 0], [-w / 2 - 0.1, 0]];
+    guiaOffsets.forEach(([ox, oz]) => {
+      const guia = new THREE.Mesh(guiaGeo, guiaRuaMat);
+      guia.position.set(cx + ox, y, cz + oz);
+      guia.receiveShadow = true;
+      scene.add(guia);
+    });
+    const len = horizontal ? w : d;
+    const cortes = Math.max(3, Math.min(18, Math.floor(len / 14)));
+    const dRua = new THREE.Object3D();
+    const juntas = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(0.16, 0.012, d * 0.92) : new THREE.BoxGeometry(w * 0.92, 0.012, 0.16),
+      juntaRuaMat,
+      cortes - 1
+    );
+    for (let i = 1; i < cortes; i++) {
+      dRua.position.set(horizontal ? cx - w / 2 + w * (i / cortes) : cx, y + 0.028, horizontal ? cz : cz - d / 2 + d * (i / cortes));
+      dRua.rotation.set(0, 0, 0);
+      dRua.scale.set(1, 1, 1);
+      dRua.updateMatrix();
+      juntas.setMatrixAt(i - 1, dRua.matrix);
+    }
+    juntas.receiveShadow = true;
+    scene.add(juntas);
+
+    const ralos = Math.max(2, Math.min(10, Math.floor(len / 28)));
+    const ralosMesh = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(0.78, 0.035, 0.22) : new THREE.BoxGeometry(0.22, 0.035, 0.78),
+      ralinhoMat,
+      ralos
+    );
+    for (let i = 0; i < ralos; i++) {
+      const t = (i + 0.5) / ralos;
+      const lado = i % 2 ? 1 : -1;
+      dRua.position.set(
+        horizontal ? cx - w / 2 + w * t : cx + lado * (w / 2 - 0.55),
+        y + 0.038,
+        horizontal ? cz + lado * (d / 2 - 0.55) : cz - d / 2 + d * t
+      );
+      dRua.rotation.set(0, 0, 0);
+      dRua.scale.set(1, 1, 1);
+      dRua.updateMatrix();
+      ralosMesh.setMatrixAt(i, dRua.matrix);
+    }
+    ralosMesh.receiveShadow = true;
+    scene.add(ralosMesh);
+  }
   const ruaMatH = matRua(34, 1.6), ruaMatV = matRua(1.6, 34);
-  const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMatH); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); };
-  const faixaV = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 180), ruaMatV); m.position.set(x, 0.02, 0); m.receiveShadow = true; scene.add(m); };
+  const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMatH); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); detalhaRua(0, z, 180, 8); };
+  const faixaV = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 180), ruaMatV); m.position.set(x, 0.02, 0); m.receiveShadow = true; scene.add(m); detalhaRua(x, 0, 8, 180); };
   const ruas = [-48, -16, 16, 48];
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
@@ -374,8 +427,10 @@ export function criaCidade() {
   // ruas do bairro (conector ao sul + via principal) + praça
   const viaConector = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 30), matRua(1.6, 6));
   viaConector.position.set(0, 0.02, -85); viaConector.receiveShadow = true; scene.add(viaConector);
+  detalhaRua(0, -85, 8, 30);
   const viaBairro = new THREE.Mesh(new THREE.BoxGeometry(60, 0.1, 8), matRua(11, 1.6));
   viaBairro.position.set(0, 0.02, -95); viaBairro.receiveShadow = true; scene.add(viaBairro);
+  detalhaRua(0, -95, 60, 8);
   const pracaSul = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 22), pisoMat);
   pracaSul.position.set(0, 0.03, -95); pracaSul.receiveShadow = true; scene.add(pracaSul);
   // poço central + bancos do bairro
@@ -573,6 +628,38 @@ export function criaCidade() {
   aplicaTexturaReal(trilhaMat, 'terra', 1.5, 16);
   const trilha = new THREE.Mesh(new THREE.BoxGeometry(6, 0.07, 85), trilhaMat);
   trilha.position.set(0, 0.04, -152); trilha.receiveShadow = true; scene.add(trilha);
+  {
+    const bordaTrilhaMat = new THREE.MeshStandardMaterial({ color: 0xc7b47c, roughness: 1, transparent: true, opacity: 0.78, depthWrite: false });
+    [-1, 1].forEach((lado) => {
+      const borda = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.026, 85), bordaTrilhaMat);
+      borda.position.set(lado * 3.38, 0.092, -152);
+      borda.receiveShadow = true;
+      scene.add(borda);
+    });
+    const pegadaMat = new THREE.MeshStandardMaterial({ color: 0x6f5233, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false });
+    const pegadas = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 0.024, 0.46), pegadaMat, 34);
+    const dTrilha = new THREE.Object3D();
+    for (let i = 0; i < 34; i++) {
+      dTrilha.position.set((i % 2 ? -0.42 : 0.42) + (Math.random() - 0.5) * 0.18, 0.108, -193 + i * 2.45);
+      dTrilha.rotation.set(0, (i % 2 ? -0.13 : 0.13) + (Math.random() - 0.5) * 0.08, 0);
+      dTrilha.scale.set(0.9 + Math.random() * 0.25, 1, 0.8 + Math.random() * 0.2);
+      dTrilha.updateMatrix();
+      pegadas.setMatrixAt(i, dTrilha.matrix);
+    }
+    pegadas.receiveShadow = true;
+    scene.add(pegadas);
+    const conchas = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.11, 0), mat(0xe8d8a5, 1), 26);
+    for (let i = 0; i < 26; i++) {
+      const lado = i % 2 ? -1 : 1;
+      dTrilha.position.set(lado * (3.8 + Math.random() * 1.0), 0.12, -194 + Math.random() * 82);
+      dTrilha.rotation.set(Math.random(), Math.random() * Math.PI, Math.random());
+      dTrilha.scale.set(0.65 + Math.random() * 0.75, 0.25 + Math.random() * 0.25, 0.65 + Math.random() * 0.75);
+      dTrilha.updateMatrix();
+      conchas.setMatrixAt(i, dTrilha.matrix);
+    }
+    conchas.castShadow = conchas.receiveShadow = true;
+    scene.add(conchas);
+  }
   add(criaPlaca(6, -190, 'Praia de Venore'));
   // coqueiral
   [[-60, -210, 1.1], [-25, -222, 1.0], [15, -214, 1.2], [55, -226, 0.95], [95, -212, 1.1],
@@ -758,8 +845,10 @@ export function criaCidade() {
     // ruas de pedra: principal (leste-oeste) + transversal (norte-sul)
     const ruaP = new THREE.Mesh(new THREE.BoxGeometry(164, 0.1, 8), matRua(30, 1.6));
     ruaP.position.set(-328, 0.02, CVZ); ruaP.receiveShadow = true; scene.add(ruaP);
+    detalhaRua(-328, CVZ, 164, 8);
     const ruaT = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 190), matRua(1.6, 34));
     ruaT.position.set(-300, 0.02, -18); ruaT.receiveShadow = true; scene.add(ruaT);
+    detalhaRua(-300, -18, 8, 190);
     // praça do Grande Mercado (calçamento)
     const pracaV = new THREE.Mesh(new THREE.BoxGeometry(30, 0.12, 30), pisoMat);
     pracaV.position.set(CVX, 0.03, CVZ); pracaV.receiveShadow = true; scene.add(pracaV);
@@ -951,8 +1040,10 @@ export function criaCidade() {
     // ruas secundárias pavimentadas ligando os distritos
     const ruaN = new THREE.Mesh(new THREE.BoxGeometry(96, 0.1, 6), matRua(18, 1.2));
     ruaN.position.set(-352, 0.02, 18); ruaN.receiveShadow = true; scene.add(ruaN); // Largo ↔ Catedral
+    detalhaRua(-352, 18, 96, 6);
     const ruaA = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 66), matRua(1.2, 12));
     ruaA.position.set(-292, 0.02, -67); ruaA.receiveShadow = true; scene.add(ruaA); // rua dos Armazéns
+    detalhaRua(-292, -67, 6, 66);
     // placas com NOME DE RUA (a capital se orienta)
     add(criaPlaca(-344, -26, 'Rua do Canal'));
     add(criaPlaca(-336, 14, 'Travessa das Guildas', Math.PI));
@@ -997,8 +1088,10 @@ export function criaCidade() {
     cidadeChao.position.set(NX, 0.035, NZ - 3); cidadeChao.receiveShadow = true; scene.add(cidadeChao);
     const ruaNoctH = new THREE.Mesh(new THREE.BoxGeometry(126, 0.1, 7.2), matRua(24, 1.2));
     ruaNoctH.position.set(NX, 0.08, NZ); ruaNoctH.receiveShadow = true; scene.add(ruaNoctH);
+    detalhaRua(NX, NZ, 126, 7.2, 0.155);
     const ruaNoctV = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.1, 78), matRua(1.2, 15));
     ruaNoctV.position.set(NX, 0.08, NZ - 5); ruaNoctV.receiveShadow = true; scene.add(ruaNoctV);
+    detalhaRua(NX, NZ - 5, 7.2, 78, 0.155);
     const pracaNoct = new THREE.Mesh(new THREE.BoxGeometry(30, 0.12, 24), calcadaNoite);
     pracaNoct.position.set(NX, 0.1, NZ - 4); pracaNoct.receiveShadow = true; scene.add(pracaNoct);
 

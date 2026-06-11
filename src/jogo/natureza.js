@@ -214,6 +214,9 @@ export function criaEstrada(xIni, xFim, z, larg = 7) {
   const baseMat = new THREE.MeshStandardMaterial({ color: 0x6d5a42, roughness: 1, flatShading: true });
   const trilhaMat = new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1, flatShading: true });
   const bordaMat = new THREE.MeshStandardMaterial({ color: 0x4f5a36, roughness: 1, flatShading: true });
+  const transicaoMat = new THREE.MeshStandardMaterial({ color: 0x6f7442, roughness: 1, transparent: true, opacity: 0.78, depthWrite: false });
+  const lamaMat = new THREE.MeshStandardMaterial({ color: 0x3f2d20, roughness: 1, transparent: true, opacity: 0.62, depthWrite: false });
+  const folhaMat = new THREE.MeshStandardMaterial({ color: 0x8a6740, roughness: 1, flatShading: true });
   const base = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.05, larg + 2.8), baseMat);
   base.position.set(cx, 0.035, z); base.receiveShadow = true; g.add(base);
   const via = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.08, larg), viaMat);
@@ -227,6 +230,10 @@ export function criaEstrada(xIni, xFim, z, larg = 7) {
   [-larg / 2 - 0.55, larg / 2 + 0.55].forEach((oz) => {
     const b = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.18, 0.5), bordaMat);
     b.position.set(cx, 0.14, z + oz); b.receiveShadow = true; g.add(b);
+  });
+  [-larg / 2 - 1.18, larg / 2 + 1.18].forEach((oz) => {
+    const faixa = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.024, 1.15), transicaoMat);
+    faixa.position.set(cx, 0.108, z + oz); faixa.receiveShadow = true; g.add(faixa);
   });
   const pedraGeo = new THREE.DodecahedronGeometry(0.18, 0);
   const pedraMat = matFlat(0x787065, 1);
@@ -246,6 +253,53 @@ export function criaEstrada(xIni, xFim, z, larg = 7) {
   }
   pedras.castShadow = pedras.receiveShadow = true;
   g.add(pedras);
+
+  const nPocas = Math.max(4, Math.min(22, Math.floor(Math.abs(comp) / 32)));
+  for (let i = 0; i < nPocas; i++) {
+    const t = (i + 0.35 + Math.random() * 0.45) / nPocas;
+    const poca = new THREE.Mesh(new THREE.CircleGeometry(0.8 + Math.random() * 0.85, 14), lamaMat);
+    poca.rotation.x = -Math.PI / 2;
+    poca.rotation.z = Math.random() * Math.PI;
+    poca.scale.set(1.45 + Math.random() * 1.3, 0.55 + Math.random() * 0.45, 1);
+    poca.position.set(xIni + comp * t, 0.162, z + (Math.random() - 0.5) * (larg * 0.58));
+    poca.receiveShadow = true;
+    g.add(poca);
+  }
+
+  const pegadasN = Math.max(12, Math.min(96, Math.floor(Math.abs(comp) / 5.8)));
+  const pegadas = new THREE.InstancedMesh(new THREE.BoxGeometry(0.18, 0.026, 0.42), lamaMat, pegadasN);
+  for (let i = 0; i < pegadasN; i++) {
+    const t = (i + 0.5) / pegadasN;
+    const passo = i % 2 ? -1 : 1;
+    dummy.position.set(
+      xIni + comp * t + (Math.random() - 0.5) * 0.45,
+      0.174,
+      z + passo * (0.58 + Math.random() * 0.18)
+    );
+    dummy.rotation.set(0, passo * (0.16 + Math.random() * 0.12), 0);
+    dummy.scale.set(0.9 + Math.random() * 0.35, 1, 0.8 + Math.random() * 0.25);
+    dummy.updateMatrix();
+    pegadas.setMatrixAt(i, dummy.matrix);
+  }
+  pegadas.receiveShadow = true;
+  g.add(pegadas);
+
+  const detritosN = Math.max(10, Math.min(80, Math.floor(Math.abs(comp) / 6)));
+  const detritos = new THREE.InstancedMesh(new THREE.BoxGeometry(0.36, 0.022, 0.12), folhaMat, detritosN);
+  for (let i = 0; i < detritosN; i++) {
+    const lado = i % 2 ? 1 : -1;
+    dummy.position.set(
+      xIni + comp * ((i + Math.random()) / detritosN),
+      0.185,
+      z + lado * (larg / 2 + 1.35 + Math.random() * 0.8)
+    );
+    dummy.rotation.set(0, Math.random() * Math.PI, 0);
+    dummy.scale.set(0.7 + Math.random() * 1.4, 1, 0.7 + Math.random() * 1.1);
+    dummy.updateMatrix();
+    detritos.setMatrixAt(i, dummy.matrix);
+  }
+  detritos.receiveShadow = true;
+  g.add(detritos);
   return { grupo: g, colisores: [] };
 }
 

@@ -42,11 +42,11 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 4. Assets externos so com licenca segura; Tibia, Albion, Pokemon e Zelda entram como referencia de qualidade e mecanica, nao como copia.
 5. A cada 5 rodadas: rodada so de bugfix, jogabilidade e performance.
 
-## Proximas 6 rodadas sugeridas
+## Rodadas premium recentes e proximas
 
-1. RV6.6: solo vivo 3D e roadmap premium.
-2. RV6.7: fachadas habitadas e qualidade urbana em casas/predios.
-3. RV6.8: trilhas/caminhos melhores, lama, pegadas, bordas de estrada e transicao cidade-campo.
-4. RV6.9: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
+1. RV6.6 entregue: solo vivo 3D e roadmap premium.
+2. RV6.7 entregue: fachadas habitadas e qualidade urbana em casas/predios.
+3. RV6.8 entregue: trilhas/caminhos melhores, lama, pegadas, bordas de estrada e transicao cidade-campo.
+4. RV6.9 proxima: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
 5. RV7.0: monstros principais com escala, efeitos e comportamento mais assustador.
 6. RV7.1: pagina `/baixar` + PWA instalavel.
