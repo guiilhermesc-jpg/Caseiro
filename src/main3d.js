@@ -19,6 +19,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda } from './jogo/esgoto.js';
+import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js';
@@ -71,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.7 (v32)';
+const VERSAO = 'RV4.8 (v33)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -239,6 +240,9 @@ criptaProfunda.grupo.visible = false;
   catacumbas.grupo.add(buraco);
 }
 let subsoloAtual = esgoto;
+// SOM sintetizado (RV4.8): efeitos + ambiente dia/noite, botão 🔊
+const sons = criaAudio();
+sons.defineNoite(() => ehNoite && !noEsgoto);
 const ratos = criaRatos(6, esgoto.salaBounds);                       // ratos na câmara central
 esgoto.corredores.forEach((b) => criaRatos(2, b).forEach((r) => ratos.push(r))); // ratos patrulhando os túneis
 const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1.6, forte: true, bounds: esgoto.salaBounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
@@ -990,6 +994,7 @@ BUEIROS.forEach((bp, i) => {
 function viajaBarca(dx, dz, custo, nomeDestino) {
   if (ouro < custo) { mostraMensagem(`A passagem custa ${custo} 🪙 — venda um peixe pro Tonho!`); return; }
   ouro -= custo; hud.ouro(ouro);
+  sons.agua();
   montado = false; petAlvo = null;
   avatar.position.set(dx, alturaTerreno(dx, dz), dz); vy = 0; noChao = true;
   salvaJogo();
@@ -1122,6 +1127,7 @@ function desce(i = 0) {
   avatar.position.set(a.x, -40, a.z + (a.z > 0 ? -3 : 3)); vy = 0; noChao = true;
   hemi.intensity = 0.08; sun.intensity = 0.05; // ESGOTO ESCURO — acenda a tocha (T)
   minimapa.esconde();
+  sons.corda();
   mostraMensagem(tochaOn ? 'Você desce pela corda. 🪢🐀' : 'Está escuro! Acenda a tocha — tecla T 🔦');
 }
 function sobe(i = acessoAtual) {
@@ -1131,7 +1137,7 @@ function sobe(i = acessoAtual) {
   const b = (subsoloAtual.saidas && subsoloAtual.saidas[i]) || BUEIROS[i] || BUEIROS[0];
   avatar.position.set(b.x, alturaTerreno(b.x, b.z + 2.5), b.z + 2.5); vy = 0; noChao = true;
   subsoloAtual = esgoto;
-  minimapa.mostra(); mostraMensagem('Você sobe pela corda de volta à superfície. 🪢☀️'); // luz volta pelo ciclo dia/noite
+  minimapa.mostra(); sons.corda(); mostraMensagem('Você sobe pela corda de volta à superfície. 🪢☀️'); // luz volta pelo ciclo dia/noite
 }
 // CATACUMBAS (RV4.4): descida própria, pela cripta atrás da Catedral
 function desceCatacumbas() {
@@ -1181,6 +1187,7 @@ let bauCriptaAberto = false;
   it.onAcao = () => {
     if (bauCriptaAberto) { mostraMensagem('O baú já foi saqueado... por você mesmo. 👑'); return; }
     bauCriptaAberto = true;
+    sons.tesouro();
     ouro += 180; hud.ouro(ouro);
     inventario.addItem({ nome: 'Rubi', icone: '💎' });
     inventario.addItem({ nome: 'Esmeralda', icone: '💎' });
@@ -1494,6 +1501,7 @@ function atacar() {
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
     if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (vilarejo), Tonho (Venore) ou Yara (Thais). ➹'); return; }
     petAlvo = melhor; // o pet entra na briga junto
+    sons.golpe();
     disparaFlecha(melhor);
     melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
     if (melhor.hp <= 0) mataBicho(melhor);
@@ -1501,7 +1509,8 @@ function atacar() {
     return;
   }
   const melhor = alvoRato();
-  if (!melhor) { mostraMensagem('Golpe no ar!'); return; }
+  if (!melhor) { mostraMensagem('Golpe no ar!'); sons.erro(); return; }
+  sons.golpe();
   petAlvo = melhor; // o pet entra na briga junto
   melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
   if (melhor.hp <= 0) mataBicho(melhor);
@@ -1544,6 +1553,7 @@ function saqueia(r) {
     else if (inventario.addItem(it)) pegou++;
   }
   r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);
+  if (pegou) sons.moeda();
   mostraMensagem(pegou ? `Saqueou ${pegou} item(s) 🎒` : 'O corpo estava vazio.');
 }
 // CORPOS CAÍDOS: ao morrer a mochila fica no chão onde você caiu, por 10
@@ -1835,6 +1845,7 @@ function recebeDano(n) {
     if (n <= 0) return false;
   }
   vida -= n; hud.vida(vida, VIDA_MAX);
+  sons.dor(); // game-feel: dano dói no ouvido também
   if (vida <= 0) { morre(); return true; }
   return false;
 }
