@@ -45,8 +45,8 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 ## Proximas 6 rodadas sugeridas
 
 1. RV6.6: solo vivo 3D e roadmap premium.
-2. RV6.7: trilhas/caminhos melhores, lama, pegadas, bordas de estrada e transicao cidade-campo.
-3. RV6.8: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
-4. RV6.9: monstros principais com escala, efeitos e comportamento mais assustador.
-5. RV7.0: pagina `/baixar` + PWA instalavel.
-6. RV7.1: empacotamento Android inicial com Capacitor.
+2. RV6.7: fachadas habitadas e qualidade urbana em casas/predios.
+3. RV6.8: trilhas/caminhos melhores, lama, pegadas, bordas de estrada e transicao cidade-campo.
+4. RV6.9: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
+5. RV7.0: monstros principais com escala, efeitos e comportamento mais assustador.
+6. RV7.1: pagina `/baixar` + PWA instalavel.

@@ -254,6 +254,26 @@ export function criaPredio(opts) {
   gbox(geosMad, 2.2, 0.32, 0.38, 0, FB + 3.25, fz + 0.05); // verga
   gbox(geosPed, 2.0, 0.25, 0.8, 0, 0.32, fz + 0.5);        // degrau
   const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xd9a522, 0.3)); macaneta.position.set(0.5, FB + 1.5, fz + 0.16); g.add(macaneta);
+  // RV6.7: entrada habitada. Mesmo prédio decorativo precisa parecer lugar:
+  // caminho de pedra, canteiros, vasos e lamparina emissiva na fachada.
+  for (let i = 0; i < 4; i++) {
+    const laje = new THREE.Mesh(new THREE.BoxGeometry(2.2 - i * 0.08, 0.055, 0.72), mat(0x8a8175, 1));
+    laje.position.set((i % 2 ? 0.08 : -0.05), 0.08, fz + 0.95 + i * 0.72);
+    laje.rotation.y = (i % 2 ? 0.08 : -0.06);
+    laje.receiveShadow = true;
+    g.add(laje);
+  }
+  [-1.75, 1.75].forEach((ox, idx) => {
+    const caixaFlor = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.24, 0.38), mat(0x6e4a2a, 1));
+    caixaFlor.position.set(ox, 0.25, fz + 0.34); caixaFlor.castShadow = true; g.add(caixaFlor);
+    for (let k = 0; k < 3; k++) {
+      const flor = new THREE.Mesh(new THREE.SphereGeometry(0.075, 6, 5), mat([0xe85d75, 0xf2c14e, 0xd06ad0][(idx + k) % 3], 0.6));
+      flor.position.set(ox + (k - 1) * 0.26, 0.46, fz + 0.38); g.add(flor);
+    }
+  });
+  const luzPorta = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6),
+    new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff9f2a, emissiveIntensity: 0.75, roughness: 0.45 }));
+  luzPorta.position.set(-0.95, FB + 2.35, fz + 0.22); g.add(luzPorta);
   if (Math.random() < 0.58) {
     const tecido = new THREE.MeshStandardMaterial({
       color: [0x9a3f2f, 0x2f5e7a, 0x4d6f3f, 0x7a5b2f][Math.floor(Math.random() * 4)],

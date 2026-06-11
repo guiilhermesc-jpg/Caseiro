@@ -96,6 +96,65 @@ export function criaCasaInterior(x, z, opts = {}) {
     g.add(j);
   });
 
+  // RV6.7: fachada habitada. A casa precisa parecer usada antes mesmo de
+  // entrar: placa, caminho de pedra, vasos, canteiro e lanterna emissiva.
+  const frenteInfo = (() => {
+    if (frente === 'sul') return { fx: 0, fz: -hz, ox: 0, oz: -1, tx: 1, tz: 0, rot: Math.PI };
+    if (frente === 'norte') return { fx: 0, fz: hz, ox: 0, oz: 1, tx: 1, tz: 0, rot: 0 };
+    if (frente === 'oeste') return { fx: -hx, fz: 0, ox: -1, oz: 0, tx: 0, tz: 1, rot: -Math.PI / 2 };
+    return { fx: hx, fz: 0, ox: 1, oz: 0, tx: 0, tz: 1, rot: Math.PI / 2 };
+  })();
+  const pontoFrente = (lado, fora, y) => ({
+    x: frenteInfo.fx + frenteInfo.tx * lado + frenteInfo.ox * fora,
+    y,
+    z: frenteInfo.fz + frenteInfo.tz * lado + frenteInfo.oz * fora,
+  });
+  const pedraEntrada = mat(0x8a8175, 1), terraVaso = mat(0x5c442c, 1);
+  for (let i = 0; i < 4; i++) {
+    const p = pontoFrente(0, 0.85 + i * 0.82, 0.09);
+    const laje = new THREE.Mesh(new THREE.BoxGeometry(frenteInfo.oz ? 2.35 : 0.82, 0.06, frenteInfo.oz ? 0.82 : 2.35), pedraEntrada);
+    laje.position.set(p.x, p.y, p.z);
+    laje.rotation.y = (i % 2 ? 0.06 : -0.05) * (frenteInfo.oz ? 1 : -1);
+    laje.receiveShadow = true;
+    g.add(laje);
+  }
+  [-gw / 2 - 0.85, gw / 2 + 0.85].forEach((lado, idx) => {
+    const p = pontoFrente(lado, 0.48, 0.22);
+    const canteiro = new THREE.Mesh(new THREE.BoxGeometry(frenteInfo.oz ? 1.25 : 0.42, 0.26, frenteInfo.oz ? 0.42 : 1.25), terraVaso);
+    canteiro.position.set(p.x, p.y, p.z); canteiro.castShadow = true; g.add(canteiro);
+    for (let k = 0; k < 3; k++) {
+      const flor = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 5), mat([0xe85d75, 0xf2c14e, 0xd06ad0][(idx + k) % 3], 0.6));
+      const pf = pontoFrente(lado + (k - 1) * 0.28, 0.52, 0.44);
+      flor.position.set(pf.x, pf.y, pf.z); g.add(flor);
+    }
+  });
+  [-gw / 2 - 0.42, gw / 2 + 0.42].forEach((lado, idx) => {
+    const p = pontoFrente(lado, 0.88, 0.32);
+    const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.42, 8), mat(0x7a4a2c, 1));
+    vaso.position.set(p.x, p.y, p.z); vaso.castShadow = true; g.add(vaso);
+    const planta = new THREE.Mesh(new THREE.IcosahedronGeometry(0.27, 0), mat(0x4f7e3e, 1));
+    planta.position.set(p.x, 0.72, p.z); planta.castShadow = true; g.add(planta);
+    if (idx === 0) {
+      const lanP = pontoFrente(lado, 0.34, 2.35);
+      const lanterna = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6),
+        new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff9f2a, emissiveIntensity: 0.8, roughness: 0.45 }));
+      lanterna.position.set(lanP.x, lanP.y, lanP.z); g.add(lanterna);
+    }
+  });
+  {
+    const texto = opts.forja ? 'FORJA' : opts.loja ? 'LOJA' : 'CASA';
+    const cnvP = document.createElement('canvas'); cnvP.width = 256; cnvP.height = 80;
+    const ctxP = cnvP.getContext('2d');
+    ctxP.fillStyle = '#5a3a22'; ctxP.fillRect(0, 0, 256, 80);
+    ctxP.strokeStyle = '#d9b36a'; ctxP.lineWidth = 6; ctxP.strokeRect(6, 6, 244, 68);
+    ctxP.fillStyle = '#f2dfb5'; ctxP.font = 'bold 34px Georgia,serif'; ctxP.textAlign = 'center'; ctxP.textBaseline = 'middle';
+    ctxP.fillText(texto, 128, 42);
+    const placa = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.58),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cnvP), transparent: true }));
+    const pp = pontoFrente(0, 0.22, 3.15);
+    placa.position.set(pp.x, pp.y, pp.z); placa.rotation.y = frenteInfo.rot; g.add(placa);
+  }
+
   // PORTA (folha) com dobradiça na borda do vão
   const dobr = new THREE.Group();
   const folhaMat = mat(0x5a3a22);
