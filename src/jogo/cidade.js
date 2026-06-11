@@ -1127,6 +1127,41 @@ export function criaCidade() {
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.seixos.push([px, pz, 0.2 + Math.random() * 0.18]);
   }
+  // MICROTERRENO (RV6.6): folhas, raízes, manchas de terra e capim baixo
+  // tiram o chão da dependência de textura repetida. Continua instanciado.
+  VEG.folhasChao = []; VEG.terraChao = []; VEG.raizesChao = []; VEG.capimRasteiro = [];
+  const emFloresta = (x, z) => (x > -175 && x < -38 && z > 16 && z < 155)
+    || (x > 36 && x < 175 && z > 126 && z < 270)
+    || (x > -185 && x < -72 && z > -116 && z < -36);
+  const emCampoAberto = (x, z) => !bloqueiaVegetacao(x, z) && z > -170 && z < 300 && x > -210 && x < 520;
+  for (let tent = 0; tent < 16000 && VEG.folhasChao.length < 360; tent++) {
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz) || !emFloresta(px, pz)) continue;
+    VEG.folhasChao.push([px, pz, 0.65 + Math.random() * 0.85]);
+  }
+  VEG.arvores.forEach(([ax, az], i) => {
+    if (i % 2) return;
+    const a = Math.random() * Math.PI * 2, rr = 0.65 + Math.random() * 0.85;
+    const rx = ax + Math.cos(a) * rr, rz = az + Math.sin(a) * rr;
+    if (!bloqueiaVegetacao(rx, rz)) VEG.raizesChao.push([rx, rz, 0.75 + Math.random() * 0.45]);
+  });
+  const zonasTerra = [
+    [236, 38, 36, 22], [392, -60, 42, 26], [146, 246, 34, 28], [-184, -86, 34, 28],
+    [380, 16, 34, 22], [470, -14, 28, 20], [-520, -28, 58, 24], [-720, -38, 54, 28],
+    [120, 42, 46, 34], [315, 48, 58, 34], [-110, 92, 44, 32],
+  ];
+  for (let tent = 0; tent < 14000 && VEG.terraChao.length < 280; tent++) {
+    const zt = zonasTerra[Math.floor(Math.random() * zonasTerra.length)];
+    const px = zt[0] + (Math.random() - 0.5) * zt[2] * 2;
+    const pz = zt[1] + (Math.random() - 0.5) * zt[3] * 2;
+    if (bloqueiaVegetacao(px, pz)) continue;
+    VEG.terraChao.push([px, pz, 0.55 + Math.random() * 0.8]);
+  }
+  for (let tent = 0; tent < 26000 && VEG.capimRasteiro.length < 760; tent++) {
+    const px = randX(), pz = randZ();
+    if (!emCampoAberto(px, pz)) continue;
+    VEG.capimRasteiro.push([px, pz, 0.7 + Math.random() * 0.9]);
+  }
   // BIOMAS (RV5.6): juncos abraçam TODA água, cogumelos nascem no pé das
   // árvores da floresta, e a fazenda ganha um CAMPO DE TRIGO de verdade
   VEG.juncos = []; VEG.cogus = []; VEG.trigo = [];

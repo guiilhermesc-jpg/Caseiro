@@ -149,6 +149,70 @@ function geoTrigo() {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
+// MICROTERRENO (RV6.6): detalhe físico no chão para quebrar a sensação de
+// textura repetida. Tudo é baixo, atravessável e instanciado.
+function geoTapeteFolhas(corBase) {
+  const partes = [];
+  const cores = [corBase, 0x8a5a2f, 0xb07a3c, 0x5b3d24];
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + (i % 3) * 0.21;
+    const folha = pinta(new THREE.PlaneGeometry(0.26 + (i % 3) * 0.08, 0.1 + (i % 2) * 0.05), cores[i % cores.length]);
+    folha.rotateX(-Math.PI / 2);
+    folha.rotateY(a);
+    folha.translate(Math.cos(a) * (0.18 + (i % 4) * 0.08), 0.055 + i * 0.001, Math.sin(a) * (0.14 + (i % 3) * 0.09));
+    partes.push(folha);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoTerraExposta(cor) {
+  const partes = [];
+  const base = pinta(desloca(new THREE.CircleGeometry(0.72, 11), 0.12), cor);
+  base.rotateX(-Math.PI / 2);
+  base.scale(1.35, 1, 0.7);
+  base.translate(0, 0.05, 0);
+  partes.push(base);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const ped = pinta(desloca(new THREE.IcosahedronGeometry(0.09 + (i % 2) * 0.035, 0), 0.03), 0x7f786c);
+    ped.scale(1.2, 0.35, 0.9);
+    ped.translate(Math.cos(a) * 0.42, 0.09, Math.sin(a) * 0.25);
+    partes.push(ped);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoRaizesBaixas() {
+  const partes = [];
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.35;
+    const raiz = pinta(new THREE.BoxGeometry(0.16, 0.09, 1.15 + (i % 2) * 0.28), 0x4b321e);
+    raiz.rotateY(a);
+    raiz.rotateZ((i % 2 ? 1 : -1) * 0.05);
+    raiz.translate(Math.cos(a) * 0.38, 0.08, Math.sin(a) * 0.38);
+    partes.push(raiz);
+  }
+  const terra = pinta(desloca(new THREE.CircleGeometry(0.55, 9), 0.08), 0x5c442c);
+  terra.rotateX(-Math.PI / 2);
+  terra.translate(0, 0.045, 0);
+  partes.push(terra);
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoCapimRasteiro(cor) {
+  const partes = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.2;
+    const h = 0.22 + (i % 3) * 0.08;
+    const lam = pinta(new THREE.ConeGeometry(0.035, h, 4), cor);
+    lam.rotateX(0.55);
+    lam.rotateY(a);
+    lam.translate(Math.cos(a) * 0.12, h / 2, Math.sin(a) * 0.12);
+    partes.push(lam);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
 function geoPedra(comMusgo) {
   const partes = [];
   const rocha = pinta(desloca(new THREE.IcosahedronGeometry(1, 0), 0.32), 0x8b8b86);
@@ -162,7 +226,10 @@ function geoPedra(comMusgo) {
 }
 
 // posições: arvores/pedras/moitas/capim/flores/seixos/juncos/cogus/trigo = [x, z, s], pinheiros = [x, z]
-export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [], flores = [], seixos = [], juncos = [], cogus = [], trigo = [] }, alturaSolo) {
+export function criaVegetacaoInstanciada({
+  arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [], flores = [], seixos = [], juncos = [], cogus = [], trigo = [],
+  folhasChao = [], terraChao = [], raizesChao = [], capimRasteiro = [],
+}, alturaSolo) {
   const g = new THREE.Group();
   const colisores = [];
   const dummy = new THREE.Object3D();
@@ -203,6 +270,11 @@ export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras 
   lote(juncos, [geoJunco(), geoJunco()], 0, 0, '');
   lote(cogus, [geoCogu(0xc23a2a), geoCogu(0x8a5a3a)], 0, 0, '');
   lote(trigo, [geoTrigo(), geoTrigo()], 0, 0, '');
+  // MICROTERRENO (RV6.6): chão deixa de depender só da textura.
+  lote(folhasChao, [geoTapeteFolhas(0x9c6a34), geoTapeteFolhas(0x6f4a2d)], 0, 0, '');
+  lote(terraChao, [geoTerraExposta(0x7a5b38), geoTerraExposta(0x5e4630)], 0, 0, '');
+  lote(raizesChao, [geoRaizesBaixas(), geoRaizesBaixas()], 0, 0, '');
+  lote(capimRasteiro, [0x4d7d39, 0x6a9144, 0x3f6931].map((c) => geoCapimRasteiro(c)), 0, 0, '');
 
   // SLOT GLB: ao carregar, a espécie inteira troca pelo modelo profissional
   // (auto-escala pela altura, base no chão, mesmas matrizes de instância)
