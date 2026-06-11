@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.5 (v30)';
+const VERSAO = 'RV4.6 (v31)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -454,6 +454,12 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
   const e = criaEsqueleto(x, z); e.position.y = -40;
   addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 11), { especie: 'esqueleto', y0: -40 });
 });
+// NINHO DAS ARANHAS (RV4.6): a Tecelã e as crias na Floresta do Oeste
+[[-148, -62], [-141, -68], [-152, -70]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 12, 4, 4, 2.6, false, areaMon(-146, -66, 13), { veneno: true, especie: 'aranhaPequena' }));
+{
+  const tecela = criaAranhaGigante(-146, -67); tecela.scale.setScalar(0.8);
+  addMonstro(tecela, 180, 55, 14, 2.6, true, areaMon(-146, -66, 12), { veneno: true, especie: 'aranha', lootEspecial: { nome: 'Seda de Aranha', icone: '🕸️' } });
+}
 { // REI ESQUELETO: boss do trono — dropa a COROA ANTIGA (vale 250🪙)
   const rei = criaEsqueleto(-350, -10); rei.position.y = -40; rei.scale.setScalar(1.75);
   addMonstro(rei, 320, 90, 24, 1.4, true, areaMon(-348, -10, 11), {
@@ -691,6 +697,10 @@ const QUESTS = [
   { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+  // RV4.6: o arqueiro do vilarejo precisa de seda pro arco
+  { id: 'sedaFalk', npc: 'Falk', tipo: 'coletar', item: 'Seda de Aranha', meta: 3,
+    titulo: 'Cordas de Seda', pede: 'O Ninho das Aranhas, na Floresta do Oeste, tem a melhor seda do reino. Traga 3 Sedas de Aranha — corda de arco boa não se faz sozinha.',
+    fala: 'Conseguiu minha seda?', recompensa: { ouro: 45, xp: 35 } },
   // RV4.4: a sacerdotisa quer paz nas catacumbas sob a Catedral
   { id: 'pazCatacumbas', npc: 'Hela', tipo: 'matar', especie: 'reiEsqueleto', meta: 1,
     titulo: 'Paz nas Catacumbas', pede: 'Algo acordou sob a Catedral... O REI ESQUELETO senta num trono entre as tumbas. Devolva-o ao descanso (a descida fica na cripta atrás da Catedral).',
@@ -1861,6 +1871,7 @@ const DISTRITOS = [
   { nome: 'Ponte do Riacho', x: 16, z: 78, raio: 14 },
   { nome: 'Beira do Lago', x: 45, z: 80, raio: 22 },
   { nome: 'Floresta do Oeste', x: -88, z: 0, raio: 45 },
+  { nome: 'Ninho das Aranhas', x: -146, z: -66, raio: 16 },
   { nome: 'Bairro do Comércio', x: 0, z: -95, raio: 26 },
   { nome: 'Moinho de Venor', x: -44, z: -74, raio: 12 },
   { nome: 'Cais do Vilarejo', x: 45, z: 64, raio: 14 },

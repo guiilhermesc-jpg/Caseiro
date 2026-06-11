@@ -89,6 +89,9 @@ function _jbox(w, h, d, material, x, y, z) {
   m.position.set(x, y, z); return m;
 }
 
+// FUMAÇA compartilhada das chaminés (RV4.6) — novelos cinza translúcidos
+const MAT_FUMACA = new THREE.MeshStandardMaterial({ color: 0xcfcfd4, transparent: true, opacity: 0.32, roughness: 1, depthWrite: false });
+
 // JANELA variada (vidro + moldura; opcional cruzeta, postigos, floreira c/ flores).
 // O vidro fica virado para +Z; o chamador posiciona/gira na parede.
 export function criaJanela(opts = {}) {
@@ -285,6 +288,19 @@ export function criaPredio(opts) {
     chapeu.position.set(tx, FB + alt + 1.35, fz - 0.3); chapeu.castShadow = true; g.add(chapeu);
   }
 
+  // RV4.6: FUMAÇA na chaminé (nem toda casa acende o fogão) — 3 novelos
+  // que sobem em loop, crescem e derivam no vento (animaProps cuida)
+  const animados = [];
+  if (Math.random() < 0.45) {
+    const fumaca = [];
+    for (let i = 0; i < 3; i++) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.26 + i * 0.05, 6, 5), MAT_FUMACA);
+      puff.position.set(larg * 0.28, topo + 2.9, -prof * 0.18); g.add(puff);
+      fumaca.push(puff);
+    }
+    animados.push({ fumaca, baseY: topo + 2.9, baseX: larg * 0.28, fase: Math.random() * 6 });
+  }
+
   // RV4.3: mescla os baldes — 2 meshes no lugar de ~20 pecinhas por casa
   if (geosMad.length) {
     const mMad = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geosMad), madeira);
@@ -298,7 +314,7 @@ export function criaPredio(opts) {
   const girado = Math.abs(Math.sin(rot)) > 0.5;
   const wA = girado ? prof : larg, dA = girado ? larg : prof;
   const colisores = [{ minX: x - wA / 2, maxX: x + wA / 2, minZ: z - dA / 2, maxZ: z + dA / 2 }];
-  return { grupo: g, colisores };
+  return { grupo: g, colisores, animados };
 }
 
 // marcos (variações + adereços)

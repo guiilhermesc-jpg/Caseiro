@@ -190,5 +190,14 @@ export function animaProps(animados, dt, tempo) {
     if (a.pulsa) a.pulsa.emissiveIntensity = 0.55 + Math.sin(tempo * 3 + a.fase) * 0.35;
     if (a.balanca) a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.25;
     if (a.porta) a.mesh.rotation.y += (a.alvo - a.mesh.rotation.y) * Math.min(1, dt * 8); // abre/fecha suave
+    if (a.fumaca) { // RV4.6: novelos de fumaça subindo da chaminé (loop infinito)
+      for (let i = 0; i < a.fumaca.length; i++) {
+        const p = a.fumaca[i];
+        const t = (tempo * 0.22 + a.fase + i * 0.34) % 1;
+        p.position.y = a.baseY + t * 3.4;
+        p.position.x = a.baseX + Math.sin(tempo * 0.8 + i) * 0.25 * t; // deriva no vento
+        p.scale.setScalar(0.5 + t * 1.3); // cresce e "dissolve" ao subir
+      }
+    }
   }
 }

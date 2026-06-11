@@ -624,6 +624,31 @@ export function criaCidade() {
   add(criaCranioDragao(250, 120));
   add(criaPlaca(243, 112, 'Ossada do Dragao', 0.5));
 
+  // === NINHO DAS ARANHAS (RV4.6) — covil na Floresta do Oeste: teias entre
+  // as árvores, casulos de seda (vítimas...) e a Aranha Tecelã rondando
+  {
+    const cnvT = document.createElement('canvas'); cnvT.width = cnvT.height = 64;
+    const xt = cnvT.getContext('2d');
+    xt.strokeStyle = 'rgba(240,240,245,0.85)'; xt.lineWidth = 1.4;
+    for (let i = 0; i < 10; i++) { // raios da teia
+      const a = (i / 10) * Math.PI * 2;
+      xt.beginPath(); xt.moveTo(32, 32); xt.lineTo(32 + Math.cos(a) * 32, 32 + Math.sin(a) * 32); xt.stroke();
+    }
+    for (let r = 6; r <= 30; r += 6) { xt.beginPath(); xt.arc(32, 32, r, 0, Math.PI * 2); xt.stroke(); }
+    const teiaMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cnvT), transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false });
+    [[-150, -62, 0.4], [-141, -70, -0.7], [-148, -74, 1.2]].forEach(([tx, tz, rotT]) => {
+      const teia = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), teiaMat);
+      teia.position.set(tx, alturaColinas(tx, tz) + 1.7 + Math.random() * 0.7, tz);
+      teia.rotation.y = rotT; scene.add(teia);
+    });
+    [[-146, -66], [-142, -61], [-151, -70]].forEach(([cx2, cz2]) => {
+      const casulo = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), mat(0xeceae2, 0.8));
+      casulo.scale.y = 1.6; casulo.position.set(cx2, alturaColinas(cx2, cz2) + 0.7, cz2);
+      casulo.rotation.z = (Math.random() - 0.5) * 0.6; casulo.castShadow = true; scene.add(casulo);
+    });
+    add(criaPlaca(-138, -56, 'Ninho das Aranhas — PERIGO', -0.6));
+  }
+
   // === NINHO DO DRAGÃO no platô do Pico (RV3.0): ovos que prometem futuro...
   {
     const ninho = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.5, 8, 16), mat(0x5a4326, 1));
