@@ -4,10 +4,45 @@
 
 ---
 
-## 🚨 43ª RODADA (EM ABERTO) — PATCH 2 EM ANDAMENTO (atualizado 11/06, RV5.8/v43)
-> **PATCH 1 LANÇADO em 11/06/2026** (cliente v38 + servidor com volume — verificados em produção). Patch 2 acumulando: 38ª (portões/casas/chão) + 39ª (entradas/HP/sons) + 40ª (biomas) + 41ª (eventos de mundo) + 42ª (Cavernas do Pico). **Deploy do v39-v43 PENDENTE** (produção está no v38).
-> 🧪 Testar quando publicar: portões · casas/entradas · barra de HP · biomas · mortos noturnos · Mascate · CAVERNAS DO PICO (boca na encosta sul em 60,266 — lava QUEIMA, cristais, Troll Ancião) · letreiro certo em cada subsolo.
-> 🔭 Fila do Patch 2: GLBs CC0 do maestro nos slots · feedback dos jogadores · launcher (Electron/Tauri).
+## 🤝 HANDOFF PRO CODEX (11/06/2026) — 43ª RODADA EM ABERTO
+> O maestro vai passar algumas rodadas pro Codex. **LEIA ESTA SEÇÃO INTEIRA antes de tocar em qualquer arquivo.**
+
+### 📦 ESTADO EXATO
+- **Produção**: caseiro.pages.dev está no **PATCH 1 (v38)**; servidor de contas no Railway ON com Volume `/data` + `DATA_DIR=/data` (testado em produção via wss).
+- **main (GitHub)**: acumula **v39→v43 SEM deploy** — 38ª (portões/casas/chão vivo), 39ª (entradas/barra de HP/sons), 40ª (biomas), 41ª (mortos noturnos + Mascate), 42ª (Cavernas do Pico). Selo atual: **RV5.8 (v43)**. Diário completo das rodadas 12ª→42ª no FIM deste arquivo.
+
+### 📏 REGRAS DO MAESTRO (não negociáveis)
+1. Responder SEMPRE em **português**.
+2. Validar por **`npm run build`** (o agente NÃO tem WebGL — nada de preview 3D); quem testa visual é o maestro (Edge no PC + iPhone, Ctrl+Shift+R).
+3. A cada rodada: código → build ✓ → **commit+push no main** → atualizar este CHECKPOINT (item na lista de teste do topo + parágrafo no DIÁRIO, no FIM, em ORDEM CRONOLÓGICA).
+4. **Bump da const `VERSAO`** no main3d.js a cada rodada (selo na tela — é como o maestro confere se atualizou).
+5. **NÃO PUBLICAR SEM OK LITERAL** do maestro: cliente = "pode publicar" → carregar `.env` em `$env:` e `npx wrangler pages deploy dist --project-name=caseiro --commit-dirty=true`; servidor = "pode publicar o servidor" → `cd server; railway up --ci`. O classificador BLOQUEIA deploys com autorização vaga — não tentar contornar.
+6. Imagem: **NUNCA estourar branco** (exposure 0.84, bloom threshold 1.0, grading com clamp).
+7. ⚖️ Tibia é INSPIRAÇÃO de estilo/mecânica — mapa, nomes, falas e conteúdo são NOSSOS (não replicar nada da CipSoft; o maestro já pediu réplica e foi explicado o porquê do não).
+
+### 🧱 ARQUITETURA NOVA (desde a 18ª — além do §5 antigo)
+- **terreno.js**: `alturaColinas(x,z)` é a FONTE ÚNICA do relevo (física do main3d + malha do chão). Zonas planas em `RETS`/`CIRCS` — construção nova no campo: ou cria zona plana ali, ou usa o `add()` do cidade.js (assenta o grupo na colina).
+- **vegetacao.js**: `criaVegetacaoInstanciada` (arvores/pinheiros/pedras/moitas/capim/flores/seixos/juncos/cogus/trigo, tudo InstancedMesh) + slots GLB `arvore1/pinheiro/pedra.glb` em public/modelos/.
+- **audio.js**: som 100% sintetizado (`criaAudio`) — golpe/erro/moeda/dor/tesouro/agua/corda/porta + ambiente dia/noite; botão 🔊.
+- **esgoto.js**: 4 SUBSOLOS (esgoto, `criaCatacumbas`, `criaCriptaProfunda`, `criaCavernasPico`) — padrão `subsoloAtual` no main3d: colisão por `subsoloAtual.colisores`, `acessos[]` pareado com `saidas[]`, renasce/tpGM escondem os 4.
+- **server/index.js**: relay MP + CONTAS (`contaSalvar`/`contaCarregar`, nome+PIN com hash, JSON em DATA_DIR, cooldown 1s, ≤100KB).
+- Sistemas no main3d: QUESTS (com `requer` de cadeia e `invoca`), RAROS por espécie, TOMOS de lore, montaria/pet de combate (`MONTARIA_VEL`/`PET_DANO`), Depósito (`cofre`), barcas (`viajaBarca`), guilda (`dragoesMortos`/`guildaMembro`), eventos noturnos (`ESQUELETOS_NOTURNOS`), barra de HP (`atualizaBarraHP`).
+
+### ⚠️ GOTCHAS (aprendidos na dor — NÃO repetir)
+- **Sprite × Raycaster**: qualquer raycaster que possa atravessar um Sprite PRECISA de `raycaster.camera = camera` — sem isso, "matrixWorld null" TODO frame e a tela congela com o boneco andando (foi o bug histórico nº1).
+- **Clones GLB** (SkeletonUtils): `.clone()` NÃO carrega o override de raycast — re-aplicar `o.raycast = () => {}` em todo clone.
+- **Commits no PowerShell 5.1**: mensagem via here-string `@'...'@` e **SEM aspas duplas dentro** (quebra a passagem de argumentos pro git).
+- **Diário cronológico**: rodada nova entra DEPOIS da última no fim do arquivo (já foi inserido fora de ordem 2×).
+- **TDZ de módulo**: consts usadas em arrays de topo (ex.: `POSTO_MASCATE`) precisam ser declaradas ANTES.
+- **Máscaras de vegetação**: mato/moitas/capim/flores/seixos têm exclusões por área — cidade/estrada nova exige atualizar TODAS.
+- **Thais é mesclada** (thais.js, baldes por material): pra remover uma casa de lá, pule a coordenada no loop do casario.
+- **.ps1 com acento** precisa de UTF-8 com BOM (regra geral da máquina do maestro).
+
+### 🔭 FILA SUGERIDA (Patch 2)
+Deploy do v39→v43 quando o maestro liberar · GLBs CC0 nos slots (o maestro baixa de quaternius.com/poly.pizza) · interiores restantes (Anselmo?) · mais quests em cadeia · launcher Electron/Tauri · perf mobile (medir draw calls de verdade no aparelho).
+
+### 🧪 ROTEIRO DE TESTE DO ACUMULADO (v39→v43)
+Portões nas 3 entradas do vilarejo · 7 casas entráveis novas (com batente/verga/degrau) · barra de HP nos bichos ao bater · rangido de porta · lamparina nas mesas · chão com manchas/flores/seixos · juncos em toda água · cogumelos na floresta · trigo na fazenda · mortos erguendo no cemitério à noite · Mascate num dos 3 acampamentos · Cavernas do Pico (boca em 60,266 — lava queima, Troll Ancião) · letreiro certo nos 4 subsolos.
 > 🔧 Próximos candidatos: GLBs CC0 do maestro nos slots (vegetação/monstros/pets) · 2º andar das catacumbas (cripta mais funda)? · conta online (decisão do maestro) · empacotar launcher (Electron/Tauri) quando for "lançar".
 > ⚖️ Regra de sempre (o maestro pediu réplica 1:1 do Tibia e foi explicado o porquê do NÃO): Tibia é INSPIRAÇÃO de estilo — mapa, prédios, nomes e falas do jogo da CipSoft são protegidos e replicá-los põe o projeto publicado em risco. MECÂNICAS são livres (depósito, barco, lojas) e assets CC0 (Quaternius/Kenney/poly.pizza) podem ser usados 1:1 — os slots GLB estão prontos.
 **Estado:** jogo em produção (caseiro.pages.dev). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
