@@ -4,10 +4,10 @@
 
 ---
 
-## 🚨 38ª RODADA (EM ABERTO) — PRÓXIMA SESSÃO, COMECE AQUI (atualizado 11/06, PATCH 1/v38)
-> As rodadas **18ª a 37ª FORAM EXECUTADAS** — o **PATCH 1 ESTÁ FECHADO** (resumos no diário). Código no main; selo agora é **PATCH 1 (v38)**.
-> 🚀 **DEPLOY PENDENTE — "PATCH 1"**: cliente acumulando (v22→v35; produção está no v21). O SERVIDOR de contas precisa de redeploy no Railway (`cd server; railway up --ci`) + ⚠️ **VOLUME montado em /data com env DATA_DIR=/data no projeto venor-servidor** (sem volume, as contas zeram a cada redeploy — disco do Railway é efêmero!).
-> 🧪 Testar a nuvem (depois dos deploys): entrar no jogo → botão ☁️ → criar PIN → "Enviar save" → noutro aparelho/navegador, mesmo nome → ☁️ → mesmo PIN → "Baixar da nuvem".
+## 🎉 PATCH 1 LANÇADO EM 11/06/2026 — 38ª RODADA EM ABERTO
+> **TUDO PUBLICADO E VERIFICADO**: cliente **PATCH 1 (v38)** no ar em caseiro.pages.dev (bundle conferido = dist) · servidor de contas no Railway com **Volume /data + DATA_DIR=/data** criados via CLI · **smoke test de conta EM PRODUÇÃO passou** (salvar ✓ / carregar ✓ via wss).
+> 🧪 Validar a nuvem como jogador: entrar → botão ☁️ → criar PIN → "Enviar save" → noutro aparelho, mesmo nome → ☁️ → mesmo PIN → "Baixar da nuvem".
+> 🔭 Patch 2 (ideias na fila): GLBs CC0 do maestro nos slots · feedback dos primeiros jogadores · mais andares/masmorras · eventos de mundo · empacotar launcher (Electron/Tauri).
 > 🔧 Próximos candidatos: GLBs CC0 do maestro nos slots (vegetação/monstros/pets) · 2º andar das catacumbas (cripta mais funda)? · conta online (decisão do maestro) · empacotar launcher (Electron/Tauri) quando for "lançar".
 > ⚖️ Regra de sempre (o maestro pediu réplica 1:1 do Tibia e foi explicado o porquê do NÃO): Tibia é INSPIRAÇÃO de estilo — mapa, prédios, nomes e falas do jogo da CipSoft são protegidos e replicá-los põe o projeto publicado em risco. MECÂNICAS são livres (depósito, barco, lojas) e assets CC0 (Quaternius/Kenney/poly.pizza) podem ser usados 1:1 — os slots GLB estão prontos.
 **Estado:** jogo em produção (caseiro.pages.dev). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
