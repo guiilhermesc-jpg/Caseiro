@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.0 (v24)';
+const VERSAO = 'RV4.0 (v25)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -899,6 +899,69 @@ BUEIROS.forEach((bp, i) => {
   interativos.push(it);
 });
 
+// === VIAGEM DE BARCO ⛵ (RV4.0): a barca liga o Porto de Venore ao Cais do
+// Vilarejo — transporte clássico de capital mercante (5🪙 a passagem)
+[
+  { x: -322, z: -82, alvo: { x: 47, z: 57 }, alvoNome: 'Cais do Vilarejo' },
+  { x: 45, z: 62, alvo: { x: -318, z: -80 }, alvoNome: 'Porto de Venore' },
+].forEach((rota) => {
+  const it = { x: rota.x, z: rota.z, raio: 3.4, titulo: '⛵ Barca', acao: `Viajar p/ ${rota.alvoNome} — 5🪙 ⛵` };
+  it.onAcao = () => {
+    if (ouro < 5) { mostraMensagem('A passagem custa 5 🪙 — venda um peixe pro Tonho!'); return; }
+    ouro -= 5; hud.ouro(ouro);
+    montado = false; petAlvo = null;
+    avatar.position.set(rota.alvo.x, alturaTerreno(rota.alvo.x, rota.alvo.z), rota.alvo.z); vy = 0; noChao = true;
+    salvaJogo();
+    mostraMensagem(`⛵ A barca corta o pântano... bem-vindo ao ${rota.alvoNome}!`);
+  };
+  interativos.push(it);
+});
+
+// === DEPÓSITO DE VENORE 🧰 (RV4.0): cofre na Torre do Depósito — guarda
+// itens em segurança (vai no save; morrer NÃO derruba o que está no cofre)
+const cofre = []; // { nome, icone, qtd, ...campos de equipamento }
+function depositaNoCofre(item) {
+  const e = cofre.find((c) => c.nome === item.nome);
+  if (e) e.qtd++;
+  else cofre.push({ ...item, qtd: 1 });
+}
+function abreCofre() {
+  const lista = cofre.length
+    ? cofre.map((c) => `${c.icone || '▪'} ${c.nome}${c.qtd > 1 ? ' ×' + c.qtd : ''}`).join(' · ')
+    : '(vazio)';
+  const opcoes = [
+    { texto: '📥 Guardar a mochila no cofre', onClick: () => {
+      let n = 0;
+      for (const item of (inventario.estado() || [])) {
+        if (!item) continue;
+        for (let q = 0; q < (item.qtd || 1); q++) {
+          if (!inventario.consomeItem(item.nome)) break;
+          depositaNoCofre(item); n++;
+        }
+      }
+      salvaJogo();
+      dialogo.abre('🧰 Depósito de Venore', n ? `Guardei ${n} item(ns). Estão seguros aqui.` : 'Sua mochila está vazia.', opcoes);
+    } },
+    { texto: '📤 Retirar tudo do cofre', onClick: () => {
+      let n = 0;
+      for (let i = cofre.length - 1; i >= 0; i--) {
+        const c = cofre[i];
+        while (c.qtd > 0 && inventario.addItem({ ...c, qtd: undefined })) { c.qtd--; n++; }
+        if (c.qtd <= 0) cofre.splice(i, 1);
+      }
+      salvaJogo();
+      dialogo.abre('🧰 Depósito de Venore', n ? `Devolvi ${n} item(ns) pra sua mochila.` : (cofre.length ? 'Mochila cheia! Libere espaço antes.' : 'Seu cofre está vazio.'), opcoes);
+    } },
+    { texto: 'Fechar', onClick: () => dialogo.fecha() },
+  ];
+  dialogo.abre('🧰 Depósito de Venore', `No cofre: ${lista}`, opcoes);
+}
+{
+  const it = { x: -296, z: -46.6, raio: 3.0, titulo: '🧰 Depósito de Venore', acao: 'Abrir seu cofre 🧰' };
+  it.onAcao = () => abreCofre();
+  interativos.push(it);
+}
+
 // === COLETÁVEIS pelo mundo (colher → vender no mercador → renascem em 90s) ===
 const TIPOS_COLETA = {
   Erva: { icone: '🌿', cria: () => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 5), new THREE.MeshStandardMaterial({ color: 0x3fa050, roughness: 0.9 })); m.position.y = 0.28; return m; } },
@@ -1450,6 +1513,7 @@ function salvaJogo() {
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
       pet: petTipo, pets: petsDomados, // companheiros domados
       quests: questEstado, // missões aceitas/cumpridas
+      cofre, // Depósito de Venore (itens guardados em segurança)
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1470,6 +1534,7 @@ function carregaJogo(nome) {
     Object.assign(economia, d.economia || {});
     restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
     Object.assign(questEstado, d.quests || {}); // missões continuam de onde pararam
+    cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
     (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
