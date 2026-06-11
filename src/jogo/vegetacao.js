@@ -14,7 +14,19 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { desloca } from './construcoes.js';
 
-const MAT_VEG = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true });
+const MAT_VEG = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true, side: THREE.DoubleSide });
+MAT_VEG.onBeforeCompile = (shader) => {
+  shader.uniforms.uTempoVento = { value: 0 };
+  shader.vertexShader = `uniform float uTempoVento;\n${shader.vertexShader}`;
+  shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `
+    #include <begin_vertex>
+    float pesoVento = smoothstep(0.18, 3.2, position.y);
+    float ondaVento = sin(uTempoVento * 1.35 + instanceMatrix[3].x * 0.055 + instanceMatrix[3].z * 0.041 + position.y * 1.7);
+    transformed.x += ondaVento * 0.055 * pesoVento;
+    transformed.z += cos(uTempoVento * 1.15 + instanceMatrix[3].z * 0.049 + position.y * 1.4) * 0.032 * pesoVento;
+  `);
+  MAT_VEG.userData.ventoShader = shader;
+};
 
 // pinta a geometria inteira de uma cor e remove o índice (pré-merge)
 function pinta(geo, cor) {
@@ -69,6 +81,87 @@ function geoMoita(pal) {
     const b = pinta(desloca(new THREE.IcosahedronGeometry(r, 0), r * 0.3), pal[i % pal.length]);
     b.translate(ox, oy, oz); partes.push(b);
   });
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoArbustoAlto(pal) {
+  const partes = [];
+  [[0, 0.82, 0, 1.18], [0.82, 0.62, 0.28, 0.72], [-0.72, 0.58, -0.32, 0.76], [0.12, 1.28, -0.26, 0.82]].forEach(([ox, oy, oz, r], i) => {
+    const b = pinta(desloca(new THREE.IcosahedronGeometry(r, 0), r * 0.28), pal[i % pal.length]);
+    b.scale(1.1, 0.72 + (i % 2) * 0.22, 0.9);
+    b.translate(ox, oy, oz);
+    partes.push(b);
+  });
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const galho = pinta(new THREE.CylinderGeometry(0.035, 0.055, 1.15, 5), CASCA);
+    galho.rotateZ((i % 2 ? 1 : -1) * 0.42);
+    galho.rotateY(a);
+    galho.translate(Math.cos(a) * 0.36, 0.68, Math.sin(a) * 0.36);
+    partes.push(galho);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoSamambaia(cor) {
+  const partes = [];
+  const miolo = pinta(new THREE.CylinderGeometry(0.08, 0.12, 0.24, 6), 0x3f5f2e);
+  miolo.translate(0, 0.12, 0); partes.push(miolo);
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + 0.15;
+    const folha = pinta(new THREE.PlaneGeometry(0.42, 1.15 + (i % 3) * 0.18), cor);
+    folha.rotateX(-Math.PI / 2 + 0.52);
+    folha.rotateZ((i % 2 ? 1 : -1) * 0.14);
+    folha.rotateY(a);
+    folha.translate(Math.cos(a) * 0.45, 0.26 + (i % 3) * 0.035, Math.sin(a) * 0.45);
+    partes.push(folha);
+    const nervura = pinta(new THREE.BoxGeometry(0.035, 0.035, 0.9 + (i % 3) * 0.12), 0x315126);
+    nervura.rotateY(a);
+    nervura.rotateX(0.34);
+    nervura.translate(Math.cos(a) * 0.47, 0.29, Math.sin(a) * 0.47);
+    partes.push(nervura);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoCapimAlto(cor) {
+  const partes = [];
+  for (let i = 0; i < 11; i++) {
+    const a = (i / 11) * Math.PI * 2 + 0.22;
+    const h = 0.95 + (i % 4) * 0.22;
+    const lam = pinta(new THREE.ConeGeometry(0.045, h, 4), cor);
+    lam.rotateX(0.3 + (i % 3) * 0.08);
+    lam.rotateY(a);
+    lam.translate(Math.cos(a) * 0.18, h / 2, Math.sin(a) * 0.18);
+    partes.push(lam);
+    if (i % 4 === 0) {
+      const espiga = pinta(new THREE.CylinderGeometry(0.035, 0.035, 0.32, 5), 0x8f7440);
+      espiga.rotateY(a);
+      espiga.translate(Math.cos(a) * 0.22, h + 0.12, Math.sin(a) * 0.22);
+      partes.push(espiga);
+    }
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
+function geoFlorPantano(corPetala) {
+  const partes = [];
+  const base = pinta(new THREE.CircleGeometry(0.42, 12), 0x3f6b37);
+  base.rotateX(-Math.PI / 2);
+  base.scale(1.35, 1, 0.72);
+  base.translate(0, 0.045, 0);
+  partes.push(base);
+  const caule = pinta(new THREE.CylinderGeometry(0.035, 0.045, 0.82, 5), 0x4e7740);
+  caule.translate(0, 0.41, 0); partes.push(caule);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const pet = pinta(new THREE.SphereGeometry(0.09, 6, 5), corPetala);
+    pet.scale(1.35, 0.45, 0.82);
+    pet.translate(Math.cos(a) * 0.13, 0.86, Math.sin(a) * 0.13);
+    partes.push(pet);
+  }
+  const miolo = pinta(new THREE.SphereGeometry(0.07, 6, 5), 0xd6b15a);
+  miolo.translate(0, 0.88, 0); partes.push(miolo);
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
@@ -229,6 +322,7 @@ function geoPedra(comMusgo) {
 export function criaVegetacaoInstanciada({
   arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [], flores = [], seixos = [], juncos = [], cogus = [], trigo = [],
   folhasChao = [], terraChao = [], raizesChao = [], capimRasteiro = [],
+  samambaias = [], capimAlto = [], floresPantano = [], arbustosAltos = [],
 }, alturaSolo) {
   const g = new THREE.Group();
   const colisores = [];
@@ -275,6 +369,12 @@ export function criaVegetacaoInstanciada({
   lote(terraChao, [geoTerraExposta(0x7a5b38), geoTerraExposta(0x5e4630)], 0, 0, '');
   lote(raizesChao, [geoRaizesBaixas(), geoRaizesBaixas()], 0, 0, '');
   lote(capimRasteiro, [0x4d7d39, 0x6a9144, 0x3f6931].map((c) => geoCapimRasteiro(c)), 0, 0, '');
+  // RV6.9: volume por bioma - samambaias e arbustos no sub-bosque, capim
+  // alto no campo e flores de pantano nas margens escuras.
+  lote(samambaias, [0x3f7a36, 0x4f8f43, 0x315f2d].map((c) => geoSamambaia(c)), 0, 0, '');
+  lote(capimAlto, [0x557d34, 0x6c9140, 0x8a873f].map((c) => geoCapimAlto(c)), 0, 0, '');
+  lote(floresPantano, [0x7ea6ff, 0xd48ad6, 0xf0d36a].map((c) => geoFlorPantano(c)), 0, 0, '');
+  lote(arbustosAltos, [geoArbustoAlto([0x466f35, 0x5d8640, 0x3f5f30]), geoArbustoAlto([0x596c3a, 0x6f7f3e, 0x44552c])], 0, 0, '');
 
   // SLOT GLB: ao carregar, a espécie inteira troca pelo modelo profissional
   // (auto-escala pela altura, base no chão, mesmas matrizes de instância)
@@ -304,5 +404,12 @@ export function criaVegetacaoInstanciada({
     }, undefined, () => { /* sem arquivo: visual procedural continua */ });
   });
 
-  return { grupo: g, colisores };
+  return {
+    grupo: g,
+    colisores,
+    animados: [{ atualiza: (_dt, tempo) => {
+      const shader = MAT_VEG.userData.ventoShader;
+      if (shader) shader.uniforms.uTempoVento.value = tempo;
+    } }],
+  };
 }

@@ -1227,6 +1227,10 @@ export function criaCidade() {
     || (x > 36 && x < 175 && z > 126 && z < 270)
     || (x > -185 && x < -72 && z > -116 && z < -36);
   const emCampoAberto = (x, z) => !bloqueiaVegetacao(x, z) && z > -170 && z < 300 && x > -210 && x < 520;
+  const emPantano = (x, z) => (x > -360 && x < -238 && z > -146 && z < -82)
+    || (x > -118 && x < -58 && z > -128 && z < -44)
+    || (x > -118 && x < -82 && z > 52 && z < 92)
+    || (x > 82 && x < 122 && z > 76 && z < 116);
   for (let tent = 0; tent < 16000 && VEG.folhasChao.length < 360; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz) || !emFloresta(px, pz)) continue;
@@ -1254,6 +1258,42 @@ export function criaCidade() {
     const px = randX(), pz = randZ();
     if (!emCampoAberto(px, pz)) continue;
     VEG.capimRasteiro.push([px, pz, 0.7 + Math.random() * 0.9]);
+  }
+  // RV6.9: volume por bioma. Mais silhueta e profundidade sem colisao:
+  // samambaias no sub-bosque, capim alto no campo e flores no pantano.
+  VEG.samambaias = []; VEG.capimAlto = []; VEG.floresPantano = []; VEG.arbustosAltos = [];
+  for (let tent = 0; tent < 22000 && VEG.samambaias.length < 240; tent++) {
+    const px = randX(), pz = randZ();
+    if (bloqueiaVegetacao(px, pz) || !emFloresta(px, pz)) continue;
+    VEG.samambaias.push([px, pz, 0.75 + Math.random() * 0.95]);
+  }
+  VEG.arvores.forEach(([ax, az], i) => {
+    if (i % 3) return;
+    const a = Math.random() * Math.PI * 2, rr = 2.4 + Math.random() * 2.6;
+    const bx = ax + Math.cos(a) * rr, bz = az + Math.sin(a) * rr;
+    if (!bloqueiaVegetacao(bx, bz)) VEG.arbustosAltos.push([bx, bz, 0.75 + Math.random() * 0.75]);
+  });
+  for (let tent = 0; tent < 30000 && VEG.capimAlto.length < 340; tent++) {
+    const px = randX(), pz = randZ();
+    if (!emCampoAberto(px, pz) || emFloresta(px, pz) || emPantano(px, pz)) continue;
+    if (Math.random() < 0.35 && Math.abs(pz) < 24 && px > 60 && px < 520) continue;
+    VEG.capimAlto.push([px, pz, 0.65 + Math.random() * 0.9]);
+  }
+  [[-95, -55, 16], [100, 95, 18], [-105, 70, 14], [-75, -110, 15], [45, 80, 15], [-330, -92, 14], [-262, -124, 9], [-296, -134, 8]]
+    .forEach(([lx, lz, lr]) => {
+      const n = Math.round(lr * 0.62);
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + Math.random() * 0.55;
+        const rr = lr + 0.8 + Math.random() * 3.2;
+        const fx = lx + Math.cos(a) * rr, fz = lz + Math.sin(a) * rr;
+        if (!bloqueiaVegetacao(fx, fz)) VEG.floresPantano.push([fx, fz, 0.7 + Math.random() * 0.55]);
+      }
+    });
+  for (let tent = 0; tent < 9000 && VEG.floresPantano.length < 170; tent++) {
+    const px = -326 + (Math.random() - 0.5) * 120;
+    const pz = -118 + (Math.random() - 0.5) * 70;
+    if (bloqueiaVegetacao(px, pz) || !emPantano(px, pz)) continue;
+    VEG.floresPantano.push([px, pz, 0.65 + Math.random() * 0.75]);
   }
   // BIOMAS (RV5.6): juncos abraçam TODA água, cogumelos nascem no pé das
   // árvores da floresta, e a fazenda ganha um CAMPO DE TRIGO de verdade
@@ -1287,7 +1327,7 @@ export function criaCidade() {
       VEG.trigo.push([tx + (Math.random() - 0.5) * 0.9, tz + (Math.random() - 0.5) * 0.9, 0.85 + Math.random() * 0.4]);
     }
   }
-  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~23 draw calls;
+  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~31 draw calls;
   // slots GLB arvore1/pinheiro/pedra trocam o visual da espécie inteira)
   add(criaVegetacaoInstanciada(VEG, alturaColinas));
 

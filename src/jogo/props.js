@@ -184,6 +184,7 @@ export function criaCristal(x, z) {
 // Atualiza as peças animadas (chamada no loop principal).
 export function animaProps(animados, dt, tempo) {
   for (const a of animados) {
+    if (a.atualiza) { a.atualiza(dt, tempo); continue; }
     if (a.gira) a.mesh.rotation.y += dt * a.gira;
     if (a.giraZ) a.mesh.rotation.z += dt * a.giraZ; // pás de moinho
     if (a.flutua) a.mesh.position.y = a.baseY + Math.sin(tempo * 2 + a.fase) * 0.12;
