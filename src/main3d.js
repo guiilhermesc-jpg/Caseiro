@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.4 (v29)';
+const VERSAO = 'RV4.5 (v30)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;

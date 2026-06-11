@@ -141,6 +141,13 @@ const ROSTER = [
     falas: { trabalho: 'Cuido da Catedral de Venore. O sino dela se ouve do outro lado do canal.', dica: 'Os deuses do pântano são antigos. O templo do vilarejo ainda guarda o renascimento.' } },
   { nome: 'Beto', prof: 'Estivador', post: { x: -292, z: -82 }, home: { x: -300, z: -78 }, cor: 0x5a4a3a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
     falas: { trabalho: 'Carrego caixa e barril o dia inteiro entre o cais e os armazéns. Braço não falta.', dica: 'A barca cobra 5 moedas, mas nadar no canal sai bem mais caro.' } },
+  // RV4.5 — moradores que dão VIDA às ruas da capital (recolhem à noite)
+  { nome: 'Rosa', prof: 'Florista', post: { x: -316, z: 14 }, home: { x: -376, z: 44 }, cor: 0xc05a7a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Vendo flores do brejo no Largo das Guildas. Até no pântano nasce beleza.', dica: 'A Travessa das Guildas é o caminho mais bonito da cidade ao entardecer.' } },
+  { nome: 'Nilo', prof: 'Cronista', post: { x: -326, z: -36 }, home: { x: -272, z: 30 }, cor: 0x3a5a8a, humor: 'bom', sexo: 'homem', tipo: 'mago',
+    falas: { trabalho: 'Anoto tudo que acontece em Venore: chegadas, partidas e os boatos do mercado.', dica: 'Dizem que o Rei Esqueleto das catacumbas usava uma coroa que vale uma fortuna.' } },
+  { nome: 'Iva', prof: 'Lavadeira', post: { x: -346, z: -2 }, home: { x: -396, z: 44 }, cor: 0x6a8a5a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Lavo roupa na beira do canal desde menina. A água conta segredos.', dica: 'As barcaças trazem especiarias de manhã cedinho. O cheiro toma o calçadão.' } },
 ];
 
 // casas (residências) — pontos LIVRES na rua em frente às casas (os antigos

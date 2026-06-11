@@ -13,7 +13,7 @@
 // =============================================================
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { mat, texturaPedra, VIDRO, aplicaTexturaReal } from './construcoes.js';
+import { mat, matParede, texturaPedra, VIDRO, aplicaTexturaReal } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
   const { HX = 60, HZ = 54, ALT = 9, ESP = 2, gw = 10 } = opts; // Thais maior e com portão/ruas folgados
@@ -107,7 +107,7 @@ export function criaThais(cx, cz, opts = {}) {
 
   // --- PRÉDIOS (fachada vira pro miolo; eixo 'x' p/ colunas leste/oeste) ---
   function predio(lx, lz, w, d, h, cor, corT, eixo = 'z') {
-    addG(new THREE.BoxGeometry(w, h, d), mat(cor, 1), lx, h / 2, lz);
+    addG(new THREE.BoxGeometry(w, h, d), matParede(cor), lx, h / 2, lz); // reboco (RV4.5)
     const tel = new THREE.ConeGeometry(Math.max(w, d) * 0.72, h * 0.5 + 1.4, 4); tel.rotateY(Math.PI / 4);
     addG(tel, mat(corT, 1), lx, h + (h * 0.5 + 1.4) / 2 - 0.1, lz);
     if (eixo === 'z') {

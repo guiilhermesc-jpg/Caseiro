@@ -145,6 +145,33 @@ function texturaTelha() {
   _texTelha.wrapS = _texTelha.wrapT = THREE.RepeatWrapping; _texTelha.repeat.set(2, 2);
   return _texTelha;
 }
+// REBOCO procedural (RV4.5): tira o "plástico liso" das paredes — ruído de
+// argamassa + manchas de tempo, tingido pela cor de cada casa (1 canvas só)
+let _texReboco = null;
+function texturaReboco() {
+  if (_texReboco) return _texReboco;
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = '#b4b4b4'; x.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 2600; i++) {
+    const v = 150 + Math.floor(Math.random() * 70);
+    x.fillStyle = `rgba(${v},${v},${v},0.5)`;
+    x.fillRect(Math.random() * 128, Math.random() * 128, 1.5, 1.5);
+  }
+  for (let i = 0; i < 12; i++) { // manchas de umidade/tempo
+    x.fillStyle = 'rgba(90,90,90,.06)';
+    x.beginPath(); x.arc(Math.random() * 128, Math.random() * 128, 6 + Math.random() * 14, 0, Math.PI * 2); x.fill();
+  }
+  _texReboco = new THREE.CanvasTexture(c);
+  _texReboco.wrapS = _texReboco.wrapT = THREE.RepeatWrapping; _texReboco.repeat.set(2, 2);
+  return _texReboco;
+}
+const matParedeCache = {};
+export function matParede(cor) {
+  if (!matParedeCache[cor]) matParedeCache[cor] = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.92, map: texturaReboco() });
+  return matParedeCache[cor];
+}
+
 const matTelhaCache = {};
 export function matTelha(cor) {
   if (!matTelhaCache[cor]) {
@@ -189,8 +216,8 @@ export function criaPredio(opts) {
 
   // alicerce de pedra (assenta a casa no chão; quebra o "caixote")
   gbox(geosPed, larg + 0.4, FB, prof + 0.4, 0, FB / 2, 0);
-  // corpo (sobre o alicerce)
-  const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), mat(cor));
+  // corpo (sobre o alicerce) — parede com REBOCO procedural (RV4.5)
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), matParede(cor));
   corpo.position.y = FB + alt / 2; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
   const topo = FB + alt; // topo das paredes
   // enxaimel: viga horizontal (divisória de andar) + montantes de canto (look medieval)
@@ -252,7 +279,7 @@ export function criaPredio(opts) {
     // TORRINHA de canto pendurada na quina frontal (silhueta medieval)
     const tx = (Math.random() < 0.5 ? -1 : 1) * (larg / 2 - 0.3);
     const hT2 = alt * 0.5;
-    const corpoT2 = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.6, hT2, 8), mat(cor));
+    const corpoT2 = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.6, hT2, 8), matParede(cor));
     corpoT2.position.set(tx, FB + alt - hT2 / 2 + 0.4, fz - 0.3); corpoT2.castShadow = true; g.add(corpoT2);
     const chapeu = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.9, 8), matTelha(corTelhado));
     chapeu.position.set(tx, FB + alt + 1.35, fz - 0.3); chapeu.castShadow = true; g.add(chapeu);

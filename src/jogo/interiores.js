@@ -6,13 +6,13 @@
 //  Devolve { grupo, colisores, interativo (porta), animados, casa }.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaJanela, texturaPedra, aplicaTexturaReal } from './construcoes.js';
+import { mat, matParede, criaJanela, texturaPedra, aplicaTexturaReal } from './construcoes.js';
 
 export function criaCasaInterior(x, z, opts = {}) {
   const { larg = 9, prof = 9, alt = 4, frente = 'sul', cor = 0xd8c4a0, corTelhado = 0x8a4632 } = opts;
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const t = 0.3, hx = larg / 2, hz = prof / 2, gw = 4.6; // vão BEM largo (entrada fácil)
-  const paredeMat = mat(cor);
+  const paredeMat = matParede(cor); // reboco procedural (RV4.5)
   const colisores = [];
 
   // chão de tábua (textura REAL de madeira quando carregar)

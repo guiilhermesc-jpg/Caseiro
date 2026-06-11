@@ -837,6 +837,32 @@ export function criaCidade() {
     [[-258, -130], [-300, -118], [-276, -136], [-264, -112], [-292, -142]].forEach(([x, z]) => add(criaJunco(x, z)));
     add(criaSalgueiro(-248, -136));
     add(criaPlaca(-276, -106, 'Brejo Profundo — PERIGO', Math.PI));
+
+    // ====== RV4.5 — ACABAMENTO URBANO (Patch 1) ======
+    add(criaFonte(-320, -30)); // chafariz do Grande Mercado (água viva e gotas na praça)
+    // ruas secundárias pavimentadas ligando os distritos
+    const ruaN = new THREE.Mesh(new THREE.BoxGeometry(96, 0.1, 6), matRua(18, 1.2));
+    ruaN.position.set(-352, 0.02, 18); ruaN.receiveShadow = true; scene.add(ruaN); // Largo ↔ Catedral
+    const ruaA = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 66), matRua(1.2, 12));
+    ruaA.position.set(-292, 0.02, -67); ruaA.receiveShadow = true; scene.add(ruaA); // rua dos Armazéns
+    // placas com NOME DE RUA (a capital se orienta)
+    add(criaPlaca(-344, -26, 'Rua do Canal'));
+    add(criaPlaca(-336, 14, 'Travessa das Guildas', Math.PI));
+    add(criaPlaca(-296, -60, 'Beco dos Armazéns', Math.PI / 2));
+    add(criaPlaca(-372, 13, 'Rua da Catedral', -Math.PI / 2));
+    // BARCAÇAS ancoradas no canal (vida de cidade mercante)
+    [[-352, -16, 0.15], [-352, 32, -0.2]].forEach(([bxx, bzz, rotB]) => {
+      const barca = new THREE.Group(); barca.position.set(bxx, 0.12, bzz); barca.rotation.y = rotB;
+      const casco = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 6.4), mat(0x6e4a2a, 1));
+      casco.position.y = 0.25; casco.castShadow = true; barca.add(casco);
+      const borda = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.18, 6.8), mat(0x5a3a22, 1));
+      borda.position.y = 0.55; barca.add(borda);
+      const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.4, 6), mat(0x4a3a2a, 1));
+      mastro.position.y = 2.2; barca.add(mastro);
+      const carga = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.8, 1.4), mat(0x8a6a44, 1));
+      carga.position.set(0, 0.9, -1.6); barca.add(carga);
+      scene.add(barca);
+    });
   }
 
   // MOITAS espalhadas pelo campo (refs premium: sub-bosque denso) — sem
