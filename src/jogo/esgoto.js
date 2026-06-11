@@ -87,3 +87,93 @@ export function criaEsgoto() {
     acessos,
   };
 }
+
+// =============================================================
+//  CATACUMBAS DE VENORE (RV4.4) · cripta sob a Catedral (y = -40).
+//  Salão de tumbas com sarcófagos, pilares, velas acesas e a CÂMARA
+//  DO TRONO do Rei Esqueleto no fundo. Uma corda de acesso no leste
+//  (sobe pra cripta atrás da Catedral). Mesmo contrato do esgoto:
+//  { grupo, colisores, bounds, acessos, saidas }.
+// =============================================================
+export function criaCatacumbas() {
+  const g = new THREE.Group();
+  const CX = -330, CZ = -10;            // centro do salão (sob Venore)
+  const W = 66, D = 38, alt = 5, t = 0.8;
+  const pedra = mat(0x3a3a42, 1), pedraEsc = mat(0x26262e, 1), osso = mat(0xd8d0ba, 0.7);
+
+  // piso + teto
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
+  piso.position.set(CX, -40 - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
+  const teto = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedraEsc);
+  teto.position.set(CX, -40 + alt, CZ); g.add(teto);
+
+  const colisores = [];
+  function bloco(cx, cz, w, d, m = pedra) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), m);
+    mesh.position.set(cx, -40 + alt / 2, cz); mesh.receiveShadow = true; g.add(mesh);
+    colisores.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }
+  // paredes perimetrais
+  bloco(CX, CZ - D / 2, W, t); bloco(CX, CZ + D / 2, W, t);
+  bloco(CX - W / 2, CZ, t, D); bloco(CX + W / 2, CZ, t, D);
+
+  // SARCÓFAGOS em duas alas (tampas entreabertas = clima)
+  for (const fila of [-11, 11]) {
+    for (let i = 0; i < 4; i++) {
+      const sx = CX - 18 + i * 11, sz = CZ + fila;
+      const caixa = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.0, 1.3), pedra);
+      caixa.position.set(sx, -40 + 0.5, sz); caixa.castShadow = caixa.receiveShadow = true; g.add(caixa);
+      const tampa = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), pedraEsc);
+      tampa.position.set(sx + 0.25, -40 + 1.1, sz); tampa.rotation.z = 0.07; g.add(tampa);
+      colisores.push({ minX: sx - 1.4, maxX: sx + 1.4, minZ: sz - 0.8, maxZ: sz + 0.8 });
+      // vela acesa em cima (emissiva — pontinhos de vida na escuridão)
+      const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.3, 6), mat(0xe8e0d0, 0.6));
+      vela.position.set(sx - 0.6, -40 + 1.35, sz); g.add(vela);
+      const chama = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6),
+        new THREE.MeshStandardMaterial({ color: 0xffc46a, emissive: 0xff9a2a, emissiveIntensity: 1.0 }));
+      chama.position.set(sx - 0.6, -40 + 1.55, sz); g.add(chama);
+    }
+  }
+  // pilares centrais
+  for (const px of [CX - 14, CX, CX + 14]) for (const pz of [CZ - 4, CZ + 4]) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, alt, 8), pedraEsc);
+    col.position.set(px, -40 + alt / 2, pz); col.castShadow = true; g.add(col);
+    colisores.push({ minX: px - 0.65, maxX: px + 0.65, minZ: pz - 0.65, maxZ: pz + 0.65 });
+  }
+  // ossadas espalhadas
+  [[-12, -6], [4, 7], [-22, 5], [14, -8], [-2, -13]].forEach(([ox, oz]) => {
+    const ossada = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.16, 0.24), osso);
+    ossada.position.set(CX + ox, -40 + 0.12, CZ + oz); ossada.rotation.y = Math.random() * 2; g.add(ossada);
+  });
+  // CÂMARA DO TRONO (oeste): estrado + trono do Rei Esqueleto
+  const estrado = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 10), pedraEsc);
+  estrado.position.set(CX - 27, -40 + 0.25, CZ); estrado.receiveShadow = true; g.add(estrado);
+  const trono = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.6, 1.0), pedra);
+  trono.position.set(CX - 30, -40 + 1.5, CZ); trono.castShadow = true; g.add(trono);
+  colisores.push({ minX: CX - 31, maxX: CX - 29, minZ: CZ - 0.8, maxZ: CZ + 0.8 });
+  // luzes quentes e fracas (3 — a cripta continua pedindo tocha)
+  [[CX - 27, CZ], [CX, CZ - 12], [CX + 18, CZ + 10]].forEach(([lx, lz]) => {
+    const luz = new THREE.PointLight(0xffb46a, 0.9, 10, 2);
+    luz.position.set(lx, -40 + alt - 1, lz); g.add(luz);
+  });
+
+  // ACESSO: corda no leste (mesma do esgoto) — sobe pra cripta da Catedral
+  const a = { x: CX + 28, z: CZ };
+  const esc = new THREE.Group(); esc.position.set(a.x, -40, a.z);
+  const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt - 0.2, 6), mat(0x9a7a44, 1));
+  corda.position.y = (alt - 0.2) / 2; esc.add(corda);
+  for (let i = 1; i <= 4; i++) {
+    const no = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.04, 6, 10), mat(0x6e5228, 1));
+    no.position.y = i * (alt / 5); no.rotation.x = Math.PI / 2; esc.add(no);
+  }
+  g.add(esc);
+  const luzEntrada = new THREE.PointLight(0xbfd8ff, 1.0, 11, 2);
+  luzEntrada.position.set(a.x, -40 + alt - 0.6, a.z); g.add(luzEntrada);
+
+  return {
+    grupo: g, colisores,
+    bounds: { minX: CX - W / 2 + 1, maxX: CX + W / 2 - 1, minZ: CZ - D / 2 + 1, maxZ: CZ + D / 2 - 1 },
+    acessos: [a],
+    saidas: [{ x: -398, z: 33 }], // cripta atrás da Catedral
+  };
+}

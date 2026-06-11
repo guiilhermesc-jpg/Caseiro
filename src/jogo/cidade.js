@@ -782,6 +782,18 @@ export function criaCidade() {
     add(criaPlaca(-312, 27, 'Salão das Guildas', Math.PI));
     add(criaMarco('igreja', { x: -390, z: 16, rot: Math.PI / 2 })); // CATEDRAL DE VENORE (campanário + sino)
     add(criaPlaca(-380, 8, 'Catedral de Venore', Math.PI / 2));
+    { // CRIPTA atrás da Catedral (RV4.4): arco de pedra + boca de descida
+      const pedraCr = mat(0x6f675c, 1);
+      const boca = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.25, 2.6), mat(0x14110c, 1));
+      boca.position.set(-398, 0.13, 33); scene.add(boca); // alçapão escuro
+      [[-399.6, 0], [-396.4, 0]].forEach(([px]) => {
+        const pilarCr = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.6, 0.6), pedraCr);
+        pilarCr.position.set(px, 1.3, 31.4); pilarCr.castShadow = true; scene.add(pilarCr);
+      });
+      const vergaCr = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.6, 0.7), pedraCr);
+      vergaCr.position.set(-398, 2.9, 31.4); vergaCr.castShadow = true; scene.add(vergaCr);
+      add(criaPlaca(-394, 30, 'Catacumbas — desça se ousar', Math.PI / 2));
+    }
     [[-340, 24], [-340, 52], [-300, 46], [-272, 28], [-264, 56], [-376, 40], [-376, 64], [-396, 46]]
       .forEach(([x, z]) => add(criaPredio({
         x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(8, 12),

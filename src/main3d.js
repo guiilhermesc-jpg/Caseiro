@@ -18,7 +18,7 @@ import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
-import { criaEsgoto } from './jogo/esgoto.js';
+import { criaEsgoto, criaCatacumbas } from './jogo/esgoto.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js';
@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.3 (v28)';
+const VERSAO = 'RV4.4 (v29)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -171,8 +171,8 @@ for (const o of obstaculos) {
   }
 }
 function colide(x, z) {
-  if (noEsgoto) { // subsolo: lista pequena, varre direto
-    for (const o of esgoto.colisores) {
+  if (noEsgoto) { // subsolo (esgoto OU catacumbas): lista pequena, varre direto
+    for (const o of subsoloAtual.colisores) {
       if (x > o.minX - RAIO_AVATAR && x < o.maxX + RAIO_AVATAR &&
           z > o.minZ - RAIO_AVATAR && z < o.maxZ + RAIO_AVATAR) return true;
     }
@@ -193,8 +193,11 @@ function colide(x, z) {
 // colisão dos BICHOS com o cenário (padrão Tibia/Albion: monstro não atravessa
 // parede/árvore). y decide o andar: esgoto (fundo) ou superfície (grade).
 function podeAndarBicho(x, z, y) {
-  if (y < -10) {
+  if (y < -10) { // bichos do subsolo: esgoto E catacumbas (regiões disjuntas)
     for (const o of esgoto.colisores) {
+      if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
+    }
+    for (const o of catacumbas.colisores) {
       if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
     }
     return true;
@@ -209,6 +212,11 @@ function podeAndarBicho(x, z, y) {
 // --- esgoto (subsolo escuro) + ratos + boss + tocha ---
 const esgoto = criaEsgoto(); scene.add(esgoto.grupo); solidos.push(esgoto.grupo);
 esgoto.grupo.visible = false; // só renderiza a grade de túneis quando você está lá embaixo (perf)
+// CATACUMBAS DE VENORE (RV4.4): segundo subsolo, sob a Catedral.
+// `subsoloAtual` diz em qual andar-de-baixo o jogador está (colisão/saídas).
+const catacumbas = criaCatacumbas(); scene.add(catacumbas.grupo);
+catacumbas.grupo.visible = false;
+let subsoloAtual = esgoto;
 const ratos = criaRatos(6, esgoto.salaBounds);                       // ratos na câmara central
 esgoto.corredores.forEach((b) => criaRatos(2, b).forEach((r) => ratos.push(r))); // ratos patrulhando os túneis
 const boss = { g: criaCobra(0, -10), hp: 60, hpMax: 60, xp: 25, dano: 10, vel: 1.6, forte: true, bounds: esgoto.salaBounds, y0: -40, alvo: { x: 0, z: -10 }, pausa: 0, tempo: 0, vivo: true, piscar: 0, boss: true, forma: 'cobra' };
@@ -441,6 +449,18 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
   addMonstro(c, 28, 10, 8, 1.5, false, areaMon(-278, -124, 18), { veneno: true, especie: 'cobra' });
 });
 [[-252, -134], [-304, -124]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 13), { especie: 'troll' }));
+// CATACUMBAS DE VENORE (RV4.4): esqueletos guardam as tumbas (y = -40)
+[[-318, -18], [-330, -2], [-342, -16], [-312, -4]].forEach(([x, z]) => {
+  const e = criaEsqueleto(x, z); e.position.y = -40;
+  addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 11), { especie: 'esqueleto', y0: -40 });
+});
+{ // REI ESQUELETO: boss do trono — dropa a COROA ANTIGA (vale 250🪙)
+  const rei = criaEsqueleto(-350, -10); rei.position.y = -40; rei.scale.setScalar(1.75);
+  addMonstro(rei, 320, 90, 24, 1.4, true, areaMon(-348, -10, 11), {
+    boss: true, especie: 'reiEsqueleto', y0: -40,
+    lootEspecial: { nome: 'Coroa Antiga', icone: '👑' },
+  });
+}
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -671,6 +691,10 @@ const QUESTS = [
   { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+  // RV4.4: a sacerdotisa quer paz nas catacumbas sob a Catedral
+  { id: 'pazCatacumbas', npc: 'Hela', tipo: 'matar', especie: 'reiEsqueleto', meta: 1,
+    titulo: 'Paz nas Catacumbas', pede: 'Algo acordou sob a Catedral... O REI ESQUELETO senta num trono entre as tumbas. Devolva-o ao descanso (a descida fica na cripta atrás da Catedral).',
+    fala: 'O rei voltou a dormir?', recompensa: { ouro: 120, xp: 80, item: { nome: 'Amuleto Sagrado', icone: '📿', slot: 'colar', defesa: 5 } } },
   // RV4.1: limpeza do Brejo Profundo (a Capitã de Venore paga bem)
   { id: 'brejoMara', npc: 'Capitã Mara', tipo: 'matar', especie: 'cobra', meta: 3,
     titulo: 'Limpeza do Brejo', pede: 'O Brejo Profundo, ao sul do porto, está infestado de cobras venenosas. Mate 3 e Venore te paga como soldado.',
@@ -697,7 +721,7 @@ const customizar = criaCustomizar({
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
-  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -864,8 +888,8 @@ function executaAcao() {
   gesto = 1;
   if (noEsgoto) {
     let subiu = false;
-    for (let i = 0; i < esgoto.acessos.length; i++) {
-      const a = esgoto.acessos[i];
+    for (let i = 0; i < subsoloAtual.acessos.length; i++) {
+      const a = subsoloAtual.acessos[i];
       if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { sobe(i); subiu = true; break; }
     }
     if (!subiu) {
@@ -1054,6 +1078,7 @@ let acessoAtual = 0;
 function desce(i = 0) {
   if (montado) { montado = false; mostraMensagem('Você desmontou pra descer. 🐾'); }
   acessoAtual = i;
+  subsoloAtual = esgoto;
   esgoto.grupo.visible = true;
   chaoY = -40; areaAtiva = esgoto.bounds; noEsgoto = true;
   const a = esgoto.acessos[i] || esgoto.acessos[0];
@@ -1063,11 +1088,31 @@ function desce(i = 0) {
   mostraMensagem(tochaOn ? 'Você desce pela corda. 🪢🐀' : 'Está escuro! Acenda a tocha — tecla T 🔦');
 }
 function sobe(i = acessoAtual) {
-  esgoto.grupo.visible = false;
+  subsoloAtual.grupo.visible = false;
   chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false;
-  const b = BUEIROS[i] || BUEIROS[0];
-  avatar.position.set(b.x, 0, b.z + 2.5); vy = 0; noChao = true;
+  // cada subsolo tem suas SAÍDAS pareadas com os acessos (esgoto = bueiros)
+  const b = (subsoloAtual.saidas && subsoloAtual.saidas[i]) || BUEIROS[i] || BUEIROS[0];
+  avatar.position.set(b.x, alturaTerreno(b.x, b.z + 2.5), b.z + 2.5); vy = 0; noChao = true;
+  subsoloAtual = esgoto;
   minimapa.mostra(); mostraMensagem('Você sobe pela corda de volta à superfície. 🪢☀️'); // luz volta pelo ciclo dia/noite
+}
+// CATACUMBAS (RV4.4): descida própria, pela cripta atrás da Catedral
+function desceCatacumbas() {
+  if (montado) { montado = false; mostraMensagem('Você desmontou pra descer. 🐾'); }
+  acessoAtual = 0;
+  subsoloAtual = catacumbas;
+  catacumbas.grupo.visible = true;
+  chaoY = -40; areaAtiva = catacumbas.bounds; noEsgoto = true;
+  const a = catacumbas.acessos[0];
+  avatar.position.set(a.x - 2.5, -40, a.z); vy = 0; noChao = true;
+  hemi.intensity = 0.08; sun.intensity = 0.05;
+  minimapa.esconde();
+  mostraMensagem(tochaOn ? '🪦 Você desce à cripta... os mortos não gostam de visitas.' : 'Está escuro! Acenda a tocha — tecla T 🔦');
+}
+{
+  const it = { x: -398, z: 33, raio: 2.8, titulo: '🪦 Catacumbas de Venore', acao: 'Descer às Catacumbas 🪦' };
+  it.onAcao = () => desceCatacumbas();
+  interativos.push(it);
 }
 
 // CICLO DIA/NOITE (discreto): muda sol/ambiente/céu/neblina e acende os lampiões
@@ -1494,7 +1539,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -1619,7 +1664,7 @@ window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualiza
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -1803,6 +1848,7 @@ const DISTRITOS = [
   { nome: 'Portão de Venore', x: -240, z: -30, raio: 12 },
   { nome: 'Largo das Guildas', x: -320, z: 20, raio: 14 },
   { nome: 'Catedral de Venore', x: -390, z: 16, raio: 14 },
+  { nome: 'Cripta da Catedral', x: -398, z: 33, raio: 7 },
   { nome: 'Bairro dos Armazéns', x: -294, z: -86, raio: 18 },
   { nome: 'Brejo Profundo', x: -278, z: -126, raio: 26 },
   { nome: 'VENORE — Cidade Mercante', x: -330, z: -20, raio: 112 },
@@ -1841,7 +1887,7 @@ const DISTRITOS = [
 let localEl, localNome = '';
 function atualizaLocal() {
   let nome = 'Terras de Venor', melhorD = Infinity;
-  if (noEsgoto) nome = 'Esgoto';
+  if (noEsgoto) nome = subsoloAtual === catacumbas ? 'Catacumbas de Venore' : 'Esgoto';
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
   localNome = nome;
@@ -2020,7 +2066,7 @@ function passo() {
     // DICA de ação (Roblox-style): o que a tecla E / botão AÇÃO faz aqui perto
     let dica = null;
     if (noEsgoto) {
-      for (const a of esgoto.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir pela corda 🪢'; break; } }
+      for (const a of subsoloAtual.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir pela corda 🪢'; break; } }
       if (!dica) { const itE = achaInterativo(); if (itE) dica = itE.acao || itE.titulo; }
       if (!dica && corpseProximo()) dica = 'Saquear o corpo 💀';
       if (!dica && alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';
