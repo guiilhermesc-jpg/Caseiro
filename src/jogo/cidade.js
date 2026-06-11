@@ -1004,7 +1004,39 @@ export function criaCidade() {
     if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
     VEG.seixos.push([px, pz, 0.2 + Math.random() * 0.18]);
   }
-  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~17 draw calls;
+  // BIOMAS (RV5.6): juncos abraçam TODA água, cogumelos nascem no pé das
+  // árvores da floresta, e a fazenda ganha um CAMPO DE TRIGO de verdade
+  VEG.juncos = []; VEG.cogus = []; VEG.trigo = [];
+  // anéis de junco em volta de cada lago do mundo
+  [[-95, -55, 16], [100, 95, 18], [-105, 70, 14], [-75, -110, 15], [45, 80, 15], [-330, -92, 14], [-262, -124, 9], [-296, -134, 8]]
+    .forEach(([lx, lz, lr]) => {
+      const n = Math.round(lr * 1.1);
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+        const rr = lr + 1.5 + Math.random() * 2.5;
+        VEG.juncos.push([lx + Math.cos(a) * rr, lz + Math.sin(a) * rr, 0.8 + Math.random() * 0.7]);
+      }
+    });
+  // margens do Rio Fundo (com o vão livre da Ponte de Pedra)
+  for (let jz = -126; jz <= 66; jz += 5.5) {
+    if (Math.abs(jz) < 9) continue;
+    if (Math.random() < 0.7) VEG.juncos.push([176 - Math.random() * 1.5, jz + (Math.random() - 0.5) * 2, 0.8 + Math.random() * 0.6]);
+    if (Math.random() < 0.7) VEG.juncos.push([184 + Math.random() * 1.5, jz + (Math.random() - 0.5) * 2, 0.8 + Math.random() * 0.6]);
+  }
+  // cogumelos no pé de ~35% das árvores grandes (a floresta tem chão vivo)
+  VEG.arvores.forEach(([ax, az]) => {
+    if (Math.random() > 0.35) return;
+    const a = Math.random() * Math.PI * 2, rr = 1.8 + Math.random() * 1.4;
+    VEG.cogus.push([ax + Math.cos(a) * rr, az + Math.sin(a) * rr, 0.8 + Math.random() * 0.8]);
+  });
+  // campo de trigo da fazenda (grade com jitter; longe do poço)
+  for (let tx = 86; tx <= 100; tx += 1.7) {
+    for (let tz = 44; tz <= 58; tz += 1.7) {
+      if (Math.hypot(tx - 93, tz - 52) < 3.5) continue; // respiro do poço
+      VEG.trigo.push([tx + (Math.random() - 0.5) * 0.9, tz + (Math.random() - 0.5) * 0.9, 0.85 + Math.random() * 0.4]);
+    }
+  }
+  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~23 draw calls;
   // slots GLB arvore1/pinheiro/pedra trocam o visual da espécie inteira)
   add(criaVegetacaoInstanciada(VEG, alturaColinas));
 

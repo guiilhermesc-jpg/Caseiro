@@ -105,6 +105,50 @@ function geoFlor(corPetala) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
+// BIOMAS (RV5.6): cada região com sua planta típica — tudo instanciado
+// JUNCO: lâminas finas verticais + espigas marrons (beira d'água)
+function geoJunco() {
+  const partes = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.4, r = 0.12 + (i % 3) * 0.08;
+    const h = 1.1 + (i % 3) * 0.35;
+    const lam = pinta(new THREE.CylinderGeometry(0.03, 0.045, h, 4), 0x4f7a3a);
+    lam.rotateZ((i % 2 ? 1 : -1) * 0.12);
+    lam.translate(Math.cos(a) * r, h / 2, Math.sin(a) * r);
+    partes.push(lam);
+    if (i % 2 === 0) {
+      const esp = pinta(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 5), 0x6b4226);
+      esp.translate(Math.cos(a) * r, h + 0.12, Math.sin(a) * r);
+      partes.push(esp);
+    }
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+// COGUMELOS: dupla de cogumelos no pé das árvores (floresta)
+function geoCogu(corChapeu) {
+  const partes = [];
+  [[0, 0.34, 0.2], [0.32, 0.22, 0.13]].forEach(([ox, hC, rC]) => {
+    const caule = pinta(new THREE.CylinderGeometry(rC * 0.4, rC * 0.5, hC, 5), 0xe8e0d0);
+    caule.translate(ox, hC / 2, 0); partes.push(caule);
+    const chap = pinta(new THREE.SphereGeometry(rC, 7, 5, 0, Math.PI * 2, 0, Math.PI / 2), corChapeu);
+    chap.translate(ox, hC, 0); partes.push(chap);
+  });
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+// TRIGO: caule fino + espiga dourada (fazenda)
+function geoTrigo() {
+  const partes = [];
+  for (let i = 0; i < 3; i++) {
+    const ox = (i - 1) * 0.14, h = 0.85 + (i % 2) * 0.18;
+    const caule = pinta(new THREE.CylinderGeometry(0.018, 0.026, h, 4), 0xb8a14e);
+    caule.rotateZ((i - 1) * 0.08);
+    caule.translate(ox, h / 2, 0); partes.push(caule);
+    const espiga = pinta(new THREE.ConeGeometry(0.06, 0.3, 5), 0xd9b95c);
+    espiga.translate(ox, h + 0.12, 0); partes.push(espiga);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
 function geoPedra(comMusgo) {
   const partes = [];
   const rocha = pinta(desloca(new THREE.IcosahedronGeometry(1, 0), 0.32), 0x8b8b86);
@@ -117,8 +161,8 @@ function geoPedra(comMusgo) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
-// posições: arvores/pedras/moitas/capim/flores/seixos = [x, z, s], pinheiros = [x, z]
-export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [], flores = [], seixos = [] }, alturaSolo) {
+// posições: arvores/pedras/moitas/capim/flores/seixos/juncos/cogus/trigo = [x, z, s], pinheiros = [x, z]
+export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [], flores = [], seixos = [], juncos = [], cogus = [], trigo = [] }, alturaSolo) {
   const g = new THREE.Group();
   const colisores = [];
   const dummy = new THREE.Object3D();
@@ -155,6 +199,10 @@ export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras 
   lote(capim, [0x4e7c3a, 0x5d8f46, 0x447034].map((c) => geoCapim(c)), 0, 0, '');
   lote(flores, [0xe85d75, 0xf2c14e, 0xd06ad0, 0xefefef].map((c) => geoFlor(c)), 0, 0, '');
   lote(seixos, [geoPedra(false), geoPedra(true)], 0, 0, '');
+  // BIOMAS (RV5.6): junco na água, cogumelo na floresta, trigo na fazenda
+  lote(juncos, [geoJunco(), geoJunco()], 0, 0, '');
+  lote(cogus, [geoCogu(0xc23a2a), geoCogu(0x8a5a3a)], 0, 0, '');
+  lote(trigo, [geoTrigo(), geoTrigo()], 0, 0, '');
 
   // SLOT GLB: ao carregar, a espécie inteira troca pelo modelo profissional
   // (auto-escala pela altura, base no chão, mesmas matrizes de instância)
