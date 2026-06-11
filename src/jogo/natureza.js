@@ -209,14 +209,43 @@ export function criaMontanha(x, z, esc = 1) {
 export function criaEstrada(xIni, xFim, z, larg = 7) {
   const g = new THREE.Group();
   const comp = xFim - xIni, cx = (xIni + xFim) / 2;
-  const viaMat = new THREE.MeshStandardMaterial({ color: 0x8a7458, roughness: 1 });
-  aplicaTexturaReal(viaMat, 'terra', comp / 8, 1.4); // terra REAL ao longo do caminho
+  const viaMat = new THREE.MeshStandardMaterial({ color: 0x7f6546, roughness: 1 });
+  aplicaTexturaReal(viaMat, 'terra', Math.max(6, comp / 7), 1.65); // terra REAL ao longo do caminho
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x6d5a42, roughness: 1, flatShading: true });
+  const trilhaMat = new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1, flatShading: true });
+  const bordaMat = new THREE.MeshStandardMaterial({ color: 0x4f5a36, roughness: 1, flatShading: true });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.05, larg + 2.8), baseMat);
+  base.position.set(cx, 0.035, z); base.receiveShadow = true; g.add(base);
   const via = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.08, larg), viaMat);
-  via.position.set(cx, 0.05, z); via.receiveShadow = true; g.add(via);
-  [-larg / 2 - 0.3, larg / 2 + 0.3].forEach((oz) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.22, 0.4), mat(0x54514a, 1));
-    b.position.set(cx, 0.11, z + oz); g.add(b);
+  via.position.set(cx, 0.075, z); via.receiveShadow = true; g.add(via);
+  [-larg * 0.25, larg * 0.25].forEach((oz) => {
+    const trilha = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.035, 0.72), trilhaMat);
+    trilha.position.set(cx, 0.13, z + oz); trilha.receiveShadow = true; g.add(trilha);
   });
+  const centro = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.026, 0.52), new THREE.MeshStandardMaterial({ color: 0x9a815e, roughness: 1 }));
+  centro.position.set(cx, 0.145, z); centro.receiveShadow = true; g.add(centro);
+  [-larg / 2 - 0.55, larg / 2 + 0.55].forEach((oz) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.18, 0.5), bordaMat);
+    b.position.set(cx, 0.14, z + oz); b.receiveShadow = true; g.add(b);
+  });
+  const pedraGeo = new THREE.DodecahedronGeometry(0.18, 0);
+  const pedraMat = matFlat(0x787065, 1);
+  const n = Math.max(8, Math.min(72, Math.floor(Math.abs(comp) / 7)));
+  const pedras = new THREE.InstancedMesh(pedraGeo, pedraMat, n);
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5 + (Math.random() - 0.5) * 0.55) / n;
+    const x = xIni + comp * t;
+    const lado = i % 2 ? 1 : -1;
+    dummy.position.set(x, 0.23, z + lado * (larg / 2 + 0.95 + Math.random() * 0.65));
+    dummy.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.4);
+    const s = 0.7 + Math.random() * 1.2;
+    dummy.scale.set(s * (1.1 + Math.random() * 0.6), 0.35 + Math.random() * 0.45, s);
+    dummy.updateMatrix();
+    pedras.setMatrixAt(i, dummy.matrix);
+  }
+  pedras.castShadow = pedras.receiveShadow = true;
+  g.add(pedras);
   return { grupo: g, colisores: [] };
 }
 
@@ -227,12 +256,31 @@ export function criaPlaca(x, z, texto = '→ THAIS', rot = 0) {
   poste.position.y = 1.2; poste.castShadow = true; g.add(poste);
   const cnv = document.createElement('canvas'); cnv.width = 256; cnv.height = 96;
   const ctx = cnv.getContext('2d');
-  ctx.fillStyle = '#7a5a32'; ctx.fillRect(0, 0, 256, 96);
-  ctx.fillStyle = '#f0e8d0'; ctx.font = 'bold 34px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const grad = ctx.createLinearGradient(0, 0, 0, 96);
+  grad.addColorStop(0, '#8a683c'); grad.addColorStop(1, '#5f4022');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 96);
+  for (let y = 14; y < 96; y += 24) {
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(0, y, 256, 2);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(0, y + 3, 256, 2);
+  }
+  for (let i = 0; i < 90; i++) {
+    ctx.fillStyle = i % 2 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)';
+    ctx.fillRect(Math.random() * 256, Math.random() * 96, 1 + Math.random() * 5, 1);
+  }
+  ctx.strokeStyle = '#2f1d10'; ctx.lineWidth = 8; ctx.strokeRect(5, 5, 246, 86);
+  ctx.fillStyle = '#24170d'; [22, 234].forEach((px) => { ctx.beginPath(); ctx.arc(px, 18, 5, 0, Math.PI * 2); ctx.fill(); });
+  const tamFonte = texto.length > 24 ? 18 : (texto.length > 16 ? 24 : 34);
+  ctx.fillStyle = '#f0e8d0'; ctx.font = `bold ${tamFonte}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(texto, 128, 48);
   const tab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.12),
     new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnv), roughness: 0.9 }));
   tab.position.y = 2.0; tab.castShadow = true; g.add(tab);
+  const mold = mat(0x3b2616);
+  [[0, 2.48, 0.16, 2.48], [0, 2.48, 0.16, 1.52], [-1.28, 0.16, 1.02, 2], [1.28, 0.16, 1.02, 2]]
+    .forEach(([px, w, h, py]) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.16), mold);
+      b.position.set(px, py, 0.07); b.castShadow = true; g.add(b);
+    });
   return { grupo: g, colisores: [{ minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3 }] };
 }
 

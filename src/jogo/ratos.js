@@ -64,6 +64,7 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
     if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0 && g.userData.corpoMat) g.userData.corpoMat.emissive.setHex(0x000000); }
     // asas (dragão) batem de leve mesmo parado
     if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; }
+    if (g.userData.garganta) g.userData.garganta.scale.setScalar(1 + Math.sin(r.tempo * 8) * 0.12);
     // PERSEGUIÇÃO: se o jogador está perto e no mesmo "andar", caça-o
     r.contato = false;
     if (jog && Math.abs(r.y0 - jog.y) < 6) {
@@ -488,7 +489,7 @@ export function criaBeholder(x, z) {
 // VERDE = dragão comum (estilo Tibia); lord=true = DRAGON LORD vermelho 5×.
 export function criaDragao(x, z, lord = false) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const s = lord ? 2.18 : 1.86;
+  const s = lord ? 2.55 : 2.18;
   const corpoMat = new THREE.MeshStandardMaterial({
     color: lord ? 0x8e2419 : 0x456f43,
     roughness: 0.76,
@@ -507,7 +508,8 @@ export function criaDragao(x, z, lord = false) {
   const osso = mat(0xf0e6c8, 0.55);
   const couro = mat(0x7a4b28, 0.7);
   const metal = new THREE.MeshStandardMaterial({ color: 0xc7a047, metalness: 0.35, roughness: 0.45, flatShading: true });
-  const olhoMat = new THREE.MeshStandardMaterial({ color: lord ? 0xff4a00 : 0xf5d14a, emissive: lord ? 0xff2500 : 0xb88500, emissiveIntensity: 0.9, roughness: 0.35 });
+  const olhoMat = new THREE.MeshStandardMaterial({ color: lord ? 0xff4a00 : 0xf5d14a, emissive: lord ? 0xff2500 : 0xb88500, emissiveIntensity: 1.15, roughness: 0.35 });
+  const brasaMat = new THREE.MeshStandardMaterial({ color: 0xffb23a, emissive: lord ? 0xff2a00 : 0xff6a00, emissiveIntensity: lord ? 1.35 : 0.9, roughness: 0.45, flatShading: true });
   const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
   const facet = (r, material, x0, y0, z0, sx = 1, sy = 1, sz = 1) => {
     const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), material);
@@ -565,6 +567,8 @@ export function criaDragao(x, z, lord = false) {
   focinho.rotation.x = -0.12;
   const mandibula = box(0.58 * s, 0.18 * s, 0.92 * s, escuro, 0, 4.88 * s, 4.03 * s);
   mandibula.rotation.x = 0.22;
+  const garganta = new THREE.Mesh(new THREE.SphereGeometry(0.18 * s, 8, 6), brasaMat);
+  garganta.position.set(0, 5.02 * s, 4.62 * s); g.add(garganta);
   [-1, 1].forEach((ld) => {
     box(0.38 * s, 0.16 * s, 0.36 * s, escuro, ld * 0.39 * s, 5.38 * s, 3.1 * s); // bochecha/placa lateral
     const olho = new THREE.Mesh(new THREE.SphereGeometry(0.115 * s, 8, 8), olhoMat);
@@ -648,7 +652,7 @@ export function criaDragao(x, z, lord = false) {
     cone((0.18 - i * 0.006) * s, (0.55 - i * 0.018) * s, escuro, 0, yc, zc, 0.08);
   }
 
-  g.userData = { patas, asas, corpoMat, tipo: 'boss' };
+  g.userData = { patas, asas, corpoMat, garganta, tipo: 'boss' };
   return g;
 }
 

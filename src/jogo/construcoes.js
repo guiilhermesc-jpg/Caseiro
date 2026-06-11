@@ -225,6 +225,10 @@ export function criaPredio(opts) {
   const topo = FB + alt; // topo das paredes
   // enxaimel: viga horizontal (divisória de andar) + montantes de canto (look medieval)
   gbox(geosMad, larg + 0.08, 0.28, prof + 0.08, 0, FB + alt * 0.52, 0);
+  gbox(geosMad, larg + 0.35, 0.22, 0.34, 0, topo + 0.05, prof / 2 + 0.18);
+  gbox(geosMad, larg + 0.35, 0.22, 0.34, 0, topo + 0.05, -prof / 2 - 0.18);
+  gbox(geosMad, 0.34, 0.22, prof + 0.35, -larg / 2 - 0.18, topo + 0.05, 0);
+  gbox(geosMad, 0.34, 0.22, prof + 0.35, larg / 2 + 0.18, topo + 0.05, 0);
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
     gbox(geosMad, 0.3, alt, 0.3, sx * larg / 2, FB + alt / 2, sz * prof / 2);
   });
@@ -238,10 +242,36 @@ export function criaPredio(opts) {
   const fz = prof / 2;
   const porta = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 0.2), portaMat);
   porta.position.set(0, FB + 1.5, fz + 0.04); g.add(porta);
+  [-0.42, 0, 0.42].forEach((px) => {
+    const friso = new THREE.Mesh(new THREE.BoxGeometry(0.045, 2.72, 0.045), mat(0x2f1d11));
+    friso.position.set(px, FB + 1.5, fz + 0.17); g.add(friso);
+  });
+  [FB + 0.72, FB + 1.55, FB + 2.38].forEach((py) => {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.07, 0.045), mat(0x2f1d11));
+    travessa.position.set(0, py, fz + 0.18); g.add(travessa);
+  });
   [-0.92, 0.92].forEach((ox) => gbox(geosMad, 0.24, 3.3, 0.36, ox, FB + 1.55, fz + 0.05));
   gbox(geosMad, 2.2, 0.32, 0.38, 0, FB + 3.25, fz + 0.05); // verga
   gbox(geosPed, 2.0, 0.25, 0.8, 0, 0.32, fz + 0.5);        // degrau
   const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xd9a522, 0.3)); macaneta.position.set(0.5, FB + 1.5, fz + 0.16); g.add(macaneta);
+  if (Math.random() < 0.58) {
+    const tecido = new THREE.MeshStandardMaterial({
+      color: [0x9a3f2f, 0x2f5e7a, 0x4d6f3f, 0x7a5b2f][Math.floor(Math.random() * 4)],
+      roughness: 0.96,
+      flatShading: true,
+    });
+    const toldo = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.16, 0.86), tecido);
+    toldo.position.set(0, FB + 3.46, fz + 0.46);
+    toldo.rotation.x = -0.22;
+    toldo.castShadow = true;
+    g.add(toldo);
+    for (let i = -2; i <= 2; i++) {
+      const barra = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.18, 0.92), madeira);
+      barra.position.set(i * 0.5, FB + 3.5, fz + 0.47);
+      barra.rotation.x = -0.22;
+      g.add(barra);
+    }
+  }
 
   if (janelas) {
     const estilo = () => ({ cruz: true, shutters: Math.random() < 0.5, floreira: Math.random() < 0.35 });
@@ -509,10 +539,33 @@ export function criaMercado(x = 0, z = 0, w = 11, d = 8) {
 // poste de luz (luminária emissiva + PointLight controlada pelo ciclo dia/noite)
 export function criaPoste(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const metal = mat(0x33373d);
-  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 6, 8), metal); mastro.position.y = 3; mastro.castShadow = true; g.add(mastro);
-  const lumMat = new THREE.MeshStandardMaterial({ color: 0xffe6a0, emissive: 0xffcf6a, emissiveIntensity: 0.6, roughness: 0.4 });
-  const lum = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 10), lumMat); lum.position.y = 6.1; g.add(lum);
-  const luz = new THREE.PointLight(0xffd27f, 0.0, 20, 2); luz.position.set(0, 6, 0); g.add(luz);
+  const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f35, roughness: 0.72, metalness: 0.38, flatShading: true });
+  const madeira = mat(0x4b3827);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.58, 0.34, 8), mat(0x655f55, 1));
+  base.position.y = 0.17; base.castShadow = base.receiveShadow = true; g.add(base);
+  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.7, 8), metal);
+  pedestal.position.y = 0.62; pedestal.castShadow = true; g.add(pedestal);
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.19, 5.55, 10), metal);
+  mastro.position.y = 3.25; mastro.castShadow = true; g.add(mastro);
+  [1.28, 3.25, 5.7].forEach((py) => {
+    const aro = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.12, 10), metal);
+    aro.position.y = py; aro.castShadow = true; g.add(aro);
+  });
+  const braco = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.12, 0.12), metal);
+  braco.position.set(0.46, 5.82, 0); braco.rotation.z = -0.22; braco.castShadow = true; g.add(braco);
+  const suporte = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.0, 6), metal);
+  suporte.position.set(0.18, 5.43, 0); suporte.rotation.z = -0.72; suporte.castShadow = true; g.add(suporte);
+  const lumMat = new THREE.MeshStandardMaterial({ color: 0xffdf9a, emissive: 0xffb84a, emissiveIntensity: 0.55, roughness: 0.32, transparent: true, opacity: 0.92 });
+  const vidro = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.44, 0.78, 6), lumMat);
+  vidro.position.set(1.02, 5.43, 0); vidro.castShadow = false; g.add(vidro);
+  const tampa = new THREE.Mesh(new THREE.ConeGeometry(0.58, 0.42, 6), metal);
+  tampa.position.set(1.02, 6.02, 0); tampa.castShadow = true; g.add(tampa);
+  const fundo = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.32, 0.16, 6), metal);
+  fundo.position.set(1.02, 4.94, 0); fundo.castShadow = true; g.add(fundo);
+  [-1, 1].forEach((s) => {
+    const haste = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.86, 0.06), madeira);
+    haste.position.set(1.02 + s * 0.33, 5.43, 0); haste.castShadow = true; g.add(haste);
+  });
+  const luz = new THREE.PointLight(0xffd27f, 0.0, 24, 2); luz.position.set(1.02, 5.42, 0); g.add(luz);
   return { grupo: g, colisores: [{ minX: x - 0.4, maxX: x + 0.4, minZ: z - 0.4, maxZ: z + 0.4 }], luz, lumMat };
 }

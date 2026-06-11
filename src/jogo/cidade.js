@@ -68,6 +68,8 @@ export function criaCidade() {
   sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
   sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 420;
+  sun.shadow.bias = -0.00018;
+  sun.shadow.normalBias = 0.035;
   scene.add(sun);
 
   // === LUA + LUAR + ESTRELAS ===

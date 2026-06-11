@@ -66,13 +66,13 @@ renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa mu
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.84; // pastel premium (bloom 1.0 segura os estouros)
+renderer.toneMappingExposure = 0.82; // contraste mais rico sem estourar branco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV6.2 (v47)';
+const VERSAO = 'RV6.3 (v48)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -114,7 +114,7 @@ if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.16, 0.32, 1.08));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.42, 1.08));
   // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
   // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
   // saturação +12%, split-tone (sombras frias / altas levemente quentes),
@@ -168,6 +168,7 @@ let areaAtiva = areaSuperficie();
 let chaoY = 0;
 let noEsgoto = false;
 let zoomDist = 13; // distância da câmera (scroll do mouse)
+let velAvatarX = 0, velAvatarZ = 0;
 
 // GRADE ESPACIAL de colisão: o mundo cresceu (centenas de obstáculos) e varrer
 // a lista inteira a cada passo travava — agora cada célula de 24u guarda só os
@@ -325,6 +326,58 @@ function achaOssos(modelo) {
 function registraDragaoVivo(modelo) {
   dragoesVivos.push({ ossos: achaOssos(modelo), raiz: modelo, fase: Math.random() * 6, escalaBase: modelo.scale.y });
 }
+const visuaisDragao = [];
+function estilizaMalhaDragao(o, lord = false, tinta = null) {
+  if (!o.isMesh || !o.material) return;
+  o.material = o.material.clone();
+  if (o.material.color) {
+    if (tinta) o.material.color.lerp(new THREE.Color(tinta), 0.48);
+    else o.material.color.lerp(new THREE.Color(lord ? 0x8e2419 : 0x4f7a43), 0.22);
+  }
+  o.material.roughness = Math.min(0.96, Math.max(0.68, o.material.roughness ?? 0.78));
+  o.material.metalness = Math.min(0.08, o.material.metalness ?? 0.02);
+  if ('flatShading' in o.material) o.material.flatShading = true;
+  if (o.material.emissive) {
+    o.material.emissive.setHex(lord ? 0x3a0900 : 0x071407);
+    o.material.emissiveIntensity = lord ? 0.16 : 0.055;
+  }
+  o.material.needsUpdate = true;
+}
+function criaBrasaDragao(lord = false, escala = 1) {
+  const g = new THREE.Group();
+  g.name = 'brasaDragaoPremium';
+  const cor = lord ? 0xff3d12 : 0xff8f24;
+  const matNucleo = new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.74, depthWrite: false });
+  const matHalo = new THREE.MeshBasicMaterial({ color: lord ? 0xff7a22 : 0xffcf64, transparent: true, opacity: 0.34, depthWrite: false });
+  const nucleo = new THREE.Mesh(new THREE.SphereGeometry(0.2 * escala, 10, 8), matNucleo);
+  g.add(nucleo);
+  const chama = new THREE.Mesh(new THREE.ConeGeometry(0.24 * escala, 0.9 * escala, 7), matHalo);
+  chama.rotation.x = Math.PI / 2;
+  chama.position.z = 0.42 * escala;
+  g.add(chama);
+  const fumaca = [];
+  for (let i = 0; i < 4; i++) {
+    const p = new THREE.Mesh(new THREE.SphereGeometry((0.05 + i * 0.018) * escala, 6, 5),
+      new THREE.MeshBasicMaterial({ color: 0x2d2a26, transparent: true, opacity: 0.18, depthWrite: false }));
+    p.position.set((Math.random() - 0.5) * 0.36 * escala, (Math.random() - 0.5) * 0.18 * escala, (-0.1 - i * 0.22) * escala);
+    g.add(p); fumaca.push(p);
+  }
+  const luz = new THREE.PointLight(cor, ehMobile ? 0 : 1.1, 16 * escala, 2.2);
+  g.add(luz);
+  g.userData = { nucleo, chama, fumaca, matNucleo, matHalo, luz, fase: Math.random() * 6, escala };
+  visuaisDragao.push(g);
+  return g;
+}
+function instalaBrasaDragao(grupo, modelo, lord = false, escala = 1) {
+  const antigo = grupo.getObjectByName('brasaDragaoPremium');
+  if (antigo) grupo.remove(antigo);
+  const box = new THREE.Box3().setFromObject(modelo || grupo);
+  const tam = new THREE.Vector3(); box.getSize(tam);
+  const brasa = criaBrasaDragao(lord, escala);
+  brasa.position.set(0, Math.max(3.4, tam.y * 0.62), Math.max(2.2, tam.z * 0.38));
+  grupo.add(brasa);
+  grupo.userData.fogoBoca = brasa;
+}
 // veste o modelo GLB no grupo do dragão (também usado no RESPAWN/Dragon Lord)
 function aplicaModeloDragao() {
   if (!modeloDragaoGLB) return;
@@ -333,8 +386,9 @@ function aplicaModeloDragao() {
   dragao.g.userData = { tipo: 'boss' }; // sem corpoMat (os guards cuidam do "piscar")
   // Dragon LORD = brasas na pele; verde = normal
   modeloDragaoGLB.traverse((o) => {
-    if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(dragao.lord ? 0x6a1408 : 0x000000);
+    estilizaMalhaDragao(o, dragao.lord);
   });
+  instalaBrasaDragao(dragao.g, modeloDragaoGLB, dragao.lord, dragao.lord ? 1.35 : 1.15);
 }
 new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   const modelo = gltf.scene;
@@ -342,7 +396,7 @@ new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   // porte de CHEFE (~12u), assentado no chão e centralizado
   const cx1 = new THREE.Box3().setFromObject(modelo);
   const tam = new THREE.Vector3(); cx1.getSize(tam);
-  const s = 12 / (Math.max(tam.x, tam.y, tam.z) || 1);
+  const s = 15.2 / (Math.max(tam.x, tam.y, tam.z) || 1);
   modelo.scale.setScalar(s);
   const cx2 = new THREE.Box3().setFromObject(modelo);
   const centro = new THREE.Vector3(); cx2.getCenter(centro);
@@ -353,6 +407,7 @@ new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
       o.castShadow = true;
       o.frustumCulled = false; // skinned some com culling errado
       o.raycast = () => {};    // FORA do raycast: osso nulo do GLB quebrava o clique ("matrixWorld" null)
+      estilizaMalhaDragao(o, dragao.lord);
     }
   });
   modeloDragaoGLB = modelo;
@@ -372,7 +427,7 @@ new GLTFLoader().load('modelos/dragao2.glb', (gltf) => {
   const base = gltf.scene;
   const cb1 = new THREE.Box3().setFromObject(base);
   const tamB = new THREE.Vector3(); cb1.getSize(tamB);
-  base.scale.setScalar(10 / (Math.max(tamB.x, tamB.y, tamB.z) || 1));
+  base.scale.setScalar(13.4 / (Math.max(tamB.x, tamB.y, tamB.z) || 1));
   const cb2 = new THREE.Box3().setFromObject(base);
   const centroB = new THREE.Vector3(); cb2.getCenter(centroB);
   base.position.x -= centroB.x; base.position.z -= centroB.z;
@@ -386,11 +441,12 @@ new GLTFLoader().load('modelos/dragao2.glb', (gltf) => {
       if (o.isMesh) {
         o.castShadow = true; o.frustumCulled = false;
         o.raycast = () => {}; // mesmo guard do matrixWorld
-        if (tinta && o.material) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(tinta), 0.45); }
+        estilizaMalhaDragao(o, false, tinta);
       }
     });
     const g = new THREE.Group(); g.position.set(x, 0, z); g.add(inst);
     g.userData = { tipo: 'boss' };
+    instalaBrasaDragao(g, inst, false, tinta ? 1.0 : 0.92);
     ratos.push({ g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, especie: 'dragao', bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 });
     scene.add(g);
     registraDragaoVivo(inst); // idle vivo também nos regionais
@@ -1883,6 +1939,28 @@ const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive
 const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
 const MAT_LAVA_CHAO = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
 aplicaTexturaReal(MAT_LAVA_CHAO, 'lava', 1.5, 1.5, true);
+function criaProjetilFogoVisual(fogo) {
+  const g = new THREE.Group();
+  if (fogo) {
+    const matCore = new THREE.MeshBasicMaterial({ color: 0xffd05a, transparent: true, opacity: 0.95, depthWrite: false });
+    const matHalo = new THREE.MeshBasicMaterial({ color: 0xff5a16, transparent: true, opacity: 0.42, depthWrite: false });
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), matCore);
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.74, 14, 10), matHalo);
+    const cauda = new THREE.Mesh(new THREE.ConeGeometry(0.44, 1.25, 8), matHalo);
+    cauda.rotation.x = -Math.PI / 2; cauda.position.z = -0.72;
+    g.add(halo, core, cauda);
+    if (!ehMobile) g.add(new THREE.PointLight(0xff6a1a, 1.2, 18, 2.3));
+    g.userData = { fogo: true, matCore, matHalo, core, halo, cauda, fase: Math.random() * 6 };
+  } else {
+    const matCore = new THREE.MeshBasicMaterial({ color: 0xe0a8ff, transparent: true, opacity: 0.92, depthWrite: false });
+    const matHalo = new THREE.MeshBasicMaterial({ color: 0x7e31ff, transparent: true, opacity: 0.34, depthWrite: false });
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 10), matCore);
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.62, 12, 10), matHalo);
+    g.add(halo, core);
+    g.userData = { fogo: false, matCore, matHalo, core, halo, fase: Math.random() * 6 };
+  }
+  return g;
+}
 function avisoFogoNoChao(x, z, y, r = 2.35) {
   const matAlvo = new THREE.MeshBasicMaterial({ color: 0xff6a24, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false });
   const alvo = new THREE.Mesh(new THREE.RingGeometry(r * 0.62, r, 28), matAlvo);
@@ -1894,17 +1972,26 @@ function avisoFogoNoChao(x, z, y, r = 2.35) {
 }
 function disparaBicho(r) {
   const fogo = r.atira === 'fogo';
-  const m = new THREE.Mesh(new THREE.SphereGeometry(fogo ? 0.5 : 0.36, 10, 10), fogo ? MAT_PROJ_FOGO : MAT_PROJ_MAGIA);
+  const m = criaProjetilFogoVisual(fogo);
   const de = r.g.position.clone(); de.y += r.tiroAltura ?? (fogo ? 7.4 : 4.2); // sai da boca/olho
   const ate = avatar.position.clone(); ate.y += 1.4;          // mira onde você ESTÁ (corre pra esquivar!)
-  m.position.copy(de); scene.add(m);
+  m.position.copy(de); m.lookAt(ate); scene.add(m);
   if (fogo) avisoFogoNoChao(ate.x, ate.z, avatar.position.y, r.boss ? 2.65 : 2.2);
   if (r.boss) mostraBossHud(r, 5.5);
   projeteis.push({ m, de, ate, t: 0, dur: Math.max(0.3, de.distanceTo(ate) / 22), dano: r.danoTiro || 10, fogo });
 }
 function criaLavaTemp(x, z, y) {
-  const m = new THREE.Mesh(new THREE.CircleGeometry(2, 14), MAT_LAVA_CHAO);
-  m.rotation.x = -Math.PI / 2; m.position.set(x, y + 0.09, z); scene.add(m);
+  const m = new THREE.Group();
+  const miolo = new THREE.Mesh(new THREE.CircleGeometry(2, 22), MAT_LAVA_CHAO);
+  miolo.rotation.x = -Math.PI / 2; m.add(miolo);
+  const crosta = new THREE.Mesh(new THREE.RingGeometry(1.7, 2.25, 22),
+    new THREE.MeshStandardMaterial({ color: 0x251714, roughness: 1, flatShading: true }));
+  crosta.rotation.x = -Math.PI / 2; crosta.position.y = 0.018; m.add(crosta);
+  if (!ehMobile) {
+    const luz = new THREE.PointLight(0xff4a14, 0.85, 10, 2.2);
+    luz.position.y = 0.8; m.add(luz);
+  }
+  m.position.set(x, y + 0.09, z); scene.add(m);
   camposTemp.push({ tipo: 'lava', x, z, r: 2, y, expiraAt: tempo + 12, mesh: m });
 }
 
@@ -2746,6 +2833,7 @@ function passo() {
     const correndo = controles.correndo();
     const abaixado = controles.abaixado();
     const movendo = (inp.x !== 0 || inp.z !== 0);
+    let alvoVX = 0, alvoVZ = 0;
     if (movendo && !morto) { // morto não anda
       const frenteX = -Math.sin(cam.yaw), frenteZ = -Math.cos(cam.yaw);
       const direitaX = Math.cos(cam.yaw), direitaZ = -Math.sin(cam.yaw);
@@ -2758,12 +2846,19 @@ function passo() {
       if (abaixado) vel *= 0.55;
       if (montado && !noEsgoto) vel *= MONTARIA_VEL[petTipo] || 1.3; // MONTARIA: velocidade por raça
       if (gmVel) vel *= 3; // GM: velocidade ×3
-      const passo = vel * dt;
-      const nx = Math.max(areaAtiva.minX, Math.min(areaAtiva.maxX, avatar.position.x + mx * passo));
-      if (!colide(nx, avatar.position.z)) avatar.position.x = nx;
-      const nz = Math.max(areaAtiva.minZ, Math.min(areaAtiva.maxZ, avatar.position.z + mz * passo));
-      if (!colide(avatar.position.x, nz)) avatar.position.z = nz;
-      giraSuave(avatar, Math.atan2(mx, mz), dt * 14); // giro macio (qualidade no andar)
+      alvoVX = mx * vel; alvoVZ = mz * vel;
+    }
+    const respostaMov = 1 - Math.exp(-dt * (movendo ? 18 : 11));
+    velAvatarX += (alvoVX - velAvatarX) * respostaMov;
+    velAvatarZ += (alvoVZ - velAvatarZ) * respostaMov;
+    if (morto) { velAvatarX *= 0.72; velAvatarZ *= 0.72; }
+    const movPlano = Math.hypot(velAvatarX, velAvatarZ);
+    if (movPlano > 0.025 && !morto) {
+      const nx = Math.max(areaAtiva.minX, Math.min(areaAtiva.maxX, avatar.position.x + velAvatarX * dt));
+      if (!colide(nx, avatar.position.z)) avatar.position.x = nx; else velAvatarX *= -0.08;
+      const nz = Math.max(areaAtiva.minZ, Math.min(areaAtiva.maxZ, avatar.position.z + velAvatarZ * dt));
+      if (!colide(avatar.position.x, nz)) avatar.position.z = nz; else velAvatarZ *= -0.08;
+      giraSuave(avatar, Math.atan2(velAvatarX, velAvatarZ), dt * 16);
     }
     if (controles.querPular() && noChao) { vy = 9; noChao = false; }
     vy -= 25 * dt;
@@ -2773,8 +2868,9 @@ function passo() {
     if (avatar.position.y <= solo) { avatar.position.y = solo; vy = 0; noChao = true; }
     const escalaY = abaixado ? 0.6 : 1;
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
-    animaAvatar(avatar, movendo && noChao, tempo, correndo);
-    ultimoAnim = { mov: movendo && noChao, corr: correndo, abx: abaixado };
+    const movendoFisico = Math.hypot(velAvatarX, velAvatarZ) > 0.08 && !morto;
+    animaAvatar(avatar, movendoFisico && noChao, tempo, correndo);
+    ultimoAnim = { mov: movendoFisico && noChao, corr: correndo, abx: abaixado };
 
     // AÇÃO (tecla E / botão): mesma rotina do clique do mouse
     if (controles.querAgir() && !morto) executaAcao();
@@ -2856,7 +2952,7 @@ function passo() {
     // segurança extra nas encostas: nunca deixa a câmera abaixo do chão local
     const chaoCam = (noEsgoto ? chaoY : alturaTerreno(posCam.x, posCam.z)) + 0.35;
     if (posCam.y < chaoCam) posCam.y = chaoCam;
-    camera.position.lerp(posCam, 0.2);
+    camera.position.lerp(posCam, 1 - Math.exp(-dt * (dentroCasa ? 15 : 10)));
     camera.lookAt(foco.x, foco.y, foco.z);
   }
 
@@ -2994,6 +3090,13 @@ function passo() {
   // projéteis dos bichos voando → impacto (esquivou = erra!)
   for (let i = projeteis.length - 1; i >= 0; i--) {
     const p = projeteis[i]; p.t += dt / p.dur;
+    const up = p.m.userData || {};
+    if (up.core) {
+      const pulso = 1 + Math.sin((tempo + up.fase) * (p.fogo ? 18 : 12)) * (p.fogo ? 0.13 : 0.08);
+      up.core.scale.setScalar(pulso);
+      if (up.halo) up.halo.scale.setScalar(1.05 + Math.sin((tempo + up.fase) * 9) * 0.1);
+      if (up.cauda) up.cauda.rotation.z += dt * 8;
+    }
     if (p.t < 1) { p.m.position.lerpVectors(p.de, p.ate, p.t); continue; }
     scene.remove(p.m); projeteis.splice(i, 1);
     if (p.fogo) {
@@ -3136,6 +3239,22 @@ function passo() {
     } else dv.raiz.scale.y = dv.escalaBase * (1 + Math.sin(tD * 1.6) * 0.02); // sem osso: respira
     dv.ossos.cauda.forEach((b, i) => { b.rotation.y = Math.sin(tD * 1.1 + i * 0.6) * 0.16; });
     dv.ossos.asas.forEach((b, i) => { b.rotation.z = (i % 2 ? -1 : 1) * Math.sin(tD * 2.2) * 0.22; });
+  }
+  for (let i = visuaisDragao.length - 1; i >= 0; i--) {
+    const v = visuaisDragao[i];
+    if (!v.parent) { visuaisDragao.splice(i, 1); continue; }
+    const u = v.userData || {};
+    const p = 1 + Math.sin((tempo + u.fase) * 8) * 0.18;
+    if (u.nucleo) u.nucleo.scale.setScalar(p);
+    if (u.chama) {
+      u.chama.scale.set(1 + Math.sin((tempo + u.fase) * 11) * 0.15, 1 + Math.sin((tempo + u.fase) * 7) * 0.22, 1);
+      u.chama.rotation.z += dt * 3.2;
+    }
+    if (u.luz) u.luz.intensity = ehMobile ? 0 : 0.75 + Math.sin((tempo + u.fase) * 5) * 0.25;
+    if (u.fumaca) u.fumaca.forEach((f, idx) => {
+      f.position.y = Math.sin(tempo * 1.7 + idx) * 0.05;
+      f.position.z = (-0.1 - idx * 0.22) * (u.escala || 1) - Math.sin(tempo + idx) * 0.03;
+    });
   }
   if (rede) rede.atualiza(dt);
   if (jogoIniciado) {

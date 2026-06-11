@@ -111,7 +111,7 @@ export function criaAvatar(cores = {}) {
   const capa = aplicaOutfit(g, tipo, C);
 
   // tronco e capa entram nas partes: respiração no idle + capa que balança
-  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, capa };
+  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, cabeca, capa };
   return g;
 }
 
@@ -250,14 +250,28 @@ export function animaAvatar(avatar, movendo, tempo, correndo = false) {
   if (movendo) {
     const vel = correndo ? 14 : 9, amp = correndo ? 1.0 : 0.7;
     const s = Math.sin(tempo * vel) * amp;
+    const pisada = Math.abs(Math.sin(tempo * vel));
     p.pernaEsq.rotation.x = s; p.pernaDir.rotation.x = -s;
     p.bracoEsq.rotation.x = -s; p.bracoDir.rotation.x = s;
+    if (p.tronco) {
+      p.tronco.rotation.x += ((correndo ? -0.1 : -0.055) - p.tronco.rotation.x) * 0.18;
+      p.tronco.position.y = 1.5 + pisada * 0.025;
+    }
+    if (p.cabeca) {
+      p.cabeca.rotation.x += ((correndo ? -0.045 : -0.025) - p.cabeca.rotation.x) * 0.14;
+      p.cabeca.position.y = 2.6 + pisada * 0.018;
+    }
     // RV3.0: capa VOA atrás ao andar/correr (pano de verdade)
     if (p.capa) p.capa.rotation.x = (correndo ? 0.5 : 0.28) + Math.sin(tempo * vel * 0.5) * 0.08;
   } else {
     ['pernaEsq', 'pernaDir', 'bracoEsq', 'bracoDir'].forEach((k) => { p[k].rotation.x *= 0.8; });
     // RV3.0: parado o boneco RESPIRA (tronco sobe/desce sutil) e a capa assenta
     if (p.capa) p.capa.rotation.x += (0.07 + Math.sin(tempo * 1.6) * 0.03 - p.capa.rotation.x) * 0.1;
+    if (p.tronco) p.tronco.rotation.x *= 0.84;
+    if (p.cabeca) {
+      p.cabeca.rotation.x *= 0.86;
+      p.cabeca.position.y += (2.6 + Math.sin(tempo * 2.2) * 0.012 - p.cabeca.position.y) * 0.16;
+    }
   }
-  if (p.tronco) p.tronco.position.y = 1.5 + (movendo ? 0 : Math.sin(tempo * 2.2) * 0.022);
+  if (p.tronco && !movendo) p.tronco.position.y = 1.5 + Math.sin(tempo * 2.2) * 0.022;
 }
