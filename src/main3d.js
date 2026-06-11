@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.9 (v34)';
+const VERSAO = 'RV5.0 (v35)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1803,7 +1803,10 @@ function carregaJogo(nome) {
     return true;
   } catch (e) { return false; }
 }
-setInterval(salvaJogo, 10000);                       // auto-save a cada 10s
+setInterval(() => {
+  salvaJogo();                                       // auto-save local a cada 10s
+  if (nuvemPin) enviaSaveNuvem(nuvemPin, false);     // ☁️ vinculou? sobe junto
+}, 10000);
 window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualizar
 { // botão 💾 (abaixo da mochila 🎒)
   const b = document.createElement('div');
@@ -2147,9 +2150,66 @@ criaSelecao({
       ativaGM();
       mostraMensagem('🛡️ Conta DEV/GM ativada — aperte G pra abrir o painel de poderes!');
     }
-    if (urlMP) rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
+    if (urlMP) {
+      rede = conectarRede({ url: urlMP, scene, getEstadoLocal: estadoLocal });
+      // ☁️ CONTA NA NUVEM (RV5.0): trata as respostas do servidor de contas
+      rede.defineOuvinteConta((msg) => {
+        if (msg.acao === 'salvar') {
+          if (!msg.ok) mostraMensagem('☁️ A nuvem recusou: ' + (msg.erro || 'erro desconhecido'));
+        } else if (msg.acao === 'carregar') {
+          if (!msg.ok) { mostraMensagem('☁️ ' + (msg.erro || 'Nada salvo na nuvem ainda.')); return; }
+          localStorage.setItem('venor_conta_' + nomeJogador.trim().toLowerCase(), msg.dados);
+          mostraMensagem('☁️ Save da nuvem aplicado — recarregando o jogo...');
+          setTimeout(() => location.reload(), 1400);
+        }
+      });
+    }
   },
 });
+
+// =============================================================
+//  ☁️ CONTA NA NUVEM (RV5.0) · nome + PIN guardam o save no servidor
+//  (Railway). Depois do 1º envio, o autosave de 10s sobe junto.
+// =============================================================
+let nuvemPin = null;
+function pegaPinNuvem() {
+  const chave = 'venor_pin_' + nomeJogador.trim().toLowerCase();
+  let pin = nuvemPin || localStorage.getItem(chave) || '';
+  if (!/^\d{4,10}$/.test(pin)) {
+    pin = (window.prompt('☁️ PIN da conta (4 a 10 dígitos — crie um novo ou informe o seu):') || '').trim();
+    if (!/^\d{4,10}$/.test(pin)) { mostraMensagem('PIN inválido — use só dígitos (4 a 10).'); return null; }
+    localStorage.setItem(chave, pin);
+  }
+  nuvemPin = pin;
+  return pin;
+}
+function enviaSaveNuvem(pin, avisa) {
+  salvaJogo();
+  const dados = localStorage.getItem('venor_conta_' + nomeJogador.trim().toLowerCase());
+  if (!dados || !rede || !rede.conectado) return;
+  rede.enviaConta({ tipo: 'contaSalvar', nome: nomeJogador.trim().toLowerCase(), pin, dados });
+  if (avisa) mostraMensagem('☁️ Save enviado pra nuvem! (agora sobe sozinho a cada 10s)');
+}
+function abreNuvem() {
+  if (!jogoIniciado) { mostraMensagem('Entre no jogo primeiro. ☁️'); return; }
+  if (!rede || !rede.conectado) { mostraMensagem('☁️ Sem conexão com o servidor agora — tente de novo em instantes.'); return; }
+  const ops = [
+    { texto: '📤 Enviar meu save pra nuvem', onClick: () => { dialogo.fecha(); const pin = pegaPinNuvem(); if (pin) enviaSaveNuvem(pin, true); } },
+    { texto: '📥 Baixar da nuvem (substitui o local)', onClick: () => { dialogo.fecha(); const pin = pegaPinNuvem(); if (pin) rede.enviaConta({ tipo: 'contaCarregar', nome: nomeJogador.trim().toLowerCase(), pin }); } },
+    { texto: 'Fechar', onClick: () => dialogo.fecha() },
+  ];
+  dialogo.abre('☁️ Conta na Nuvem', 'Vincule sua conta com um PIN: o save fica guardado no servidor e você joga de QUALQUER aparelho com o mesmo nome + PIN.', ops);
+}
+{ // botão ☁️ (abaixo do 🔊)
+  const b = document.createElement('div');
+  b.textContent = '☁️';
+  b.title = 'Conta na nuvem (save no servidor)';
+  b.style.cssText = 'position:fixed;top:182px;left:14px;width:48px;height:48px;z-index:41;display:flex;'
+    + 'align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;'
+    + 'background:rgba(16,22,32,.8);border:1px solid #3a4654;border-radius:12px;';
+  b.addEventListener('pointerdown', (e) => { e.stopPropagation(); abreNuvem(); });
+  document.body.appendChild(b);
+}
 
 // PRÉ-COMPILA todos os shaders agora (no carregamento). Sem isto, o three.js
 // compila o shader de cada material novo na PRIMEIRA vez que ele aparece na

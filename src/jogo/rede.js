@@ -39,6 +39,7 @@ export function conectarRede({ url, scene, getEstadoLocal }) {
   let acumEnvio = 0;
   let tentativas = 0;
   let fechadoDeProposito = false;
+  let ouvinteConta = null; // callback das respostas de conta na nuvem
 
   function adicionaOutro(e) {
     if (e.id === id || outros.has(e.id)) return;
@@ -104,6 +105,9 @@ export function conectarRede({ url, scene, getEstadoLocal }) {
         atualizaOutro(msg);
       } else if (msg.tipo === 'saiu') {
         removeOutro(msg.id);
+      } else if (msg.tipo === 'contaResp') {
+        // CONTA NA NUVEM (RV5.0): repassa a resposta pro jogo tratar
+        if (ouvinteConta) ouvinteConta(msg);
       }
     };
     ws.onclose = () => { aberto = false; if (!fechadoDeProposito) agendaReconexao(); };
@@ -156,5 +160,11 @@ export function conectarRede({ url, scene, getEstadoLocal }) {
     outros,
     get id() { return id; },
     get conectado() { return aberto; },
+    // CONTA NA NUVEM (RV5.0): envia pedido e registra o ouvinte das respostas
+    enviaConta(obj) {
+      if (!aberto) return false;
+      try { ws.send(JSON.stringify(obj)); return true; } catch { return false; }
+    },
+    defineOuvinteConta(fn) { ouvinteConta = fn; },
   };
 }
