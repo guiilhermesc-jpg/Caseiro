@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.0 (v35)';
+const VERSAO = 'RV5.1 (v36)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -736,6 +736,10 @@ const QUESTS = [
   { id: 'pazCatacumbas', npc: 'Hela', tipo: 'matar', especie: 'reiEsqueleto', meta: 1,
     titulo: 'Paz nas Catacumbas', pede: 'Algo acordou sob a Catedral... O REI ESQUELETO senta num trono entre as tumbas. Devolva-o ao descanso (a descida fica na cripta atrás da Catedral).',
     fala: 'O rei voltou a dormir?', recompensa: { ouro: 120, xp: 80, item: { nome: 'Amuleto Sagrado', icone: '📿', slot: 'colar', defesa: 5 } } },
+  // RV5.1: o PET DA PROFECIA — cadeia da Hela (liga o Fragmento Profético aos ovos do Pico)
+  { id: 'guardiaoOvo', npc: 'Hela', requer: 'pazCatacumbas', tipo: 'coletar', item: 'Escama de Dragão', meta: 1,
+    titulo: 'O Guardião do Ovo', pede: 'Você leu o Fragmento das Ruínas? "Três ovos ao calor da lava..." Pois um deles CHOCOU — e o filhote não pode cair em mãos erradas. Traga-me 1 Escama de Dragão como prova de força, e ele será SEU pra criar.',
+    fala: 'Trouxe a escama? O filhote não para quieto...', recompensa: { ouro: 0, xp: 120, pet: 'dragaozinho' } },
   // RV4.1: limpeza do Brejo Profundo (a Capitã de Venore paga bem)
   { id: 'brejoMara', npc: 'Capitã Mara', tipo: 'matar', especie: 'cobra', meta: 3,
     titulo: 'Limpeza do Brejo', pede: 'O Brejo Profundo, ao sul do porto, está infestado de cobras venenosas. Mate 3 e Venore te paga como soldado.',
@@ -750,7 +754,11 @@ const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 let dragoesMortos = 0, guildaMembro = false;
 const contaItem = (nome) => (inventario.estado() || []).reduce((s, it) => s + (it && it.nome === nome ? (it.qtd || 1) : 0), 0);
 function progressoQuest(q, e) { return q.tipo === 'matar' ? e.prog : Math.min(q.meta, contaItem(q.item)); }
-function questDe(npc) { return QUESTS.find((qq) => qq.npc === npc.nome && !(questEstado[qq.id] || {}).feita); }
+function questDe(npc) {
+  // cadeia: quests com `requer` só aparecem depois do pré-requisito feito
+  return QUESTS.find((qq) => qq.npc === npc.nome && !(questEstado[qq.id] || {}).feita
+    && (!qq.requer || (questEstado[qq.requer] || {}).feita));
+}
 
 const customizar = criaCustomizar({
   cores: coresJogador,
@@ -821,9 +829,18 @@ function abreDialogo(npc) {
       e.feita = true;
       ouro += q.recompensa.ouro; hud.ouro(ouro); hud.ganhaXP(q.recompensa.xp);
       if (q.recompensa.item) inventario.addItem({ ...q.recompensa.item });
+      if (q.recompensa.pet && !petsDomados.includes(q.recompensa.pet)) { // PET de quest (RV5.1)
+        petsDomados.push(q.recompensa.pet);
+        for (let i = domaveisVivos.length - 1; i >= 0; i--) {
+          if (domaveisVivos[i].tipo === q.recompensa.pet) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
+        }
+        trocaPet(q.recompensa.pet);
+        sons.tesouro();
+      }
       salvaJogo();
       dialogo.abre(npc.nome, `Excelente trabalho! 🏅 +${q.recompensa.ouro}🪙 e +${q.recompensa.xp} XP`
-        + (q.recompensa.item ? ` + ${q.recompensa.item.icone} ${q.recompensa.item.nome}` : '') + '.', opcoes);
+        + (q.recompensa.item ? ` + ${q.recompensa.item.icone} ${q.recompensa.item.nome}` : '')
+        + (q.recompensa.pet ? ' 🐲 O FILHOTE DE DRAGÃO agora é seu — ele te segue (e aceita sela: tecla M)!' : '') + '.', opcoes);
     } });
   }
   // GUILDA DE VENORE (RV4.2): o Mestre Ulric aceita quem provou valor
@@ -1558,13 +1575,16 @@ function atacar() {
   if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: tiro à distância (gasta 1 flecha)
     const melhor = alvoRato(alcanceAtaque());
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
-    if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (vilarejo), Tonho (Venore) ou Yara (Thais). ➹'); return; }
+    // VIROTE (RV5.1): munição PESADA — se tiver na mochila, sai primeiro e bate +4
+    const usouVirote = inventario.consomeItem('Virote');
+    if (!usouVirote && !inventario.consomeItem('Flecha')) { mostraMensagem('Sem munição! Flechas/Virotes com Falk (vilarejo), Tonho (Venore) ou Yara (Thais). ➹'); return; }
+    const danoTiro = dano + (usouVirote ? 4 : 0);
     petAlvo = melhor; // o pet entra na briga junto
     sons.golpe();
     disparaFlecha(melhor);
-    melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+    melhor.hp -= danoTiro; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
     if (melhor.hp <= 0) mataBicho(melhor);
-    else mostraMensagem(`🏹 Flechada! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
+    else mostraMensagem(`${usouVirote ? '🏹 VIROTAÇO!' : '🏹 Flechada!'} (-${danoTiro}, vida ${Math.max(0, melhor.hp)})`);
     return;
   }
   const melhor = alvoRato();
@@ -2139,6 +2159,24 @@ criaSelecao({
       inventario.addItem({ nome: 'Vara de pesca', icone: '🎣' }); // e uma vara pra pescar nos lagos
       hud.vida(vida, VIDA_MAX); hud.ouro(ouro);
       mostraMensagem('Você tem 🔦 Tocha (T) e 🎣 Vara — chegue num lago e use AÇÃO pra pescar.');
+      // KIT POR VOCAÇÃO (RV5.1): cada vocação nasce com a SUA identidade
+      const voc = coresJogador.tipo;
+      if (voc === 'cavaleiro') {
+        inventario.addItem({ nome: 'Adaga', icone: '🗡️', slot: 'maoDir', dano: 8, arma: true });
+        inventario.addItem({ nome: 'Escudo', icone: '🛡️', slot: 'maoEsq', defesa: 4 });
+        setTimeout(() => mostraMensagem('⚔️ CAVALEIRO: Adaga e Escudo na mochila — clique pra equipar e vá pro corpo a corpo!'), 2600);
+      } else if (voc === 'paladino') {
+        inventario.addItem({ nome: 'Arco', icone: '🏹', slot: 'maoDir', dano: 10, arma: true, arco: true });
+        for (let q = 0; q < 24; q++) inventario.addItem({ nome: 'Flecha', icone: '➹' });
+        setTimeout(() => mostraMensagem('🏹 PALADINO: Arco + 24 Flechas — cace de LONGE! Virotes (Falk/Tonho) batem +4.'), 2600);
+      } else if (voc === 'feiticeiro') {
+        inventario.addItem({ nome: 'Runa de Fogo', icone: '🔥', slot: 'runa', usavel: 'runaFogo' });
+        inventario.addItem({ nome: 'Runa de Fogo', icone: '🔥', slot: 'runa', usavel: 'runaFogo' });
+        setTimeout(() => mostraMensagem('🔮 FEITICEIRO: 2 Runas de Fogo — e as magias (teclas 1-5) são sua verdadeira arma.'), 2600);
+      } else if (voc === 'druida') {
+        for (let q = 0; q < 3; q++) inventario.addItem({ nome: 'Poção de Vida', icone: '🧪', slot: 'pocao', usavel: 'pocao' });
+        setTimeout(() => mostraMensagem('🌿 DRUIDA: 3 Poções de Vida — a natureza cura quem cuida dela.'), 2600);
+      }
     } else {
       mostraMensagem(`💾 Bem-vindo de volta, ${nome}! Sua conta foi carregada.`);
     }

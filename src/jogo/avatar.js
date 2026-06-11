@@ -19,12 +19,20 @@ export function giraSuave(obj, alvo, f) {
   obj.rotation.y += d * Math.min(1, f);
 }
 
-export const MODELOS = ['aldeao', 'cacador', 'mago', 'cavaleiro'];
-export const MODELO_NOME = { aldeao: 'Aldeão', cacador: 'Caçador', mago: 'Mago', cavaleiro: 'Cavaleiro' };
+// RV5.1 — AS QUATRO VOCAÇÕES (arquetipos clássicos do gênero, visual NOSSO):
+// corpo-a-corpo, atirador, e dois conjuradores (e SEM chapéu de mago).
+// Os tipos antigos (aldeao/cacador/mago) seguem existindo pra NPCs e saves.
+export const MODELOS = ['cavaleiro', 'paladino', 'feiticeiro', 'druida'];
+export const MODELO_NOME = {
+  cavaleiro: 'Cavaleiro', paladino: 'Paladino', feiticeiro: 'Feiticeiro', druida: 'Druida',
+  aldeao: 'Aldeão', cacador: 'Caçador', mago: 'Mago',
+};
+const LEGADOS = ['aldeao', 'cacador', 'mago'];
 
 const PADRAO = { pele: 0xe0b088, casaco: 0x556b2f, calca: 0x2e3440, cabelo: 0x3a2c20, bota: 0x241d16 };
 function mat(c, r = 0.85) { return new THREE.MeshStandardMaterial({ color: c, roughness: r }); }
 function metal(c) { return new THREE.MeshStandardMaterial({ color: c, metalness: 0.7, roughness: 0.35 }); }
+const matVerdeFolha = new THREE.MeshStandardMaterial({ color: 0x5d8f46, roughness: 0.9 }); // folhas do druida
 
 function membro(larg, alt, material) {
   const geo = RBox(larg, alt, larg);
@@ -34,7 +42,7 @@ function membro(larg, alt, material) {
 
 export function criaAvatar(cores = {}) {
   const sexo = cores.sexo || 'homem';
-  const tipo = MODELOS.includes(cores.tipo) ? cores.tipo : 'aldeao';
+  const tipo = (MODELOS.includes(cores.tipo) || LEGADOS.includes(cores.tipo)) ? cores.tipo : 'cavaleiro';
   const C = {
     pele: cores.pele ?? PADRAO.pele,
     casaco: cores.casaco ?? PADRAO.casaco,
@@ -155,6 +163,61 @@ function aplicaOutfit(g, tipo, C) {
       new THREE.MeshStandardMaterial({ color: 0x9a6aff, emissive: 0x6a3aff, emissiveIntensity: 0.7, roughness: 0.3 }));
     runa.position.set(0, -0.7, -0.08); capa.add(runa); // filha da capa → balança junto
     const gola = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.32, 0.62), mat(0x241a4a)); gola.position.y = 2.06; g.add(gola);
+  } else if (tipo === 'paladino') {
+    // PALADINO (RV5.1): atirador de elite — couro leve, bandoleira, aljava
+    // farta e manto curto de campo. Faixa na testa (visão livre pra mirar).
+    const colete = new THREE.Mesh(RBox(1.08, 1.0, 0.62), mat(0x7a5a34)); colete.position.y = 1.58; colete.castShadow = true; g.add(colete);
+    [-0.3, 0, 0.3].forEach((oy) => { // tachas de metal no couro
+      const tacha = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), metal(0xb8bcc4));
+      tacha.position.set(0.34, 1.58 + oy, 0.33); g.add(tacha);
+    });
+    const bandoleira = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.3, 0.7), mat(0x4a3018));
+    bandoleira.position.set(0, 1.6, 0); bandoleira.rotation.z = 0.55; g.add(bandoleira);
+    const ombreira = new THREE.Mesh(RBox(0.42, 0.3, 0.62), mat(0x5a4326)); // só no braço do arco
+    ombreira.position.set(-0.62, 2.05, 0); ombreira.castShadow = true; g.add(ombreira);
+    const aljava = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.0, 8), mat(0x5a3a1a));
+    aljava.position.set(0.32, 2.0, -0.42); aljava.rotation.x = 0.28; g.add(aljava);
+    [-0.06, 0.04, 0.12].forEach((ox, i) => { // flechas aparecendo na aljava
+      const pena = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 4), mat([0xc23a2a, 0xe8e0d0, 0x2a6ba0][i]));
+      pena.position.set(0.32 + ox, 2.56, -0.56 - i * 0.02); g.add(pena);
+    });
+    const faixa = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.82), mat(0x2a5a3a));
+    faixa.position.y = 2.86; g.add(faixa);
+    capa = criaCapa(0x3d5a35, 1.15); g.add(capa); // manto curto de campo
+  } else if (tipo === 'feiticeiro') {
+    // FEITICEIRO (RV5.1): robe arcano SEM chapéu — gola alta, livro no
+    // cinto e runa viva no peito (o poder mora nele, não no figurino).
+    const manto = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.0, 1.7, 12), mat(0x3a2a5a)); manto.position.y = 0.85; manto.castShadow = true; g.add(manto);
+    const gola = new THREE.Mesh(RBox(0.7, 0.42, 0.7), mat(0x2a1e44)); gola.position.y = 2.1; g.add(gola);
+    const runaPeito = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0x9a6aff, emissive: 0x6a3aff, emissiveIntensity: 0.8, roughness: 0.3 }));
+    runaPeito.position.set(0, 1.78, 0.34); g.add(runaPeito);
+    const livro = new THREE.Mesh(RBox(0.34, 0.42, 0.14), mat(0x6a1f2a)); // grimório no cinto
+    livro.position.set(-0.5, 1.02, 0.26); livro.rotation.z = 0.18; g.add(livro);
+    [-0.26, 0.26].forEach((ox) => { // detalhes bordados na barra do robe
+      const borda = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.06), mat(0xd9a522, 0.4));
+      borda.position.set(ox, 0.4, 0.55); g.add(borda);
+    });
+    capa = criaCapa(0x241a4a, 1.8); g.add(capa);
+  } else if (tipo === 'druida') {
+    // DRUIDA (RV5.1): túnica de musgo, cinto de corda, coroa de folhas e
+    // bolsa de ervas — a floresta anda com ele.
+    const tunica = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.95, 1.65, 12), mat(0x4a6a3a)); tunica.position.y = 0.88; tunica.castShadow = true; g.add(tunica);
+    const corda = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 6, 14), mat(0x9a7a44));
+    corda.position.y = 1.05; corda.rotation.x = Math.PI / 2; g.add(corda);
+    const bolsa = new THREE.Mesh(RBox(0.3, 0.34, 0.18), mat(0x6e4a2a)); // ervas da cura
+    bolsa.position.set(0.46, 0.96, 0.3); g.add(bolsa);
+    for (let i = 0; i < 8; i++) { // COROA DE FOLHAS
+      const a = (i / 8) * Math.PI * 2;
+      const folha = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 4), matVerdeFolha);
+      folha.position.set(Math.cos(a) * 0.42, 3.0, Math.sin(a) * 0.4);
+      folha.rotation.z = Math.cos(a) * 0.5; folha.rotation.x = -Math.sin(a) * 0.5; g.add(folha);
+    }
+    [-0.6, 0.6].forEach((ox) => { // folhagem nos ombros
+      const tufo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), matVerdeFolha);
+      tufo.position.set(ox, 2.16, 0); g.add(tufo);
+    });
+    capa = criaCapa(0x39512f, 1.4); g.add(capa);
   } else if (tipo === 'cavaleiro') {
     capa = criaCapa(0x8a1a1a, 1.7); g.add(capa);
     // RV3.0: emblema DOURADO do dragão costurado na capa (balança junto)

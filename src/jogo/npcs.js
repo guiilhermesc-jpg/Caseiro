@@ -51,6 +51,7 @@ const ROSTER = [
     loja: [
       { nome: 'Arco', icone: '🏹', preco: 80, slot: 'maoDir', dano: 10, arma: true, arco: true },
       { nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } },
+      { nome: 'Virotes (12)', icone: '🏹', preco: 18, pacote: { nome: 'Virote', icone: '🏹', qtd: 12 } },
     ],
     compra: ['Couro', 'Seda de Aranha', 'Osso'],
     ofertas: [{ precisa: 12, item: { nome: 'Arco Longo', icone: '🏹', preco: 260, slot: 'maoDir', dano: 15, arma: true, arco: true, alcance: 18 } }] },
@@ -118,7 +119,10 @@ const ROSTER = [
     ofertas: [{ precisa: 10, item: { nome: 'Runa Explosiva', icone: '💣', preco: 60, slot: 'runa', usavel: 'runaExplosiva' } }] },
   { nome: 'Tonho', prof: 'Pescador', post: { x: -322, z: -81 }, home: { x: -272, z: -20 }, cor: 0x2a6a5a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
     falas: { trabalho: 'Pesco no porto desde menino. A lagoa devolve o que o canal traz.', dica: 'Peixe raro eu pago em ouro vivo. Dourado e pintado, principalmente.' },
-    loja: [{ nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } }],
+    loja: [
+      { nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } },
+      { nome: 'Virotes (12)', icone: '🏹', preco: 18, pacote: { nome: 'Virote', icone: '🏹', qtd: 12 } },
+    ],
     compra: ['Lambari', 'Tilápia', 'Traíra', 'Carpa', 'Bagre', 'Tucunaré', 'Dourado', 'Pintado', 'Concha'] },
   { nome: 'Dona Ema', prof: 'Padeira', post: { x: -326, z: -10 }, home: { x: -392, z: -20 }, cor: 0xd8c4a0, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Pão de fubá do brejo, quentinho do Grande Mercado. Prove e me diga.', dica: 'O relógio do Depósito atrasa cinco minutos há vinte anos. Ninguém conserta por carinho.' } },
