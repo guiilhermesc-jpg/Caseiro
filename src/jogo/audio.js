@@ -60,6 +60,8 @@ export function criaAudio() {
     tesouro() { [523, 659, 784, 1046].forEach((f, i) => blip(f, 0.14, 'triangle', 0.35, 0, i * 0.08)); },
     agua() { sopro(0.45, 520, 0.4); sopro(0.3, 900, 0.25, 0.12); },                     // barca/mergulho
     corda() { blip(190, 0.05, 'square', 0.3); blip(160, 0.05, 'square', 0.3, 0, 0.09); },
+    porta() { blip(150, 0.22, 'sawtooth', 0.16, 95); blip(70, 0.08, 'square', 0.2, 0, 0.2); }, // rangido + baque
+
     grilo() { for (let i = 0; i < 3; i++) blip(4200, 0.025, 'sine', 0.1, 0, i * 0.07); },
     passaro() { blip(1900, 0.09, 'sine', 0.14, 2600); blip(2300, 0.07, 'sine', 0.12, 1800, 0.12); },
     coruja() { blip(430, 0.22, 'sine', 0.14, 370); blip(400, 0.3, 'sine', 0.12, 340, 0.32); },

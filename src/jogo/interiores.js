@@ -35,21 +35,55 @@ export function criaCasaInterior(x, z, opts = {}) {
   }
   function ladoComVao(lado) {
     const vert = alt - 2.6; // verga acima da porta
+    const madV = mat(0x5a4632, 1), pedV = mat(0x6f675c, 1);
     if (lado === 'sul' || lado === 'norte') {
       const cz = lado === 'sul' ? -hz : hz, seg = (larg - gw) / 2;
       muro(-(gw / 2 + seg / 2), cz, seg, t); // laterais sólidas; só o vão da porta abre
       muro(gw / 2 + seg / 2, cz, seg, t);
       const verga = new THREE.Mesh(new THREE.BoxGeometry(gw, vert, t), paredeMat);
       verga.position.set(0, alt - vert / 2, cz); g.add(verga);
+      // RV5.5: ENTRADA de verdade — batentes, verga de madeira e degrau de pedra
+      const foraZ = lado === 'sul' ? -1 : 1;
+      [-(gw / 2), gw / 2].forEach((ox) => {
+        const bat = new THREE.Mesh(new THREE.BoxGeometry(0.26, 2.7, t + 0.26), madV);
+        bat.position.set(ox, 1.35, cz); bat.castShadow = true; g.add(bat);
+      });
+      const vergaM = new THREE.Mesh(new THREE.BoxGeometry(gw + 0.3, 0.3, t + 0.26), madV);
+      vergaM.position.set(0, 2.72, cz); g.add(vergaM);
+      const degrau = new THREE.Mesh(new THREE.BoxGeometry(gw * 0.7, 0.22, 0.8), pedV);
+      degrau.position.set(0, 0.11, cz + foraZ * (t / 2 + 0.4)); degrau.receiveShadow = true; g.add(degrau);
     } else {
       const cx = lado === 'oeste' ? -hx : hx, seg = (prof - gw) / 2;
       muro(cx, -(gw / 2 + seg / 2), t, seg);
       muro(cx, gw / 2 + seg / 2, t, seg);
       const verga = new THREE.Mesh(new THREE.BoxGeometry(t, vert, gw), paredeMat);
       verga.position.set(cx, alt - vert / 2, 0); g.add(verga);
+      const foraX = lado === 'oeste' ? -1 : 1;
+      [-(gw / 2), gw / 2].forEach((oz) => {
+        const bat = new THREE.Mesh(new THREE.BoxGeometry(t + 0.26, 2.7, 0.26), madV);
+        bat.position.set(cx, 1.35, oz); bat.castShadow = true; g.add(bat);
+      });
+      const vergaM = new THREE.Mesh(new THREE.BoxGeometry(t + 0.26, 0.3, gw + 0.3), madV);
+      vergaM.position.set(cx, 2.72, 0); g.add(vergaM);
+      const degrau = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, gw * 0.7), pedV);
+      degrau.position.set(cx + foraX * (t / 2 + 0.4), 0.11, 0); degrau.receiveShadow = true; g.add(degrau);
     }
   }
   ['sul', 'norte', 'oeste', 'leste'].forEach((l) => { if (l === frente) ladoComVao(l); else ladoCheio(l); });
+
+  // RV5.5: a casa entrável fala a MESMA língua dos prédios — montantes de
+  // canto e vigas de topo externas (nada invade o interior)
+  const madC = mat(0x5a4632, 1);
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.32, alt, 0.32), madC);
+    post.position.set(sx * hx, alt / 2, sz * hz); post.castShadow = true; g.add(post);
+  });
+  [[0, -hz - 0.12, larg + 0.3, 0.2], [0, hz + 0.12, larg + 0.3, 0.2],
+   [-hx - 0.12, 0, 0.2, prof + 0.3], [hx + 0.12, 0, 0.2, prof + 0.3]]
+    .forEach(([px2, pz2, w2, d2]) => {
+      const viga = new THREE.Mesh(new THREE.BoxGeometry(w2, 0.24, d2), madC);
+      viga.position.set(px2, alt - 0.1, pz2); g.add(viga);
+    });
 
   // janelas variadas nas paredes que não têm a porta
   ['sul', 'norte', 'oeste', 'leste'].forEach((l) => {
@@ -176,6 +210,14 @@ export function criaCasaInterior(x, z, opts = {}) {
     mesa.add(meshBox(1.6, 0.15, 1.0, mad, 0, 0.95, 0));
     [[-0.7, -0.4], [0.7, -0.4], [-0.7, 0.4], [0.7, 0.4]].forEach(([px, pz]) => mesa.add(meshBox(0.12, 0.95, 0.12, mad, px, 0.47, pz)));
     mesa.position.set(hx - 2.6, 0, 0.4); g.add(mesa);
+    // RV5.5: lamparina ACESA na mesa — casa habitada tem luz
+    const lamparina = new THREE.Group(); lamparina.position.set(hx - 2.6, 1.03, 0.15);
+    const corpoL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.22, 8), mat(0x8a6a2a, 0.5));
+    corpoL.position.y = 0.11; lamparina.add(corpoL);
+    const luzL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffaa3a, emissiveIntensity: 0.95 }));
+    luzL.position.y = 0.3; lamparina.add(luzL);
+    g.add(lamparina);
     [[-0.9], [0.9]].forEach(([oz]) => {
       const cad = new THREE.Group();
       cad.add(meshBox(0.6, 0.1, 0.6, mad, 0, 0.55, 0));

@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.4 (v39)';
+const VERSAO = 'RV5.5 (v40)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1605,6 +1605,7 @@ function atacar() {
     sons.golpe();
     disparaFlecha(melhor);
     melhor.hp -= danoTiro; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+    atualizaBarraHP(melhor);
     if (melhor.hp <= 0) mataBicho(melhor);
     else mostraMensagem(`${usouVirote ? '🏹 VIROTAÇO!' : '🏹 Flechada!'} (-${danoTiro}, vida ${Math.max(0, melhor.hp)})`);
     return;
@@ -1614,6 +1615,7 @@ function atacar() {
   sons.golpe();
   petAlvo = melhor; // o pet entra na briga junto
   melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+  atualizaBarraHP(melhor);
   if (melhor.hp <= 0) mataBicho(melhor);
   else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
 }
@@ -1651,8 +1653,32 @@ function invocaVorag() {
   sons.dor();
   mostraMensagem('🦴 A OSSADA SE ERGUE! Vorag, o Primeiro, renasceu no campo a leste — o Terceiro Sinal se cumpriu!');
 }
+// BARRA DE VIDA flutuante (RV5.5): aparece sobre o bicho ao ser ferido e
+// some sozinha em 4s — jogabilidade de verdade, sem ler número em texto
+function atualizaBarraHP(r) {
+  if (!r || !r.vivo) return;
+  if (!r.barraHP) {
+    const cnv = document.createElement('canvas'); cnv.width = 64; cnv.height = 10;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
+    sp.scale.set(1.7, 0.26, 1); sp.renderOrder = 998;
+    const box = new THREE.Box3().setFromObject(r.g);
+    sp.position.y = Math.max(2.2, (box.max.y - r.g.position.y) + 0.7);
+    r.g.add(sp); r.barraHP = sp; r.barraCnv = cnv;
+  }
+  const c = r.barraCnv.getContext('2d');
+  c.clearRect(0, 0, 64, 10);
+  c.fillStyle = 'rgba(10,14,20,.78)'; c.fillRect(0, 0, 64, 10);
+  const f = Math.max(0, r.hp / r.hpMax);
+  c.fillStyle = f > 0.5 ? '#46c46a' : f > 0.25 ? '#e0b020' : '#d84a3a';
+  c.fillRect(2, 2, Math.max(1, 60 * f), 6);
+  r.barraHP.material.map.needsUpdate = true;
+  r.barraHP.visible = true;
+  clearTimeout(r._barraTimer);
+  r._barraTimer = setTimeout(() => { if (r.barraHP) r.barraHP.visible = false; }, 4000);
+}
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;
+  if (r.barraHP) r.barraHP.visible = false;
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
   if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0x000000);
   r.loot = rollLoot(r.boss || r.forte);
@@ -2400,6 +2426,8 @@ function passo() {
       const d = avatar.position.x > c.box.minX && avatar.position.x < c.box.maxX
              && avatar.position.z > c.box.minZ && avatar.position.z < c.box.maxZ;
       c.roof.visible = !d;
+      if (d && !c._dentro) sons.porta(); // rangido ao cruzar a porta (RV5.5)
+      c._dentro = d;
       if (d) dentroCasa = true;
       // PORTA SEMPRE ABERTA (pedido do maestro: entrar tem que ser fácil)
       if (c.portaAnim) { c.portaAnim.alvo = c.angAberto; c.aberta = true; }
@@ -2485,6 +2513,7 @@ function passo() {
           petProxMordida = tempo + 1.2;
           const dnP = PET_DANO[petTipo] || 2;
           petAlvo.hp -= dnP; petAlvo.piscar = 0.15;
+          atualizaBarraHP(petAlvo);
           if (pg.userData.corpoMat) pg.userData.corpoMat.emissive.setHex(0x882020);
           if (petAlvo.hp <= 0) { mataBicho(petAlvo); petAlvo = null; }
         }
