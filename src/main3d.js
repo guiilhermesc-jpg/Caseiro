@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV6.3 (v48)';
+const VERSAO = 'RV6.4 (v49)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -152,6 +152,50 @@ function alturaTerreno(x, z) {
     return montanhaDragao.h * (1 - (r - montanhaDragao.topo) / (montanhaDragao.r - montanhaDragao.topo));
   }
   return alturaColinas(x, z);
+}
+const GEO_SOMBRA_CONTATO = new THREE.CircleGeometry(1, 28);
+const sombrasContato = [];
+let sombraAvatar = null, sombraPet = null;
+function criaSombraContato(alvo, rx = 0.82, rz = 0.56, op = 0.18) {
+  const matSombra = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: op,
+    depthWrite: false,
+    fog: false,
+  });
+  const mesh = new THREE.Mesh(GEO_SOMBRA_CONTATO, matSombra);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.renderOrder = 0;
+  scene.add(mesh);
+  const s = { mesh, mat: matSombra, alvo, rx, rz, op };
+  sombrasContato.push(s);
+  return s;
+}
+function sombraBicho(r) {
+  const boss = r.boss || r.dragao;
+  const grande = r.especie === 'aranha' || r.especie === 'beholder' || r.especie === 'ciclope' || r.especie === 'vorag' || r.especie === 'arconteDrakari';
+  const rx = r.dragao ? 4.6 : boss ? 2.1 : grande ? 1.55 : 0.78;
+  const rz = r.dragao ? 3.1 : boss ? 1.35 : grande ? 1.05 : 0.52;
+  const op = r.dragao ? 0.2 : boss ? 0.18 : 0.13;
+  r.sombraContato = criaSombraContato(r.g, rx, rz, op);
+  return r.sombraContato;
+}
+function atualizaSombrasContato() {
+  for (const s of sombrasContato) {
+    const a = s.alvo;
+    if (!a) { s.mesh.visible = false; continue; }
+    const visivel = a.visible !== false && !!a.parent && a.parent.visible !== false;
+    if (!visivel) { s.mesh.visible = false; continue; }
+    let y = a.position.y;
+    if (!noEsgoto && y > -5) y = alturaTerreno(a.position.x, a.position.z);
+    const altitude = Math.max(0, a.position.y - y);
+    const escalaAlt = 1 + Math.min(1.45, altitude * 0.022);
+    s.mesh.visible = true;
+    s.mesh.position.set(a.position.x, y + 0.035, a.position.z);
+    s.mesh.scale.set(s.rx * escalaAlt, s.rz * escalaAlt, 1);
+    s.mat.opacity = s.op * Math.max(0.18, 1 - altitude * 0.018);
+  }
 }
 const raycaster = new THREE.Raycaster();
 // ⚠️ FIX DA "TELA TRAVADA": Sprite.raycast LÊ raycaster.camera.matrixWorld.
@@ -259,6 +303,7 @@ function areaMon(x, z, r) { return { minX: x - r, maxX: x + r, minZ: z - r, maxZ
 function addMonstro(g, hp, xp, dano, vel, forte, b, extra) {
   const r = { g, hp, hpMax: hp, xp, dano, vel, forte, bounds: b, y0: 0, alvo: { x: g.position.x, z: g.position.z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, ...extra };
   ratos.push(r);
+  sombraBicho(r);
   return r;
 }
 
@@ -447,7 +492,8 @@ new GLTFLoader().load('modelos/dragao2.glb', (gltf) => {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.add(inst);
     g.userData = { tipo: 'boss' };
     instalaBrasaDragao(g, inst, false, tinta ? 1.0 : 0.92);
-    ratos.push({ g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, especie: 'dragao', bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 });
+    const rDrag = { g, hp: 220, hpMax: 220, xp: 120, dano: 22, vel: 1.5, forte: true, boss: true, especie: 'dragao', bounds: areaMon(x, z, 14), y0: 0, alvo: { x, z }, pausa: Math.random() * 2, tempo: Math.random() * 5, vivo: true, piscar: 0, lootEspecial: { nome: 'Escama de Dragão', icone: '🐲' }, atira: 'fogo', alcanceTiro: 15, danoTiro: 18, cadencia: 4.5, tiroAltura: 6.5 };
+    ratos.push(rDrag); sombraBicho(rDrag);
     scene.add(g);
     registraDragaoVivo(inst); // idle vivo também nos regionais
   });
@@ -623,7 +669,7 @@ const ESQUELETOS_NOTURNOS = [];
   const anc = criaEsqueleto(x, z); anc.position.y = -80; anc.scale.setScalar(1.3);
   addMonstro(anc, 80, 30, 14, 1.7, true, areaMon(-346, -10, 12), { especie: 'esqueleto', y0: -80 });
 });
-ratos.forEach((r) => scene.add(r.g));
+ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
 let tochaOn = false;
@@ -650,6 +696,8 @@ function montaAvatar() {
   if (tochaOn) poeTochaNaMao(true); // mantém a tocha acesa
   poeCorpoEquip();                  // mantém as armaduras no corpo
   scene.add(avatar);
+  if (!sombraAvatar) sombraAvatar = criaSombraContato(avatar, 0.68, 0.48, 0.18);
+  else sombraAvatar.alvo = avatar;
 }
 montaAvatar();
 
@@ -724,6 +772,7 @@ LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
   sp.scale.set(1.9, 1.9, 1); sp.position.set(L.x, 5.4, L.z); sp.renderOrder = 996; scene.add(sp);
 });
 const npcs = criaNPCs(scene, colide);
+npcs.forEach((n) => { if (n.g) n.sombraContato = criaSombraContato(n.g, 0.58, 0.42, 0.12); });
 const inventario = criaInventario({ aoEquipar: (item) => aoEquipar(item) });
 
 // --- mensagens (toast) + ação/interação ---
@@ -931,6 +980,8 @@ function trocaPet(tipo) {
   gato.position.copy(pos);
   gato.userData.tipo = 'pet';
   scene.add(gato);
+  if (!sombraPet) sombraPet = criaSombraContato(gato, 0.7, 0.48, 0.14);
+  else sombraPet.alvo = gato;
   petTipo = tipo;
 }
 
@@ -959,7 +1010,9 @@ DOMAVEIS.forEach((d) => {
   cD.font = '58px Arial'; cD.textAlign = 'center'; cD.textBaseline = 'middle'; cD.fillText('🐾', 64, 68);
   const spD = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnvD), transparent: true, depthTest: false }));
   spD.scale.set(0.62, 0.62, 1); spD.position.y = 2.3; spD.renderOrder = 996; g.add(spD);
-  domaveisVivos.push({ ...d, g, base: { x: d.x, z: d.z }, alvo: { x: d.x, z: d.z }, pausa: Math.random() * 3, fase: Math.random() * 6 });
+  const domavel = { ...d, g, base: { x: d.x, z: d.z }, alvo: { x: d.x, z: d.z }, pausa: Math.random() * 3, fase: Math.random() * 6 };
+  domavel.sombraContato = criaSombraContato(g, d.tipo === 'burro' ? 0.95 : 0.62, d.tipo === 'burro' ? 0.62 : 0.42, 0.12);
+  domaveisVivos.push(domavel);
 });
 function domavelProximo() {
   for (const d of domaveisVivos) {
@@ -2259,6 +2312,7 @@ function reviveBicho(r) {
     r.g = criaDragao(DRX, DRZ, r.lord);
     r.g.position.y = DRY;
     scene.add(r.g);
+    if (r.sombraContato) r.sombraContato.alvo = r.g; else sombraBicho(r);
     if (r.lord) {
       r.hpMax = 1100; r.xp = 600; r.dano = 55; r.vel = 1.9; r.danoTiro = 40; r.cadencia = 3; r.tiroAltura = 12.4;
       r.lootEspecial = { nome: 'Coração de Dragão', icone: '❤️‍🔥' };
@@ -2277,6 +2331,7 @@ function reviveBicho(r) {
     r.forma = r.forma === 'cobra' ? 'croc' : 'cobra';
     r.g = (r.forma === 'cobra' ? criaCobra : criaCrocodilo)(0, -10);
     scene.add(r.g);
+    if (r.sombraContato) r.sombraContato.alvo = r.g; else sombraBicho(r);
     mostraMensagem('🐍 Algo desperta no fundo do esgoto...');
   } else {
     const b = r.bounds;
@@ -2394,7 +2449,9 @@ function spawnGM(tipo) {
   else if (tipo === 'troll') { g2 = criaTroll(px, pz); hp = 25; xp = 8; dn = 6; vl = 2.0; }
   else { g2 = criaDragao(px, pz); hp = 220; xp = 120; dn = 22; vl = 1.6; forte = true; }
   g2.position.y = avatar.position.y;
-  ratos.push({ g: g2, hp, hpMax: hp, xp, dano: dn, vel: vl, forte, bounds: areaMon(px, pz, 14), y0: avatar.position.y, alvo: { x: px, z: pz }, pausa: 0, tempo: 0, vivo: true, piscar: 0 });
+  const rGM = { g: g2, hp, hpMax: hp, xp, dano: dn, vel: vl, forte, bounds: areaMon(px, pz, 14), y0: avatar.position.y, alvo: { x: px, z: pz }, pausa: 0, tempo: 0, vivo: true, piscar: 0, especie: tipo === 'dragao' ? 'dragao' : tipo };
+  ratos.push(rGM);
+  sombraBicho(rGM);
   scene.add(g2);
   mostraMensagem(`✨ GM: ${tipo} invocado!`);
 }
@@ -3261,6 +3318,7 @@ function passo() {
     minimapa.atualiza(avatar, rede ? rede.outros : null);
     atualizaDestinoMapa();
   }
+  atualizaSombrasContato();
   ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)
 
 }
