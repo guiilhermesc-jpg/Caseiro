@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.1 (v36)';
+const VERSAO = 'RV5.2 (v37)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -475,6 +475,19 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
   addMonstro(c, 28, 10, 8, 1.5, false, areaMon(-278, -124, 18), { veneno: true, especie: 'cobra' });
 });
 [[-252, -134], [-304, -124]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 13), { especie: 'troll' }));
+// FORTE DOS ORCS (RV5.2): as Ruínas da Estrada têm dono — caça de ELITE
+// pra quem já tem nível: veteranos fortes + o SENHOR DA GUERRA no comando
+[[392, -78], [408, -62], [414, -76]].forEach(([x, z]) => {
+  const vet = criaOrc(x, z); vet.scale.setScalar(1.15);
+  addMonstro(vet, 60, 24, 16, 2.0, true, areaMon(403, -70, 14), { especie: 'orc' });
+});
+{
+  const warlord = criaOrc(403, -72); warlord.scale.setScalar(1.5);
+  addMonstro(warlord, 400, 120, 26, 1.6, true, areaMon(403, -70, 12), {
+    boss: true, especie: 'orcWarlord',
+    lootEspecial: { nome: 'Estandarte Orc', icone: '🚩' },
+  });
+}
 // CATACUMBAS DE VENORE (RV4.4): esqueletos guardam as tumbas (y = -40)
 [[-318, -18], [-330, -2], [-342, -16], [-312, -4]].forEach(([x, z]) => {
   const e = criaEsqueleto(x, z); e.position.y = -40;
@@ -510,7 +523,7 @@ let danoArma = 2; // 2 = mãos · 5 = graveto · espadas etc. sobem
 const MAT_METAL = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.6, roughness: 0.4 });
 
 // avatar (recriado quando muda a aparência na tela de seleção)
-const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20, sexo: 'homem', tipo: 'aldeao' };
+const coresJogador = { casaco: 0x556b2f, pele: 0xe0b088, cabelo: 0x3a2c20, sexo: 'homem', tipo: 'cavaleiro' };
 let avatar;
 function montaAvatar() {
   // preserva posição/rotação ao recriar (troca de cor in-game não teleporta)
@@ -728,6 +741,10 @@ const QUESTS = [
   { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+  // RV5.2: o caçador de Thais quer a cabeça do Senhor da Guerra
+  { id: 'senhorGuerra', npc: 'Khan', tipo: 'matar', especie: 'orcWarlord', meta: 1,
+    titulo: 'O Senhor da Guerra', pede: 'Os orcs das Ruínas da Estrada ganharam um COMANDANTE — e comandante junta exército. Derrube o Senhor da Guerra antes que ele marche sobre Thais.',
+    fala: 'O estandarte deles ainda tremula?', recompensa: { ouro: 140, xp: 100 } },
   // RV4.6: o arqueiro do vilarejo precisa de seda pro arco
   { id: 'sedaFalk', npc: 'Falk', tipo: 'coletar', item: 'Seda de Aranha', meta: 3,
     titulo: 'Cordas de Seda', pede: 'O Ninho das Aranhas, na Floresta do Oeste, tem a melhor seda do reino. Traga 3 Sedas de Aranha — corda de arco boa não se faz sozinha.',
@@ -770,7 +787,7 @@ const customizar = criaCustomizar({
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
-  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -1603,6 +1620,7 @@ const RAROS = {
   dragao: { chance: 0.07, item: { nome: 'Égide do Dragão', icone: '🛡️', slot: 'maoEsq', defesa: 7 } },
   beholder: { chance: 0.1, item: { nome: 'Olho Lapidado', icone: '🔮' } },
   cobra: { chance: 0.02, item: { nome: 'Dente do Profundo', icone: '🦷', slot: 'colar', defesa: 3 } },
+  orcWarlord: { chance: 0.08, item: { nome: 'Machado do Senhor da Guerra', icone: '🪓', slot: 'maoDir', dano: 28, arma: true } },
 };
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;

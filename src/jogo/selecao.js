@@ -43,7 +43,21 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
     wrap.appendChild(linha); return wrap;
   }
   painel.appendChild(escolha('Sexo', [['homem', '♂ Homem'], ['mulher', '♀ Mulher']], 'sexo'));
-  painel.appendChild(escolha('Modelo', MODELOS.map((m) => [m, MODELO_NOME[m]]), 'tipo'));
+  const escolhaVoc = escolha('Vocação', MODELOS.map((m) => [m, MODELO_NOME[m]]), 'tipo');
+  painel.appendChild(escolhaVoc);
+  // RV5.2: descrição da vocação (o jogador novo entende o que está escolhendo)
+  const DESC_VOC = {
+    cavaleiro: '⚔️ Linha de frente: nasce com Adaga e Escudo. Aguenta porrada e devolve em dobro.',
+    paladino: '🏹 Atirador: nasce com Arco e 24 Flechas. Caça de LONGE — e Virotes batem ainda mais forte.',
+    feiticeiro: '🔮 Conjurador arcano: nasce com 2 Runas de Fogo. As magias (teclas 1-5) são sua arma.',
+    druida: '🌿 Guardião da natureza: nasce com 3 Poções de Vida. Cura, doma e sobrevive a tudo.',
+  };
+  const descVoc = document.createElement('div');
+  descVoc.style.cssText = 'margin:-6px 0 14px;padding:9px 12px;border-radius:9px;background:#0e141c;border:1px solid #26303e;color:#b8c6d6;font-size:12.5px;line-height:1.5;min-height:34px;';
+  const atualizaDesc = () => { descVoc.textContent = DESC_VOC[cores.tipo] || ''; };
+  atualizaDesc();
+  escolhaVoc.addEventListener('click', () => setTimeout(atualizaDesc, 0));
+  painel.appendChild(descVoc);
 
   function grupo(label, tipo) {
     const wrap = document.createElement('div'); wrap.style.cssText = 'margin-bottom:14px;';
