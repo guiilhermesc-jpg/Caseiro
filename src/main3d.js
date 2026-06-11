@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV6.1 (v46)';
+const VERSAO = 'RV6.2 (v47)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -658,7 +658,8 @@ const ROTAS_MAPA = [
 ];
 const minimapa = criaMinimapa({
   obstaculos, ruas, marcos, lugares: LUGARES_MAPA, lojas: LOJAS_MAPA, rotas: ROTAS_MAPA, regiao: REGIAO, alcance: 90,
-  onMarcar: ({ nome, dist }) => mostraMensagem(`🗺️ ${nome}: aproximadamente ${dist} passos daqui.`),
+  onMarcar: (destino) => defineDestinoMapa(destino),
+  onLimpar: (silencioso) => limpaDestinoMapa(silencioso),
 });
 LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
   const cnvL = document.createElement('canvas'); cnvL.width = 128; cnvL.height = 128;
@@ -685,6 +686,54 @@ function mostraMensagem(txt) {
   clearTimeout(msgTimer);
   msgTimer = setTimeout(() => { msgEl.style.opacity = '0'; }, 2600);
 }
+let destinoMapa = null, destinoEl = null, destinoSetaEl = null, destinoTextoEl = null;
+function garanteDestinoHUD() {
+  if (destinoEl) return;
+  destinoEl = document.createElement('div');
+  destinoEl.style.cssText = 'position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:44;display:none;'
+    + 'align-items:center;gap:9px;background:rgba(16,22,32,.88);border:1px solid #d9a522;border-radius:10px;'
+    + 'padding:7px 10px;color:#f6e7b0;font:13px Arial;box-shadow:0 4px 18px rgba(0,0,0,.45);pointer-events:auto;';
+  destinoSetaEl = document.createElement('div');
+  destinoSetaEl.textContent = '▲';
+  destinoSetaEl.style.cssText = 'width:22px;height:22px;display:flex;align-items:center;justify-content:center;'
+    + 'font-size:19px;color:#ffdf5a;text-shadow:0 1px 2px #000;transform-origin:center;';
+  destinoTextoEl = document.createElement('div');
+  destinoTextoEl.style.cssText = 'min-width:128px;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+  const fechar = document.createElement('button');
+  fechar.textContent = '×';
+  fechar.title = 'Limpar destino';
+  fechar.style.cssText = 'width:24px;height:24px;border-radius:7px;border:1px solid #5a4a2a;background:#211a12;'
+    + 'color:#ffe6a0;cursor:pointer;font-size:16px;line-height:18px;';
+  fechar.addEventListener('pointerdown', (e) => { e.stopPropagation(); minimapa.limpaDestino(); });
+  destinoEl.appendChild(destinoSetaEl); destinoEl.appendChild(destinoTextoEl); destinoEl.appendChild(fechar);
+  document.body.appendChild(destinoEl);
+}
+function defineDestinoMapa(destino) {
+  destinoMapa = destino;
+  garanteDestinoHUD();
+  destinoEl.style.display = 'flex';
+  mostraMensagem(`🗺️ ${destino.nome}: aproximadamente ${destino.dist} passos daqui.`);
+  atualizaDestinoMapa();
+}
+function limpaDestinoMapa(silencioso = false) {
+  destinoMapa = null;
+  if (destinoEl) destinoEl.style.display = 'none';
+  if (!silencioso) mostraMensagem('🗺️ Destino removido.');
+}
+function atualizaDestinoMapa() {
+  if (!destinoMapa || !destinoEl || !jogoIniciado || morto) return;
+  const dx = destinoMapa.x - avatar.position.x;
+  const dz = destinoMapa.z - avatar.position.z;
+  const dist = Math.round(Math.hypot(dx, dz));
+  const rel = Math.atan2(dx, dz) - controles.cam.yaw;
+  destinoSetaEl.style.transform = `rotate(${rel}rad)`;
+  destinoTextoEl.textContent = `${destinoMapa.nome} · ${dist} passos`;
+  if (dist < 7) {
+    const nome = destinoMapa.nome;
+    minimapa.limpaDestino(true);
+    mostraMensagem(`🗺️ Você chegou perto de ${nome}.`);
+  }
+}
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
@@ -694,6 +743,33 @@ function achaInterativo() {
     if (d <= it.raio && d < melhorD) { melhorD = d; melhor = it; }
   }
   return melhor;
+}
+function achaInterativoNoPonto(x, z) {
+  let melhor = null, melhorD = Infinity;
+  for (const it of interativos) {
+    if (it._off) continue;
+    if (Math.abs((it.y || 0) - avatar.position.y) > 6) continue;
+    const dPonto = Math.hypot(it.x - x, it.z - z);
+    if (dPonto > Math.max(2.4, (it.raio || 2) + 1.4)) continue;
+    if (dPonto < melhorD) { melhorD = dPonto; melhor = it; }
+  }
+  return melhor;
+}
+function executaInterativo(alvo, clicado = false) {
+  if (!alvo) return false;
+  const dJogador = Math.hypot(alvo.x - avatar.position.x, alvo.z - avatar.position.z);
+  if (dJogador > (alvo.raio || 2) + 0.8) {
+    if (clicado) mostraMensagem(`Chegue mais perto para ${alvo.acao || alvo.titulo}.`);
+    return clicado;
+  }
+  gesto = 1;
+  if (alvo.onAcao) {
+    alvo.onAcao();
+    if (alvo.msgAcao) mostraMensagem(alvo.msgAcao);
+  } else {
+    mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+  }
+  return true;
 }
 
 // AVISO de ação flutuante (estilo Roblox): "[E] Abrir porta"
@@ -1092,8 +1168,15 @@ function abreEditorPersonagem() {
 }
 // CLIQUE/TOQUE: tap curto (sem arrasto) seleciona NPC / você / pet
 const rayTap = new THREE.Raycaster();
+const planoTap = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const pontoTap = new THREE.Vector3();
 function achaTipo(obj) { while (obj) { if (obj.userData && obj.userData.tipo) return obj; obj = obj.parent; } return null; }
 let tapIni = null;
+function pontoChaoDoClique() {
+  planoTap.constant = -avatar.position.y;
+  const p = rayTap.ray.intersectPlane(planoTap, pontoTap);
+  return p ? { x: p.x, z: p.z } : null;
+}
 renderer.domElement.addEventListener('pointerdown', (e) => { tapIni = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 // CLIQUE = AÇÃO (estilo Roblox): clicar em NPC conversa, em bicho ataca/saqueia,
 // em pet monta/desmonta; clicar no mundo executa a ação do lugar (abrir/pegar/pescar).
@@ -1133,6 +1216,11 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     }
     break;
   }
+  const pChao = pontoChaoDoClique();
+  if (pChao) {
+    const itClicado = achaInterativoNoPonto(pChao.x, pChao.z);
+    if (itClicado && executaInterativo(itClicado, true)) return;
+  }
   executaAcao(); // clicou no mundo → mesma ação da tecla E / botão AÇÃO
 });
 renderer.domElement.addEventListener('contextmenu', (e) => {
@@ -1162,14 +1250,13 @@ function executaAcao() {
     }
     if (!subiu) {
       const itEsg = achaInterativo(); // ex.: sua mochila caída no esgoto
-      if (itEsg && itEsg.onAcao) { itEsg.onAcao(); return; }
+      if (executaInterativo(itEsg)) return;
       const c = corpseProximo(); if (c) saqueia(c); else atacar();
     }
   } else {
     const alvo = achaInterativo();
-    if (alvo) {
-      if (alvo.onAcao) { alvo.onAcao(); if (alvo.msgAcao) mostraMensagem(alvo.msgAcao); }
-      else mostraMensagem(alvo.titulo + ' — ' + alvo.msg);
+    if (executaInterativo(alvo)) {
+      return;
     } else { // sem interativo: domar / saquear / atacar / pescar
       const dom = domavelProximo();
       if (dom) { tentaDomar(dom); return; }
@@ -3051,7 +3138,10 @@ function passo() {
     dv.ossos.asas.forEach((b, i) => { b.rotation.z = (i % 2 ? -1 : 1) * Math.sin(tD * 2.2) * 0.22; });
   }
   if (rede) rede.atualiza(dt);
-  if (jogoIniciado) minimapa.atualiza(avatar, rede ? rede.outros : null);
+  if (jogoIniciado) {
+    minimapa.atualiza(avatar, rede ? rede.outros : null);
+    atualizaDestinoMapa();
+  }
   ceu.position.copy(camera.position); // céu sempre em volta da câmera (mundo grande)
 
 }

@@ -9,7 +9,7 @@ const MARCO_COR = {
 };
 const corHex = (c) => '#' + ((c >>> 0) & 0xffffff).toString(16).padStart(6, '0');
 
-export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], lojas = [], rotas = [], regiao = null, alcance = 90, onMarcar = null }) {
+export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], lojas = [], rotas = [], regiao = null, alcance = 90, onMarcar = null, onLimpar = null }) {
   const TAM = 150;
   const MAP_W = 980, MAP_H = 640;
   const mundo = regiao || { minX: -430, maxX: 830, minZ: -490, maxZ: 490 };
@@ -57,13 +57,22 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
   const titulo = document.createElement('div');
   titulo.innerHTML = '<b style="font-size:16px;">🗺️ Mapa de Venor</b>'
     + '<span style="display:block;font-size:12px;color:#aeb9c8;margin-top:2px;">clique no mapa para marcar um destino; Esc fecha</span>';
+  const acoesTopo = document.createElement('div');
+  acoesTopo.style.cssText = 'display:flex;gap:7px;align-items:center;';
+  const limpar = document.createElement('button');
+  limpar.textContent = 'Limpar destino';
+  limpar.title = 'Remover marcação do mapa';
+  limpar.style.cssText = 'height:32px;border-radius:8px;border:1px solid #445266;'
+    + 'background:#172334;color:#e8eef7;font-size:12px;cursor:pointer;padding:0 10px;';
+  limpar.addEventListener('pointerdown', (e) => { e.stopPropagation(); limpaDestino(); });
   const fechar = document.createElement('button');
   fechar.textContent = '✕';
   fechar.title = 'Fechar mapa';
   fechar.style.cssText = 'width:36px;height:32px;border-radius:8px;border:1px solid #445266;'
     + 'background:#172334;color:#e8eef7;font-size:17px;cursor:pointer;';
   fechar.addEventListener('pointerdown', (e) => { e.stopPropagation(); fechaMapa(); });
-  topo.appendChild(titulo); topo.appendChild(fechar);
+  acoesTopo.appendChild(limpar); acoesTopo.appendChild(fechar);
+  topo.appendChild(titulo); topo.appendChild(acoesTopo);
   const mapa = document.createElement('canvas');
   mapa.width = MAP_W; mapa.height = MAP_H;
   mapa.style.cssText = 'width:100%;height:auto;max-height:72vh;aspect-ratio:980/640;background:#5c7d44;'
@@ -80,6 +89,11 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
   function abreMapa() { overlay.style.display = 'flex'; desenhaMapaGrande(); }
   function fechaMapa() { overlay.style.display = 'none'; }
   function toggleMapa() { overlay.style.display === 'none' ? abreMapa() : fechaMapa(); }
+  function limpaDestino(silencioso = false) {
+    destino = null;
+    desenhaMapaGrande();
+    if (onLimpar) onLimpar(silencioso);
+  }
 
   cnv.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); abreMapa(); });
   window.addEventListener('keydown', (e) => { if (e.code === 'Escape' && overlay.style.display !== 'none') fechaMapa(); });
@@ -305,5 +319,5 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
     if (overlay.style.display !== 'none') desenhaMapaGrande();
   }
 
-  return { atualiza, mostra, esconde, zoom, abreMapa, fechaMapa, toggleMapa, el: cnv };
+  return { atualiza, mostra, esconde, zoom, abreMapa, fechaMapa, toggleMapa, limpaDestino, el: cnv };
 }
