@@ -87,6 +87,24 @@ function geoCapim(cor) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
+// FLOR 3D (RV5.4): caule + corola de 5 pétalas + miolo — o campo deixa de
+// ser só textura e ganha flores DE VERDADE (instanciadas, ~1 draw call/cor)
+function geoFlor(corPetala) {
+  const partes = [];
+  const caule = pinta(new THREE.CylinderGeometry(0.025, 0.035, 0.5, 5), 0x4a7a36);
+  caule.translate(0, 0.25, 0); partes.push(caule);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const pet = pinta(new THREE.SphereGeometry(0.075, 6, 5), corPetala);
+    pet.scale(1, 0.55, 1);
+    pet.translate(Math.cos(a) * 0.09, 0.52, Math.sin(a) * 0.09);
+    partes.push(pet);
+  }
+  const miolo = pinta(new THREE.SphereGeometry(0.055, 6, 5), 0xf2c14e);
+  miolo.translate(0, 0.54, 0); partes.push(miolo);
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
 function geoPedra(comMusgo) {
   const partes = [];
   const rocha = pinta(desloca(new THREE.IcosahedronGeometry(1, 0), 0.32), 0x8b8b86);
@@ -99,8 +117,8 @@ function geoPedra(comMusgo) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
-// posições: arvores/pedras/moitas/capim = [x, z, s], pinheiros = [x, z]
-export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [] }, alturaSolo) {
+// posições: arvores/pedras/moitas/capim/flores/seixos = [x, z, s], pinheiros = [x, z]
+export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [], flores = [], seixos = [] }, alturaSolo) {
   const g = new THREE.Group();
   const colisores = [];
   const dummy = new THREE.Object3D();
@@ -132,9 +150,11 @@ export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras 
   lote(arvores, PALETAS.map((p) => geoArvoreGrande(p)), 1.2, 11, 'arvore1');
   lote(pinheiros, [0x356130, 0x2e6e3a, 0x3d7a36].map((c) => geoPinheiro(c)), 1.0, 7.5, 'pinheiro');
   lote(pedras, [geoPedra(true), geoPedra(false)], 0.8, 1.5, 'pedra');
-  // moitas e capim: SEM colisor (atravessáveis, como capim alto) e sem slot GLB
+  // moitas/capim/flores/seixos: SEM colisor (atravessáveis) e sem slot GLB
   lote(moitas, [geoMoita([0x4f7e3e, 0x568a44, 0x3f6e34]), geoMoita([0x5d8f46, 0x4a7a38, 0x6a9a50])], 0, 0, '');
   lote(capim, [0x4e7c3a, 0x5d8f46, 0x447034].map((c) => geoCapim(c)), 0, 0, '');
+  lote(flores, [0xe85d75, 0xf2c14e, 0xd06ad0, 0xefefef].map((c) => geoFlor(c)), 0, 0, '');
+  lote(seixos, [geoPedra(false), geoPedra(true)], 0, 0, '');
 
   // SLOT GLB: ao carregar, a espécie inteira troca pelo modelo profissional
   // (auto-escala pela altura, base no chão, mesmas matrizes de instância)

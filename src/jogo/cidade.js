@@ -130,7 +130,25 @@ export function criaCidade() {
     uvR.setXY(i, uvR.getX(i) * (LARG_R / 4200), uvR.getY(i) * (PROF_R / 4200)); // textura na mesma escala do horizonte
   }
   geoRelevo.computeVertexNormals();
-  const relevo = new THREE.Mesh(geoRelevo, gramaMat);
+  // CHÃO COM VIDA (RV5.4): variação de tom POR VÉRTICE assada na malha —
+  // manchas largas de capim seco e de terra batida + respiro fino de verde
+  // quebram o "papel de parede" da textura repetida
+  const gramaMatCampo = gramaMat.clone();
+  gramaMatCampo.vertexColors = true;
+  aplicaTexturaReal(gramaMatCampo, 'grama', 300, 300);
+  const coresR = new Float32Array(posR.count * 3);
+  for (let i = 0; i < posR.count; i++) {
+    const wx = posR.getX(i) + cxR, wz = posR.getZ(i) + czR;
+    const n1 = Math.sin(wx * 0.013 + 1.7) * Math.cos(wz * 0.011 - 0.6); // manchas largas
+    const n2 = Math.sin(wx * 0.047 - 0.8) * Math.cos(wz * 0.053 + 1.2); // granulado
+    let r = 1, g2 = 1, b = 1;
+    if (n1 > 0.55) { r = 1.12; g2 = 1.04; b = 0.82; }       // capim seco (amarelado)
+    else if (n1 < -0.62) { r = 0.94; g2 = 0.82; b = 0.64; } // terra batida
+    const v = 1 + n2 * 0.07;
+    coresR[i * 3] = r * v; coresR[i * 3 + 1] = g2 * v; coresR[i * 3 + 2] = b * v;
+  }
+  geoRelevo.setAttribute('color', new THREE.BufferAttribute(coresR, 3));
+  const relevo = new THREE.Mesh(geoRelevo, gramaMatCampo);
   relevo.position.set(cxR, 0, czR); relevo.receiveShadow = true; scene.add(relevo);
 
   // MATO 3D (padrão Tibia): tufos de capim espalhados pelo campo inteiro —
@@ -248,7 +266,7 @@ export function criaCidade() {
   const snap = (ang) => Math.round(ang / (Math.PI / 2)) * (Math.PI / 2); // alinha a 0/90/180/270
   const lotes = [
     [32, 32], [-32, 32], [32, -32], [-32, -32],
-    [64, 0], [-64, 0], [0, 64], [0, -64],
+    [-64, 0], [0, -64],
     [64, 32], [64, -32], [-64, 32], [-64, -32],
     [32, 64], [-32, 64], [32, -64], [-32, -64],
     [64, 64], [-64, 64], [64, -64], [-64, -64],
@@ -257,6 +275,38 @@ export function criaCidade() {
     x, z, larg: rnd(8, 13), prof: rnd(8, 12), alt: rnd(6, 11),
     cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
   })));
+  // RV5.4: dois lotes que eram decorativos viraram casas ENTRÁVEIS de verdade
+  add(criaCasaInterior(64, 0, { frente: 'oeste', cor: 0xe0d0a0, corTelhado: 0x7a3a2a }));
+  add(criaCasaInterior(0, 64, { frente: 'sul', cor: 0x9ab0a4, corTelhado: 0x4a5666 }));
+
+  // === PORTÕES DO VILAREJO (RV5.4): paliçada de madeira com tabuleta nas
+  // 3 entradas — a vila ganha rosto (e quem chega sabe onde chegou)
+  function portaoVila(px, pz, rotY, nome) {
+    const gP = new THREE.Group(); gP.position.set(px, 0, pz); gP.rotation.y = rotY;
+    const madP = mat(0x6e4a2a, 1);
+    [-5, 5].forEach((ox) => {
+      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 7.5, 8), madP);
+      poste.position.set(ox, 3.75, 0); poste.castShadow = true; gP.add(poste);
+      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.8, 8), madP);
+      ponta.position.set(ox, 7.9, 0); gP.add(ponta);
+    });
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.7, 0.7), madP);
+    travessa.position.y = 6.6; travessa.castShadow = true; gP.add(travessa);
+    const cnvP = document.createElement('canvas'); cnvP.width = 256; cnvP.height = 64;
+    const cp = cnvP.getContext('2d');
+    cp.fillStyle = '#7a5a32'; cp.fillRect(0, 0, 256, 64);
+    cp.fillStyle = '#f0e8d0'; cp.font = 'bold 26px Arial'; cp.textAlign = 'center'; cp.textBaseline = 'middle';
+    cp.fillText(nome, 128, 34);
+    const tab = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.1, 0.18),
+      new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnvP), roughness: 0.9 }));
+    tab.position.y = 5.6; gP.add(tab);
+    scene.add(gP); solidos.push(gP);
+    const lados = Math.abs(Math.sin(rotY)) > 0.5 ? [[0, -5], [0, 5]] : [[-5, 0], [5, 0]];
+    lados.forEach(([ox, oz]) => obstaculos.push({ minX: px + ox - 0.7, maxX: px + ox + 0.7, minZ: pz + oz - 0.7, maxZ: pz + oz + 0.7 }));
+  }
+  portaoVila(72, 0, Math.PI / 2, 'VILAREJO DE VENOR');      // leste (estrada de Thais)
+  portaoVila(-86, -30, Math.PI / 2, 'VILAREJO DE VENOR');   // oeste (estrada de Venore)
+  portaoVila(0, -116, 0, 'VILAREJO DE VENOR');              // sul (trilha da praia)
 
   // postes de luz nas esquinas das ruas
   // (4 postes deslocados: ficavam EXATAMENTE em cima dos bueiros do esgoto)
@@ -531,6 +581,9 @@ export function criaCidade() {
   // posição calculada livre: sul da via, porta pro norte voltada pra rua)
   add(criaCasaInterior(524, -14, { frente: 'norte', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
   add(criaCasaInterior(592, 0, { frente: 'oeste', cor: 0xdccfae, corTelhado: 0x2f8d80 }));
+  // RV5.4: os "respiros" do casario viraram casas ENTRÁVEIS (6 em Thais agora)
+  add(criaCasaInterior(588, 46, { frente: 'sul', cor: 0xd8c8a4, corTelhado: 0xc0653a }));
+  add(criaCasaInterior(532, -48, { frente: 'norte', cor: 0xcdb892, corTelhado: 0x2f8d80 }));
   // mercado, poço, estátua e estandartes (cores de Thais: turquesa/ouro) — frentes livres
   add(criaBarraca(550, 7, 0, 0xc0653a));
   add(criaBarraca(570, 7, 0, 0x2f8d80));
@@ -738,11 +791,14 @@ export function criaCidade() {
     add(criaPlaca(-310, -16, 'Grande Mercado de Venore', -Math.PI / 2));
 
     // === CASARIO MERCANTE (alto: 2 andares + sacadas saem do criaPredio) ===
-    [[-392, -44], [-376, -44], [-376, -16], [-340, -48], [-320, -54], [-258, -44], [-272, -44]]
+    [[-376, -44], [-340, -48], [-320, -54], [-258, -44], [-272, -44]]
       .forEach(([x, z]) => add(criaPredio({
         x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(9, 12),
         cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - CVZ))),
       })));
+    // RV5.4: mais portas abertas na capital — decorativas viraram ENTRÁVEIS
+    add(criaCasaInterior(-392, -44, { frente: 'leste', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
+    add(criaCasaInterior(-376, -16, { frente: 'sul', cor: 0xb0b8c0, corTelhado: 0x55636f }));
     // LOJA ARCANA DA ILDA (RV4.3): runas atendidas em interior de verdade
     add(criaCasaInterior(-340, -12, { frente: 'leste', cor: 0xc7b394, corTelhado: 0x6a4a8a, loja: true }));
     add(criaPlaca(-334, -7, 'Runas — Ilda', -Math.PI / 2));
@@ -819,12 +875,13 @@ export function criaCidade() {
       vergaCr.position.set(-398, 2.9, 31.4); vergaCr.castShadow = true; scene.add(vergaCr);
       add(criaPlaca(-394, 30, 'Catacumbas — desça se ousar', Math.PI / 2));
     }
-    [[-340, 24], [-340, 52], [-300, 46], [-272, 28], [-264, 56], [-376, 40], [-376, 64], [-396, 46]]
+    [[-340, 24], [-340, 52], [-300, 46], [-264, 56], [-376, 40], [-376, 64], [-396, 46]]
       .forEach(([x, z]) => add(criaPredio({
         x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(8, 12),
         cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - 18))),
       })));
     add(criaCasaInterior(-296, 64, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x4a5666 }));
+    add(criaCasaInterior(-272, 28, { frente: 'oeste', cor: 0xcaa890, corTelhado: 0x6a4a6a })); // RV5.4
     [[-330, 10], [-310, 26], [-352, 64], [-300, 64]].forEach(([x, z]) => add(criaPoste(x, z)));
     [[-308, 12, 0x2a5a9c], [-332, 26, 0x2a8a4a]].forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
 
@@ -920,7 +977,34 @@ export function criaCidade() {
     if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
     VEG.capim.push([px, pz, 0.8 + Math.random() * 1.0]);
   }
-  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~11 draw calls;
+  // FLORES 3D + SEIXOS soltos (RV5.4): o campo deixa de ser papel de parede —
+  // flores de pétalas de verdade e pedrinhas espalhadas (instanciado, ~6 draw calls)
+  VEG.flores = []; VEG.seixos = [];
+  for (let tent = 0; tent < 24000 && VEG.flores.length < 260; tent++) {
+    const px = (Math.random() - 0.5) * 880, pz = (Math.random() - 0.5) * 640;
+    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;
+    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;
+    if (pz < -178) continue;
+    if (Math.abs(px) < 42 && pz < -70) continue;
+    if (Math.hypot(px - 110, pz - 300) < 52) continue;
+    if (px > 498) continue;
+    if (px < -232 && pz > -152 && pz < 94) continue;
+    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
+    VEG.flores.push([px, pz, 0.85 + Math.random() * 0.7]);
+  }
+  for (let tent = 0; tent < 18000 && VEG.seixos.length < 170; tent++) {
+    const px = (Math.random() - 0.5) * 900, pz = (Math.random() - 0.5) * 640;
+    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;
+    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;
+    if (pz < -178) continue;
+    if (Math.abs(px) < 42 && pz < -70) continue;
+    if (Math.hypot(px - 110, pz - 300) < 52) continue;
+    if (px > 498) continue;
+    if (px < -232 && pz > -152 && pz < 94) continue;
+    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
+    VEG.seixos.push([px, pz, 0.2 + Math.random() * 0.18]);
+  }
+  // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~17 draw calls;
   // slots GLB arvore1/pinheiro/pedra trocam o visual da espécie inteira)
   add(criaVegetacaoInstanciada(VEG, alturaColinas));
 
