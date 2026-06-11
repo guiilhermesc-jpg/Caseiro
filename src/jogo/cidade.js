@@ -40,7 +40,7 @@ function texturaGrama(rep = 60) {
 
 export function criaCidade() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xd6e4f0, 260, 720); // neblina mais presente = profundidade de pack premium
+  scene.fog = new THREE.Fog(0xc9d9e6, 250, 760); // neblina com mais profundidade e menos branco estourado
 
   // céu em gradiente (claro)
   const skyMat = new THREE.ShaderMaterial({
@@ -58,9 +58,9 @@ export function criaCidade() {
     ceu.material = new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false });
   }, undefined, () => {});
 
-  const hemi = new THREE.HemisphereLight(0xcfe2f5, 0x6f6a52, 0.95);
+  const hemi = new THREE.HemisphereLight(0xc4dcf2, 0x5d6a44, 0.86);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xffeed6, 1.35); // sol levemente dourado (luz pastel)
+  const sun = new THREE.DirectionalLight(0xffe3b8, 1.42); // sol dourado com leitura mais cinematográfica
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); // sombras mais nítidas (só pesa no PC; mobile não usa sombra)

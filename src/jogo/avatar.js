@@ -30,8 +30,10 @@ export const MODELO_NOME = {
 const LEGADOS = ['aldeao', 'cacador', 'mago'];
 
 const PADRAO = { pele: 0xe0b088, casaco: 0x556b2f, calca: 0x2e3440, cabelo: 0x3a2c20, bota: 0x241d16 };
-function mat(c, r = 0.85) { return new THREE.MeshStandardMaterial({ color: c, roughness: r }); }
-function metal(c) { return new THREE.MeshStandardMaterial({ color: c, metalness: 0.7, roughness: 0.35 }); }
+function mat(c, r = 0.85) {
+  return new THREE.MeshStandardMaterial({ color: c, roughness: Math.min(1, r + 0.06), metalness: 0, envMapIntensity: 0.08 });
+}
+function metal(c) { return new THREE.MeshStandardMaterial({ color: c, metalness: 0.62, roughness: 0.34, envMapIntensity: 0.18 }); }
 const matVerdeFolha = new THREE.MeshStandardMaterial({ color: 0x5d8f46, roughness: 0.9 }); // folhas do druida
 
 function membro(larg, alt, material) {

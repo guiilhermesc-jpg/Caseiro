@@ -66,13 +66,13 @@ renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa mu
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.82; // contraste mais rico sem estourar branco
+renderer.toneMappingExposure = 0.80; // contraste mais rico sem estourar branco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV6.4 (v49)';
+const VERSAO = 'RV6.5 (v50)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -108,13 +108,23 @@ let composer = null;
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, vagalumes, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
 scene.add(sun.target); // o alvo da sombra do sol acompanha o jogador (ver loop)
+// RV6.5: luz de recorte "adventure premium". Ela segue a câmera e desenha a
+// silhueta do jogador/monstros sem lavar o cenário inteiro.
+const luzRecorte = new THREE.DirectionalLight(0xbfd8ff, ehMobile ? 0.14 : 0.46);
+luzRecorte.position.set(-28, 28, -28);
+luzRecorte.target.position.set(0, 1.8, 0);
+scene.add(luzRecorte, luzRecorte.target);
+const luzPreenchimentoEstilizado = new THREE.HemisphereLight(0xfff1d2, 0x32442f, ehMobile ? 0.08 : 0.16);
+scene.add(luzPreenchimentoEstilizado);
+const tmpLuzRecorte = new THREE.Vector3();
+let fatorDiaVisual = 0.82;
 // liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
 // passam a refletir o entorno — o salto de "protótipo" pra "premium"
 if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.42, 1.08));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.24, 0.5, 1.06));
   // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
   // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
   // saturação +12%, split-tone (sombras frias / altas levemente quentes),
@@ -126,22 +136,45 @@ if (!ehMobile) {
       + 'void main(){\n'
       + '  vec4 c = texture2D(tDiffuse, vUv);\n'
       + '  vec3 col = c.rgb;\n'
-      + '  col = clamp((col - 0.5) * 1.09 + 0.506, 0.0, 1.0);\n'                                  // S-curve fílmica leve
+      + '  col = clamp((col - 0.5) * 1.13 + 0.502, 0.0, 1.0);\n'                                  // S-curve fílmica leve
       + '  float luma = dot(col, vec3(0.299, 0.587, 0.114));\n'
-      + '  col = mix(vec3(luma), col, 1.12);\n'                                                    // saturação
-      + '  col += vec3(0.012, 0.014, 0.030) * (1.0 - smoothstep(vec3(0.0), vec3(0.4), col));\n'    // sombras frias
-      + '  col = mix(col, col * vec3(1.045, 1.0, 0.94), smoothstep(0.55, 1.0, luma) * 0.45);\n'    // altas quentes
+      + '  col = mix(vec3(luma), col, 1.16);\n'                                                    // saturação
+      + '  vec3 styl = floor(col * 18.0 + 0.5) / 18.0;\n'
+      + '  col = mix(col, styl, 0.12);\n'                                                          // leve lapidação toon
+      + '  col += vec3(0.014, 0.018, 0.038) * (1.0 - smoothstep(vec3(0.0), vec3(0.42), col));\n'   // sombras frias
+      + '  col = mix(col, col * vec3(1.055, 1.0, 0.93), smoothstep(0.55, 1.0, luma) * 0.48);\n'    // altas quentes
+      + '  col = pow(col, vec3(0.965));\n'
       + '  col = clamp(col, 0.0, 1.0);\n'
       + '  float d = distance(vUv, vec2(0.5));\n'
-      + '  col *= 1.0 - 0.22 * smoothstep(0.38, 0.80, d);\n'                                       // vinheta de cinema
+      + '  col *= 1.0 - 0.17 * smoothstep(0.42, 0.84, d);\n'                                       // vinheta de cinema
       + '  col += (fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;\n'     // dither anti-banding
       + '  gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);\n'
       + '}',
   }));
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.18; // reflexo sutil; sem clarear rostos/grama
+  scene.environmentIntensity = 0.14; // reflexo sutil; sem clarear rostos/grama
 }
+function lapidaMaterialPremium(material, forca = 1) {
+  if (!material) return;
+  const lista = Array.isArray(material) ? material : [material];
+  for (const m of lista) {
+    if (!m || m.userData?.rv65Lapidado) continue;
+    if ('roughness' in m && typeof m.roughness === 'number') {
+      m.roughness = Math.min(1, Math.max(0.72, m.roughness + 0.05 * forca));
+    }
+    if ('metalness' in m && typeof m.metalness === 'number' && m.metalness < 0.18) {
+      m.metalness = Math.max(0, m.metalness * 0.55);
+    }
+    if ('envMapIntensity' in m) m.envMapIntensity = Math.min(0.2, m.envMapIntensity ?? 0.12);
+    m.userData = { ...(m.userData || {}), rv65Lapidado: true };
+    m.needsUpdate = true;
+  }
+}
+function lapidaObjetoPremium(root, forca = 1) {
+  root.traverse((o) => { if (o.isMesh) lapidaMaterialPremium(o.material, forca); });
+}
+lapidaObjetoPremium(scene, 0.7);
 // ALTURA DO TERRENO: colinas procedurais no campo (terreno.js — a malha do
 // chão usa a MESMA função, nada flutua) + Montanha do Dragão (rampa cônica
 // escalável até o platô). O avatar "gruda" nessa altura ao andar.
@@ -386,6 +419,7 @@ function estilizaMalhaDragao(o, lord = false, tinta = null) {
     o.material.emissive.setHex(lord ? 0x3a0900 : 0x071407);
     o.material.emissiveIntensity = lord ? 0.16 : 0.055;
   }
+  lapidaMaterialPremium(o.material, 0.8);
   o.material.needsUpdate = true;
 }
 function criaBrasaDragao(lord = false, escala = 1) {
@@ -536,7 +570,12 @@ function preparaBaseGLB(gltf, tam) {
   const b2 = new THREE.Box3().setFromObject(base);
   const cc = new THREE.Vector3(); b2.getCenter(cc);
   base.position.x -= cc.x; base.position.z -= cc.z; base.position.y -= b2.min.y;
-  base.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; o.raycast = () => {}; } });
+  base.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true; o.frustumCulled = false; o.raycast = () => {};
+      lapidaMaterialPremium(o.material, 0.9);
+    }
+  });
   return base;
 }
 function aplicaGLBEm(r) { // veste o modelo da espécie num bicho (spawn novo incluso)
@@ -544,7 +583,12 @@ function aplicaGLBEm(r) { // veste o modelo da espécie num bicho (spawn novo in
   if (!base) return false;
   const inst = cloneSkinned(base);
   // o .clone() NÃO carrega o override de raycast — re-blinda o clone novo
-  inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; o.raycast = () => {}; } });
+  inst.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true; o.frustumCulled = false; o.raycast = () => {};
+      lapidaMaterialPremium(o.material, 0.9);
+    }
+  });
   const tipoAntigo = (r.g.userData && r.g.userData.tipo) || 'monstro';
   while (r.g.children.length) r.g.remove(r.g.children[0]);
   r.g.add(inst);
@@ -1704,7 +1748,7 @@ let bauCriptaAberto = false;
 // CICLO DIA/NOITE (discreto): muda sol/ambiente/céu/neblina e acende os lampiões
 const C_TOPO_DIA = new THREE.Color(0x4f86c0), C_BASE_DIA = new THREE.Color(0xdce9f2);
 const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0x16233f);
-const C_FOG_DIA = new THREE.Color(0xcfe0ee), C_FOG_NOITE = new THREE.Color(0x111b2e);
+const C_FOG_DIA = new THREE.Color(0xc4d6e3), C_FOG_NOITE = new THREE.Color(0x101a2c);
 let tempoDia = 0.3; // começa de manhã
 let ehNoite = false;
 let avisoNoite = false; // lembrete da tocha (1× por noite)
@@ -1712,6 +1756,7 @@ let noiteAnterior = false; // detecta a VIRADA do dia (eventos noturnos)
 function aplicaDiaNoite(dt) {
   tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
   const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
+  fatorDiaVisual = d;
   ehNoite = d < 0.35;
   // NOITE ESTILO OT (RV4.2): madrugada ESCURA de verdade — a tocha, os
   // lampiões e o luar viram a diferença entre andar e tropeçar
@@ -1764,6 +1809,21 @@ function aplicaDiaNoite(dt) {
     p.luz.intensity = (!ehMobile && noite > 0.45 && perto) ? (noite - 0.45) * 3.4 : 0; // sem point-lights no mobile
     if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9; // a luminária emissiva brilha em todos (barato)
   }
+}
+function atualizaLuzRecorte() {
+  if (!avatar || !camera) return;
+  tmpLuzRecorte.subVectors(camera.position, avatar.position);
+  if (tmpLuzRecorte.lengthSq() < 0.001) tmpLuzRecorte.set(0, 0, 1);
+  tmpLuzRecorte.normalize();
+  luzRecorte.position.set(
+    avatar.position.x - tmpLuzRecorte.x * 42,
+    avatar.position.y + 24,
+    avatar.position.z - tmpLuzRecorte.z * 42,
+  );
+  luzRecorte.target.position.set(avatar.position.x, avatar.position.y + 1.7, avatar.position.z);
+  const noite = 1 - fatorDiaVisual;
+  luzRecorte.intensity = noEsgoto ? 0 : (ehMobile ? 0.13 : 0.48) * (0.76 + noite * 0.28);
+  luzPreenchimentoEstilizado.intensity = noEsgoto ? 0.03 : (ehMobile ? 0.08 : 0.16) * (0.86 + fatorDiaVisual * 0.2);
 }
 // CADA ARMA TEM SEU DESIGN (adaga ≠ espada ≠ machado ≠ arco ≠ graveto):
 // a peça na mão precisa PARECER o que é.
@@ -3015,6 +3075,7 @@ function passo() {
 
   // ambiente vivo (sempre): ciclo dia/noite (na superfície), nuvens, fonte, gato
   if (!noEsgoto) aplicaDiaNoite(dt);
+  atualizaLuzRecorte();
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;
