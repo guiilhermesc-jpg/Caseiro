@@ -164,6 +164,8 @@ export function criaCidade() {
     if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
     if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
     if (px > 498) continue;                                   // fora de Thais
+    if (px < -240 && pz > -120 && pz < 60) continue;          // fora de VENORE (cidade nova)
+    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue; // fora da Estrada do Pântano
     dummyM.position.set(px, alturaColinas(px, pz), pz); // tufos assentam na colina
     dummyM.rotation.y = Math.random() * Math.PI;
     dummyM.scale.setScalar(0.7 + Math.random() * 0.9);
@@ -633,6 +635,120 @@ export function criaCidade() {
     });
   }
 
+  // ============================================================
+  //  VENORE — A CIDADE MERCANTE DO PÂNTANO (RV4.0, cidade PRINCIPAL)
+  //  Design ORIGINAL inspirado no estilo "cidade de comércio sobre o
+  //  brejo": canal com pontes de tábuas, calçadão de madeira, Grande
+  //  Mercado com TORRE DO DEPÓSITO, porto com cais, casario mercante
+  //  alto (2 andares/sacadas) e pântano em volta. A cidade antiga
+  //  passa a ser o VILAREJO DE VENOR.
+  // ============================================================
+  // estrada do pântano: liga o vilarejo (oeste) à nova capital
+  add(criaEstrada(-250, -86, -30, 8));
+  add(criaPlaca(-92, -37, '← VENORE', Math.PI));
+  add(criaPlaca(-160, -23, 'VENORE ⟵'));
+  add(criaPlaca(-254, -23, 'VENORE — Cidade Mercante'));
+  add(criaMarcoDistancia(-170, -37, 'VENORE 150\nVENOR 84'));
+  {
+    const CVX = -320, CVZ = -30; // centro da praça do Grande Mercado
+    // ruas de pedra: principal (leste-oeste) + transversal (norte-sul)
+    const ruaP = new THREE.Mesh(new THREE.BoxGeometry(164, 0.1, 8), matRua(30, 1.6));
+    ruaP.position.set(-328, 0.02, CVZ); ruaP.receiveShadow = true; scene.add(ruaP);
+    const ruaT = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 136), matRua(1.6, 26));
+    ruaT.position.set(-300, 0.02, -32); ruaT.receiveShadow = true; scene.add(ruaT);
+    // praça do Grande Mercado (calçamento)
+    const pracaV = new THREE.Mesh(new THREE.BoxGeometry(30, 0.12, 30), pisoMat);
+    pracaV.position.set(CVX, 0.03, CVZ); pracaV.receiveShadow = true; scene.add(pracaV);
+
+    // === CANAL DE VENORE (norte-sul) com margens de pedra e 2 pontes ===
+    const aguaCanal = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 140),
+      new THREE.MeshStandardMaterial({ color: 0x39707f, roughness: 0.15, metalness: 0.3, transparent: true, opacity: 0.85 }));
+    aguaCanal.position.set(-352, 0.04, -30); scene.add(aguaCanal); aguas.push(aguaCanal);
+    [-355.6, -348.4].forEach((mx) => {
+      const margem = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.34, 140), pisoMat);
+      margem.position.set(mx, 0.17, -30); margem.receiveShadow = true; scene.add(margem);
+    });
+    // o canal BLOQUEIA (cair na água não dá) — vãos livres só onde têm pontes
+    [[-100, -33.5], [-26.5, 2.5], [9.5, 40]].forEach(([z0, z1]) => {
+      obstaculos.push({ minX: -356.4, maxX: -347.6, minZ: z0, maxZ: z1 });
+    });
+    // pontes de tábuas (passa por cima; sem colisor)
+    [[-30], [6]].forEach(([pz]) => {
+      const tabuas = new THREE.Mesh(new THREE.BoxGeometry(10, 0.12, 5.4), new THREE.MeshStandardMaterial({ color: 0x7a5a36, roughness: 1 }));
+      tabuas.position.set(-352, 0.06, pz); tabuas.receiveShadow = true; scene.add(tabuas);
+      [-2.9, 2.9].forEach((oz) => {
+        const corr = new THREE.Mesh(new THREE.BoxGeometry(10, 0.5, 0.16), mat(0x5a4326, 1));
+        corr.position.set(-352, 0.6, pz + oz); scene.add(corr);
+      });
+    });
+    // calçadão de madeira na beira leste do canal (passeio do comércio)
+    const calcadao = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.09, 128), new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 }));
+    aplicaTexturaReal(calcadao.material, 'madeira', 1.2, 22);
+    calcadao.position.set(-345.6, 0.05, -32); calcadao.receiveShadow = true; scene.add(calcadao);
+
+    // === TORRE DO DEPÓSITO (marco da cidade — visível de longe) ===
+    {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(11, 11, 11), mat(0xb9a486, 1));
+      base.position.set(-296, 5.5, -54); base.castShadow = base.receiveShadow = true; scene.add(base);
+      const torre = new THREE.Mesh(new THREE.BoxGeometry(5.6, 11, 5.6), mat(0xc7b394, 1));
+      torre.position.set(-296, 16.5, -54); torre.castShadow = true; scene.add(torre);
+      const coroa = new THREE.Mesh(new THREE.ConeGeometry(4.6, 4.6, 4), matRua(2, 2));
+      coroa.rotation.y = Math.PI / 4; coroa.position.set(-296, 24.2, -54); coroa.castShadow = true; scene.add(coroa);
+      // relógio do depósito (canvas) virado pra praça
+      const cnvR = document.createElement('canvas'); cnvR.width = cnvR.height = 64;
+      const cr = cnvR.getContext('2d');
+      cr.fillStyle = '#f0e8d0'; cr.beginPath(); cr.arc(32, 32, 30, 0, Math.PI * 2); cr.fill();
+      cr.strokeStyle = '#3a2a1a'; cr.lineWidth = 4; cr.stroke();
+      cr.beginPath(); cr.moveTo(32, 32); cr.lineTo(32, 12); cr.moveTo(32, 32); cr.lineTo(46, 36); cr.stroke();
+      const relogio = new THREE.Mesh(new THREE.CircleGeometry(1.6, 18),
+        new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnvR), roughness: 0.8 }));
+      relogio.position.set(-296, 17, -51.1); scene.add(relogio);
+      const portaD = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.4, 0.2), mat(0x4a2f1a));
+      portaD.position.set(-296, 1.7, -48.4); scene.add(portaD);
+      obstaculos.push({ minX: -301.5, maxX: -290.5, minZ: -59.5, maxZ: -48.5 });
+    }
+
+    // === GRANDE MERCADO (pavilhão coberto, lado norte da praça) ===
+    add(criaMercado(CVX, -10, 16, 10));
+    add(criaPlaca(-310, -16, 'Grande Mercado de Venore', -Math.PI / 2));
+
+    // === CASARIO MERCANTE (alto: 2 andares + sacadas saem do criaPredio) ===
+    [[-392, -44], [-376, -44], [-376, -16], [-340, -48], [-320, -54], [-340, -12], [-258, -44], [-272, -44]]
+      .forEach(([x, z]) => add(criaPredio({
+        x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(9, 12),
+        cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - CVZ))),
+      })));
+    // casas ENTRÁVEIS + a LOJA DA ALQUIMISTA (interior de loja de verdade)
+    add(criaCasaInterior(-392, -16, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x55636f }));
+    add(criaCasaInterior(-272, -16, { frente: 'sul', cor: 0xa8bcae, corTelhado: 0x6a4a6a }));
+    add(criaCasaInterior(-284, -44, { frente: 'norte', cor: 0xd0a0a0, corTelhado: 0x8a4632, loja: true }));
+    add(criaPlaca(-280, -38, 'Alquimia — Berta', Math.PI));
+
+    // === PORTO DE VENORE (lagoa + cais; pesca!) ===
+    add(criaLago(-330, -92, 14));
+    add(criaCais(-322, -84, 12));
+    add(criaPlaca(-314, -76, 'Porto de Venore', -Math.PI / 2));
+    [[-342, -84], [-318, -98], [-338, -100], [-322, -78]].forEach(([x, z]) => add(criaJunco(x, z)));
+    add(criaSalgueiro(-344, -96));
+
+    // === VIDA DE PRAÇA: barracas, poço, bancos, canteiros, bandeiras, postes
+    add(criaBarraca(-330, -38, 0.2, 0xb23a3a));
+    add(criaBarraca(-310, -22, -0.3, 0x2a6ba0));
+    add(criaPoco(-330, -22));
+    add(criaBanco(-312, -38, -Math.PI / 2)); add(criaBanco(-328, -22, Math.PI / 2));
+    add(criaCanteiro(-312, -22)); add(criaCanteiro(-328, -38));
+    [[-306, -44, 0x2a8a4a], [-334, -44, 0xd9a522], [-306, -16, 0xb8902a], [-334, -16, 0x9c2a2a]]
+      .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
+    [[-312, -30], [-328, -30], [-300, -50], [-300, -10], [-352, -38], [-352, 2]]
+      .forEach(([x, z]) => add(criaPoste(x, z)));
+
+    // === O PÂNTANO ABRAÇA A CIDADE (identidade de Venore) ===
+    add(criaPantano(-262, 34));
+    [[-368, 42], [-282, 40], [-398, -92], [-408, 10]].forEach(([x, z]) => add(criaSalgueiro(x, z)));
+    [[-396, 30], [-254, -88], [-410, -60]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
+    [[-372, 34], [-290, 44], [-404, -36], [-398, -78], [-260, 22]].forEach(([x, z]) => add(criaJunco(x, z)));
+  }
+
   // MOITAS espalhadas pelo campo (refs premium: sub-bosque denso) — sem
   // colisor (atravessável, estilo capim alto do Tibia), 2 draw calls
   VEG.moitas = [];
@@ -644,7 +760,24 @@ export function criaCidade() {
     if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
     if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
     if (px > 498) continue;                                   // fora de Thais
+    if (px < -240 && pz > -120 && pz < 60) continue;          // fora de VENORE (cidade nova)
+    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue; // fora da Estrada do Pântano
     VEG.moitas.push([px, pz, 0.8 + Math.random() * 0.9]);
+  }
+  // CAPIM 3D (RV4.0): tufos SÓLIDOS misturados aos cartazes de mato —
+  // profundidade real no chão do mundo inteiro (3 draw calls)
+  VEG.capim = [];
+  for (let tent = 0; tent < 20000 && VEG.capim.length < 260; tent++) {
+    const px = (Math.random() - 0.5) * 900, pz = (Math.random() - 0.5) * 640;
+    if (Math.abs(px) < 78 && Math.abs(pz) < 78) continue;
+    if (px > 60 && px < 620 && Math.abs(pz) < 15) continue;
+    if (pz < -178) continue;
+    if (Math.abs(px) < 42 && pz < -70) continue;
+    if (Math.hypot(px - 110, pz - 300) < 52) continue;
+    if (px > 498) continue;
+    if (px < -240 && pz > -120 && pz < 60) continue;
+    if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue;
+    VEG.capim.push([px, pz, 0.8 + Math.random() * 1.0]);
   }
   // VEGETAÇÃO INSTANCIADA entra em cena (florestas todas em ~11 draw calls;
   // slots GLB arvore1/pinheiro/pedra trocam o visual da espécie inteira)

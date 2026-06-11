@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV3.0 (v23)';
+const VERSAO = 'RV4.0 (v24)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -786,7 +786,7 @@ function abreDialogo(npc) {
     }
   }
   const saud = npc.humor === 'bom'
-    ? `Saudações! Sou ${npc.nome}, ${npc.prof.toLowerCase()} de Venore. 😊`
+    ? `Saudações! Sou ${npc.nome}, ${npc.prof.toLowerCase()}. 😊`
     : `${npc.nome}, ${npc.prof.toLowerCase()}. O que você quer?`;
   dialogo.abre(npc.nome, saud, opcoes);
 }
@@ -1259,7 +1259,7 @@ function atacar() {
   if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: tiro à distância (gasta 1 flecha)
     const melhor = alvoRato(alcanceAtaque());
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
-    if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (Venore) ou Yara (Thais). ➹'); return; }
+    if (!inventario.consomeItem('Flecha')) { mostraMensagem('Sem flechas! Compre com Falk (vilarejo), Tonho (Venore) ou Yara (Thais). ➹'); return; }
     petAlvo = melhor; // o pet entra na briga junto
     disparaFlecha(melhor);
     melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
@@ -1536,8 +1536,10 @@ function ativaGM() {
     gmPainel.appendChild(b);
     return b;
   }
-  B('🌀 Ir: Venore', () => tpGM(0, 2));
-  B('🌀 Ir: Thais', () => tpGM(560, -2));
+  // ⚠️ destinos FORA das fontes das praças (o jogador caía DENTRO da água)
+  B('🌀 Ir: VENORE (capital)', () => tpGM(-312, -34));
+  B('🌀 Ir: Vilarejo de Venor', () => tpGM(10, 14));
+  B('🌀 Ir: Thais', () => tpGM(560, -8));
   B('🌀 Ir: Pico do Dragão', () => tpGM(110, 300));
   B('🌀 Ir: Praia', () => tpGM(0, -208));
   B('❤️ Curar tudo', () => { vida = VIDA_MAX; hud.vida(vida, VIDA_MAX); mostraMensagem('❤️ GM: vida cheia'); });
@@ -1674,22 +1676,31 @@ window.addEventListener('keydown', (e) => {
 
 // NOMES DE LUGARES (estilo Tibia) — mostra o bairro/rua onde você está
 const DISTRITOS = [
-  { nome: 'Praça Central de Venore', x: 0, z: 0, raio: 18 },
+  // VENORE — a CIDADE MERCANTE (RV4.0, principal). Entradas mais específicas
+  // primeiro (a checagem pega a mais próxima dentro do raio).
+  { nome: 'Praça do Grande Mercado', x: -320, z: -30, raio: 17 },
+  { nome: 'Canal de Venore', x: -352, z: -20, raio: 13 },
+  { nome: 'Porto de Venore', x: -330, z: -90, raio: 17 },
+  { nome: 'Torre do Depósito', x: -296, z: -54, raio: 11 },
+  { nome: 'VENORE — Cidade Mercante', x: -330, z: -28, raio: 92 },
+  { nome: 'Estrada do Pântano', x: -168, z: -30, raio: 80 },
+  // Vilarejo de Venor (a antiga cidadezinha onde tudo começou)
+  { nome: 'Praça do Vilarejo de Venor', x: 0, z: 0, raio: 18 },
   { nome: 'Rua do Mercado', x: 16, z: 0, raio: 16 },
-  { nome: 'Templo Sagrado de Venore', x: 0, z: -30, raio: 15 },
+  { nome: 'Templo Sagrado', x: 0, z: -30, raio: 15 },
   { nome: 'Largo da Escola', x: 0, z: 28, raio: 15 },
   { nome: 'Ponte do Riacho', x: 16, z: 78, raio: 14 },
   { nome: 'Beira do Lago', x: 45, z: 80, raio: 22 },
   { nome: 'Floresta do Oeste', x: -88, z: 0, raio: 45 },
   { nome: 'Bairro do Comércio', x: 0, z: -95, raio: 26 },
-  { nome: 'Moinho de Venore', x: -44, z: -74, raio: 12 },
-  { nome: 'Porto de Venore', x: 45, z: 64, raio: 14 },
+  { nome: 'Moinho de Venor', x: -44, z: -74, raio: 12 },
+  { nome: 'Cais do Vilarejo', x: 45, z: 64, raio: 14 },
   { nome: 'Farol do Porto', x: 66, z: 84, raio: 10 },
   { nome: 'Caminho de Thais', x: 300, z: 0, raio: 250 },
   { nome: 'Vale dos Monstros', x: 200, z: 90, raio: 70 },
   { nome: 'Portão de Thais', x: 502, z: 0, raio: 14 },
   { nome: 'Cidade de Thais', x: 560, z: 0, raio: 60 },
-  { nome: 'Praia de Venore', x: 0, z: -222, raio: 90 },
+  { nome: 'Praia de Venor', x: 0, z: -222, raio: 90 },
   { nome: 'Templo de Thais', x: 560, z: 18, raio: 12 },
   { nome: 'Ruínas da Estrada', x: 400, z: -70, raio: 18 },
   { nome: 'Ruínas Antigas', x: 150, z: 250, raio: 20 },
@@ -1706,8 +1717,8 @@ const DISTRITOS = [
 ];
 let localEl, localNome = '';
 function atualizaLocal() {
-  let nome = 'Venore', melhorD = Infinity;
-  if (noEsgoto) nome = 'Esgoto de Venore';
+  let nome = 'Terras de Venor', melhorD = Infinity;
+  if (noEsgoto) nome = 'Esgoto';
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
   localNome = nome;

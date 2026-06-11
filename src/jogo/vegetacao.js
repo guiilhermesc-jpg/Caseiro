@@ -72,6 +72,21 @@ function geoMoita(pal) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
+// CAPIM 3D (RV4.0): tufo de lâminas SÓLIDAS inclinadas — profundidade de
+// verdade no chão, misturado aos cartazes de mato (fim do "papel de parede")
+function geoCapim(cor) {
+  const partes = [];
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + 0.3;
+    const h = 0.55 + (i % 3) * 0.22;
+    const folha = pinta(new THREE.ConeGeometry(0.05, h, 4), cor);
+    folha.rotateX(0.32); folha.rotateY(a);
+    folha.translate(Math.cos(a) * 0.16, h / 2, Math.sin(a) * 0.16);
+    partes.push(folha);
+  }
+  return BufferGeometryUtils.mergeGeometries(partes);
+}
+
 function geoPedra(comMusgo) {
   const partes = [];
   const rocha = pinta(desloca(new THREE.IcosahedronGeometry(1, 0), 0.32), 0x8b8b86);
@@ -84,8 +99,8 @@ function geoPedra(comMusgo) {
   return BufferGeometryUtils.mergeGeometries(partes);
 }
 
-// posições: arvores/pedras/moitas = [x, z, s], pinheiros = [x, z]
-export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [] }, alturaSolo) {
+// posições: arvores/pedras/moitas/capim = [x, z, s], pinheiros = [x, z]
+export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras = [], moitas = [], capim = [] }, alturaSolo) {
   const g = new THREE.Group();
   const colisores = [];
   const dummy = new THREE.Object3D();
@@ -117,8 +132,9 @@ export function criaVegetacaoInstanciada({ arvores = [], pinheiros = [], pedras 
   lote(arvores, PALETAS.map((p) => geoArvoreGrande(p)), 1.2, 11, 'arvore1');
   lote(pinheiros, [0x356130, 0x2e6e3a, 0x3d7a36].map((c) => geoPinheiro(c)), 1.0, 7.5, 'pinheiro');
   lote(pedras, [geoPedra(true), geoPedra(false)], 0.8, 1.5, 'pedra');
-  // moitas: SEM colisor (atravessável, como capim alto) e sem slot GLB
+  // moitas e capim: SEM colisor (atravessáveis, como capim alto) e sem slot GLB
   lote(moitas, [geoMoita([0x4f7e3e, 0x568a44, 0x3f6e34]), geoMoita([0x5d8f46, 0x4a7a38, 0x6a9a50])], 0, 0, '');
+  lote(capim, [0x4e7c3a, 0x5d8f46, 0x447034].map((c) => geoCapim(c)), 0, 0, '');
 
   // SLOT GLB: ao carregar, a espécie inteira troca pelo modelo profissional
   // (auto-escala pela altura, base no chão, mesmas matrizes de instância)

@@ -90,12 +90,47 @@ const ROSTER = [
     falas: { trabalho: 'Vigio a estrada do alto da torre. O braseiro fica aceso a noite toda.', dica: 'Daqui até Thais são mais de 400 passos. Cuidado na ponte: lobos rondam, e além do rio a estrada só piora.' } },
   { nome: 'Gil', prof: 'Lavrador', post: { x: 105, z: 53 }, home: { x: 105, z: 50 }, cor: 0x8a6a2a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
     falas: { trabalho: 'Planto trigo nesta terra desde moleque. O espantalho? Chama-se Zé.', dica: 'Não vá ao cemitério depois do anoitecer. Os mortos lá não descansam.' } },
+  // --- VENORE, a Cidade Mercante do Pântano (RV4.0 — cidade PRINCIPAL) ---
+  { nome: 'Anselmo', prof: 'Mercador', post: { x: -320, z: -13 }, home: { x: -322, z: -44 }, cor: 0x8a6a2a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'O Grande Mercado é meu: tudo que o pântano e a estrada trazem passa por esta banca.', dica: 'O canal leva as barcas até o porto. Sem ele, Venore afundava na lama.' },
+    ofertas: [{ precisa: 25, item: { nome: 'Anel do Mercador', icone: '💍', preco: 180, slot: 'anel', defesa: 3 } }] },
+  { nome: 'Berta', prof: 'Alquimista', post: { x: -284, z: -47.3 }, home: { x: -284, z: -38 }, cor: 0x7a3a6a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+    falas: { trabalho: 'Minha loja destila o que o brejo dá: poções, essências e uns vapores melhor não perguntar.', dica: 'Erva e cogumelo do pântano rendem o dobro na minha banca.' },
+    loja: [{ nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' }],
+    compra: ['Erva', 'Cogumelo', 'Frasco'],
+    ofertas: [{ precisa: 10, item: { nome: 'Poção Grande', icone: '🧉', preco: 20, slot: 'pocao', usavel: 'pocaoGrande' } }] },
+  { nome: 'Grom', prof: 'Ferreiro', post: { x: -308, z: -38 }, home: { x: -340, z: -42 }, cor: 0x445162, humor: 'mau', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'Ferro do norte, brasa do sul, e a melhor têmpera do reino — bem aqui na praça.', dica: 'Couro e osso da caça viram cabo e empunhadura. Traga que eu pago.' },
+    loja: [
+      { nome: 'Adaga', icone: '🗡️', preco: 25, slot: 'maoDir', dano: 8, arma: true },
+      { nome: 'Espada', icone: '⚔️', preco: 60, slot: 'maoDir', dano: 12, arma: true },
+      { nome: 'Machado', icone: '🪓', preco: 100, slot: 'maoDir', dano: 16, arma: true },
+    ],
+    compra: ['Couro', 'Osso', 'Presa do Boss', 'Escama de Dragão'],
+    ofertas: [{ precisa: 15, item: { nome: 'Martelo de Guerra', icone: '🔨', preco: 420, slot: 'maoDir', dano: 24, arma: true } }] },
+  { nome: 'Ilda', prof: 'Arcanista', post: { x: -332, z: -22 }, home: { x: -376, z: -20 }, cor: 0x5a2a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+    falas: { trabalho: 'Grafo runas com tinta de lodo arcano. O pântano tem mais magia do que parece.', dica: 'Dizem que o Dragão Ancião perto de Thais guarda uma runa que ninguém leu.' },
+    loja: [
+      { nome: 'Runa de Cura', icone: '✨', preco: 15, slot: 'runa', usavel: 'runaCura' },
+      { nome: 'Runa de Fogo', icone: '🔥', preco: 20, slot: 'runa', usavel: 'runaFogo' },
+    ],
+    compra: ['Erva', 'Frasco', 'Olho do Beholder', 'Seda de Aranha'],
+    ofertas: [{ precisa: 10, item: { nome: 'Runa Explosiva', icone: '💣', preco: 60, slot: 'runa', usavel: 'runaExplosiva' } }] },
+  { nome: 'Tonho', prof: 'Pescador', post: { x: -322, z: -81 }, home: { x: -272, z: -20 }, cor: 0x2a6a5a, humor: 'bom', sexo: 'homem', tipo: 'cacador',
+    falas: { trabalho: 'Pesco no porto desde menino. A lagoa devolve o que o canal traz.', dica: 'Peixe raro eu pago em ouro vivo. Dourado e pintado, principalmente.' },
+    loja: [{ nome: 'Flechas (12)', icone: '➹', preco: 10, pacote: { nome: 'Flecha', icone: '➹', qtd: 12 } }],
+    compra: ['Lambari', 'Tilápia', 'Traíra', 'Carpa', 'Bagre', 'Tucunaré', 'Dourado', 'Pintado', 'Concha'] },
+  { nome: 'Dona Ema', prof: 'Padeira', post: { x: -326, z: -10 }, home: { x: -392, z: -20 }, cor: 0xd8c4a0, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Pão de fubá do brejo, quentinho do Grande Mercado. Prove e me diga.', dica: 'O relógio do Depósito atrasa cinco minutos há vinte anos. Ninguém conserta por carinho.' } },
+  { nome: 'Capitã Mara', prof: 'Guarda do Canal', post: { x: -256, z: -34 }, home: { x: -296, z: -46 }, cor: 0x2a3a6a, humor: 'mau', sexo: 'mulher', tipo: 'cavaleiro',
+    falas: { trabalho: 'Patrulho a entrada e o canal. Em Venore o ouro corre — e ladrão corre atrás.', dica: 'A estrada do pântano é traiçoeira à noite. Leve tocha e volte inteiro.' } },
 ];
 
 // casas (residências) — pontos LIVRES na rua em frente às casas (os antigos
 // caíam DENTRO dos prédios e o NPC andava contra a parede a noite inteira!)
 const HOMES = [[24, 24], [-24, 24], [24, -24], [-24, -24], [56, 8], [-56, 8], [8, 56], [8, -56], [24, 40], [-24, 40], [40, -24]];
-const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias', 'Eldra', 'Falk']); // lojistas/templo viram a noite no posto
+const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias', 'Eldra', 'Falk',
+  'Anselmo', 'Berta', 'Grom', 'Ilda', 'Capitã Mara']); // lojistas/templo/guarda viram a noite no posto
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');
