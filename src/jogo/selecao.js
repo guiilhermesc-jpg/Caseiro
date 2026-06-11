@@ -104,6 +104,24 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   dica.style.cssText = 'margin:12px 0 0;text-align:center;color:#67748a;font-size:12px;';
   painel.appendChild(dica);
 
+  // RV5.3: vitrine do lançamento — o que chegou no Patch 1
+  const nov = document.createElement('div');
+  nov.innerHTML = '<b style="cursor:pointer;color:#e8d9a0;">📜 Novidades do Patch 1 ▾</b>'
+    + '<div id="novLista" style="display:none;margin-top:8px;text-align:left;color:#9fb0c0;font-size:12px;line-height:1.7;">'
+    + '• VENORE, a capital do pântano: canal, catedral, guildas e porto<br>'
+    + '• 4 VOCAÇÕES com kits próprios (e Virotes pro atirador!)<br>'
+    + '• Catacumbas de 2 andares + Cripta do tesouro<br>'
+    + '• Montarias, pets de combate e o Filhote de Dragão da profecia<br>'
+    + '• 13 missões, Guilda, Depósito, rede de Barcas e chefes com itens LENDÁRIOS<br>'
+    + '• A LORE em 6 tomos — e o TERCEIRO SINAL espera os corajosos...<br>'
+    + '• Conta na NUVEM (☁️ nome + PIN), noite escura, som e visual de cinema</div>';
+  nov.style.cssText = 'margin:12px 0 0;text-align:center;font-size:13px;';
+  nov.querySelector('b').onclick = () => {
+    const l = nov.querySelector('#novLista');
+    l.style.display = l.style.display === 'none' ? 'block' : 'none';
+  };
+  painel.appendChild(nov);
+
   ov.appendChild(painel);
   document.body.appendChild(ov);
 }

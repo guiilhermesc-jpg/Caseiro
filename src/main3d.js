@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.2 (v37)';
+const VERSAO = 'PATCH 1 (v38)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -741,6 +741,10 @@ const QUESTS = [
   { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+  // RV5.3: O FINALE DA LORE — a Ossada se ergue (cereja do Patch 1)
+  { id: 'terceiroSinal', npc: 'Hela', requer: 'guardiaoOvo', tipo: 'matar', especie: 'vorag', meta: 1, invoca: 'vorag',
+    titulo: 'O Terceiro Sinal', pede: 'A coroa brilhou sob a terra. A seda cobriu a floresta. E agora o filhote anda ao seu lado... O TERCEIRO SINAL se cumpriu — e a Ossada no campo a leste NÃO está mais dormindo. Vá. Termine o que a profecia começou.',
+    fala: 'Os ossos ainda andam?', recompensa: { ouro: 300, xp: 200, item: { nome: 'Relíquia de Vorag', icone: '🦴', slot: 'anel', defesa: 5 } } },
   // RV5.2: o caçador de Thais quer a cabeça do Senhor da Guerra
   { id: 'senhorGuerra', npc: 'Khan', tipo: 'matar', especie: 'orcWarlord', meta: 1,
     titulo: 'O Senhor da Guerra', pede: 'Os orcs das Ruínas da Estrada ganharam um COMANDANTE — e comandante junta exército. Derrube o Senhor da Guerra antes que ele marche sobre Thais.',
@@ -787,7 +791,7 @@ const customizar = criaCustomizar({
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
-  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -837,6 +841,7 @@ function abreDialogo(npc) {
     opcoes.splice(opcoes.length - 1, 0, { texto: rotulo, onClick: () => {
       if (!e.aceita) {
         e.aceita = true; salvaJogo();
+        if (q.invoca === 'vorag') invocaVorag(); // RV5.3: a Ossada se ergue AGORA
         dialogo.abre(npc.nome, `${q.pede} (são ${q.meta} no total — eu anoto aqui)`, opcoes);
         return;
       }
@@ -1621,7 +1626,31 @@ const RAROS = {
   beholder: { chance: 0.1, item: { nome: 'Olho Lapidado', icone: '🔮' } },
   cobra: { chance: 0.02, item: { nome: 'Dente do Profundo', icone: '🦷', slot: 'colar', defesa: 3 } },
   orcWarlord: { chance: 0.08, item: { nome: 'Machado do Senhor da Guerra', icone: '🪓', slot: 'maoDir', dano: 28, arma: true } },
+  vorag: { chance: 0.15, item: { nome: 'Presa de Vorag', icone: '🦴', slot: 'colar', defesa: 6 } },
 };
+// === VORAG, O PRIMEIRO (RV5.3): o finale da lore — a Ossada SE ERGUE ===
+// Invocado ao aceitar "O Terceiro Sinal" (e re-invocado no load, se a
+// chama já foi acesa). Dragão osso-pálido, 2.2×, cospe fogo de longe.
+let voragInvocado = false;
+function invocaVorag() {
+  if (voragInvocado) return;
+  voragInvocado = true;
+  const v = criaDragao(250, 120);
+  v.scale.setScalar(2.2);
+  v.traverse((o) => {
+    if (o.isMesh && o.material && o.material.color) {
+      o.material = o.material.clone();
+      o.material.color.lerp(new THREE.Color(0xe8e0cc), 0.65); // pele de osso
+    }
+  });
+  const r = addMonstro(v, 800, 300, 30, 1.4, true, areaMon(250, 120, 18), {
+    boss: true, especie: 'vorag', atira: 'fogo', alcanceTiro: 18, danoTiro: 24, cadencia: 3.5, tiroAltura: 8,
+    lootEspecial: { nome: 'Coração Ancestral', icone: '🫀' },
+  });
+  scene.add(r.g);
+  sons.dor();
+  mostraMensagem('🦴 A OSSADA SE ERGUE! Vorag, o Primeiro, renasceu no campo a leste — o Terceiro Sinal se cumpriu!');
+}
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
@@ -1809,6 +1838,7 @@ function salvaJogo() {
       cofre, // Depósito de Venore (itens guardados em segurança)
       dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
       bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
+      vorag: voragInvocado, // a Ossada erguida não volta a dormir
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1832,6 +1862,7 @@ function carregaJogo(nome) {
     cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
+    if (d.vorag) invocaVorag(); // a Ossada erguida continua erguida
     (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
@@ -2065,6 +2096,7 @@ const DISTRITOS = [
   { nome: 'Beira do Lago', x: 45, z: 80, raio: 22 },
   { nome: 'Floresta do Oeste', x: -88, z: 0, raio: 45 },
   { nome: 'Ninho das Aranhas', x: -146, z: -66, raio: 16 },
+  { nome: 'Ossada do Dragão', x: 250, z: 120, raio: 20 },
   { nome: 'Bairro do Comércio', x: 0, z: -95, raio: 26 },
   { nome: 'Moinho de Venor', x: -44, z: -74, raio: 12 },
   { nome: 'Cais do Vilarejo', x: 45, z: 64, raio: 14 },
