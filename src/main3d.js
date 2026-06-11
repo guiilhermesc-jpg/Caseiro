@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { CONFIG3D } from './config3d.js';
 import { criaCidade } from './jogo/cidade.js';
-import { alturaColinas } from './jogo/terreno.js';
+import { alturaColinas, REGIAO } from './jogo/terreno.js';
 import { criaAvatar, animaAvatar, giraSuave } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
 import { criaGato, atualizaGato, PETS } from './jogo/pet.js';
@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV6.0 (v45)';
+const VERSAO = 'RV6.1 (v46)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -589,7 +589,7 @@ function montaAvatar() {
   avatar = criaAvatar(coresJogador);
   avatar.position.copy(pos);
   avatar.rotation.y = rotY;
-  avatar.userData.tipo = 'jogador'; // clicável (abre customização)
+  avatar.userData.tipo = 'jogador'; // clique direito/atalho; clique comum segue ações do mundo
   if (armado) poeArmaNaMao();       // mantém o graveto ao recriar (troca de cor)
   if (tochaOn) poeTochaNaMao(true); // mantém a tocha acesa
   poeCorpoEquip();                  // mantém as armaduras no corpo
@@ -648,7 +648,18 @@ const LOJAS_MAPA = [
   { x: -590, z: -52, icone: '⚒️' }, // Calder (forja sombria de Noctaria)
   { x: -588, z: -10, icone: '💰' },  // Mira Noctar (suprimentos)
 ];
-const minimapa = criaMinimapa({ obstaculos, ruas, marcos, lugares: LUGARES_MAPA, lojas: LOJAS_MAPA, alcance: 90 });
+const ROTAS_MAPA = [
+  { x1: -86, z1: -30, x2: -258, z2: -30, w: 8 },   // Vilarejo -> Venore
+  { x1: 72, z1: 0, x2: 500, z2: 0, w: 8 },         // Vilarejo -> Thais
+  { x1: 0, z1: -116, x2: 0, z2: -218, w: 6 },      // trilha da praia
+  { x1: -424, z1: -30, x2: -552, z2: -30, w: 8 },  // Venore -> Noctaria
+  { x1: -690, z1: -30, x2: -742, z2: -30, w: 7 },  // Noctaria -> Lua Partida
+  { x1: 180, z1: -126, x2: 180, z2: 66, w: 5 },    // Rio Fundo / referência de travessia
+];
+const minimapa = criaMinimapa({
+  obstaculos, ruas, marcos, lugares: LUGARES_MAPA, lojas: LOJAS_MAPA, rotas: ROTAS_MAPA, regiao: REGIAO, alcance: 90,
+  onMarcar: ({ nome, dist }) => mostraMensagem(`🗺️ ${nome}: aproximadamente ${dist} passos daqui.`),
+});
 LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
   const cnvL = document.createElement('canvas'); cnvL.width = 128; cnvL.height = 128;
   const cL = cnvL.getContext('2d'); cL.font = '88px Arial'; cL.textAlign = 'center'; cL.textBaseline = 'middle'; cL.fillText(L.icone, 64, 70);
@@ -833,7 +844,7 @@ function tentaDomar(d) {
     scene.remove(d.g);
     domaveisVivos.splice(domaveisVivos.indexOf(d), 1);
     trocaPet(d.tipo);
-    mostraMensagem(`✨ Você DOMOU o ${d.nome}! ${d.emoji} Ele agora te segue. (clique em você pra trocar de pet)`);
+    mostraMensagem(`✨ Você DOMOU o ${d.nome}! ${d.emoji} Ele agora te segue. Use o botão 👤 para trocar pet/cores.`);
     salvaJogo();
   } else {
     mostraMensagem(`💨 O ${d.nome} comeu ${d.item} e escapuliu... tente de novo!`);
@@ -1073,13 +1084,20 @@ function abreDialogo(npc) {
     : `${npc.nome}, ${npc.prof.toLowerCase()}. O que você quer?`;
   dialogo.abre(npc.nome, saud, opcoes);
 }
+function abreEditorPersonagem() {
+  if (!jogoIniciado) { mostraMensagem('Entre no jogo primeiro. 👤'); return; }
+  if (morto) return;
+  if (dialogo.aberto) { mostraMensagem('Feche a conversa antes de editar o personagem. 👤'); return; }
+  customizar.abre();
+}
 // CLIQUE/TOQUE: tap curto (sem arrasto) seleciona NPC / você / pet
 const rayTap = new THREE.Raycaster();
 function achaTipo(obj) { while (obj) { if (obj.userData && obj.userData.tipo) return obj; obj = obj.parent; } return null; }
 let tapIni = null;
 renderer.domElement.addEventListener('pointerdown', (e) => { tapIni = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 // CLIQUE = AÇÃO (estilo Roblox): clicar em NPC conversa, em bicho ataca/saqueia,
-// em você customiza; clicar no mundo executa a ação do lugar (abrir/pegar/pescar).
+// em pet monta/desmonta; clicar no mundo executa a ação do lugar (abrir/pegar/pescar).
+// Customização saiu do clique comum: botão 👤, tecla P ou clique direito no boneco.
 renderer.domElement.addEventListener('pointerup', (e) => {
   const ini = tapIni; tapIni = null;
   if (!ini || !jogoIniciado || morto || dialogo.aberto || customizar.aberto) return;
@@ -1100,7 +1118,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
       return;
     }
     if (tipo === 'pet') { montaOuDesmonta(); return; } // clicar no SEU pet = montar/desmontar
-    if (tipo === 'jogador') { customizar.abre(); return; }
+    if (tipo === 'jogador') break; // clique comum no boneco continua caindo na AÇÃO do lugar
     if (tipo === 'rato' || tipo === 'monstro' || tipo === 'boss') { // clicou no bicho
       const r = ratos.find((m) => m.g === alvo);
       if (r) {
@@ -1116,6 +1134,21 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     break;
   }
   executaAcao(); // clicou no mundo → mesma ação da tecla E / botão AÇÃO
+});
+renderer.domElement.addEventListener('contextmenu', (e) => {
+  e.preventDefault(); e.stopPropagation();
+  if (!jogoIniciado || morto || dialogo.aberto || customizar.aberto) return;
+  const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  rayTap.setFromCamera(ndc, camera);
+  let hitsTap = [];
+  try { hitsTap = rayTap.intersectObjects(scene.children, true); }
+  catch (err) { console.error('raycast do clique direito:', err); hitsTap = []; }
+  for (const h of hitsTap) {
+    const alvo = achaTipo(h.object);
+    if (!alvo) continue;
+    if (alvo.userData.tipo === 'jogador') { abreEditorPersonagem(); return; }
+    break;
+  }
 });
 
 // AÇÃO do lugar (compartilhada entre tecla E, botão AÇÃO e clique do mouse)
@@ -2152,6 +2185,20 @@ window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualiza
   document.body.appendChild(b);
   window.__btnSalvar = b;
 }
+{ // botão 👤: edição de personagem/pet SEM conflitar com AÇÃO do mundo
+  const b = document.createElement('div');
+  b.textContent = '👤';
+  b.title = 'Editar personagem e pet (P)';
+  b.style.cssText = 'position:fixed;top:238px;left:14px;width:48px;height:48px;z-index:41;display:none;'
+    + 'align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;touch-action:none;'
+    + 'background:rgba(16,22,32,.8);border:1px solid #3a4654;border-radius:12px;';
+  b.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); abreEditorPersonagem(); });
+  document.body.appendChild(b);
+  window.__btnEditarPersonagem = b;
+}
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyP' && jogoIniciado && !morto && !customizar.aberto) abreEditorPersonagem();
+});
 
 // =============================================================
 //  CONTA DEV/GM (igual GM do Tibia) — entre com o nome "gm", "adm"
@@ -2505,6 +2552,7 @@ criaSelecao({
       mostraMensagem(`💾 Bem-vindo de volta, ${nome}! Sua conta foi carregada.`);
     }
     if (window.__btnSalvar) window.__btnSalvar.style.display = 'flex';
+    if (window.__btnEditarPersonagem) window.__btnEditarPersonagem.style.display = 'flex';
     barraMagias.style.display = 'flex'; // barra de magias estilo Diablo (teclas 1-5 / toque)
     hud.mana(mana, MANA_MAX);
     // CONTA DEV/GM: entrar com o nome "gm", "adm" ou "dev" libera os poderes
