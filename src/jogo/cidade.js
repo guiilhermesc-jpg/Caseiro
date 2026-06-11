@@ -663,6 +663,20 @@ export function criaCidade() {
   [[MD.x - MD.r - 3, MD.z + 6, 1.4], [MD.x + 4, MD.z + MD.r + 3, 1.2], [MD.x + MD.r + 2, MD.z - 5, 1.1]]
     .forEach(([x, z, s]) => pedr(x, z, s));
   add(criaPlaca(MD.x - MD.r - 4, MD.z, 'Pico do Dragão — PERIGO', Math.PI / 2));
+  { // BOCA DAS CAVERNAS (RV5.8): entrada de pedra na encosta sul do Pico
+    const yBoca = alturaColinas(60, 266);
+    const rochaB = mat(0x4a473f, 1);
+    [[-2.2, 0], [2.2, 0]].forEach(([ox]) => {
+      const pilarB = new THREE.Mesh(new THREE.BoxGeometry(1.1, 3.6, 1.1), rochaB);
+      pilarB.position.set(60 + ox, yBoca + 1.8, 264.6); pilarB.castShadow = true; scene.add(pilarB);
+      obstaculos.push({ minX: 60 + ox - 0.7, maxX: 60 + ox + 0.7, minZ: 263.9, maxZ: 265.3 });
+    });
+    const vergaB = new THREE.Mesh(new THREE.BoxGeometry(5.8, 1.0, 1.3), rochaB);
+    vergaB.position.set(60, yBoca + 3.9, 264.6); vergaB.castShadow = true; scene.add(vergaB);
+    const escuro = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.2), new THREE.MeshBasicMaterial({ color: 0x05050a }));
+    escuro.position.set(60, yBoca + 1.7, 265.3); escuro.rotation.y = Math.PI; scene.add(escuro);
+    add(criaPlaca(55, 262, 'Cavernas do Pico — calor lá embaixo', 0.5));
+  }
   // bosque carbonizado na aproximação (árvores mortas + pedras + caveiras de pedra)
   [[10, 280], [70, 285], [-10, 300], [80, 305], [25, 312], [55, 268], [-20, 262]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
   [[0, 290, 1.6], [90, 300, 1.4], [60, 320, 1.8], [20, 340, 1.3]].forEach(([x, z, s]) => pedr(x, z, s));

@@ -18,7 +18,7 @@ import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
-import { criaEsgoto, criaCatacumbas, criaCriptaProfunda } from './jogo/esgoto.js';
+import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.7 (v42)';
+const VERSAO = 'RV5.8 (v43)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -215,6 +215,9 @@ function podeAndarBicho(x, z, y) {
     for (const o of criptaProfunda.colisores) {
       if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
     }
+    for (const o of cavernasPico.colisores) {
+      if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
+    }
     return true;
   }
   const arr = gradeCol.get(Math.floor(x / CELULA) * 4096 + Math.floor(z / CELULA));
@@ -234,6 +237,9 @@ catacumbas.grupo.visible = false;
 // CRIPTA PROFUNDA (RV4.7): o cofre dos reis, 2º andar abaixo do trono (y=-80)
 const criptaProfunda = criaCriptaProfunda(); scene.add(criptaProfunda.grupo);
 criptaProfunda.grupo.visible = false;
+// CAVERNAS DO PICO (RV5.8): a 3ª masmorra, por dentro da Montanha do Dragão
+const cavernasPico = criaCavernasPico(); scene.add(cavernasPico.grupo);
+cavernasPico.grupo.visible = false;
 { // boca da descida (marca escura no chão da câmara do trono)
   const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
   buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
@@ -493,6 +499,22 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
   const e = criaEsqueleto(x, z); e.position.y = -40;
   addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 11), { especie: 'esqueleto', y0: -40 });
 });
+// CAVERNAS DO PICO (RV5.8): escorpiões e trolls no calor da lava (y = -40)
+[[88, 282], [112, 298], [104, 278]].forEach(([x, z]) => {
+  const e = criaEscorpiao(x, z); e.position.y = -40;
+  addMonstro(e, 22, 8, 6, 2.1, false, areaMon(100, 290, 18), { veneno: true, especie: 'escorpiao', y0: -40 });
+});
+[[90, 298], [116, 284]].forEach(([x, z]) => {
+  const tr = criaTroll(x, z); tr.position.y = -40;
+  addMonstro(tr, 40, 14, 9, 1.9, false, areaMon(100, 290, 16), { especie: 'troll', y0: -40 });
+});
+{ // TROLL ANCIÃO: o dono das cavernas — guarda os cristais há gerações
+  const anciao = criaTroll(100, 302); anciao.position.y = -40; anciao.scale.setScalar(1.6);
+  addMonstro(anciao, 300, 110, 22, 1.5, true, areaMon(100, 296, 14), {
+    boss: true, especie: 'trollAnciao', y0: -40,
+    lootEspecial: { nome: 'Cristal do Pico', icone: '💠' },
+  });
+}
 // EVENTO NOTURNO (RV5.7): os mortos do Cemitério Abandonado se ERGUEM à
 // noite e viram pó ao amanhecer — o aviso da Gil sempre foi verdade
 const ESQUELETOS_NOTURNOS = [];
@@ -754,6 +776,10 @@ const QUESTS = [
   { id: 'terceiroSinal', npc: 'Hela', requer: 'guardiaoOvo', tipo: 'matar', especie: 'vorag', meta: 1, invoca: 'vorag',
     titulo: 'O Terceiro Sinal', pede: 'A coroa brilhou sob a terra. A seda cobriu a floresta. E agora o filhote anda ao seu lado... O TERCEIRO SINAL se cumpriu — e a Ossada no campo a leste NÃO está mais dormindo. Vá. Termine o que a profecia começou.',
     fala: 'Os ossos ainda andam?', recompensa: { ouro: 300, xp: 200, item: { nome: 'Relíquia de Vorag', icone: '🦴', slot: 'anel', defesa: 5 } } },
+  // RV5.8: o Mestre da Guilda quer os cristais das profundezas
+  { id: 'profundezasPico', npc: 'Ulric', tipo: 'matar', especie: 'trollAnciao', meta: 1,
+    titulo: 'Profundezas do Pico', pede: 'Acharam uma boca de caverna na encosta sul do Pico — e o que mora lá dentro não paga aluguel. Derrube o TROLL ANCIÃO e a Guilda fica devendo uma.',
+    fala: 'As cavernas já têm dono novo?', recompensa: { ouro: 160, xp: 120 } },
   // RV5.2: o caçador de Thais quer a cabeça do Senhor da Guerra
   { id: 'senhorGuerra', npc: 'Khan', tipo: 'matar', especie: 'orcWarlord', meta: 1,
     titulo: 'O Senhor da Guerra', pede: 'Os orcs das Ruínas da Estrada ganharam um COMANDANTE — e comandante junta exército. Derrube o Senhor da Guerra antes que ele marche sobre Thais.',
@@ -800,7 +826,7 @@ const customizar = criaCustomizar({
 const PRECOS = {
   'Cauda de rato': 2, 'Osso': 2, 'Couro': 4, 'Erva': 3, 'Frasco': 5,
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
-  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500,
+  'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500, 'Cristal do Pico': 150,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -1287,6 +1313,28 @@ function sobeDaCripta() {
   sobe2.onAcao = () => sobeDaCripta();
   interativos.push(sobe2);
 }
+// CAVERNAS DO PICO (RV5.8): descida pela boca de caverna na encosta sul
+function desceCavernas() {
+  if (montado) { montado = false; mostraMensagem('Você desmontou pra descer. 🐾'); }
+  acessoAtual = 0;
+  subsoloAtual = cavernasPico;
+  cavernasPico.grupo.visible = true;
+  chaoY = -40; areaAtiva = cavernasPico.bounds; noEsgoto = true;
+  const a = cavernasPico.acessos[0];
+  avatar.position.set(a.x + 2.5, -40, a.z - 2); vy = 0; noChao = true;
+  hemi.intensity = 0.08; sun.intensity = 0.05;
+  minimapa.esconde();
+  sons.corda();
+  mostraMensagem(tochaOn ? '🌋 O calor sobe das profundezas... cuidado onde pisa.' : 'Está escuro! Acenda a tocha — tecla T 🔦');
+}
+{
+  const it = { x: 60, z: 266, raio: 3.0, titulo: '🌋 Cavernas do Pico', acao: 'Entrar nas Cavernas do Pico 🌋' };
+  it.onAcao = () => desceCavernas();
+  interativos.push(it);
+}
+// a LAVA das cavernas QUEIMA de verdade (entra nos campos de chão)
+cavernasPico.lavas.forEach((L) => CAMPOS.push({ tipo: 'lava', x: L.x, z: L.z, r: L.r, y: L.y }));
+
 // BAÚ ANCESTRAL: o tesouro dos reis (UMA vez por conta — vai no save)
 let bauCriptaAberto = false;
 {
@@ -1654,6 +1702,7 @@ const RAROS = {
   cobra: { chance: 0.02, item: { nome: 'Dente do Profundo', icone: '🦷', slot: 'colar', defesa: 3 } },
   orcWarlord: { chance: 0.08, item: { nome: 'Machado do Senhor da Guerra', icone: '🪓', slot: 'maoDir', dano: 28, arma: true } },
   vorag: { chance: 0.15, item: { nome: 'Presa de Vorag', icone: '🦴', slot: 'colar', defesa: 6 } },
+  trollAnciao: { chance: 0.08, item: { nome: 'Clava de Magma', icone: '🌋', slot: 'maoDir', dano: 24, arma: true } },
 };
 // === VORAG, O PRIMEIRO (RV5.3): o finale da lore — a Ossada SE ERGUE ===
 // Invocado ao aceitar "O Terceiro Sinal" (e re-invocado no load, se a
@@ -1816,7 +1865,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -1948,7 +1997,7 @@ window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualiza
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -2174,7 +2223,11 @@ const DISTRITOS = [
 let localEl, localNome = '';
 function atualizaLocal() {
   let nome = 'Terras de Venor', melhorD = Infinity;
-  if (noEsgoto) nome = subsoloAtual === catacumbas ? 'Catacumbas de Venore' : 'Esgoto';
+  if (noEsgoto) {
+    nome = subsoloAtual === catacumbas ? 'Catacumbas de Venore'
+      : subsoloAtual === criptaProfunda ? 'Cripta Profunda'
+      : subsoloAtual === cavernasPico ? 'Cavernas do Pico' : 'Esgoto';
+  }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
   localNome = nome;

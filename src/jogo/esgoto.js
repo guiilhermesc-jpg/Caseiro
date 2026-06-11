@@ -244,3 +244,70 @@ export function criaCriptaProfunda() {
     acessos: [], // sobe-se pela CORDA própria (interativo), não pela saída genérica
   };
 }
+
+// =============================================================
+//  CAVERNAS DO PICO (RV5.8) · a 3ª masmorra (y = -40), cavada POR
+//  DENTRO da Montanha do Dragão: rios de LAVA (o calor que choca os
+//  ovos lá em cima), cristais que brilham no escuro, estalagmites e
+//  trolls das profundezas. Boca de caverna na encosta sul.
+//  Mesmo contrato dos subsolos: { grupo, colisores, bounds, acessos,
+//  saidas, lavas } (lavas viram CAMPOS que queimam, no main3d).
+// =============================================================
+export function criaCavernasPico() {
+  const g = new THREE.Group();
+  const CX = 100, CZ = 290, YC = -40;
+  const W = 56, D = 42, alt = 5.5, t = 0.8;
+  const rocha = mat(0x3a332e, 1), rochaEsc = mat(0x241f1b, 1);
+
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), rocha);
+  piso.position.set(CX, YC - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
+  const teto = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), rochaEsc);
+  teto.position.set(CX, YC + alt, CZ); g.add(teto);
+
+  const colisores = [];
+  function parede(cx, cz, w, d) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), rocha);
+    mesh.position.set(cx, YC + alt / 2, cz); mesh.receiveShadow = true; g.add(mesh);
+    colisores.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }
+  parede(CX, CZ - D / 2, W, t); parede(CX, CZ + D / 2, W, t);
+  parede(CX - W / 2, CZ, t, D); parede(CX + W / 2, CZ, t, D);
+
+  // RIOS DE LAVA cruzando a caverna (visual emissivo; o dano vem dos CAMPOS)
+  const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 1.0, roughness: 0.55 });
+  const lavas = [];
+  [[CX - 14, CZ + 6, 4.2], [CX + 8, CZ - 9, 3.4], [CX + 18, CZ + 11, 2.8]].forEach(([lx, lz, lr]) => {
+    const poca = new THREE.Mesh(new THREE.CircleGeometry(lr, 16), lavaMat);
+    poca.rotation.x = -Math.PI / 2; poca.position.set(lx, YC + 0.04, lz); g.add(poca);
+    lavas.push({ x: lx, z: lz, r: lr, y: YC });
+    const luzL = new THREE.PointLight(0xff6a2a, 1.3, lr * 4.5, 2);
+    luzL.position.set(lx, YC + 2.2, lz); g.add(luzL);
+  });
+  // CRISTAIS do Pico (azuis/roxos, emissivos — os tesouros da montanha)
+  [[CX - 22, CZ - 12, 0x6ab0ff], [CX + 2, CZ + 14, 0x9a6aff], [CX + 21, CZ - 4, 0x6ab0ff], [CX - 6, CZ - 16, 0x9a6aff]].forEach(([cx2, cz2, cor]) => {
+    const cr = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.8, 6),
+      new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.5, roughness: 0.25 }));
+    cr.position.set(cx2, YC + 0.9, cz2); cr.rotation.z = (Math.random() - 0.5) * 0.4; g.add(cr);
+  });
+  // estalagmites (colisores — o caminho serpenteia)
+  [[CX - 8, CZ + 1], [CX + 12, CZ + 4], [CX - 18, CZ - 4], [CX + 4, CZ - 13], [CX + 20, CZ - 14]].forEach(([sx, sz]) => {
+    const est = new THREE.Mesh(new THREE.ConeGeometry(0.9, 3.6, 7), rochaEsc);
+    est.position.set(sx, YC + 1.8, sz); est.castShadow = true; g.add(est);
+    const estT = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.4, 7), rochaEsc);
+    estT.position.set(sx, YC + alt - 1.2, sz); estT.rotation.x = Math.PI; g.add(estT);
+    colisores.push({ minX: sx - 0.9, maxX: sx + 0.9, minZ: sz - 0.9, maxZ: sz + 0.9 });
+  });
+  // corda de acesso (sul — sobe pra boca da caverna na encosta)
+  const a = { x: CX - 20, z: CZ + 17 };
+  const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt - 0.2, 6), mat(0x9a7a44, 1));
+  corda.position.set(a.x, YC + (alt - 0.2) / 2, a.z); g.add(corda);
+  const luzEntrada = new THREE.PointLight(0xbfd8ff, 1.0, 11, 2);
+  luzEntrada.position.set(a.x, YC + alt - 0.6, a.z); g.add(luzEntrada);
+
+  return {
+    grupo: g, colisores, lavas,
+    bounds: { minX: CX - W / 2 + 1, maxX: CX + W / 2 - 1, minZ: CZ - D / 2 + 1, maxZ: CZ + D / 2 - 1 },
+    acessos: [a],
+    saidas: [{ x: 60, z: 266 }], // boca da caverna na encosta sul do Pico
+  };
+}
