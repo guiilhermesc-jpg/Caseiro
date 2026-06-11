@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.6 (v41)';
+const VERSAO = 'RV5.7 (v42)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -492,6 +492,15 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
 [[-318, -18], [-330, -2], [-342, -16], [-312, -4]].forEach(([x, z]) => {
   const e = criaEsqueleto(x, z); e.position.y = -40;
   addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 11), { especie: 'esqueleto', y0: -40 });
+});
+// EVENTO NOTURNO (RV5.7): os mortos do Cemitério Abandonado se ERGUEM à
+// noite e viram pó ao amanhecer — o aviso da Gil sempre foi verdade
+const ESQUELETOS_NOTURNOS = [];
+[[126, -52], [134, -66], [140, -58]].forEach(([x, z]) => {
+  const e = criaEsqueleto(x, z);
+  const r = addMonstro(e, 30, 12, 7, 1.9, false, areaMon(130, -60, 22), { especie: 'esqueleto', noturno: true });
+  r.vivo = false; r.g.visible = false; // dormem de dia
+  ESQUELETOS_NOTURNOS.push(r);
 });
 // NINHO DAS ARANHAS (RV4.6): a Tecelã e as crias na Floresta do Oeste
 [[-148, -62], [-141, -68], [-152, -70]].forEach(([x, z]) => addMonstro(criaAranhaPequena(x, z), 12, 4, 4, 2.6, false, areaMon(-146, -66, 13), { veneno: true, especie: 'aranhaPequena' }));
@@ -1302,6 +1311,7 @@ const C_FOG_DIA = new THREE.Color(0xcfe0ee), C_FOG_NOITE = new THREE.Color(0x111
 let tempoDia = 0.3; // começa de manhã
 let ehNoite = false;
 let avisoNoite = false; // lembrete da tocha (1× por noite)
+let noiteAnterior = false; // detecta a VIRADA do dia (eventos noturnos)
 function aplicaDiaNoite(dt) {
   tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
   const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
@@ -1327,6 +1337,21 @@ function aplicaDiaNoite(dt) {
     avisoNoite = true; mostraMensagem('🌙 A noite caiu de verdade — acenda a tocha (tecla T)!');
   }
   if (!ehNoite) avisoNoite = false;
+  // EVENTO NOTURNO (RV5.7): a virada do dia comanda os mortos do cemitério
+  if (ehNoite !== noiteAnterior) {
+    noiteAnterior = ehNoite;
+    if (ehNoite) {
+      for (const r of ESQUELETOS_NOTURNOS) {
+        if (!r.corpse) { r.vivo = true; r.g.visible = true; r.hp = r.hpMax; }
+      }
+      if (jogoIniciado) setTimeout(() => mostraMensagem('💀 Os mortos se ergueram no Cemitério Abandonado...'), 2600);
+    } else {
+      for (const r of ESQUELETOS_NOTURNOS) {
+        r.vivo = false; r.corpse = false; r.g.visible = false; r.respawnAt = null;
+        if (r.barraHP) r.barraHP.visible = false;
+      }
+    }
+  }
   // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
   luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
   if (luaMat) luaMat.emissiveIntensity = 0.35 + noite * 0.85;
@@ -2713,6 +2738,7 @@ function passo() {
   // corpos de bicho somem em 30s; respawn calibrado (rato 25s, boss 60s)
   for (const r of ratos) {
     if (r.corpse && tempo > r.despawnAt) { r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25); }
+    if (r.noturno && !ehNoite) continue; // mortos noturnos só voltam com a noite (RV5.7)
     if (!r.vivo && !r.corpse && r.respawnAt && tempo > r.respawnAt) reviveBicho(r);
   }
   if (mixerDragao) mixerDragao.update(dt); // animação esquelética do dragão 3D (se o .glb existir)

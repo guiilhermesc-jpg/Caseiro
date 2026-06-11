@@ -14,6 +14,10 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 // Elenco distribuído pela cidade (cada ofício no seu lugar)
 // Cada NPC fica NO SEU comércio/posto (espalhados pela cidade, não no meio da praça)
+// RV5.7: acampamento do Mascate sorteado a cada sessão (os 3 pontos têm
+// fogueira na beira da estrada de Thais)
+const POSTO_MASCATE = [[122, 17], [210, -17], [382, 19]][Math.floor(Math.random() * 3)];
+
 const ROSTER = [
   { nome: 'Otto', prof: 'Mercador', post: { x: 17, z: 11 }, cor: 0x7a4632, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
     falas: { trabalho: 'Minha banca fica aqui na Rua do Mercado. Compro seu loot!', dica: 'Quanto mais você me vende, mais coisa RARA eu consigo trazer pras prateleiras.' },
@@ -152,6 +156,15 @@ const ROSTER = [
     falas: { trabalho: 'Anoto tudo que acontece em Venore: chegadas, partidas e os boatos do mercado.', dica: 'Dizem que o Rei Esqueleto das catacumbas usava uma coroa que vale uma fortuna.' } },
   { nome: 'Iva', prof: 'Lavadeira', post: { x: -346, z: -2 }, home: { x: -396, z: 44 }, cor: 0x6a8a5a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Lavo roupa na beira do canal desde menina. A água conta segredos.', dica: 'As barcaças trazem especiarias de manhã cedinho. O cheiro toma o calçadão.' } },
+  // RV5.7: o MASCATE VIAJANTE — cada sessão ele acampa num ponto diferente
+  // da estrada de Thais (procure as fogueiras!) com mercadoria que só ele tem
+  { nome: 'Zé das Rotas', prof: 'Mascate', post: { x: POSTO_MASCATE[0], z: POSTO_MASCATE[1] }, home: { x: POSTO_MASCATE[0], z: POSTO_MASCATE[1] }, cor: 0x9c6a2a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'Compro ali, vendo aqui, durmo onde a fogueira deixa. A estrada é minha loja.', dica: 'Amanhã? Amanhã eu já tô noutro acampamento. Mascate parado é mascate pobre.' },
+    loja: [
+      { nome: 'Poção Grande', icone: '🧉', preco: 18, slot: 'pocao', usavel: 'pocaoGrande' },
+      { nome: 'Virotes (12)', icone: '🏹', preco: 15, pacote: { nome: 'Virote', icone: '🏹', qtd: 12 } },
+      { nome: 'Capa do Viajante', icone: '🧥', preco: 120, slot: 'tronco', defesa: 4 },
+    ] },
 ];
 
 // casas (residências) — pontos LIVRES na rua em frente às casas (os antigos
