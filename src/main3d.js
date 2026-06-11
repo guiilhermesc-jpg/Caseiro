@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV5.8 (v43)';
+const VERSAO = 'RV5.9 (v44)';
 { // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -671,6 +671,79 @@ function mostraPrompt(dica) {
       + '<div style="font-size:11px;opacity:.85;margin-top:2px;">aperte <b>E</b> ou o botão <b>AÇÃO</b></div>';
     promptEl.style.display = 'block';
   } else { promptEl.style.display = 'none'; }
+}
+
+// RV5.9: presença de chefe. Além da barra pequena sobre o monstro, chefes
+// ganham uma barra grande de RPG online no topo, com nome e fase.
+let bossHudEl = null, bossHudFill = null, bossHudNome = null, bossHudInfo = null, bossHudAte = 0, bossHudAlvo = null;
+const NOMES_CHEFES = {
+  dragao: 'Dragão do Pico',
+  vorag: 'Vorag, o Primeiro',
+  reiEsqueleto: 'Rei Esqueleto',
+  orcWarlord: 'Senhor da Guerra',
+  trollAnciao: 'Troll Ancião',
+  aranha: 'Aranha Tecelã',
+  cobra: 'Guardião do Esgoto',
+};
+function nomeChefe(r) {
+  if (!r) return 'Chefe';
+  if (r.lord) return 'Dragon Lord';
+  return NOMES_CHEFES[r.especie] || (r.boss ? 'Criatura Poderosa' : 'Criatura');
+}
+function garanteBossHud() {
+  if (bossHudEl) return;
+  bossHudEl = document.createElement('div');
+  bossHudEl.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:47;'
+    + 'width:min(86vw,680px);display:none;pointer-events:none;font-family:Arial,sans-serif;color:#f4ead6;'
+    + 'filter:drop-shadow(0 8px 18px rgba(0,0,0,.55));';
+  const painel = document.createElement('div');
+  painel.style.cssText = 'background:linear-gradient(180deg,rgba(32,20,17,.94),rgba(12,14,18,.92));'
+    + 'border:1px solid rgba(245,180,90,.55);border-radius:8px;padding:8px 10px 10px;';
+  bossHudNome = document.createElement('div');
+  bossHudNome.style.cssText = 'font-weight:bold;text-align:center;font-size:14px;letter-spacing:0;';
+  bossHudInfo = document.createElement('div');
+  bossHudInfo.style.cssText = 'text-align:center;font-size:11px;color:#d7b98b;margin:2px 0 7px;';
+  const trilho = document.createElement('div');
+  trilho.style.cssText = 'height:12px;background:#1b1110;border:1px solid rgba(255,255,255,.16);border-radius:5px;overflow:hidden;';
+  bossHudFill = document.createElement('div');
+  bossHudFill.style.cssText = 'height:100%;width:100%;background:linear-gradient(90deg,#b52820,#f0822d,#ffd06a);'
+    + 'box-shadow:0 0 12px rgba(255,96,24,.55);transition:width .16s;';
+  trilho.appendChild(bossHudFill);
+  painel.appendChild(bossHudNome); painel.appendChild(bossHudInfo); painel.appendChild(trilho);
+  bossHudEl.appendChild(painel);
+  document.body.appendChild(bossHudEl);
+}
+function mostraBossHud(r, dur = 5) {
+  if (!r || !r.boss || !r.vivo) return;
+  garanteBossHud();
+  bossHudAlvo = r;
+  bossHudAte = Math.max(bossHudAte, tempo + dur);
+  bossHudEl.style.display = 'block';
+  const f = Math.max(0, Math.min(1, r.hp / r.hpMax));
+  bossHudFill.style.width = `${Math.max(1, f * 100)}%`;
+  bossHudFill.style.background = f > 0.5
+    ? 'linear-gradient(90deg,#b52820,#f0822d,#ffd06a)'
+    : f > 0.25
+      ? 'linear-gradient(90deg,#9d1f1a,#e0502a,#f2b13c)'
+      : 'linear-gradient(90deg,#611313,#b21d1d,#ff5a2a)';
+  bossHudNome.textContent = nomeChefe(r);
+  const fase = r.atira === 'fogo'
+    ? (f < 0.35 ? 'Fúria: fogo acelerado' : 'Sopro de fogo')
+    : r.forte ? 'Elite' : 'Chefe';
+  bossHudInfo.textContent = `${Math.max(0, Math.ceil(r.hp))}/${r.hpMax} PV · ${fase}`;
+  if (r.boss && r.atira === 'fogo' && f < 0.35 && !r._faseFuria) {
+    r._faseFuria = true;
+    mostraMensagem(`🔥 ${nomeChefe(r)} entrou em fúria!`);
+  }
+}
+function atualizaBossHud() {
+  if (!bossHudEl || !bossHudAlvo) return;
+  if (!bossHudAlvo.vivo || bossHudAlvo.corpse || tempo > bossHudAte) {
+    bossHudEl.style.display = 'none';
+    bossHudAlvo = null;
+    return;
+  }
+  mostraBossHud(bossHudAlvo, 0);
 }
 
 // --- diálogo (NPC), customização (você) e troca de pet ---
@@ -1638,16 +1711,28 @@ function disparaFlecha(r) {
 // que às vezes deixa LAVA no chão por 12s — quem pisar QUEIMA)
 const projeteis = [];
 const camposTemp = [];
+const avisosFogo = [];
 const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 1 });
 const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
 const MAT_LAVA_CHAO = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
 aplicaTexturaReal(MAT_LAVA_CHAO, 'lava', 1.5, 1.5, true);
+function avisoFogoNoChao(x, z, y, r = 2.35) {
+  const matAlvo = new THREE.MeshBasicMaterial({ color: 0xff6a24, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false });
+  const alvo = new THREE.Mesh(new THREE.RingGeometry(r * 0.62, r, 28), matAlvo);
+  alvo.rotation.x = -Math.PI / 2;
+  alvo.position.set(x, y + 0.14, z);
+  alvo.renderOrder = 8;
+  scene.add(alvo);
+  avisosFogo.push({ mesh: alvo, mat: matAlvo, t: 0, dur: 0.78 });
+}
 function disparaBicho(r) {
   const fogo = r.atira === 'fogo';
   const m = new THREE.Mesh(new THREE.SphereGeometry(fogo ? 0.5 : 0.36, 10, 10), fogo ? MAT_PROJ_FOGO : MAT_PROJ_MAGIA);
   const de = r.g.position.clone(); de.y += r.tiroAltura ?? (fogo ? 7.4 : 4.2); // sai da boca/olho
   const ate = avatar.position.clone(); ate.y += 1.4;          // mira onde você ESTÁ (corre pra esquivar!)
   m.position.copy(de); scene.add(m);
+  if (fogo) avisoFogoNoChao(ate.x, ate.z, avatar.position.y, r.boss ? 2.65 : 2.2);
+  if (r.boss) mostraBossHud(r, 5.5);
   projeteis.push({ m, de, ate, t: 0, dur: Math.max(0.3, de.distanceTo(ate) / 22), dano: r.danoTiro || 10, fogo });
 }
 function criaLavaTemp(x, z, y) {
@@ -1658,13 +1743,15 @@ function criaLavaTemp(x, z, y) {
 
 // EXPLOSÃO da Runa de Fogo (esfera que cresce e some)
 const explosoes = [];
-function explosaoFogo() {
+function explosaoFogoEm(pos, escala = 1, yOff = 1.2) {
   const m = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10),
     new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0.7, depthWrite: false }));
-  m.position.copy(avatar.position); m.position.y += 1.2;
+  m.position.copy(pos); m.position.y += yOff;
+  m.scale.setScalar(escala);
   scene.add(m);
-  explosoes.push({ m, t: 0 });
+  explosoes.push({ m, t: 0, base: escala });
 }
+function explosaoFogo() { explosaoFogoEm(avatar.position, 1); }
 function atacar() {
   const dano = danoArma;
   if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: tiro à distância (gasta 1 flecha)
@@ -1731,6 +1818,7 @@ function invocaVorag() {
 // some sozinha em 4s — jogabilidade de verdade, sem ler número em texto
 function atualizaBarraHP(r) {
   if (!r || !r.vivo) return;
+  if (r.boss) mostraBossHud(r, 6);
   if (!r.barraHP) {
     const cnv = document.createElement('canvas'); cnv.width = 64; cnv.height = 10;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
@@ -1753,6 +1841,7 @@ function atualizaBarraHP(r) {
 function mataBicho(r) {
   r.vivo = false; r.corpse = true;
   if (r.barraHP) r.barraHP.visible = false;
+  if (bossHudAlvo === r && bossHudEl) { bossHudEl.style.display = 'none'; bossHudAlvo = null; }
   r.g.rotation.z = Math.PI / 2;      // tomba (corpo no chão)
   if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0x000000);
   r.loot = rollLoot(r.boss || r.forte);
@@ -2626,6 +2715,20 @@ function passo() {
   atualizaNPCs(npcs, dt, colide, ehNoite);
   atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho, alturaTerreno);
 
+  if (jogoIniciado && !morto) {
+    let chefePerto = null, chefeDist = Infinity;
+    for (const r of ratos) {
+      if (!r.boss || !r.vivo || r.corpse || Math.abs(r.g.position.y - avatar.position.y) > 8) continue;
+      const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+      const alcance = r.dragao || r.atira === 'fogo' ? 42 : 24;
+      if (d < alcance && d < chefeDist) { chefeDist = d; chefePerto = r; }
+    }
+    if (chefePerto && tempo > (chefePerto._bossHudCooldown || 0)) {
+      chefePerto._bossHudCooldown = tempo + 2.2;
+      mostraBossHud(chefePerto, 2.8);
+    }
+  }
+
   // VOO DO DRAGÃO: de tempos em tempos ele decola do pico, plana sobre Venore
   // atrás de comida e volta — dá pra ver ele cruzando o céu da cidade!
   if (dragao.vivo && !dragao.corpse) {
@@ -2666,7 +2769,8 @@ function passo() {
     const dT = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
     if (dT < 2.5 || dT > r.alcanceTiro) continue;
     if (tempo > (r.proxTiro || 0)) {
-      r.proxTiro = tempo + (r.cadencia || 3);
+      const furia = r.boss && r.atira === 'fogo' && r.hp / r.hpMax < 0.35;
+      r.proxTiro = tempo + (r.cadencia || 3) * (furia ? 0.72 : 1);
       r.g.rotation.y = Math.atan2(avatar.position.x - r.g.position.x, avatar.position.z - r.g.position.z);
       disparaBicho(r);
     }
@@ -2676,6 +2780,10 @@ function passo() {
     const p = projeteis[i]; p.t += dt / p.dur;
     if (p.t < 1) { p.m.position.lerpVectors(p.de, p.ate, p.t); continue; }
     scene.remove(p.m); projeteis.splice(i, 1);
+    if (p.fogo) {
+      const impacto = p.ate.clone(); impacto.y = avatar.position.y;
+      explosaoFogoEm(impacto, 1.15, 0.95);
+    }
     const dI = Math.hypot(p.ate.x - avatar.position.x, p.ate.z - avatar.position.z);
     if (dI < 1.9 && jogoIniciado) {
       mostraMensagem(p.fogo ? `🔥 Bola de fogo do dragão! (-${p.dano})` : `🔮 Rajada mágica do beholder! (-${p.dano})`);
@@ -2684,6 +2792,14 @@ function passo() {
     if (p.fogo && Math.random() < 0.5) criaLavaTemp(p.ate.x, p.ate.z, alturaTerreno(p.ate.x, p.ate.z)); // fogo vira LAVA no chão
   }
   // lava temporária do dragão evapora
+  for (let i = avisosFogo.length - 1; i >= 0; i--) {
+    const a = avisosFogo[i]; a.t += dt;
+    const f = a.t / a.dur;
+    if (f >= 1) { scene.remove(a.mesh); avisosFogo.splice(i, 1); continue; }
+    a.mesh.scale.setScalar(1 + Math.sin(f * Math.PI) * 0.18);
+    a.mat.opacity = 0.5 * (1 - f);
+  }
+  atualizaBossHud();
   for (let i = camposTemp.length - 1; i >= 0; i--) {
     if (tempo > camposTemp[i].expiraAt) { scene.remove(camposTemp[i].mesh); camposTemp.splice(i, 1); }
   }
@@ -2709,7 +2825,7 @@ function passo() {
   for (let i = explosoes.length - 1; i >= 0; i--) {
     const e = explosoes[i]; e.t += dt * 3;
     if (e.t >= 1) { scene.remove(e.m); explosoes.splice(i, 1); continue; }
-    e.m.scale.setScalar(1 + e.t * 4.5); e.m.material.opacity = 0.7 * (1 - e.t);
+    e.m.scale.setScalar((e.base || 1) * (1 + e.t * 4.5)); e.m.material.opacity = 0.7 * (1 - e.t);
   }
   if (jogoIniciado) {
     for (const r of ratos) {

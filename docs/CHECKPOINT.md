@@ -1,15 +1,15 @@
 # 📌 CHECKPOINT — Jogo "Venore / Caseiro"
 > Documento-mestre para **retomar o projeto do zero** sem perder contexto.
-> Atualizado: 10/06/2026 (fim do dia). Leia este arquivo primeiro ao reabrir o projeto.
+> Atualizado: 11/06/2026 (Patch 2 v44). Leia este arquivo primeiro ao reabrir o projeto.
 
 ---
 
-## 🤝 HANDOFF PRO CODEX (11/06/2026) — 43ª RODADA EM ABERTO
+## 🤝 HANDOFF PRO CODEX (11/06/2026) — 44ª RODADA EM ABERTO
 > O maestro vai passar algumas rodadas pro Codex. **LEIA ESTA SEÇÃO INTEIRA antes de tocar em qualquer arquivo.**
 
 ### 📦 ESTADO EXATO
 - **Produção**: caseiro.pages.dev está no **PATCH 1 (v38)**; servidor de contas no Railway ON com Volume `/data` + `DATA_DIR=/data` (testado em produção via wss).
-- **main (GitHub)**: acumula **v39→v43 SEM deploy** — 38ª (portões/casas/chão vivo), 39ª (entradas/barra de HP/sons), 40ª (biomas), 41ª (mortos noturnos + Mascate), 42ª (Cavernas do Pico). Selo atual: **RV5.8 (v43)**. Diário completo das rodadas 12ª→42ª no FIM deste arquivo.
+- **main (GitHub)**: acumula **v39→v44 SEM deploy** — 38ª (portões/casas/chão vivo), 39ª (entradas/barra de HP/sons), 40ª (biomas), 41ª (mortos noturnos + Mascate), 42ª (Cavernas do Pico), 43ª (chefes com presença). Selo atual: **RV5.9 (v44)**. Diário completo das rodadas 12ª→43ª no FIM deste arquivo.
 
 ### 📏 REGRAS DO MAESTRO (não negociáveis)
 1. Responder SEMPRE em **português**.
@@ -39,10 +39,10 @@
 - **.ps1 com acento** precisa de UTF-8 com BOM (regra geral da máquina do maestro).
 
 ### 🔭 FILA SUGERIDA (Patch 2)
-Deploy do v39→v43 quando o maestro liberar · GLBs CC0 nos slots (o maestro baixa de quaternius.com/poly.pizza) · interiores restantes (Anselmo?) · mais quests em cadeia · launcher Electron/Tauri · perf mobile (medir draw calls de verdade no aparelho).
+Deploy do v39→v44 quando o maestro liberar · GLBs CC0 nos slots (o maestro baixa de quaternius.com/poly.pizza) · interiores restantes (Anselmo?) · mais quests em cadeia · launcher Electron/Tauri · perf mobile (medir draw calls de verdade no aparelho).
 
-### 🧪 ROTEIRO DE TESTE DO ACUMULADO (v39→v43)
-Portões nas 3 entradas do vilarejo · 7 casas entráveis novas (com batente/verga/degrau) · barra de HP nos bichos ao bater · rangido de porta · lamparina nas mesas · chão com manchas/flores/seixos · juncos em toda água · cogumelos na floresta · trigo na fazenda · mortos erguendo no cemitério à noite · Mascate num dos 3 acampamentos · Cavernas do Pico (boca em 60,266 — lava queima, Troll Ancião) · letreiro certo nos 4 subsolos.
+### 🧪 ROTEIRO DE TESTE DO ACUMULADO (v39→v44)
+Portões nas 3 entradas do vilarejo · 7 casas entráveis novas (com batente/verga/degrau) · barra de HP nos bichos ao bater · rangido de porta · lamparina nas mesas · chão com manchas/flores/seixos · juncos em toda água · cogumelos na floresta · trigo na fazenda · mortos erguendo no cemitério à noite · Mascate num dos 3 acampamentos · Cavernas do Pico (boca em 60,266 — lava queima, Troll Ancião) · letreiro certo nos 4 subsolos · barra grande de CHEFE no topo · aviso circular no chão antes/na chegada da bola de fogo · fase de fúria dos dragões.
 > 🔧 Próximos candidatos: GLBs CC0 do maestro nos slots (vegetação/monstros/pets) · 2º andar das catacumbas (cripta mais funda)? · conta online (decisão do maestro) · empacotar launcher (Electron/Tauri) quando for "lançar".
 > ⚖️ Regra de sempre (o maestro pediu réplica 1:1 do Tibia e foi explicado o porquê do NÃO): Tibia é INSPIRAÇÃO de estilo — mapa, prédios, nomes e falas do jogo da CipSoft são protegidos e replicá-los põe o projeto publicado em risco. MECÂNICAS são livres (depósito, barco, lojas) e assets CC0 (Quaternius/Kenney/poly.pizza) podem ser usados 1:1 — os slots GLB estão prontos.
 **Estado:** jogo em produção (caseiro.pages.dev). Conta GM = nome `gm`/`adm`/`dev` + tecla G.
@@ -103,6 +103,7 @@ Portões nas 3 entradas do vilarejo · 7 casas entráveis novas (com batente/ver
 53. **💀 MORTOS NOTURNOS** (41ª): à noite, 3 esqueletos extras SE ERGUEM no Cemitério Abandonado (aviso na tela) e rondam mais longe; ao amanhecer viram pó — respawn blindado contra ressuscitar de dia.
 54. **🧳 MASCATE VIAJANTE** (41ª): Zé das Rotas acampa num dos 3 pontos de fogueira da estrada (sorteado a cada sessão!) — vende Poção Grande (18🪙), Virotes baratos (15🪙) e a CAPA DO VIAJANTE (tronco def 4, 120🪙) que só ele tem.
 55. **🌋 CAVERNAS DO PICO** (42ª): 3ª masmorra, POR DENTRO da Montanha do Dragão — boca de pedra na encosta sul (60,266): rios de LAVA que queimam de verdade (entram nos campos de chão), cristais azuis/roxos brilhando, estalagmites com colisão, 3 escorpiões venenosos + 2 trolls + TROLL ANCIÃO (boss 300hp, dropa Cristal do Pico = 150🪙; raro 8%: Clava de Magma dano 24) · quest do Ulric "Profundezas do Pico" (→160🪙 +120xp) · o letreiro 📍 agora acerta TODOS os subsolos (Cripta Profunda mostrava "Esgoto").
+56. **🔥 CHEFES COM PRESENÇA** (43ª): chefes agora ganham barra grande no topo ao aproximar/bater/atirar, com nome, PV e fase; dragões entram em FÚRIA abaixo de 35% e aceleram fogo; bolas de fogo marcam o chão com círculo pulsante e explodem no impacto — mais leitura, perigo e clima de RPG online.
 
 ### 🎨 MISSÃO QUE CONTINUA: MODELOS PROFISSIONAIS (GLB)
 A vegetação inteira virou **InstancedMesh** (~900 meshes → ~9 draw calls, vegetacao.js) com **slots GLB prontos**: o maestro baixa Quaternius Ultimate Nature/Stylized Nature (poly.pizza, CC0, GLB) e solta em `public/modelos/`:
@@ -410,3 +411,5 @@ bichos da superfície (troll/ciclope/aranha) + tocha inicial →
 **41ª rodada (💀🧳 RV5.7 — EVENTOS DE MUNDO, v42):** o mundo passa a ACONTECER. 💀 **mortos noturnos** (`ESQUELETOS_NOTURNOS` no main3d): 3 esqueletos extras no Cemitério Abandonado que nascem mortos/invisíveis e a VIRADA da noite (`noiteAnterior` em aplicaDiaNoite) os ergue (hp cheio, aviso "💀 Os mortos se ergueram..." 2.6s após o aviso da tocha); ao amanhecer viram pó (vivo/corpse/visible/respawnAt limpos + barra de HP escondida); guarda no loop de respawn (`r.noturno && !ehNoite → continue`) impede ressuscitar de dia · 🧳 **MASCATE VIAJANTE** (npcs.js): "Zé das Rotas" acampa num dos **3 pontos de fogueira da estrada sorteado por sessão** (`POSTO_MASCATE` antes do ROSTER — cuidado com TDZ); loja exclusiva: Poção Grande 18🪙, Virotes 15🪙 (mais barato que Falk/Tonho) e **Capa do Viajante** (tronco def 4, 120🪙) · Selo **RV5.7 (v42)**. Build ✓. **Deploy pendente** (produção no v38).
 
 **42ª rodada (🌋 RV5.8 — CAVERNAS DO PICO, v43):** a 3ª masmorra, cavada POR DENTRO da Montanha do Dragão (e a lore fecha: o calor que choca os ovos vem daqui). 🌋 **criaCavernasPico()** (esgoto.js, y=−40, salão 56×42 sob 100,290): 3 **rios de lava** emissivos com PointLights quentes — e que **QUEIMAM de verdade** (`cavernasPico.lavas` → CAMPOS) · 4 **cristais** azuis/roxos emissivos · 5 pares de **estalagmite/estalactite** com colisão (o caminho serpenteia) · corda de acesso ao sul · 🚪 **boca de caverna na encosta** (60,266): pilares + verga de pedra + vão escuro + placa; interativo `desceCavernas()` · 👹 fauna: 3 escorpiões venenosos + 2 trolls + **TROLL ANCIÃO** (1.6×, boss 300hp/dano 22, dropa **Cristal do Pico** = PRECOS 150🪙; raro 8%: **Clava de Magma** dano 24) · 📜 **quest do Ulric** "Profundezas do Pico" (→160🪙 +120xp) · 🐛 **fix**: letreiro dos subsolos agora acerta todos (Cripta Profunda mostrava "Esgoto"; cadeia catacumbas/cripta/cavernas/esgoto) · renasce/tpGM escondem os 4 subsolos · Selo **RV5.8 (v43)**. Build ✓. **Deploy pendente** (produção no v38).
+
+**43ª rodada (🔥 RV5.9 — CHEFES COM PRESENÇA, v44):** início Codex do Patch 2. 🎯 **barra grande de CHEFE** no topo (`mostraBossHud`): aparece ao se aproximar, atacar ou receber tiro de boss; mostra nome, PV e fase, e some limpa ao derrotar/sair do tempo. 🔥 **dragões com fase de fúria**: abaixo de 35% de vida, chefes de fogo avisam "entrou em fúria" e reduzem a cadência do ataque em ~28%, deixando o final da luta mais tenso. ⭕ **leitura de perigo**: bolas de fogo agora criam círculo pulsante no chão no ponto de impacto e uma explosão visual ao chegar; fica mais justo esquivar e mais bonito ver o combate. Selo **RV5.9 (v44)**. Build ✓. **Deploy pendente** (produção no v38; só publicar com "pode publicar").
