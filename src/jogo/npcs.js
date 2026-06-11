@@ -123,14 +123,31 @@ const ROSTER = [
   { nome: 'Dona Ema', prof: 'Padeira', post: { x: -326, z: -10 }, home: { x: -392, z: -20 }, cor: 0xd8c4a0, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
     falas: { trabalho: 'Pão de fubá do brejo, quentinho do Grande Mercado. Prove e me diga.', dica: 'O relógio do Depósito atrasa cinco minutos há vinte anos. Ninguém conserta por carinho.' } },
   { nome: 'Capitã Mara', prof: 'Guarda do Canal', post: { x: -256, z: -34 }, home: { x: -296, z: -46 }, cor: 0x2a3a6a, humor: 'mau', sexo: 'mulher', tipo: 'cavaleiro',
-    falas: { trabalho: 'Patrulho a entrada e o canal. Em Venore o ouro corre — e ladrão corre atrás.', dica: 'A estrada do pântano é traiçoeira à noite. Leve tocha e volte inteiro.' } },
+    falas: { trabalho: 'Patrulho a entrada e o canal. Em Venore o ouro corre — e ladrão corre atrás.', dica: 'O Brejo Profundo ao sul anda infestado de cobras. Se tiver coragem, me procure.' } },
+  // RV4.1 — distrito norte + armazéns (a capital cresceu)
+  { nome: 'Tessa', prof: 'Armadureira', post: { x: -312, z: 22 }, home: { x: -340, z: 28 }, cor: 0x6a5a4a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Forjo proteção, não espada: elmo, peitoral e bota que aguentam dente de dragão.', dica: 'Couro curtido no lodo do brejo fica duas vezes mais rijo. Segredo da casa.' },
+    loja: [
+      { nome: 'Elmo de Ferro', icone: '🪖', preco: 70, slot: 'cabeca', defesa: 3 },
+      { nome: 'Peitoral de Ferro', icone: '🛡️', preco: 120, slot: 'tronco', defesa: 5 },
+      { nome: 'Calças de Couro', icone: '👖', preco: 50, slot: 'pernas', defesa: 2 },
+      { nome: 'Botas de Couro', icone: '🥾', preco: 40, slot: 'pes', defesa: 2 },
+    ],
+    compra: ['Couro', 'Escama de Dragão', 'Seda de Aranha'],
+    ofertas: [{ precisa: 18, item: { nome: 'Peitoral de Escamas', icone: '🐲', preco: 380, slot: 'tronco', defesa: 8 } }] },
+  { nome: 'Ulric', prof: 'Mestre da Guilda', post: { x: -320, z: 27 }, home: { x: -320, z: 30 }, cor: 0x7a1f2a, humor: 'mau', sexo: 'homem', tipo: 'cavaleiro',
+    falas: { trabalho: 'O Salão das Guildas reúne os aventureiros de Venore. Prove seu valor e terá um lugar.', dica: 'Quem derrota um dragão entra pra história. Quem derrota DOIS entra pra guilda.' } },
+  { nome: 'Hela', prof: 'Sacerdotisa', post: { x: -386, z: 16 }, home: { x: -390, z: 12 }, cor: 0x4a3a7a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+    falas: { trabalho: 'Cuido da Catedral de Venore. O sino dela se ouve do outro lado do canal.', dica: 'Os deuses do pântano são antigos. O templo do vilarejo ainda guarda o renascimento.' } },
+  { nome: 'Beto', prof: 'Estivador', post: { x: -292, z: -82 }, home: { x: -300, z: -78 }, cor: 0x5a4a3a, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'Carrego caixa e barril o dia inteiro entre o cais e os armazéns. Braço não falta.', dica: 'A barca cobra 5 moedas, mas nadar no canal sai bem mais caro.' } },
 ];
 
 // casas (residências) — pontos LIVRES na rua em frente às casas (os antigos
 // caíam DENTRO dos prédios e o NPC andava contra a parede a noite inteira!)
 const HOMES = [[24, 24], [-24, 24], [24, -24], [-24, -24], [56, 8], [-56, 8], [8, 56], [8, -56], [24, 40], [-24, 40], [40, -24]];
 const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias', 'Eldra', 'Falk',
-  'Anselmo', 'Berta', 'Grom', 'Ilda', 'Capitã Mara']); // lojistas/templo/guarda viram a noite no posto
+  'Anselmo', 'Berta', 'Grom', 'Ilda', 'Capitã Mara', 'Tessa', 'Ulric', 'Hela']); // lojistas/templo/guarda viram a noite no posto
 
 function nomeSprite(texto) {
   const cnv = document.createElement('canvas');

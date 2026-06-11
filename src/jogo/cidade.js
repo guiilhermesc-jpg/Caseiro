@@ -164,7 +164,7 @@ export function criaCidade() {
     if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
     if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
     if (px > 498) continue;                                   // fora de Thais
-    if (px < -240 && pz > -120 && pz < 60) continue;          // fora de VENORE (cidade nova)
+    if (px < -232 && pz > -152 && pz < 94) continue;          // fora de VENORE (capital expandida)
     if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue; // fora da Estrada do Pântano
     dummyM.position.set(px, alturaColinas(px, pz), pz); // tufos assentam na colina
     dummyM.rotation.y = Math.random() * Math.PI;
@@ -654,26 +654,26 @@ export function criaCidade() {
     // ruas de pedra: principal (leste-oeste) + transversal (norte-sul)
     const ruaP = new THREE.Mesh(new THREE.BoxGeometry(164, 0.1, 8), matRua(30, 1.6));
     ruaP.position.set(-328, 0.02, CVZ); ruaP.receiveShadow = true; scene.add(ruaP);
-    const ruaT = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 136), matRua(1.6, 26));
-    ruaT.position.set(-300, 0.02, -32); ruaT.receiveShadow = true; scene.add(ruaT);
+    const ruaT = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 190), matRua(1.6, 34));
+    ruaT.position.set(-300, 0.02, -18); ruaT.receiveShadow = true; scene.add(ruaT);
     // praça do Grande Mercado (calçamento)
     const pracaV = new THREE.Mesh(new THREE.BoxGeometry(30, 0.12, 30), pisoMat);
     pracaV.position.set(CVX, 0.03, CVZ); pracaV.receiveShadow = true; scene.add(pracaV);
 
     // === CANAL DE VENORE (norte-sul) com margens de pedra e 2 pontes ===
-    const aguaCanal = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 140),
+    const aguaCanal = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 190),
       new THREE.MeshStandardMaterial({ color: 0x39707f, roughness: 0.15, metalness: 0.3, transparent: true, opacity: 0.85 }));
-    aguaCanal.position.set(-352, 0.04, -30); scene.add(aguaCanal); aguas.push(aguaCanal);
+    aguaCanal.position.set(-352, 0.04, -5); scene.add(aguaCanal); aguas.push(aguaCanal);
     [-355.6, -348.4].forEach((mx) => {
-      const margem = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.34, 140), pisoMat);
-      margem.position.set(mx, 0.17, -30); margem.receiveShadow = true; scene.add(margem);
+      const margem = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.34, 190), pisoMat);
+      margem.position.set(mx, 0.17, -5); margem.receiveShadow = true; scene.add(margem);
     });
     // o canal BLOQUEIA (cair na água não dá) — vãos livres só onde têm pontes
-    [[-100, -33.5], [-26.5, 2.5], [9.5, 40]].forEach(([z0, z1]) => {
+    [[-100, -33.5], [-26.5, 2.5], [9.5, 52.5], [59.5, 90]].forEach(([z0, z1]) => {
       obstaculos.push({ minX: -356.4, maxX: -347.6, minZ: z0, maxZ: z1 });
     });
     // pontes de tábuas (passa por cima; sem colisor)
-    [[-30], [6]].forEach(([pz]) => {
+    [[-30], [6], [56]].forEach(([pz]) => {
       const tabuas = new THREE.Mesh(new THREE.BoxGeometry(10, 0.12, 5.4), new THREE.MeshStandardMaterial({ color: 0x7a5a36, roughness: 1 }));
       tabuas.position.set(-352, 0.06, pz); tabuas.receiveShadow = true; scene.add(tabuas);
       [-2.9, 2.9].forEach((oz) => {
@@ -682,9 +682,9 @@ export function criaCidade() {
       });
     });
     // calçadão de madeira na beira leste do canal (passeio do comércio)
-    const calcadao = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.09, 128), new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 }));
-    aplicaTexturaReal(calcadao.material, 'madeira', 1.2, 22);
-    calcadao.position.set(-345.6, 0.05, -32); calcadao.receiveShadow = true; scene.add(calcadao);
+    const calcadao = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.09, 180), new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 }));
+    aplicaTexturaReal(calcadao.material, 'madeira', 1.2, 30);
+    calcadao.position.set(-345.6, 0.05, -8); calcadao.receiveShadow = true; scene.add(calcadao);
 
     // === TORRE DO DEPÓSITO (marco da cidade — visível de longe) ===
     {
@@ -747,6 +747,74 @@ export function criaCidade() {
     [[-368, 42], [-282, 40], [-398, -92], [-408, 10]].forEach(([x, z]) => add(criaSalgueiro(x, z)));
     [[-396, 30], [-254, -88], [-410, -60]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
     [[-372, 34], [-290, 44], [-404, -36], [-398, -78], [-260, 22]].forEach(([x, z]) => add(criaJunco(x, z)));
+
+    // ====== RV4.1 — VENORE IMPONENTE (a capital cresce de verdade) ======
+    // PORTÃO MONUMENTAL na entrada da estrada (2 torres + arco passável)
+    {
+      const pedraPort = mat(0xb9a486, 1);
+      [[-240, -39.5], [-240, -20.5]].forEach(([tx, tz]) => {
+        const torre = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 13, 10), pedraPort);
+        torre.position.set(tx, 6.5, tz); torre.castShadow = torre.receiveShadow = true; scene.add(torre);
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(2.8, 4.2, 10), mat(0x2f8d80, 1));
+        cone.position.set(tx, 15.1, tz); cone.castShadow = true; scene.add(cone);
+        obstaculos.push({ minX: tx - 2.2, maxX: tx + 2.2, minZ: tz - 2.2, maxZ: tz + 2.2 });
+      });
+      const arcoP = new THREE.Mesh(new THREE.BoxGeometry(3, 3.4, 17), pedraPort);
+      arcoP.position.set(-240, 9.2, -30); arcoP.castShadow = true; scene.add(arcoP); // passa POR BAIXO
+      add(criaBandeira(-244, -42, 0xd9a522)); add(criaBandeira(-244, -18, 0x9c2a2a));
+    }
+
+    // === DISTRITO NORTE: Largo das Guildas + Catedral + casario ===
+    const largoG = new THREE.Mesh(new THREE.BoxGeometry(22, 0.12, 16), pisoMat);
+    largoG.position.set(-320, 0.03, 18); largoG.receiveShadow = true; scene.add(largoG);
+    add(criaEstatua(-326, 18)); // herói fundador no Largo
+    add(criaPredio({ x: -320, z: 36, larg: 16, prof: 13, alt: 12, cor: 0xcab98e, corTelhado: 0x6a4a6a, rot: Math.PI })); // SALÃO DAS GUILDAS
+    add(criaPlaca(-312, 27, 'Salão das Guildas', Math.PI));
+    add(criaMarco('igreja', { x: -390, z: 16, rot: Math.PI / 2 })); // CATEDRAL DE VENORE (campanário + sino)
+    add(criaPlaca(-380, 8, 'Catedral de Venore', Math.PI / 2));
+    [[-340, 24], [-340, 52], [-300, 46], [-272, 28], [-264, 56], [-376, 40], [-376, 64], [-396, 46]]
+      .forEach(([x, z]) => add(criaPredio({
+        x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(8, 12),
+        cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - 18))),
+      })));
+    add(criaCasaInterior(-296, 64, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x4a5666 }));
+    [[-330, 10], [-310, 26], [-352, 64], [-300, 64]].forEach(([x, z]) => add(criaPoste(x, z)));
+    [[-308, 12, 0x2a5a9c], [-332, 26, 0x2a8a4a]].forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
+
+    // === BAIRRO DOS ARMAZÉNS (porto que trabalha) ===
+    [[-300, -76], [-284, -76], [-302, -104]].forEach(([x, z], i) => add(criaPredio({
+      x, z, larg: 13, prof: 9, alt: 6, cor: [0xb0a890, 0xa89a84, 0x9a9282][i % 3], corTelhado: 0x55636f,
+      rot: snap(Math.atan2(-(x + 330), -(z + 92))), janelas: false,
+    })));
+    add(criaCais(-342, -88, 10)); // segundo cais (o porto cresceu)
+    [[-300, -88], [-286, -98]].forEach(([x, z]) => { add(criaBarril(x, z)); add(criaCaixa(x + 1.4, z + 0.4)); });
+    add(criaCarroca(-294, -90, 0.4));
+    add(criaPlaca(-292, -70, 'Bairro dos Armazéns', -Math.PI / 2));
+    [[-310, -84], [-290, -106]].forEach(([x, z]) => add(criaPoste(x, z)));
+
+    // === PASSARELA ELEVADA sobre o brejo (calçadão sul, com lampiões) ===
+    {
+      const tabuaMat = new THREE.MeshStandardMaterial({ color: 0x7a5a36, roughness: 1 });
+      aplicaTexturaReal(tabuaMat, 'madeira', 1, 14);
+      const passarela = new THREE.Mesh(new THREE.BoxGeometry(3, 0.14, 44), tabuaMat);
+      passarela.position.set(-272, 0.08, -120); passarela.receiveShadow = true; scene.add(passarela);
+      for (let pz = -104; pz >= -136; pz -= 8) { // estacas fincadas no brejo
+        [-1.8, 1.8].forEach((ox) => {
+          const estaca = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 1.4, 6), tabuaMat);
+          estaca.position.set(-272 + ox, 0.2, pz); scene.add(estaca);
+        });
+      }
+      add(criaPoste(-274.5, -112)); add(criaPoste(-269.5, -130));
+    }
+
+    // === BREJO PROFUNDO (sul da cidade — covil de perigo de verdade) ===
+    add(criaLago(-262, -124, 9));
+    add(criaLago(-296, -134, 8));
+    add(criaPantano(-282, -126));
+    [[-252, -116], [-306, -126], [-270, -142], [-290, -114]].forEach(([x, z]) => add(criaArvoreMorta(x, z)));
+    [[-258, -130], [-300, -118], [-276, -136], [-264, -112], [-292, -142]].forEach(([x, z]) => add(criaJunco(x, z)));
+    add(criaSalgueiro(-248, -136));
+    add(criaPlaca(-276, -106, 'Brejo Profundo — PERIGO', Math.PI));
   }
 
   // MOITAS espalhadas pelo campo (refs premium: sub-bosque denso) — sem
@@ -760,7 +828,7 @@ export function criaCidade() {
     if (Math.abs(px) < 42 && pz < -70) continue;              // fora do bairro sul/trilha
     if (Math.hypot(px - 110, pz - 300) < 52) continue;        // fora da Montanha do Dragão
     if (px > 498) continue;                                   // fora de Thais
-    if (px < -240 && pz > -120 && pz < 60) continue;          // fora de VENORE (cidade nova)
+    if (px < -232 && pz > -152 && pz < 94) continue;          // fora de VENORE (capital expandida)
     if (px > -260 && px < -80 && Math.abs(pz + 30) < 9) continue; // fora da Estrada do Pântano
     VEG.moitas.push([px, pz, 0.8 + Math.random() * 0.9]);
   }

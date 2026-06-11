@@ -23,7 +23,7 @@ const RETS = [
   [134, 232, 168, 268],      // ruínas do norte
   [-198, -108, -162, -72],   // ruínas do sudoeste
   [492, -74, 642, 70],       // Thais (muralha + casario + praça)
-  [-418, -118, -242, 58],    // VENORE, a Cidade Mercante (RV4.0 — cidade principal)
+  [-424, -150, -236, 92],    // VENORE, a Cidade Mercante (RV4.1: distrito norte + armazéns + brejo)
   [-258, -52, -82, -8],      // Estrada do Pântano (vilarejo → Venore)
 ];
 // círculos planos [cx, cz, raio]

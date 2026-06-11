@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.0 (v25)';
+const VERSAO = 'RV4.1 (v26)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -435,6 +435,12 @@ MODELOS_MONSTROS.forEach(({ arquivo, especie, tam }) => {
 addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), { especie: 'ciclope' }); // ciclope da mata fechada
 // caranguejos na Praia do Sul (fraquinhos — primeiro alvo de quem chega)
 [[-30, -225], [20, -230], [60, -218], [-85, -228], [110, -222]].forEach(([x, z]) => addMonstro(criaCaranguejo(x, z), 12, 4, 3, 2.2, false, areaMon(x, z, 13), { especie: 'caranguejo' }));
+// BREJO PROFUNDO (RV4.1): o covil ao sul de Venore — cobras venenosas e trolls
+[[-276, -122], [-288, -132], [-264, -118], [-296, -114]].forEach(([x, z]) => {
+  const c = criaCobra(x, z); c.position.y = 0;
+  addMonstro(c, 28, 10, 8, 1.5, false, areaMon(-278, -124, 18), { veneno: true, especie: 'cobra' });
+});
+[[-252, -134], [-304, -124]].forEach(([x, z]) => addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 13), { especie: 'troll' }));
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -665,6 +671,10 @@ const QUESTS = [
   { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
+  // RV4.1: limpeza do Brejo Profundo (a Capitã de Venore paga bem)
+  { id: 'brejoMara', npc: 'Capitã Mara', tipo: 'matar', especie: 'cobra', meta: 3,
+    titulo: 'Limpeza do Brejo', pede: 'O Brejo Profundo, ao sul do porto, está infestado de cobras venenosas. Mate 3 e Venore te paga como soldado.',
+    fala: 'O brejo já está mais limpo?', recompensa: { ouro: 50, xp: 40 } },
   // RV3.0: a QUEST ÉPICA do tema — derrote um DRAGÃO de verdade
   { id: 'cacaDragao', npc: 'Dorian', tipo: 'matar', especie: 'dragao', meta: 1,
     titulo: 'A Caça ao Dragão', pede: 'Os dragões voltaram a dominar estas terras — o do Pico cospe fogo até sobre Venore. Derrote UM dragão e Thais te honrará com o ELMO DO DRAGÃO.',
@@ -1747,7 +1757,12 @@ const DISTRITOS = [
   { nome: 'Canal de Venore', x: -352, z: -20, raio: 13 },
   { nome: 'Porto de Venore', x: -330, z: -90, raio: 17 },
   { nome: 'Torre do Depósito', x: -296, z: -54, raio: 11 },
-  { nome: 'VENORE — Cidade Mercante', x: -330, z: -28, raio: 92 },
+  { nome: 'Portão de Venore', x: -240, z: -30, raio: 12 },
+  { nome: 'Largo das Guildas', x: -320, z: 20, raio: 14 },
+  { nome: 'Catedral de Venore', x: -390, z: 16, raio: 14 },
+  { nome: 'Bairro dos Armazéns', x: -294, z: -86, raio: 18 },
+  { nome: 'Brejo Profundo', x: -278, z: -126, raio: 26 },
+  { nome: 'VENORE — Cidade Mercante', x: -330, z: -20, raio: 112 },
   { nome: 'Estrada do Pântano', x: -168, z: -30, raio: 80 },
   // Vilarejo de Venor (a antiga cidadezinha onde tudo começou)
   { nome: 'Praça do Vilarejo de Venor', x: 0, z: 0, raio: 18 },
