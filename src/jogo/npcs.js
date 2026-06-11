@@ -108,8 +108,8 @@ const ROSTER = [
     ],
     compra: ['Couro', 'Osso', 'Presa do Boss', 'Escama de Dragão'],
     ofertas: [{ precisa: 15, item: { nome: 'Martelo de Guerra', icone: '🔨', preco: 420, slot: 'maoDir', dano: 24, arma: true } }] },
-  { nome: 'Ilda', prof: 'Arcanista', post: { x: -332, z: -22 }, home: { x: -376, z: -20 }, cor: 0x5a2a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
-    falas: { trabalho: 'Grafo runas com tinta de lodo arcano. O pântano tem mais magia do que parece.', dica: 'Dizem que o Dragão Ancião perto de Thais guarda uma runa que ninguém leu.' },
+  { nome: 'Ilda', prof: 'Arcanista', post: { x: -343.4, z: -12 }, home: { x: -376, z: -20 }, cor: 0x5a2a8a, humor: 'bom', sexo: 'mulher', tipo: 'mago',
+    falas: { trabalho: 'Minha loja arcana fica na beira do canal — entre. Grafo runas com tinta de lodo do pântano.', dica: 'Dizem que o Dragão Ancião perto de Thais guarda uma runa que ninguém leu.' },
     loja: [
       { nome: 'Runa de Cura', icone: '✨', preco: 15, slot: 'runa', usavel: 'runaCura' },
       { nome: 'Runa de Fogo', icone: '🔥', preco: 20, slot: 'runa', usavel: 'runaFogo' },

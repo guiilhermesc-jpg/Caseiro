@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.2 (v27)';
+const VERSAO = 'RV4.3 (v28)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -923,21 +923,35 @@ BUEIROS.forEach((bp, i) => {
   interativos.push(it);
 });
 
-// === VIAGEM DE BARCO ⛵ (RV4.0): a barca liga o Porto de Venore ao Cais do
-// Vilarejo — transporte clássico de capital mercante (5🪙 a passagem)
-[
-  { x: -322, z: -82, alvo: { x: 47, z: 57 }, alvoNome: 'Cais do Vilarejo' },
-  { x: 45, z: 62, alvo: { x: -318, z: -80 }, alvoNome: 'Porto de Venore' },
-].forEach((rota) => {
-  const it = { x: rota.x, z: rota.z, raio: 3.4, titulo: '⛵ Barca', acao: `Viajar p/ ${rota.alvoNome} — 5🪙 ⛵` };
-  it.onAcao = () => {
-    if (ouro < 5) { mostraMensagem('A passagem custa 5 🪙 — venda um peixe pro Tonho!'); return; }
-    ouro -= 5; hud.ouro(ouro);
-    montado = false; petAlvo = null;
-    avatar.position.set(rota.alvo.x, alturaTerreno(rota.alvo.x, rota.alvo.z), rota.alvo.z); vy = 0; noChao = true;
-    salvaJogo();
-    mostraMensagem(`⛵ A barca corta o pântano... bem-vindo ao ${rota.alvoNome}!`);
+// === REDE DE BARCAS ⛵ (RV4.3): o Porto de Venore virou HUB com 2 rotas
+// (vilarejo 5🪙 / praia 8🪙); vilarejo e praia têm a volta — fast-travel
+// clássico de capital mercante, pago e salvo.
+function viajaBarca(dx, dz, custo, nomeDestino) {
+  if (ouro < custo) { mostraMensagem(`A passagem custa ${custo} 🪙 — venda um peixe pro Tonho!`); return; }
+  ouro -= custo; hud.ouro(ouro);
+  montado = false; petAlvo = null;
+  avatar.position.set(dx, alturaTerreno(dx, dz), dz); vy = 0; noChao = true;
+  salvaJogo();
+  mostraMensagem(`⛵ A barca corta as águas... bem-vindo: ${nomeDestino}!`);
+}
+{
+  const itPV = { x: -322, z: -82, raio: 3.4, titulo: '⛵ Barcas de Venore', acao: 'Ver rotas da barca ⛵' };
+  itPV.onAcao = () => {
+    const ops = [
+      { texto: '⛵ Cais do Vilarejo — 5🪙', onClick: () => { dialogo.fecha(); viajaBarca(47, 57, 5, 'Cais do Vilarejo'); } },
+      { texto: '⛵ Praia de Venor — 8🪙', onClick: () => { dialogo.fecha(); viajaBarca(-20, -203, 8, 'Praia de Venor'); } },
+      { texto: 'Ficar no porto', onClick: () => dialogo.fecha() },
+    ];
+    dialogo.abre('⛵ Barcas de Venore', 'Pra onde vamos? O canal leva a barca até o mar.', ops);
   };
+  interativos.push(itPV);
+}
+[
+  { x: 45, z: 62, alvo: { x: -318, z: -80 }, custo: 5, alvoNome: 'Porto de Venore' },
+  { x: -20, z: -206, alvo: { x: -318, z: -80 }, custo: 8, alvoNome: 'Porto de Venore' },
+].forEach((rota) => {
+  const it = { x: rota.x, z: rota.z, raio: 3.4, titulo: '⛵ Barca', acao: `Viajar p/ ${rota.alvoNome} — ${rota.custo}🪙 ⛵` };
+  it.onAcao = () => viajaBarca(rota.alvo.x, rota.alvo.z, rota.custo, rota.alvoNome);
   interativos.push(it);
 });
 

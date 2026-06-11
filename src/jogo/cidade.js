@@ -713,11 +713,14 @@ export function criaCidade() {
     add(criaPlaca(-310, -16, 'Grande Mercado de Venore', -Math.PI / 2));
 
     // === CASARIO MERCANTE (alto: 2 andares + sacadas saem do criaPredio) ===
-    [[-392, -44], [-376, -44], [-376, -16], [-340, -48], [-320, -54], [-340, -12], [-258, -44], [-272, -44]]
+    [[-392, -44], [-376, -44], [-376, -16], [-340, -48], [-320, -54], [-258, -44], [-272, -44]]
       .forEach(([x, z]) => add(criaPredio({
         x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(9, 12),
         cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - CVZ))),
       })));
+    // LOJA ARCANA DA ILDA (RV4.3): runas atendidas em interior de verdade
+    add(criaCasaInterior(-340, -12, { frente: 'leste', cor: 0xc7b394, corTelhado: 0x6a4a8a, loja: true }));
+    add(criaPlaca(-334, -7, 'Runas — Ilda', -Math.PI / 2));
     // casas ENTRÁVEIS + a LOJA DA ALQUIMISTA (interior de loja de verdade)
     add(criaCasaInterior(-392, -16, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x55636f }));
     add(criaCasaInterior(-272, -16, { frente: 'sul', cor: 0xa8bcae, corTelhado: 0x6a4a6a }));

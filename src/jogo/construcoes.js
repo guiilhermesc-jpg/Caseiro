@@ -4,6 +4,7 @@
 //  Cada função devolve { grupo, colisores:[{minX,maxX,minZ,maxZ}], ... }.
 // =============================================================
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 const matCache = {};
 export function mat(cor, rough = 0.9) {
@@ -91,18 +92,26 @@ function _jbox(w, h, d, material, x, y, z) {
 // JANELA variada (vidro + moldura; opcional cruzeta, postigos, floreira c/ flores).
 // O vidro fica virado para +Z; o chamador posiciona/gira na parede.
 export function criaJanela(opts = {}) {
-  const { w = 1.3, h = 1.3, cruz = true, shutters = false, floreira = false, cor = 0x9fd0e0 } = opts;
+  const { w = 1.3, h = 1.3, cruz = true, shutters = false, floreira = false } = opts;
   const g = new THREE.Group();
   const moldura = mat(0xede6d2), vidro = VIDRO, fr = 0.1;
+  // RV4.3: moldura+cruzeta viram UMA geometria mesclada (era a maior fonte
+  // de mini-meshes do jogo — toda casa tem 2-8 janelas)
+  const gb = (w2, h2, d2, x2, y2, z2) => { const ge = new THREE.BoxGeometry(w2, h2, d2); ge.translate(x2, y2, z2); return ge; };
+  const geosM = [
+    gb(w + fr, fr, 0.12, 0, h / 2, 0),
+    gb(w + fr, fr, 0.12, 0, -h / 2, 0),
+    gb(fr, h + fr, 0.12, -w / 2, 0, 0),
+    gb(fr, h + fr, 0.12, w / 2, 0, 0),
+  ];
+  if (cruz) { geosM.push(gb(w, 0.06, 0.1, 0, 0, 0)); geosM.push(gb(0.06, h, 0.1, 0, 0, 0)); }
+  const mold = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geosM), moldura);
+  g.add(mold);
   g.add(_jbox(w, h, 0.06, vidro, 0, 0, 0));
-  g.add(_jbox(w + fr, fr, 0.12, moldura, 0, h / 2, 0));
-  g.add(_jbox(w + fr, fr, 0.12, moldura, 0, -h / 2, 0));
-  g.add(_jbox(fr, h + fr, 0.12, moldura, -w / 2, 0, 0));
-  g.add(_jbox(fr, h + fr, 0.12, moldura, w / 2, 0, 0));
-  if (cruz) { g.add(_jbox(w, 0.06, 0.1, moldura, 0, 0, 0)); g.add(_jbox(0.06, h, 0.1, moldura, 0, 0, 0)); }
-  if (shutters) [-1, 1].forEach((s) => {
-    g.add(_jbox(w * 0.52, h, 0.05, mat(0x6a4a8a), s * (w * 0.52 / 2 + w / 2 + 0.03), 0, 0.05));
-  });
+  if (shutters) {
+    const sw = w * 0.52, geosS = [-1, 1].map((s) => gb(sw, h, 0.05, s * (sw / 2 + w / 2 + 0.03), 0, 0.05));
+    g.add(new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geosS), mat(0x6a4a8a)));
+  }
   if (floreira) {
     g.add(_jbox(w + 0.2, 0.22, 0.3, mat(0x6e4a2a), 0, -h / 2 - 0.16, 0.16));
     const cores = [0xe85d75, 0xf2c14e, 0xd06ad0, 0xff8a4c];
@@ -172,36 +181,36 @@ export function criaPredio(opts) {
 
   const madeira = mat(0x5a4632), pedraBase = mat(0x6f675c), portaMat = mat(0x4a2f1a);
   const FB = 0.7; // altura do alicerce
+  // RV4.3: peças do MESMO material viram UMA geometria mesclada por casa
+  // (madeira: vigas/batentes/guarda-corpo · pedra: alicerce/chaminé/degrau)
+  // — cada prédio caiu de ~20 pecinhas pra 2 meshes nesses materiais.
+  const geosMad = [], geosPed = [];
+  const gbox = (lista, w2, h2, d2, x2, y2, z2) => { const ge = new THREE.BoxGeometry(w2, h2, d2); ge.translate(x2, y2, z2); lista.push(ge); };
 
   // alicerce de pedra (assenta a casa no chão; quebra o "caixote")
-  const base = new THREE.Mesh(new THREE.BoxGeometry(larg + 0.4, FB, prof + 0.4), pedraBase);
-  base.position.y = FB / 2; base.receiveShadow = true; g.add(base);
+  gbox(geosPed, larg + 0.4, FB, prof + 0.4, 0, FB / 2, 0);
   // corpo (sobre o alicerce)
   const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), mat(cor));
   corpo.position.y = FB + alt / 2; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
   const topo = FB + alt; // topo das paredes
   // enxaimel: viga horizontal (divisória de andar) + montantes de canto (look medieval)
-  const faixa = new THREE.Mesh(new THREE.BoxGeometry(larg + 0.08, 0.28, prof + 0.08), madeira);
-  faixa.position.y = FB + alt * 0.52; g.add(faixa);
+  gbox(geosMad, larg + 0.08, 0.28, prof + 0.08, 0, FB + alt * 0.52, 0);
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, alt, 0.3), madeira);
-    post.position.set(sx * larg / 2, FB + alt / 2, sz * prof / 2); post.castShadow = true; g.add(post);
+    gbox(geosMad, 0.3, alt, 0.3, sx * larg / 2, FB + alt / 2, sz * prof / 2);
   });
   // telhado de duas águas + cumeeira
   g.add(telhadoDuasAguas(larg, prof, Math.max(2.6, alt * 0.45), corTelhado, topo));
   // chaminé com fumeiro
-  const chamine = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.0, 0.8), pedraBase);
-  chamine.position.set(larg * 0.28, topo + 1.5, -prof * 0.18); chamine.castShadow = true; g.add(chamine);
-  const chTopo = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 1.0), madeira);
-  chTopo.position.set(larg * 0.28, topo + 2.6, -prof * 0.18); g.add(chTopo);
+  gbox(geosPed, 0.8, 2.0, 0.8, larg * 0.28, topo + 1.5, -prof * 0.18);
+  gbox(geosMad, 1.0, 0.3, 1.0, larg * 0.28, topo + 2.6, -prof * 0.18);
 
   // PORTA (frente +Z) com batentes, verga, degrau de pedra e maçaneta
   const fz = prof / 2;
   const porta = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.0, 0.2), portaMat);
   porta.position.set(0, FB + 1.5, fz + 0.04); g.add(porta);
-  [-0.92, 0.92].forEach((ox) => { const bat = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.3, 0.36), madeira); bat.position.set(ox, FB + 1.55, fz + 0.05); g.add(bat); });
-  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.32, 0.38), madeira); verga.position.set(0, FB + 3.25, fz + 0.05); g.add(verga);
-  const degrau = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.25, 0.8), pedraBase); degrau.position.set(0, 0.32, fz + 0.5); degrau.receiveShadow = true; g.add(degrau);
+  [-0.92, 0.92].forEach((ox) => gbox(geosMad, 0.24, 3.3, 0.36, ox, FB + 1.55, fz + 0.05));
+  gbox(geosMad, 2.2, 0.32, 0.38, 0, FB + 3.25, fz + 0.05); // verga
+  gbox(geosPed, 2.0, 0.25, 0.8, 0, 0.32, fz + 0.5);        // degrau
   const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xd9a522, 0.3)); macaneta.position.set(0.5, FB + 1.5, fz + 0.16); g.add(macaneta);
 
   if (janelas) {
@@ -233,20 +242,12 @@ export function criaPredio(opts) {
   if (alt >= 8 && Math.random() < 0.6) {
     // SACADA com guarda-corpo sobre a porta + porta-janela do 2º andar
     const yS = FB + alt * 0.55;
-    const pisoS = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.18, 1.0), pedraBase);
-    pisoS.position.set(0, yS, fz + 0.5); pisoS.castShadow = true; g.add(pisoS);
+    gbox(geosPed, 2.6, 0.18, 1.0, 0, yS, fz + 0.5); // piso da sacada
     const portaJ = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.9, 0.12), portaMat);
     portaJ.position.set(0, yS + 1.0, fz + 0.07); g.add(portaJ);
-    const corrimao = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.09, 0.09), madeira);
-    corrimao.position.set(0, yS + 0.95, fz + 0.96); g.add(corrimao);
-    for (let bi = -2; bi <= 2; bi++) { // balaústres
-      const bal = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.86, 0.07), madeira);
-      bal.position.set(bi * 0.58, yS + 0.5, fz + 0.96); g.add(bal);
-    }
-    [-1, 1].forEach((s) => { // corrimãos laterais
-      const lado = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.92), madeira);
-      lado.position.set(s * 1.26, yS + 0.95, fz + 0.5); g.add(lado);
-    });
+    gbox(geosMad, 2.6, 0.09, 0.09, 0, yS + 0.95, fz + 0.96); // corrimão
+    for (let bi = -2; bi <= 2; bi++) gbox(geosMad, 0.07, 0.86, 0.07, bi * 0.58, yS + 0.5, fz + 0.96); // balaústres
+    [-1, 1].forEach((s) => gbox(geosMad, 0.09, 0.09, 0.92, s * 1.26, yS + 0.95, fz + 0.5)); // laterais
   } else if (Math.random() < 0.45) {
     // TORRINHA de canto pendurada na quina frontal (silhueta medieval)
     const tx = (Math.random() < 0.5 ? -1 : 1) * (larg / 2 - 0.3);
@@ -255,6 +256,16 @@ export function criaPredio(opts) {
     corpoT2.position.set(tx, FB + alt - hT2 / 2 + 0.4, fz - 0.3); corpoT2.castShadow = true; g.add(corpoT2);
     const chapeu = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.9, 8), matTelha(corTelhado));
     chapeu.position.set(tx, FB + alt + 1.35, fz - 0.3); chapeu.castShadow = true; g.add(chapeu);
+  }
+
+  // RV4.3: mescla os baldes — 2 meshes no lugar de ~20 pecinhas por casa
+  if (geosMad.length) {
+    const mMad = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geosMad), madeira);
+    mMad.castShadow = true; g.add(mMad);
+  }
+  if (geosPed.length) {
+    const mPed = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geosPed), pedraBase);
+    mPed.castShadow = mPed.receiveShadow = true; g.add(mPed);
   }
 
   const girado = Math.abs(Math.sin(rot)) > 0.5;
