@@ -18,7 +18,7 @@ import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
-import { criaEsgoto, criaCatacumbas } from './jogo/esgoto.js';
+import { criaEsgoto, criaCatacumbas, criaCriptaProfunda } from './jogo/esgoto.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js';
@@ -71,7 +71,18 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.6 (v31)';
+const VERSAO = 'RV4.7 (v32)';
+{ // TÍTULO do Patch 1 na tela de entrada (some quando o jogo começa)
+  const titulo = document.createElement('div');
+  titulo.id = 'tituloVenor';
+  titulo.innerHTML = 'VENOR'
+    + '<div style="font-size:15px;letter-spacing:6px;color:#e8d9a0;margin-top:2px;">ERA DOS DRAGÕES</div>'
+    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">— PATCH 1 —</div>';
+  titulo.style.cssText = 'position:fixed;top:7%;left:50%;transform:translateX(-50%);z-index:36;'
+    + 'font:bold 54px Georgia,serif;letter-spacing:10px;color:#f4e9c8;text-align:center;'
+    + 'text-shadow:0 2px 6px #000,0 0 28px rgba(217,165,34,.45);pointer-events:none;';
+  document.body.appendChild(titulo);
+}
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -200,6 +211,9 @@ function podeAndarBicho(x, z, y) {
     for (const o of catacumbas.colisores) {
       if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
     }
+    for (const o of criptaProfunda.colisores) {
+      if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
+    }
     return true;
   }
   const arr = gradeCol.get(Math.floor(x / CELULA) * 4096 + Math.floor(z / CELULA));
@@ -216,6 +230,14 @@ esgoto.grupo.visible = false; // só renderiza a grade de túneis quando você e
 // `subsoloAtual` diz em qual andar-de-baixo o jogador está (colisão/saídas).
 const catacumbas = criaCatacumbas(); scene.add(catacumbas.grupo);
 catacumbas.grupo.visible = false;
+// CRIPTA PROFUNDA (RV4.7): o cofre dos reis, 2º andar abaixo do trono (y=-80)
+const criptaProfunda = criaCriptaProfunda(); scene.add(criptaProfunda.grupo);
+criptaProfunda.grupo.visible = false;
+{ // boca da descida (marca escura no chão da câmara do trono)
+  const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
+  buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
+  catacumbas.grupo.add(buraco);
+}
 let subsoloAtual = esgoto;
 const ratos = criaRatos(6, esgoto.salaBounds);                       // ratos na câmara central
 esgoto.corredores.forEach((b) => criaRatos(2, b).forEach((r) => ratos.push(r))); // ratos patrulhando os túneis
@@ -467,6 +489,11 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
     lootEspecial: { nome: 'Coroa Antiga', icone: '👑' },
   });
 }
+// CRIPTA PROFUNDA (RV4.7): os Ancestrais guardam o tesouro (y = -80)
+[[-352, -6], [-340, -16]].forEach(([x, z]) => {
+  const anc = criaEsqueleto(x, z); anc.position.y = -80; anc.scale.setScalar(1.3);
+  addMonstro(anc, 80, 30, 14, 1.7, true, areaMon(-346, -10, 12), { especie: 'esqueleto', y0: -80 });
+});
 ratos.forEach((r) => scene.add(r.g));
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -1124,6 +1151,44 @@ function desceCatacumbas() {
   it.onAcao = () => desceCatacumbas();
   interativos.push(it);
 }
+// CRIPTA PROFUNDA (RV4.7): descida na câmara do trono e corda de volta
+function desceCripta() {
+  subsoloAtual = criptaProfunda;
+  catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = true;
+  chaoY = -80; areaAtiva = criptaProfunda.bounds; // noEsgoto continua true
+  avatar.position.set(-340, -80, -10); vy = 0; noChao = true;
+  mostraMensagem('🕳️ Você desce ainda mais fundo... o ar pesa e algo brilha no escuro.');
+}
+function sobeDaCripta() {
+  subsoloAtual = catacumbas;
+  criptaProfunda.grupo.visible = false; catacumbas.grupo.visible = true;
+  chaoY = -40; areaAtiva = catacumbas.bounds;
+  avatar.position.set(-344, -40, -13); vy = 0; noChao = true;
+  mostraMensagem('🪢 De volta à câmara do trono.');
+}
+{
+  const desce2 = { x: -344, z: -16, y: -40, raio: 2.4, titulo: '🕳️ Cripta Profunda', acao: 'Descer à Cripta Profunda 🕳️' };
+  desce2.onAcao = () => desceCripta();
+  interativos.push(desce2);
+  const sobe2 = { x: -334, z: -10, y: -80, raio: 2.6, titulo: '🪢 Corda', acao: 'Subir pela corda 🪢' };
+  sobe2.onAcao = () => sobeDaCripta();
+  interativos.push(sobe2);
+}
+// BAÚ ANCESTRAL: o tesouro dos reis (UMA vez por conta — vai no save)
+let bauCriptaAberto = false;
+{
+  const it = { x: -354, z: -14, y: -80, raio: 2.8, titulo: '🧰 Baú Ancestral', acao: 'Abrir o Baú Ancestral 👑' };
+  it.onAcao = () => {
+    if (bauCriptaAberto) { mostraMensagem('O baú já foi saqueado... por você mesmo. 👑'); return; }
+    bauCriptaAberto = true;
+    ouro += 180; hud.ouro(ouro);
+    inventario.addItem({ nome: 'Rubi', icone: '💎' });
+    inventario.addItem({ nome: 'Esmeralda', icone: '💎' });
+    salvaJogo();
+    mostraMensagem('👑 O tesouro dos reis antigos! +180🪙, um Rubi e uma Esmeralda.');
+  };
+  interativos.push(it);
+}
 
 // CICLO DIA/NOITE (discreto): muda sol/ambiente/céu/neblina e acende os lampiões
 const C_TOPO_DIA = new THREE.Color(0x4f86c0), C_BASE_DIA = new THREE.Color(0xdce9f2);
@@ -1549,7 +1614,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -1621,6 +1686,7 @@ function salvaJogo() {
       quests: questEstado, // missões aceitas/cumpridas
       cofre, // Depósito de Venore (itens guardados em segurança)
       dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
+      bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1643,6 +1709,7 @@ function carregaJogo(nome) {
     Object.assign(questEstado, d.quests || {}); // missões continuam de onde pararam
     cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
+    bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
     (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
@@ -1674,7 +1741,7 @@ window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualiza
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -1968,6 +2035,7 @@ criaSelecao({
   aoMudarCor: () => montaAvatar(),
   aoEntrar: (nome) => {
     nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI;
+    { const tEl = document.getElementById('tituloVenor'); if (tEl) tEl.remove(); } // título sai de cena
     minimapa.mostra();
     inventario.mostra();
     hud.mostra();

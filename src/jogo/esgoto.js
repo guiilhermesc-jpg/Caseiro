@@ -177,3 +177,70 @@ export function criaCatacumbas() {
     saidas: [{ x: -398, z: 33 }], // cripta atrás da Catedral
   };
 }
+
+// =============================================================
+//  CRIPTA PROFUNDA (RV4.7) · o 2º andar das catacumbas (y = -80):
+//  o cofre dos reis antigos — monte de ouro, BAÚ ANCESTRAL e dois
+//  Esqueletos Ancestrais de guarda. Sobe/desce por corda a partir
+//  da câmara do trono. { grupo, colisores, bounds, acessos:[] }.
+// =============================================================
+export function criaCriptaProfunda() {
+  const g = new THREE.Group();
+  const CX = -346, CZ = -10, YP = -80;
+  const W = 32, D = 24, alt = 4.6, t = 0.8;
+  const pedra = mat(0x33333b, 1), pedraEsc = mat(0x202027, 1);
+
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
+  piso.position.set(CX, YP - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
+  const teto = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedraEsc);
+  teto.position.set(CX, YP + alt, CZ); g.add(teto);
+
+  const colisores = [];
+  function parede(cx, cz, w, d) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), pedra);
+    mesh.position.set(cx, YP + alt / 2, cz); mesh.receiveShadow = true; g.add(mesh);
+    colisores.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }
+  parede(CX, CZ - D / 2, W, t); parede(CX, CZ + D / 2, W, t);
+  parede(CX - W / 2, CZ, t, D); parede(CX + W / 2, CZ, t, D);
+  for (const px of [CX - 9, CX + 3]) for (const pz of [CZ - 6, CZ + 6]) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, alt, 8), pedraEsc);
+    col.position.set(px, YP + alt / 2, pz); g.add(col);
+    colisores.push({ minX: px - 0.6, maxX: px + 0.6, minZ: pz - 0.6, maxZ: pz + 0.6 });
+  }
+  // O TESOURO DOS REIS: monte de ouro + BAÚ ANCESTRAL no fundo oeste
+  const ouroMat = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.65, roughness: 0.35, emissive: 0x4a3404, emissiveIntensity: 0.35 });
+  const monte = new THREE.Mesh(new THREE.ConeGeometry(2.2, 1.5, 12), ouroMat);
+  monte.position.set(CX - 11, YP + 0.75, CZ + 4); monte.castShadow = true; g.add(monte);
+  for (let i = 0; i < 8; i++) {
+    const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 8), ouroMat);
+    moeda.position.set(CX - 11 + (Math.random() - 0.5) * 5, YP + 0.05, CZ + 4 + (Math.random() - 0.5) * 4);
+    moeda.rotation.x = (Math.random() - 0.5) * 0.6; g.add(moeda);
+  }
+  const bau = new THREE.Group(); bau.position.set(CX - 8, YP, CZ - 4);
+  const caixaB = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.0, 1.1), mat(0x5a3a22, 1));
+  caixaB.position.y = 0.5; caixaB.castShadow = true; bau.add(caixaB);
+  const tampaB = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.35, 1.15), mat(0x4a2f1a, 1));
+  tampaB.position.set(0, 1.1, -0.18); tampaB.rotation.x = -0.5; bau.add(tampaB);
+  const fecho = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.3, 0.08), ouroMat);
+  fecho.position.set(0, 0.62, 0.58); bau.add(fecho);
+  g.add(bau);
+  colisores.push({ minX: CX - 9, maxX: CX - 7, minZ: CZ - 4.8, maxZ: CZ - 3.2 });
+  // velas + luz baixa dourada (clima de cofre)
+  [[CX - 11, CZ + 1], [CX + 6, CZ - 7], [CX + 8, CZ + 7]].forEach(([vx, vz]) => {
+    const chama = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6),
+      new THREE.MeshStandardMaterial({ color: 0xffc46a, emissive: 0xff9a2a, emissiveIntensity: 1.0 }));
+    chama.position.set(vx, YP + 0.5, vz); g.add(chama);
+  });
+  const luzOuro = new THREE.PointLight(0xffc46a, 1.1, 12, 2);
+  luzOuro.position.set(CX - 10, YP + 2.6, CZ + 2); g.add(luzOuro);
+  // corda de volta (canto leste — sobe pra câmara do trono)
+  const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt - 0.2, 6), mat(0x9a7a44, 1));
+  corda.position.set(CX + 12, YP + (alt - 0.2) / 2, CZ); g.add(corda);
+
+  return {
+    grupo: g, colisores,
+    bounds: { minX: CX - W / 2 + 1, maxX: CX + W / 2 - 1, minZ: CZ - D / 2 + 1, maxZ: CZ + D / 2 - 1 },
+    acessos: [], // sobe-se pela CORDA própria (interativo), não pela saída genérica
+  };
+}
