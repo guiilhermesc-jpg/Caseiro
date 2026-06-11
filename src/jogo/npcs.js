@@ -99,8 +99,8 @@ const ROSTER = [
     loja: [{ nome: 'Poção de Vida', icone: '🧪', preco: 8, slot: 'pocao', usavel: 'pocao' }],
     compra: ['Erva', 'Cogumelo', 'Frasco'],
     ofertas: [{ precisa: 10, item: { nome: 'Poção Grande', icone: '🧉', preco: 20, slot: 'pocao', usavel: 'pocaoGrande' } }] },
-  { nome: 'Grom', prof: 'Ferreiro', post: { x: -308, z: -38 }, home: { x: -340, z: -42 }, cor: 0x445162, humor: 'mau', sexo: 'homem', tipo: 'aldeao',
-    falas: { trabalho: 'Ferro do norte, brasa do sul, e a melhor têmpera do reino — bem aqui na praça.', dica: 'Couro e osso da caça viram cabo e empunhadura. Traga que eu pago.' },
+  { nome: 'Grom', prof: 'Ferreiro', post: { x: -308, z: -53.4 }, home: { x: -340, z: -42 }, cor: 0x445162, humor: 'mau', sexo: 'homem', tipo: 'aldeao',
+    falas: { trabalho: 'Minha FORJA fica na praça — entre e veja o forno aceso. A melhor têmpera do reino.', dica: 'Couro e osso da caça viram cabo e empunhadura. Traga que eu pago.' },
     loja: [
       { nome: 'Adaga', icone: '🗡️', preco: 25, slot: 'maoDir', dano: 8, arma: true },
       { nome: 'Espada', icone: '⚔️', preco: 60, slot: 'maoDir', dano: 12, arma: true },
@@ -125,8 +125,8 @@ const ROSTER = [
   { nome: 'Capitã Mara', prof: 'Guarda do Canal', post: { x: -256, z: -34 }, home: { x: -296, z: -46 }, cor: 0x2a3a6a, humor: 'mau', sexo: 'mulher', tipo: 'cavaleiro',
     falas: { trabalho: 'Patrulho a entrada e o canal. Em Venore o ouro corre — e ladrão corre atrás.', dica: 'O Brejo Profundo ao sul anda infestado de cobras. Se tiver coragem, me procure.' } },
   // RV4.1 — distrito norte + armazéns (a capital cresceu)
-  { nome: 'Tessa', prof: 'Armadureira', post: { x: -312, z: 22 }, home: { x: -340, z: 28 }, cor: 0x6a5a4a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
-    falas: { trabalho: 'Forjo proteção, não espada: elmo, peitoral e bota que aguentam dente de dragão.', dica: 'Couro curtido no lodo do brejo fica duas vezes mais rijo. Segredo da casa.' },
+  { nome: 'Tessa', prof: 'Armadureira', post: { x: -286.8, z: 22 }, home: { x: -340, z: 28 }, cor: 0x6a5a4a, humor: 'bom', sexo: 'mulher', tipo: 'aldeao',
+    falas: { trabalho: 'Minha loja fica no Largo das Guildas — entre e se vista: elmo, peitoral e bota que aguentam dente de dragão.', dica: 'Couro curtido no lodo do brejo fica duas vezes mais rijo. Segredo da casa.' },
     loja: [
       { nome: 'Elmo de Ferro', icone: '🪖', preco: 70, slot: 'cabeca', defesa: 3 },
       { nome: 'Peitoral de Ferro', icone: '🛡️', preco: 120, slot: 'tronco', defesa: 5 },

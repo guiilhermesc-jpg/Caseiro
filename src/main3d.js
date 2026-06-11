@@ -71,7 +71,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV4.1 (v26)';
+const VERSAO = 'RV4.2 (v27)';
 {
   const selo = document.createElement('div');
   selo.textContent = VERSAO;
@@ -681,6 +681,8 @@ const QUESTS = [
     fala: 'O dragão ainda voa?', recompensa: { ouro: 150, xp: 100, item: { nome: 'Elmo do Dragão', icone: '🐲', slot: 'cabeca', defesa: 6 } } },
 ];
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
+// GUILDA DE VENORE (RV4.2): 2 dragões abatidos = entrada + Manto da Guilda
+let dragoesMortos = 0, guildaMembro = false;
 const contaItem = (nome) => (inventario.estado() || []).reduce((s, it) => s + (it && it.nome === nome ? (it.qtd || 1) : 0), 0);
 function progressoQuest(q, e) { return q.tipo === 'matar' ? e.prog : Math.min(q.meta, contaItem(q.item)); }
 function questDe(npc) { return QUESTS.find((qq) => qq.npc === npc.nome && !(questEstado[qq.id] || {}).feita); }
@@ -757,6 +759,18 @@ function abreDialogo(npc) {
       salvaJogo();
       dialogo.abre(npc.nome, `Excelente trabalho! 🏅 +${q.recompensa.ouro}🪙 e +${q.recompensa.xp} XP`
         + (q.recompensa.item ? ` + ${q.recompensa.item.icone} ${q.recompensa.item.nome}` : '') + '.', opcoes);
+    } });
+  }
+  // GUILDA DE VENORE (RV4.2): o Mestre Ulric aceita quem provou valor
+  if (npc.nome === 'Ulric') {
+    const rotuloG = guildaMembro ? '🛡️ Guilda: você é MEMBRO' : `🛡️ Entrar para a Guilda (${Math.min(dragoesMortos, 2)}/2 dragões)`;
+    opcoes.splice(opcoes.length - 1, 0, { texto: rotuloG, onClick: () => {
+      if (guildaMembro) { dialogo.abre(npc.nome, 'Você já é dos nossos, caçador de dragões. O Salão é sua casa.', opcoes); return; }
+      if (dragoesMortos < 2) { dialogo.abre(npc.nome, `O Salão não aceita qualquer um. Derrote mais ${2 - dragoesMortos} dragão(ões) e volte.`, opcoes); return; }
+      guildaMembro = true;
+      inventario.addItem({ nome: 'Manto da Guilda', icone: '🛡️', slot: 'tronco', defesa: 6 });
+      hud.ganhaXP(120); salvaJogo();
+      dialogo.abre(npc.nome, '🏅 BEM-VINDO À GUILDA DE VENORE! Seu MANTO DA GUILDA (defesa 6) está na mochila — vista com orgulho. +120 XP', opcoes);
     } });
   }
   // ECONOMIA CIRCULAR (estilo Tibia): mercadores compram TUDO; lojistas
@@ -1048,20 +1062,32 @@ const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0
 const C_FOG_DIA = new THREE.Color(0xcfe0ee), C_FOG_NOITE = new THREE.Color(0x111b2e);
 let tempoDia = 0.3; // começa de manhã
 let ehNoite = false;
+let avisoNoite = false; // lembrete da tocha (1× por noite)
 function aplicaDiaNoite(dt) {
   tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
   const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
   ehNoite = d < 0.35;
-  sun.intensity = 0.10 + d * 0.95;
-  hemi.intensity = 0.16 + d * 0.48;
+  // NOITE ESTILO OT (RV4.2): madrugada ESCURA de verdade — a tocha, os
+  // lampiões e o luar viram a diferença entre andar e tropeçar
+  sun.intensity = 0.04 + d * 1.01;
+  hemi.intensity = 0.07 + d * 0.57;
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
     ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
   } else {
     skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
     skyMat.uniforms.corBase.value.copy(C_BASE_NOITE).lerp(C_BASE_DIA, d);
   }
-  if (scene.fog) scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
+  if (scene.fog) {
+    scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
+    scene.fog.near = 110 + d * 150; // a escuridão FECHA o horizonte à noite
+    scene.fog.far = 340 + d * 380;  // (dia: 260/720 — igual antes)
+  }
   const noite = 1 - d;
+  // aviso de sobrevivência (1× por noite): acende a tocha!
+  if (ehNoite && !tochaOn && !noEsgoto && jogoIniciado && !avisoNoite) {
+    avisoNoite = true; mostraMensagem('🌙 A noite caiu de verdade — acenda a tocha (tecla T)!');
+  }
+  if (!ehNoite) avisoNoite = false;
   // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
   luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
   if (luaMat) luaMat.emissiveIntensity = 0.35 + noite * 0.85;
@@ -1357,6 +1383,7 @@ function mataBicho(r) {
   const xp = r.xp || 5;
   hud.ganhaXP(xp);
   mostraMensagem(`${r.boss || r.forte ? 'Criatura poderosa derrotada!' : 'Derrotado!'} +${xp} XP — AÇÃO no corpo p/ saquear`);
+  if (r.especie === 'dragao') dragoesMortos++; // currículo pra Guilda de Venore
   // progresso de QUEST de caça (conta também as mordidas do pet)
   for (const q of QUESTS) {
     const e = questEstado[q.id];
@@ -1524,6 +1551,7 @@ function salvaJogo() {
       pet: petTipo, pets: petsDomados, // companheiros domados
       quests: questEstado, // missões aceitas/cumpridas
       cofre, // Depósito de Venore (itens guardados em segurança)
+      dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
     }));
   } catch (e) { /* armazenamento cheio/indisponível: segue o jogo */ }
 }
@@ -1545,6 +1573,7 @@ function carregaJogo(nome) {
     restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
     Object.assign(questEstado, d.quests || {}); // missões continuam de onde pararam
     cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
+    dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
     (d.pets || []).forEach((t) => { if (!petsDomados.includes(t)) petsDomados.push(t); });
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }

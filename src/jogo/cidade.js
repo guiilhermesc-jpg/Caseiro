@@ -731,6 +731,13 @@ export function criaCidade() {
     [[-342, -84], [-318, -98], [-338, -100], [-322, -78]].forEach(([x, z]) => add(criaJunco(x, z)));
     add(criaSalgueiro(-344, -96));
 
+    // === FORJA DO GROM (RV4.2): oficina entrável com bigorna e forno aceso
+    add(criaCasaInterior(-308, -50, { frente: 'norte', cor: 0x9a9282, corTelhado: 0x3a4656, forja: true }));
+    add(criaPlaca(-303, -44, 'Forja — Grom', Math.PI));
+    // === ARMADURAS DA TESSA (RV4.2): loja entrável no Largo das Guildas
+    add(criaCasaInterior(-290, 22, { frente: 'oeste', cor: 0xb0a890, corTelhado: 0x55636f, loja: true }));
+    add(criaPlaca(-296, 27, 'Armaduras — Tessa', Math.PI / 2));
+
     // === VIDA DE PRAÇA: barracas, poço, bancos, canteiros, bandeiras, postes
     add(criaBarraca(-330, -38, 0.2, 0xb23a3a));
     add(criaBarraca(-310, -22, -0.3, 0x2a6ba0));

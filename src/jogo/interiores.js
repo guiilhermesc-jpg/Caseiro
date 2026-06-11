@@ -89,7 +89,46 @@ export function criaCasaInterior(x, z, opts = {}) {
   const animPorta = { mesh: dobr, porta: true, alvo: angAberto }; // porta começa ABERTA (entrada livre)
 
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
-  if (opts.loja) {
+  if (opts.forja) {
+    // === FORJA (RV4.2): bigorna, forno ACESO e balcão de ferreiro ===
+    const eixoZ = frente === 'norte' || frente === 'sul';
+    const dirFundo = (frente === 'norte' || frente === 'leste') ? -1 : 1;
+    const bw = (eixoZ ? larg : prof) - 3.6;
+    const balcao = new THREE.Group();
+    balcao.add(meshBox(eixoZ ? bw : 0.9, 1.05, eixoZ ? 0.9 : bw, mad, 0, 0.52, 0));
+    balcao.add(meshBox(eixoZ ? bw + 0.2 : 1.1, 0.12, eixoZ ? 1.1 : bw + 0.2, mat(0x6f675c), 0, 1.12, 0)); // tampo de pedra
+    const bx = eixoZ ? 0 : dirFundo * (hx - 2.2), bz = eixoZ ? dirFundo * (hz - 2.2) : 0;
+    balcao.position.set(bx, 0, bz); g.add(balcao);
+    colisores.push({
+      minX: x + bx - (eixoZ ? bw / 2 : 0.55), maxX: x + bx + (eixoZ ? bw / 2 : 0.55),
+      minZ: z + bz - (eixoZ ? 0.55 : bw / 2), maxZ: z + bz + (eixoZ ? 0.55 : bw / 2),
+    });
+    // BIGORNA no meio da oficina
+    const big = new THREE.Group();
+    big.add(meshBox(0.55, 0.5, 0.5, mat(0x3a3d42, 0.5), 0, 0.25, 0));
+    big.add(meshBox(0.32, 0.22, 1.15, mat(0x52565e, 0.4), 0, 0.6, 0));
+    big.position.set(eixoZ ? -1.6 : 0, 0, eixoZ ? 0 : -1.6); g.add(big);
+    // FORNO aceso no canto do fundo (brasa emissiva)
+    const forno = new THREE.Group();
+    forno.add(meshBox(1.7, 1.9, 1.3, mat(0x6f675c), 0, 0.95, 0));
+    const boca = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.65, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 0.85, roughness: 0.5 }));
+    boca.position.set(0, 0.6, eixoZ ? -dirFundo * 0.7 : 0); if (!eixoZ) boca.position.x = -dirFundo * 0.7;
+    if (!eixoZ) boca.rotation.y = Math.PI / 2;
+    forno.add(boca);
+    forno.position.set(eixoZ ? hx - 1.4 : dirFundo * (hx - 1.0), 0, eixoZ ? dirFundo * (hz - 1.0) : hz - 1.4);
+    g.add(forno);
+    // prateleira com lingotes de metal
+    const pw = (eixoZ ? larg : prof) - 2.6;
+    g.add(meshBox(eixoZ ? pw : 0.34, 0.08, eixoZ ? 0.34 : pw, mad,
+      eixoZ ? 0 : dirFundo * (hx - 0.4), 1.9, eixoZ ? dirFundo * (hz - 0.4) : 0));
+    for (let k = 0; k < 5; k++) {
+      const t = -pw / 2 + 0.6 + k * ((pw - 1.2) / 4);
+      g.add(meshBox(0.34, 0.12, 0.16, mat(0xb8bcc4, 0.35), eixoZ ? t : dirFundo * (hx - 0.4), 1.99, eixoZ ? dirFundo * (hz - 0.4) : t));
+    }
+    const tapF = new THREE.Mesh(new THREE.BoxGeometry(eixoZ ? 2.6 : 1.8, 0.04, eixoZ ? 1.8 : 2.6), mat(0x3a3026));
+    tapF.position.set(0, 0.11, 0); g.add(tapF);
+  } else if (opts.loja) {
     // === LOJA (estilo Tibia): balcão, prateleiras de poções e barris ===
     const eixoZ = frente === 'norte' || frente === 'sul';
     const dirFundo = (frente === 'norte' || frente === 'leste') ? -1 : 1; // fundo = oposto da porta
