@@ -48,5 +48,6 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 2. RV6.7 entregue: fachadas habitadas e qualidade urbana em casas/predios.
 3. RV6.8 entregue: trilhas/caminhos melhores, lama, pegadas, bordas de estrada e transicao cidade-campo.
 4. RV6.9 entregue: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
-5. RV7.0 proxima: monstros principais com escala, efeitos e comportamento mais assustador.
-6. RV7.1: pagina `/baixar` + PWA instalavel.
+5. RV7.0 entregue: monstros principais com telegraph no chao, aggro claro e investida telegrafada.
+6. RV7.1 proxima: pagina `/baixar` + PWA instalavel.
+7. RV7.2: GLBs CC0 nos slots de vegetacao/monstros ou masmorra interna da Fenda, conforme material do maestro.

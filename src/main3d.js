@@ -72,7 +72,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV6.9 (v54)';
+const VERSAO = 'RV7.0 (v55)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2048,6 +2048,22 @@ function disparaFlecha(r) {
 const projeteis = [];
 const camposTemp = [];
 const avisosFogo = [];
+const avisosMonstro = [];
+const PERFIS_MONSTRO_RV70 = {
+  lobo: { aggro: 18, dist: 7.5, cd: 5.0, aviso: 0.48, dur: 0.26, alcance: 2.0, mult: 1.15, raio: 1.35, cor: 0xffd166, msg: 'O lobo abaixa o corpo e avanca!' },
+  orc: { aggro: 17, dist: 6.6, cd: 5.8, aviso: 0.55, dur: 0.3, alcance: 2.15, mult: 1.22, raio: 1.55, cor: 0xf08a32, msg: 'O orc puxa o golpe pesado!' },
+  orcWarlord: { aggro: 24, dist: 8.4, cd: 6.3, aviso: 0.7, dur: 0.34, alcance: 2.65, mult: 1.35, raio: 2.25, cor: 0xff5b38, msg: 'O Senhor da Guerra investe com o machado!' },
+  drakari: { aggro: 20, dist: 7.2, cd: 5.3, aviso: 0.52, dur: 0.28, alcance: 2.2, mult: 1.2, raio: 1.55, cor: 0xff6f3c, msg: 'O Drakari finca a lanca e dispara!' },
+  drakariElite: { aggro: 22, dist: 7.8, cd: 6.0, aviso: 0.64, dur: 0.32, alcance: 2.45, mult: 1.3, raio: 1.95, cor: 0xff3434, msg: 'O guarda Drakari prepara uma estocada ritual!' },
+  troll: { aggro: 16, dist: 6.0, cd: 6.2, aviso: 0.62, dur: 0.32, alcance: 2.25, mult: 1.28, raio: 1.7, cor: 0xb4d36a, msg: 'O troll junta forca para esmagar!' },
+  trollAnciao: { aggro: 22, dist: 7.4, cd: 6.5, aviso: 0.72, dur: 0.36, alcance: 2.7, mult: 1.38, raio: 2.25, cor: 0xff9b3a, msg: 'O Troll Anciao bate no chao e avanca!' },
+  ciclope: { aggro: 20, dist: 7.0, cd: 6.8, aviso: 0.78, dur: 0.38, alcance: 2.8, mult: 1.42, raio: 2.35, cor: 0xf4c46a, msg: 'O ciclope ergue a clava!' },
+  urso: { aggro: 18, dist: 6.6, cd: 6.0, aviso: 0.58, dur: 0.32, alcance: 2.35, mult: 1.25, raio: 1.85, cor: 0xd09a62, msg: 'O urso baixa a cabeca e atropela!' },
+  aranha: { aggro: 20, dist: 7.4, cd: 5.5, aviso: 0.5, dur: 0.3, alcance: 2.25, mult: 1.18, raio: 1.8, cor: 0xba55ff, msg: 'A aranha se encolhe para saltar!' },
+  esqueleto: { aggro: 15, dist: 5.6, cd: 6.0, aviso: 0.54, dur: 0.3, alcance: 2.0, mult: 1.18, raio: 1.35, cor: 0xd8d0b0, msg: 'O esqueleto range e corta de lado!' },
+  reiEsqueleto: { aggro: 22, dist: 7.5, cd: 6.4, aviso: 0.68, dur: 0.34, alcance: 2.55, mult: 1.34, raio: 2.15, cor: 0xe8d68a, msg: 'O Rei Esqueleto chama um golpe antigo!' },
+  arconteDrakari: { aggro: 28, dist: 8.8, cd: 6.8, aviso: 0.78, dur: 0.38, alcance: 2.9, mult: 1.45, raio: 2.55, cor: 0xff2e1f, msg: 'O Arconte dobra a luz da fenda e investe!' },
+};
 const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 1 });
 const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
 const MAT_LAVA_CHAO = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
@@ -2082,6 +2098,106 @@ function avisoFogoNoChao(x, z, y, r = 2.35) {
   alvo.renderOrder = 8;
   scene.add(alvo);
   avisosFogo.push({ mesh: alvo, mat: matAlvo, t: 0, dur: 0.78 });
+}
+function perfilMonstroRV70(r) {
+  if (!r || r.filhote || r.voando) return null;
+  return PERFIS_MONSTRO_RV70[r.especie] || null;
+}
+function avisoMonstroNoChao(x, z, y, raio, cor, dur = 0.75) {
+  const matAlvo = new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false });
+  const alvo = new THREE.Mesh(new THREE.RingGeometry(raio * 0.52, raio, 26), matAlvo);
+  alvo.rotation.x = -Math.PI / 2;
+  alvo.position.set(x, y + 0.16, z);
+  alvo.renderOrder = 9;
+  scene.add(alvo);
+  avisosMonstro.push({ mesh: alvo, mat: matAlvo, t: 0, dur, base: raio });
+}
+function atualizaAvisosMonstro(dt) {
+  for (let i = avisosMonstro.length - 1; i >= 0; i--) {
+    const a = avisosMonstro[i];
+    a.t += dt;
+    const f = Math.min(1, a.t / a.dur);
+    const pulso = 1 + Math.sin(f * Math.PI) * 0.22;
+    a.mesh.scale.setScalar(pulso);
+    a.mat.opacity = 0.42 * (1 - f);
+    if (f >= 1) { scene.remove(a.mesh); avisosMonstro.splice(i, 1); }
+  }
+}
+function agendaInvestidaMonstro(r, p, dx, dz, dist) {
+  const mx = dx / dist, mz = dz / dist;
+  const alvoX = avatar.position.x + mx * 1.15;
+  const alvoZ = avatar.position.z + mz * 1.15;
+  if (podeAndarBicho && !podeAndarBicho(alvoX, alvoZ, r.g.position.y)) return;
+  const durTotal = p.aviso + p.dur + 0.08;
+  r.pausa = Math.max(r.pausa || 0, durTotal);
+  r._rv70Investida = {
+    p,
+    x0: r.g.position.x,
+    z0: r.g.position.z,
+    x1: alvoX,
+    z1: alvoZ,
+    inicio: tempo,
+    dispara: tempo + p.aviso,
+    fim: tempo + p.aviso + p.dur,
+    bateu: false,
+  };
+  r._rv70ProxInvestida = tempo + p.cd;
+  r.g.rotation.y = Math.atan2(dx, dz);
+  avisoMonstroNoChao(r.g.position.x, r.g.position.z, r.g.position.y, p.raio, p.cor, p.aviso);
+  avisoMonstroNoChao(alvoX, alvoZ, avatar.position.y, p.raio * 0.92, p.cor, p.aviso + p.dur);
+  if (tempo > (r._rv70MsgAte || 0)) {
+    r._rv70MsgAte = tempo + 4.5;
+    mostraMensagem(p.msg);
+  }
+  if (r.boss) mostraBossHud(r, 4.5);
+}
+function danoInvestidaMonstro(r, p) {
+  if (r.veneno && Math.random() < 0.45 && tempo > envenenadoAte) {
+    envenenadoAte = tempo + 6;
+    mostraMensagem('Mordida venenosa: voce foi envenenado por 6s.');
+  }
+  const dano = Math.max(1, Math.round((r.dano || 5) * p.mult) - defesa);
+  mostraMensagem(`Investida! (-${dano})`);
+  return recebeDano(dano);
+}
+function atualizaPresencaMonstros(dt) {
+  if (!jogoIniciado || morto) return;
+  for (const r of ratos) {
+    if (!r.vivo || r.corpse || r.voando) continue;
+    const p = perfilMonstroRV70(r);
+    if (!p || Math.abs(r.g.position.y - avatar.position.y) > 7) continue;
+    const dx = avatar.position.x - r.g.position.x;
+    const dz = avatar.position.z - r.g.position.z;
+    const dist = Math.hypot(dx, dz);
+    const inv = r._rv70Investida;
+    if (inv) {
+      r.pausa = Math.max(r.pausa || 0, 0.12);
+      if (tempo < inv.dispara) continue;
+      const f = Math.min(1, (tempo - inv.dispara) / p.dur);
+      const s = f * f * (3 - 2 * f);
+      const nx = inv.x0 + (inv.x1 - inv.x0) * s;
+      const nz = inv.z0 + (inv.z1 - inv.z0) * s;
+      if (!podeAndarBicho || podeAndarBicho(nx, nz, r.g.position.y)) {
+        r.g.position.x = nx; r.g.position.z = nz;
+      }
+      r.g.rotation.y = Math.atan2(inv.x1 - inv.x0, inv.z1 - inv.z0);
+      const dh = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
+      if (!inv.bateu && dh < p.alcance) {
+        inv.bateu = true;
+        if (danoInvestidaMonstro(r, p)) return;
+      }
+      if (f >= 1) r._rv70Investida = null;
+      continue;
+    }
+    if (dist > p.aggro) continue;
+    if (tempo > (r._rv70AlertaAte || 0)) {
+      r._rv70AlertaAte = tempo + 3.4;
+      avisoMonstroNoChao(r.g.position.x, r.g.position.z, r.g.position.y, p.raio * 0.84, p.cor, 0.55);
+    }
+    if (dist > 2.4 && dist < p.dist && tempo > (r._rv70ProxInvestida || 0)) {
+      agendaInvestidaMonstro(r, p, dx, dz, dist);
+    }
+  }
 }
 function disparaBicho(r) {
   const fogo = r.atira === 'fogo';
@@ -3144,6 +3260,7 @@ function passo() {
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide, ehNoite);
   atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho, alturaTerreno);
+  atualizaPresencaMonstros(dt); // RV7.0: aggro, telegraph e investida dos monstros principais
 
   if (jogoIniciado && !morto) {
     let chefePerto = null, chefeDist = Infinity;
@@ -3236,6 +3353,7 @@ function passo() {
     a.mesh.scale.setScalar(1 + Math.sin(f * Math.PI) * 0.18);
     a.mat.opacity = 0.5 * (1 - f);
   }
+  atualizaAvisosMonstro(dt);
   atualizaBossHud();
   for (let i = camposTemp.length - 1; i >= 0; i--) {
     if (tempo > camposTemp[i].expiraAt) { scene.remove(camposTemp[i].mesh); camposTemp.splice(i, 1); }
