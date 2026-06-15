@@ -9,7 +9,7 @@ import { criaCidade } from './jogo/cidade.js';
 import { alturaColinas, REGIAO } from './jogo/terreno.js';
 import { criaAvatar, animaAvatar, giraSuave } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
-import { criaGato, atualizaGato, PETS } from './jogo/pet.js';
+import { criaGato, atualizaGato, PETS, criaDraptor } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
 import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
@@ -75,7 +75,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV8.1 (v57)';
+const VERSAO = 'RV8.2 (v58)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -822,6 +822,30 @@ LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnvL), transparent: true, depthTest: false }));
   sp.scale.set(1.9, 1.9, 1); sp.position.set(L.x, 5.4, L.z); sp.renderOrder = 996; scene.add(sp);
 });
+const luzesUrbanas = [];
+function texturaLuzUrbana() {
+  const cnv = document.createElement('canvas'); cnv.width = cnv.height = 96;
+  const ctx = cnv.getContext('2d');
+  const grd = ctx.createRadialGradient(48, 48, 4, 48, 48, 46);
+  grd.addColorStop(0, 'rgba(255,221,128,0.95)');
+  grd.addColorStop(0.34, 'rgba(255,170,70,0.55)');
+  grd.addColorStop(1, 'rgba(255,140,40,0)');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, 96, 96);
+  return new THREE.CanvasTexture(cnv);
+}
+const TEX_LUZ_URBANA = texturaLuzUrbana();
+function addLuzUrbana(x, z, y = 3.3, s = 2.4, cor = 0xffd98a) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX_LUZ_URBANA, color: cor, transparent: true, opacity: 0, depthWrite: false, depthTest: true }));
+  sp.position.set(x, y, z); sp.scale.set(s, s, 1); sp.renderOrder = 18; scene.add(sp);
+  luzesUrbanas.push({ sp, base: s, fase: Math.random() * Math.PI * 2 });
+}
+[
+  [-18, 11, 3.4, 2.2], [18, 11, 3.4, 2.2], [22, -15, 3.2, 2.1], [-22, 17, 3.2, 2.1],
+  [43, 6, 3.2, 1.8], [-43, 6, 3.2, 1.8], [0, -30, 4.8, 2.5], [0, 30, 3.8, 2.2],
+  [-296, -46, 7.2, 3.4], [-322, -82, 4.2, 2.6], [-388, 12, 6.2, 3.2], [-590, -52, 4.2, 2.3],
+  [-588, -10, 4.2, 2.3], [-620, -30, 5.6, 3.0], [552, 10, 4.0, 2.2], [560, 19, 4.6, 2.4],
+  [118, 12, 3.8, 2.4], [374, 14, 3.8, 2.2], [45, 62, 3.4, 2.0], [-20, -206, 3.2, 1.8],
+].forEach(([x, z, y, s]) => addLuzUrbana(x, z, y, s));
 const npcs = criaNPCs(scene, colide);
 npcs.forEach((n) => { if (n.g) n.sombraContato = criaSombraContato(n.g, 0.58, 0.42, 0.12); });
 const inventario = criaInventario({ aoEquipar: (item) => aoEquipar(item) });
@@ -965,6 +989,10 @@ const NOMES_CHEFES = {
   cobra: 'Guardião do Esgoto',
   arconteDrakari: 'Arconte Drakari',
 };
+Object.assign(NOMES_CHEFES, {
+  draptor: 'Draptor Invasor',
+  draptorLendario: 'Draptor Lendario',
+});
 function nomeChefe(r) {
   if (!r) return 'Chefe';
   if (r.lord) return 'Dragon Lord';
@@ -1053,6 +1081,10 @@ const DOMAVEIS = [
   { tipo: 'burro', nome: 'Burro', emoji: '🐴', x: 117, z: 44, item: 'Cenoura', chance: 0.5, dica: 'cenouras da fazenda' },
   { tipo: 'dragaozinho', nome: 'Filhote de Dragão', emoji: '🐲', x: 104, z: 308, y: 34, item: 'Escama de Dragão', chance: 0.3, dica: 'derrote o dragão do pico' },
 ];
+DOMAVEIS.push(
+  { tipo: 'coruja', nome: 'Coruja Gigante', emoji: 'O', x: 124, z: -12, item: 'Dourado', chance: 0.18, dica: 'um Dourado pescado no Rio Fundo' },
+  { tipo: 'morcego', nome: 'Morcego Grande', emoji: 'M', x: -690, z: -54, item: 'Fragmento de Obsidiana', chance: 0.16, dica: 'fragmentos dos Drakari no Ermo das Cinzas' },
+);
 const domaveisVivos = [];
 DOMAVEIS.forEach((d) => {
   if (!PETS[d.tipo]) return;
@@ -1102,8 +1134,29 @@ const MONTARIA_VEL = { gato: 1.25, coelho: 1.35, cachorro: 1.45, lobo: 1.7, burr
 const MONTARIA_SELA = { gato: 0.5, coelho: 0.45, cachorro: 0.6, lobo: 0.8, burro: 1.25, dragaozinho: 0.9 };
 const PET_DANO = { gato: 2, coelho: 1, cachorro: 3, lobo: 5, burro: 4, dragaozinho: 8 };
 const PET_NOMES = { gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', lobo: 'Lobo', burro: 'Burro', dragaozinho: 'Filhote de Dragão' };
+Object.assign(MONTARIA_VEL, { coruja: 2.05, morcego: 2.1, draptor: 2.45, draptorLendario: 2.85 });
+Object.assign(MONTARIA_SELA, { coruja: 1.55, morcego: 1.25, draptor: 1.35, draptorLendario: 1.55 });
+Object.assign(PET_DANO, { coruja: 6, morcego: 7, draptor: 12, draptorLendario: 18 });
+Object.assign(PET_NOMES, { coruja: 'Coruja Gigante', morcego: 'Morcego Grande', draptor: 'Draptor', draptorLendario: 'Draptor Lendario' });
 let montado = false;
 let petAlvo = null, petProxMordida = 0;
+function animaCompanheiro(g, movendo, ritmo = 1) {
+  const u = g && g.userData;
+  if (!u) return;
+  if (u.patas) {
+    const sp = movendo ? Math.sin(tempo * 12 * ritmo) * 0.65 : 0;
+    u.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; });
+  }
+  if (u.asas) {
+    const a = Math.sin(tempo * 5.8 * ritmo) * 0.42;
+    u.asas.forEach((asa, i) => {
+      asa.rotation.z = (i ? -1 : 1) * (0.12 + a);
+      asa.rotation.y = (i ? -1 : 1) * (0.08 + Math.abs(a) * 0.18);
+    });
+  }
+  if (u.cauda) u.cauda.rotation.y = Math.sin(tempo * 2.8 * ritmo) * 0.2;
+  else if (u.rabo) u.rabo.rotation.y = Math.sin(tempo * 3 * ritmo) * 0.38;
+}
 function montaOuDesmonta() {
   if (!gato) { mostraMensagem('🐾 Você precisa DOMAR um bicho primeiro (procure os crachás 🐾 pelo mundo).'); return; }
   if (noEsgoto) { mostraMensagem('Aqui embaixo não dá pra montar. 🪢'); return; }
@@ -1172,6 +1225,19 @@ const QUESTS = [
     titulo: 'A Lua Partida', pede: 'A Fenda respondeu. O Arconte Drakari vai acordar no santuário a oeste. Ele é o grande desafio desta era: fogo negro, magia e muita vida. Vá apenas se estiver pronto.',
     fala: 'O Arconte ainda respira?', recompensa: { ouro: 420, xp: 360, item: { nome: 'Selo da Lua Partida', icone: '🌑', slot: 'anel', defesa: 7 } } },
 ];
+QUESTS.push({
+  id: 'selaDraptor',
+  npc: 'Hela',
+  requer: 'arconteLuaPartida',
+  nivel: 14,
+  tipo: 'coletar',
+  item: 'Coração de Obsidiana',
+  meta: 1,
+  titulo: 'A Sela do Draptor',
+  pede: 'A historia dos dragoes nao terminou no Arconte. Traga 1 Coracao de Obsidiana: com ele consagro uma Sela Draconica. So ela permite tentar domar um Draptor durante invasoes.',
+  fala: 'Trouxe o coracao da fenda?',
+  recompensa: { ouro: 0, xp: 420, item: { nome: 'Sela Draconica', icone: 'S' } },
+});
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 // GUILDA DE VENORE (RV4.2): 2 dragões abatidos = entrada + Manto da Guilda
 let dragoesMortos = 0, guildaMembro = false;
@@ -1506,6 +1572,45 @@ function viajaBarca(dx, dz, custo, nomeDestino) {
   interativos.push(it);
 });
 
+// === CARROCAS DE VIAGEM: transporte terrestre pago, inspirado em hubs de MMO.
+// Economiza tempo, mas custa mais que caminhar; a estrada ainda vale por loot,
+// risco e descoberta.
+function viajaCarroca(dx, dz, custo, nomeDestino) {
+  if (ouro < custo) { mostraMensagem(`A carroca custa ${custo} moedas. Venda loot ou pesque antes de viajar.`); return; }
+  ouro -= custo; hud.ouro(ouro);
+  montado = false; petAlvo = null;
+  avatar.position.set(dx, alturaTerreno(dx, dz), dz); vy = 0; noChao = true;
+  salvaJogo();
+  mostraMensagem(`Carroca pronta. A estrada passa depressa... destino: ${nomeDestino}.`);
+}
+[
+  { x: 118, z: 12, titulo: 'Carrocas da Estrada da Vigia', rotas: [
+    { nome: 'Thais', x: 552, z: 8, custo: 12 },
+    { nome: 'Venore', x: -294, z: -82, custo: 10 },
+  ] },
+  { x: 374, z: 14, titulo: 'Carroca para o Vilarejo', rotas: [
+    { nome: 'Vilarejo de Venor', x: 118, z: 12, custo: 12 },
+  ] },
+  { x: -294, z: -90, titulo: 'Carrocas de Venore', rotas: [
+    { nome: 'Vilarejo de Venor', x: 118, z: 12, custo: 10 },
+    { nome: 'Noctaria', x: -604, z: -40, custo: 24 },
+  ] },
+  { x: -604, z: -40, titulo: 'Carroca Sombria de Noctaria', rotas: [
+    { nome: 'Venore', x: -294, z: -90, custo: 24 },
+  ] },
+].forEach((posto) => {
+  const it = { x: posto.x, z: posto.z, raio: 4.0, titulo: posto.titulo, acao: 'Ver viagens de carroca' };
+  it.onAcao = () => {
+    const ops = posto.rotas.map((r) => ({
+      texto: `${r.nome} - ${r.custo} moedas`,
+      onClick: () => { dialogo.fecha(); viajaCarroca(r.x, r.z, r.custo, r.nome); },
+    }));
+    ops.push({ texto: 'Ficar aqui', onClick: () => dialogo.fecha() });
+    dialogo.abre(posto.titulo, 'Viagem terrestre rapida. Caminhar rende loot; carroca compra tempo.', ops);
+  };
+  interativos.push(it);
+});
+
 // === DEPÓSITO DE VENORE 🧰 (RV4.0): cofre na Torre do Depósito — guarda
 // itens em segurança (vai no save; morrer NÃO derruba o que está no cofre)
 const cofre = []; // { nome, icone, qtd, ...campos de equipamento }
@@ -1825,7 +1930,13 @@ function aplicaDiaNoite(dt) {
     const pp = p.luz.parent ? p.luz.parent.position : null;
     const perto = pp && Math.abs(pp.x - avatar.position.x) < 55 && Math.abs(pp.z - avatar.position.z) < 55;
     p.luz.intensity = (!ehMobile && noite > 0.45 && perto) ? (noite - 0.45) * 3.4 : 0; // sem point-lights no mobile
-    if (p.lumMat) p.lumMat.emissiveIntensity = 0.25 + noite * 0.9; // a luminária emissiva brilha em todos (barato)
+    if (p.lumMat) p.lumMat.emissiveIntensity = 0.15 + noite * 1.85; // emissivo forte tambem no mobile
+  }
+  const aceso = Math.min(1, Math.max(0, (noite - 0.22) * 1.65));
+  for (const l of luzesUrbanas) {
+    const pulso = 1 + Math.sin(tempo * 2.2 + l.fase) * 0.035;
+    l.sp.material.opacity = aceso * 0.82;
+    l.sp.scale.setScalar(l.base * (0.85 + aceso * 0.35) * pulso);
   }
 }
 function atualizaLuzRecorte() {
@@ -2082,6 +2193,10 @@ const PERFIS_MONSTRO_RV70 = {
   reiEsqueleto: { aggro: 22, dist: 7.5, cd: 6.4, aviso: 0.68, dur: 0.34, alcance: 2.55, mult: 1.34, raio: 2.15, cor: 0xe8d68a, msg: 'O Rei Esqueleto chama um golpe antigo!' },
   arconteDrakari: { aggro: 28, dist: 8.8, cd: 6.8, aviso: 0.78, dur: 0.38, alcance: 2.9, mult: 1.45, raio: 2.55, cor: 0xff2e1f, msg: 'O Arconte dobra a luz da fenda e investe!' },
 };
+Object.assign(PERFIS_MONSTRO_RV70, {
+  draptor: { aggro: 28, dist: 9.2, cd: 5.7, aviso: 0.58, dur: 0.36, alcance: 2.75, mult: 1.42, raio: 2.35, cor: 0x7fe06a, msg: 'O Draptor raspa as garras no chao e dispara!' },
+  draptorLendario: { aggro: 34, dist: 10.4, cd: 5.2, aviso: 0.54, dur: 0.34, alcance: 3.05, mult: 1.6, raio: 2.8, cor: 0x68d8ff, msg: 'O Draptor Lendario dobra a luz e investe!' },
+});
 const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 1 });
 const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
 const MAT_LAVA_CHAO = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
@@ -2296,6 +2411,33 @@ const RAROS = {
 // === VORAG, O PRIMEIRO (RV5.3): o finale da lore — a Ossada SE ERGUE ===
 // Invocado ao aceitar "O Terceiro Sinal" (e re-invocado no load, se a
 // chama já foi acesa). Dragão osso-pálido, 2.2×, cospe fogo de longe.
+Object.assign(RAROS, {
+  draptor: { chance: 0.08, item: { nome: 'Garra de Draptor', icone: 'G', slot: 'colar', defesa: 5 } },
+  draptorLendario: { chance: 0.18, item: { nome: 'Crista Lendaria do Draptor', icone: 'C', slot: 'cabeca', defesa: 9 } },
+});
+function tentaCapturarDraptor(r) {
+  if (!r || (r.especie !== 'draptor' && r.especie !== 'draptorLendario')) return;
+  const questFeita = (questEstado.selaDraptor || {}).feita;
+  if (!questFeita || !inventario.temItem('Sela Draconica')) {
+    mostraMensagem('O Draptor cai, mas ninguem consegue conter a fera sem a Sela Draconica da Hela.');
+    return;
+  }
+  const alvoPet = r.especie === 'draptorLendario' ? 'draptorLendario' : 'draptor';
+  if (petsDomados.includes(alvoPet)) return;
+  const chance = r.especie === 'draptorLendario' ? 0.04 : 0.10;
+  if (Math.random() < chance) {
+    inventario.consomeItem('Sela Draconica');
+    petsDomados.push(alvoPet);
+    trocaPet(alvoPet);
+    sons.tesouro();
+    mostraMensagem(r.especie === 'draptorLendario'
+      ? 'CAPTURA LENDARIA! O Draptor Lendario aceitou sua sela. Esta e a montaria mais rara de Venor.'
+      : 'Voce capturou um Draptor! Use M para montar e o painel de personagem para trocar montaria.');
+    salvaJogo();
+  } else {
+    mostraMensagem('A Sela Draconica brilhou, mas o Draptor resistiu. A captura continua rara.');
+  }
+}
 let voragInvocado = false;
 function invocaVorag() {
   if (voragInvocado) return;
@@ -2343,6 +2485,42 @@ function invocaArconteDrakari() {
 }
 // BARRA DE VIDA flutuante (RV5.5): aparece sobre o bicho ao ser ferido e
 // some sozinha em 4s — jogabilidade de verdade, sem ler número em texto
+let proxInvasaoDraptor = 220 + Math.random() * 260;
+let invasaoDraptorAtiva = null;
+const PONTOS_INVASAO_DRAPTOR = [
+  { nome: 'Ruinas da Estrada', x: 154, z: 246, r: 30 },
+  { nome: 'Passo do Ciclope', x: 205, z: 170, r: 34 },
+  { nome: 'Estrada das Cinzas', x: -690, z: -50, r: 36 },
+  { nome: 'Trilha do Pico', x: 110, z: 300, r: 32 },
+];
+function iniciaInvasaoDraptor(forcar = false) {
+  if (invasaoDraptorAtiva && invasaoDraptorAtiva.vivo && !invasaoDraptorAtiva.corpse) return;
+  if (!forcar && (!jogoIniciado || noEsgoto || morto)) return;
+  const p = PONTOS_INVASAO_DRAPTOR[Math.floor(Math.random() * PONTOS_INVASAO_DRAPTOR.length)];
+  const lendario = Math.random() < 0.14;
+  const g = criaDraptor(lendario);
+  g.position.set(p.x, alturaTerreno(p.x, p.z), p.z);
+  const r = addMonstro(g, lendario ? 1450 : 880, lendario ? 900 : 520, lendario ? 52 : 38, lendario ? 2.45 : 2.15, true, areaMon(p.x, p.z, p.r), {
+    boss: true,
+    especie: lendario ? 'draptorLendario' : 'draptor',
+    invasao: true,
+    lootEspecial: { nome: lendario ? 'Nucleo Prismatico' : 'Escama de Draptor', icone: lendario ? 'N' : 'E' },
+  });
+  scene.add(r.g);
+  invasaoDraptorAtiva = r;
+  proxInvasaoDraptor = tempo + 420 + Math.random() * 420;
+  mostraMensagem(lendario
+    ? `INVASAO RARA: o Draptor Lendario apareceu em ${p.nome}!`
+    : `Invasao: um Draptor foi avistado em ${p.nome}.`);
+  mostraBossHud(r, 8);
+}
+function atualizaInvasaoDraptor() {
+  if (!jogoIniciado || noEsgoto || morto) return;
+  if (invasaoDraptorAtiva && (!invasaoDraptorAtiva.vivo || invasaoDraptorAtiva.corpse)) {
+    invasaoDraptorAtiva = null;
+  }
+  if (!invasaoDraptorAtiva && tempo > proxInvasaoDraptor) iniciaInvasaoDraptor();
+}
 function atualizaBarraHP(r) {
   if (!r || !r.vivo) return;
   if (r.boss) mostraBossHud(r, 6);
@@ -2380,6 +2558,7 @@ function mataBicho(r) {
     setTimeout(() => mostraMensagem(`✨ DROP RARO! ${raroDef.item.icone} ${raroDef.item.nome} caiu no corpo — SAQUEIE!`), 900);
   }
   r.despawnAt = tempo + 30;          // some em 30s se não saquear
+  tentaCapturarDraptor(r);
   const xp = r.xp || 5;
   hud.ganhaXP(xp);
   mostraMensagem(`${r.boss || r.forte ? 'Criatura poderosa derrotada!' : 'Derrotado!'} +${xp} XP — AÇÃO no corpo p/ saquear`);
@@ -2409,7 +2588,7 @@ function saqueia(r) {
     else if (it.nome === 'Bolsa de Ouro') { ouro += 10 + Math.floor(Math.random() * 16); hud.ouro(ouro); pegou++; }
     else if (inventario.addItem(it)) pegou++;
   }
-  r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25);
+  r.loot = []; r.corpse = false; r.g.visible = false; r.respawnAt = r.invasao ? null : tempo + (r.boss ? 60 : 25);
   if (pegou) sons.moeda();
   mostraMensagem(pegou ? `Saqueou ${pegou} item(s) 🎒` : 'O corpo estava vazio.');
 }
@@ -3227,7 +3406,7 @@ function passo() {
       const dxm = gato.position.x - (uG._px ?? gato.position.x), dzm = gato.position.z - (uG._pz ?? gato.position.z);
       const trotando = Math.hypot(dxm, dzm) > 0.01;
       uG._px = gato.position.x; uG._pz = gato.position.z;
-      if (uG.patas) { const sp = trotando ? Math.sin(tempo * 14) * 0.7 : 0; uG.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
+      animaCompanheiro(gato, trotando, montado ? 1.25 : 1);
     } else if (petAlvo && petAlvo.vivo && !petAlvo.corpse) {
       // PET DE COMBATE: corre pro bicho que você atacou e morde junto
       const pg = petAlvo.g;
@@ -3240,7 +3419,7 @@ function passo() {
           const vP = Math.min(dp - 1.2, 6.5 * dt);
           gato.position.x += (dxp / dp) * vP; gato.position.z += (dzp / dp) * vP;
           gato.rotation.y = Math.atan2(dxp, dzp);
-          if (uG.patas) { const sp = Math.sin(tempo * 16) * 0.6; uG.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
+          animaCompanheiro(gato, true, 1.15);
         } else if (tempo > petProxMordida) {
           petProxMordida = tempo + 1.2;
           const dnP = PET_DANO[petTipo] || 2;
@@ -3274,10 +3453,11 @@ function passo() {
     if (!d.y) d.g.position.y = alturaTerreno(d.g.position.x, d.g.position.z); // segue o relevo
     d.g.rotation.y = Math.atan2(ddx, ddz);
     const uD = d.g.userData;
-    if (uD.patas) { const sp = Math.sin(tempo * 10 + d.fase) * 0.45; uD.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; }); }
+    animaCompanheiro(d.g, true, 0.85);
   }
   animaProps(animados, dt, tempo);
   atualizaNPCs(npcs, dt, colide, ehNoite);
+  atualizaInvasaoDraptor();
   atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho, alturaTerreno);
   atualizaPresencaMonstros(dt); // RV7.0: aggro, telegraph e investida dos monstros principais
 
@@ -3480,7 +3660,11 @@ function passo() {
   }
   // corpos de bicho somem em 30s; respawn calibrado (rato 25s, boss 60s)
   for (const r of ratos) {
-    if (r.corpse && tempo > r.despawnAt) { r.corpse = false; r.g.visible = false; r.respawnAt = tempo + (r.boss ? 60 : 25); }
+    if (r.corpse && tempo > r.despawnAt) {
+      r.corpse = false; r.g.visible = false;
+      r.respawnAt = r.invasao ? null : tempo + (r.boss ? 60 : 25);
+    }
+    if (r.invasao && !r.vivo && !r.corpse) continue;
     if (r.noturno && !ehNoite) continue; // mortos noturnos só voltam com a noite (RV5.7)
     if (!r.vivo && !r.corpse && r.respawnAt && tempo > r.respawnAt) reviveBicho(r);
   }

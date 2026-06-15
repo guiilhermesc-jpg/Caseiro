@@ -29,3 +29,23 @@ Antes de importar modelos de sites externos, registrar:
 - arquivo final no projeto.
 
 Preferencia: CC0, public domain, ou assets pagos com licenca comercial clara.
+
+## Candidatos premium para RV8.2+
+
+Ainda nao importados. Usar apenas depois de baixar, conferir licenca e registrar
+arquivo final.
+
+- Quaternius - Free Game Assets: https://quaternius.com/
+  - candidatos: Animated Dinosaur Pack (Draptor/raptores), Ultimate Animated
+    Animal Pack (cavalo/burro/lobo), Fantasy Props MegaKit e Medieval Village
+    MegaKit (carrocas/wagon/props), Animated Monster Pack / Ultimate Monsters
+    (morcegos/monstros).
+- Kenney Assets: https://kenney.nl/assets
+  - candidatos: props low-poly, UI e objetos de mundo com licenca clara.
+- Poly Pizza: https://poly.pizza/
+  - candidatos: modelos individuais para props/animais; conferir licenca por
+    asset antes de usar.
+
+Regra nova: se a qualidade visual nao superar o procedural atual, o asset nao
+entra. Substituir por GLB so quando melhorar silhueta, animacao, material e
+leitura no celular.
