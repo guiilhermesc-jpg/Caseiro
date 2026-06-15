@@ -50,6 +50,8 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 4. RV6.9 entregue: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
 5. RV7.0 entregue: monstros principais com telegraph no chao, aggro claro e investida telegrafada.
 6. RV8.0 entregue: PWA/offline-first, pagina `/baixar`, arte oficial do patch, tela de patch, calendario semanal e mascate raro.
-7. RV8.1 proxima: auditoria de proporcoes/ruas/interiores e correcao de leitura no celular.
-8. RV8.2: interiores premium e padrao de entrada/saida em casas, lojas e templos.
-9. RV8.3: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.
+7. RV8.1 em andamento: Jornadas Valiosas - rotas, habitats, gap analysis RPG e painel de planejamento de viagem.
+8. RV8.1.1: spawns por habitat, com cyclops de montanha, raros e loot esperado por rota.
+9. RV8.1.2: casas reais, posse persistente, bau privado, decoracao e permissao de familia/grupo.
+10. RV8.2: interiores premium e padrao de entrada/saida em casas, lojas e templos.
+11. RV8.3: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.

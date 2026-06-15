@@ -14,6 +14,7 @@ import { criaSelecao } from './jogo/selecao.js';
 import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 import { criaPatchNotes } from './jogo/patchNotes.js';
+import { criaQuadroJornadas, pontosJornadaParaMapa, rotasParaMapa } from './jogo/jornadas.js';
 import { precoCompra } from './jogo/calendario.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
@@ -74,7 +75,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV8.0 (v56)';
+const VERSAO = 'RV8.1 (v57)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -789,6 +790,7 @@ const LUGARES_MAPA = [
   { nome: 'Lua Partida', x: -742, z: -30 },
 ];
 // LOJAS identificadas (estilo Tibia): ícone no MINIMAPA + marcador flutuante na cena
+const LUGARES_JORNADA = pontosJornadaParaMapa();
 const LOJAS_MAPA = [
   { x: 17, z: 11, icone: '💰' },   // Otto (mercador — compra tudo)
   { x: -17, z: 11, icone: '⚒️' },  // Bram (forja: armas; compra couro/osso/presas)
@@ -799,7 +801,8 @@ const LOJAS_MAPA = [
   { x: -590, z: -52, icone: '⚒️' }, // Calder (forja sombria de Noctaria)
   { x: -588, z: -10, icone: '💰' },  // Mira Noctar (suprimentos)
 ];
-const ROTAS_MAPA = [
+const ROTAS_MAPA = rotasParaMapa();
+/* const ROTAS_MAPA_LEGACY = [
   { x1: -86, z1: -30, x2: -258, z2: -30, w: 8 },   // Vilarejo -> Venore
   { x1: 72, z1: 0, x2: 500, z2: 0, w: 8 },         // Vilarejo -> Thais
   { x1: 0, z1: -116, x2: 0, z2: -218, w: 6 },      // trilha da praia
@@ -807,8 +810,9 @@ const ROTAS_MAPA = [
   { x1: -690, z1: -30, x2: -742, z2: -30, w: 7 },  // Noctaria -> Lua Partida
   { x1: 180, z1: -126, x2: 180, z2: 66, w: 5 },    // Rio Fundo / referência de travessia
 ];
+*/
 const minimapa = criaMinimapa({
-  obstaculos, ruas, marcos, lugares: LUGARES_MAPA, lojas: LOJAS_MAPA, rotas: ROTAS_MAPA, regiao: REGIAO, alcance: 90,
+  obstaculos, ruas, marcos, lugares: [...LUGARES_MAPA, ...LUGARES_JORNADA], lojas: LOJAS_MAPA, rotas: ROTAS_MAPA, regiao: REGIAO, alcance: 90,
   onMarcar: (destino) => defineDestinoMapa(destino),
   onLimpar: (silencioso) => limpaDestinoMapa(silencioso),
 });
@@ -886,6 +890,13 @@ function atualizaDestinoMapa() {
     mostraMensagem(`🗺️ Você chegou perto de ${nome}.`);
   }
 }
+const quadroJornadas = criaQuadroJornadas({
+  onAbrirMapa: () => minimapa.abreMapa(),
+  onMarcarDestino: (destino) => {
+    const dist = Math.round(Math.hypot(destino.x - avatar.position.x, destino.z - avatar.position.z));
+    defineDestinoMapa({ ...destino, dist });
+  },
+});
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
@@ -2930,6 +2941,7 @@ criaSelecao({
     nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI;
     { const tEl = document.getElementById('tituloVenor'); if (tEl) tEl.remove(); } // título sai de cena
     minimapa.mostra();
+    quadroJornadas.mostra();
     inventario.mostra();
     hud.mostra();
     const temConta = carregaJogo(nome); // CONTA LOCAL: mesmo nome = mesmo progresso
