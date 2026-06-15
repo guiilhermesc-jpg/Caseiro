@@ -1,27 +1,48 @@
-# Projetos / Sessões — espelho dos grupos de abas
+# Projetos / Sessões — espelho para acompanhar em outros dispositivos
 
-> Cópia dos títulos e grupos das sessões abertas no computador principal,
+> Cópia dos títulos e grupos das sessões/abas abertas no computador principal,
 > para acompanhamento no MacBook (ou qualquer outro dispositivo).
-> Títulos com "…" estavam cortados no print original — completar quando possível.
+> Só os títulos e grupos — sem carregar o conteúdo das sessões.
 >
-> Atualizado em: 2026-06-13
+> Atualizado em: 2026-06-15
 
-## (Grupo cortado no print)
+---
 
+## Sessões do Claude Code (app) — repo guiilhermesc-jpg/Caseiro
+
+> Agrupadas por tempo, como aparecem na lista do app. O texto em itálico é o
+> último passo/prompt pendente visível, para você saber onde retomar.
+
+### Hoje
+- [ ] **Social media campaign strategy** (2h)
+  - _Pendente: choose: (1) paste site content for ad text adjustment, (2) add competitive positioning doc, or (3) both_
+- [ ] **Docusign electronic signature setup** (5h)
+
+### Ontem
+- [ ] **MacBook tab sync with project groups** (19h)
+
+### Esta semana
+- [ ] **Local sessions cloud migration** (2d)
+  - _Pendente: do 'Continue in' → 'Claude Code on the Web' on first project and confirm it appears in claude.ai/code sidebar_
+
+---
+
+## Grupos de abas do navegador (print anterior)
+
+> Títulos com "…" estavam cortados no print original — completar quando possível.
+
+### (Grupo cortado no print)
 - [ ] Gmail organization and document rev…
 - [ ] Outlook email organization and client…
 
-## STS SATELLITE
-
+### STS SATELLITE
 - [ ] STS satellite internet site
 
-## RCSINC
-
+### RCSINC
 - [ ] RCS management platform
 - [ ] RCS carousel templates for RCSBRA…
 
-## Ungrouped (sem grupo)
-
+### Ungrouped (sem grupo)
 - [ ] 🟡 Local sessions cloud migration
 - [ ] 🟡 Desktop and documents organization
 - [ ] 🟡 Jetwave vs Starlink comparison docu…
@@ -29,21 +50,30 @@
 - [ ] guide IAGAMESSITES
 - [ ] Smoking cessation guide document
 
-> 🟡 = sessões que estavam com indicador amarelo (ativas/pendentes) no momento do print.
+> 🟡 = sessões com indicador amarelo (ativas/pendentes) no momento do print.
 
-## Como ver isso no MacBook
+---
 
-1. Abra o repositório no GitHub: `guiilhermesc-jpg/caseiro`, branch `claude/gracious-mayer-4r2mgn`, arquivo `docs/PROJETOS-SESSOES.md` — ou
-2. No terminal do MacBook: `git pull` dentro da pasta do projeto Caseiro.
+## Como ver / atualizar no MacBook
 
-## Observação sobre sincronização real das abas
+1. **No navegador:** GitHub → `guiilhermesc-jpg/caseiro` → branch
+   `claude/gracious-mayer-4r2mgn` → `docs/PROJETOS-SESSOES.md`
+2. **No terminal:** dentro da pasta do projeto Caseiro, rode
+   `git pull origin claude/gracious-mayer-4r2mgn`
 
-Uma sessão do Claude Code não consegue copiar abas/grupos de navegador entre
-máquinas — ela não tem acesso ao navegador. Para sincronizar as abas de verdade:
+## Por que as sessões "não aparecem" no Mac (e como resolver de verdade)
 
-- **Chrome**: fazer login na mesma conta Google nos dois computadores e ativar
-  a sincronização (Configurações → Você e o Google → Sincronização). Grupos de
-  guias salvos sincronizam automaticamente.
-- **Safari**: os Grupos de Abas sincronizam via iCloud entre dispositivos Apple.
-- **Conversas do Claude.ai**: já ficam na conta — basta entrar com a mesma conta
-  no MacBook que o histórico de conversas aparece em claude.ai/recents.
+- **Sessões do Claude Code no navegador/web** ficam na sua conta e aparecem em
+  **claude.ai/code** em qualquer dispositivo logado na mesma conta. Entrou com a
+  mesma conta no Mac → aparecem sozinhas.
+- **Sessões locais** (rodando no terminal do PC) **não** sincronizam — são
+  presas àquela máquina. Para uma delas aparecer no Mac/web, abra a sessão no PC
+  e use **"Continue in" → "Claude Code on the Web"**; depois confirme que ela
+  surgiu na barra lateral de claude.ai/code. (É exatamente o passo pendente da
+  sessão "Local sessions cloud migration".)
+- **Grupos de abas do navegador** não passam por aqui: sincronizam pelo próprio
+  navegador — Chrome (login na conta Google + sincronização ligada) ou Safari
+  (Grupos de Abas via iCloud).
+
+Este arquivo é a cópia manual só dos títulos/grupos: leve, sem carregar conteúdo.
+Quando quiser, me mande um print novo que eu atualizo a lista.
