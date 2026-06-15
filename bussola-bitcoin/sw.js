@@ -1,19 +1,19 @@
 /* Bússola — service worker (offline-first do shell + book). */
 const CACHE = 'bussola-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/assets/style.css',
-  '/assets/app.js',
-  '/manifest.webmanifest',
-  '/icon.svg',
-  '/docs/00-VISAO.md',
-  '/docs/01-COMPRAR.md',
-  '/docs/02-CARTEIRA.md',
-  '/docs/03-DECLARACAO.md',
-  '/docs/04-GANHAR-HOJE.md',
-  '/docs/05-MAPA-HISTORICO.md',
-  '/docs/99-FONTES.md',
+  './',
+  'index.html',
+  'assets/style.css',
+  'assets/app.js',
+  'manifest.webmanifest',
+  'icon.svg',
+  'docs/00-VISAO.md',
+  'docs/01-COMPRAR.md',
+  'docs/02-CARTEIRA.md',
+  'docs/03-DECLARACAO.md',
+  'docs/04-GANHAR-HOJE.md',
+  'docs/05-MAPA-HISTORICO.md',
+  'docs/99-FONTES.md',
 ];
 
 self.addEventListener('install', (e) => {
