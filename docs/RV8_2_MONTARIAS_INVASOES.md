@@ -40,6 +40,12 @@ a primeira montaria realmente aspiracional do jogo.
    - chance pequena de variante lendaria;
    - captura rara somente se o jogador tiver feito a quest da sela.
 
+6. **Modo instalavel/offline**
+   - PWA existente mantido como caminho oficial para jogar sem internet;
+   - cache atualizado para `venor-rv82-offline-v1`;
+   - depois do primeiro carregamento online, o navegador pode abrir Venor pelo
+     pacote local.
+
 ## Criterios de aceite
 
 1. Build passa.
@@ -50,6 +56,7 @@ a primeira montaria realmente aspiracional do jogo.
 6. Quest da Hela aparece apenas depois de `A Lua Partida`.
 7. Invasao do Draptor aparece aleatoriamente e pode ser forcada pelo ciclo do jogo.
 8. Draptor derrotado nao respawna como bicho comum; nova aparicao vem de nova invasao.
+9. Service worker usa cache `venor-rv82-offline-v1` para atualizar o pacote offline.
 
 ## Proxima camada premium
 
