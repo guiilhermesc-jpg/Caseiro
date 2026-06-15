@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#26364a"/>
+      <stop offset="1" stop-color="#10151d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4e9c8"/>
+      <stop offset="1" stop-color="#b98624"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="92" fill="url(#bg)"/>
+  <path d="M92 392h328v32H92z" fill="#66523b"/>
+  <path d="M112 372h288v24H112z" fill="#91724c"/>
+  <path d="M128 318h256v58H128z" fill="#bda67b"/>
+  <path d="M160 282h192v48H160z" fill="#d4c39c"/>
+  <path d="M138 282l118-120 118 120z" fill="#7a3b2a"/>
+  <path d="M230 212h52v166h-52z" fill="#4b2e20"/>
+  <path d="M215 182h82v38h-82z" fill="#d6c59d"/>
+  <path d="M256 70l35 72h-70z" fill="url(#gold)"/>
+  <path d="M246 54h20v96h-20zM220 92h72v20h-72z" fill="url(#gold)"/>
+  <path d="M104 126c82 12 133 53 152 122 24-80 84-118 152-122-62 48-105 112-128 194h-48c-22-82-65-146-128-194z" fill="url(#gold)" opacity=".9"/>
+</svg>

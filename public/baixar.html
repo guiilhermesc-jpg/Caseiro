@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Instalar Venor</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#1e293b" />
+    <style>
+      body { margin:0; min-height:100vh; font-family:Arial, sans-serif; color:#f4ead2;
+        background:linear-gradient(180deg,rgba(7,10,14,.35),rgba(7,10,14,.96)),
+        url('/patches/rv8-pacto-da-semana.png') center/cover fixed no-repeat; }
+      main { width:min(920px,92vw); margin:0 auto; padding:42px 0; }
+      .card { background:rgba(12,16,22,.88); border:1px solid rgba(232,217,160,.35);
+        border-radius:18px; padding:28px; box-shadow:0 20px 80px rgba(0,0,0,.55); }
+      h1 { margin:0 0 8px; font:800 44px Georgia,serif; letter-spacing:1px; }
+      p { color:#c8d3df; line-height:1.65; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:18px; }
+      section { background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:16px; }
+      h2 { margin:0 0 8px; color:#e8d9a0; font:700 18px Georgia,serif; }
+      ol { margin:0; padding-left:19px; color:#d9e2cf; line-height:1.75; }
+      a { color:#bff0a8; font-weight:800; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>Instalar Venor</h1>
+        <p>Venor agora funciona como jogo instalavel: carregue uma vez, instale no aparelho e abra de novo mesmo sem internet. O modo online/multiplayer continua opcional quando houver servidor ativo.</p>
+        <p><a href="/">Abrir o jogo</a></p>
+        <div class="grid">
+          <section>
+            <h2>Android / Chrome</h2>
+            <ol>
+              <li>Abra o jogo no Chrome.</li>
+              <li>Menu de tres pontos.</li>
+              <li>Toque em "Adicionar a tela inicial" ou "Instalar app".</li>
+            </ol>
+          </section>
+          <section>
+            <h2>iPhone / iPad</h2>
+            <ol>
+              <li>Abra no Safari.</li>
+              <li>Toque em compartilhar.</li>
+              <li>Escolha "Adicionar a Tela de Inicio".</li>
+            </ol>
+          </section>
+          <section>
+            <h2>PC</h2>
+            <ol>
+              <li>Abra no Chrome ou Edge.</li>
+              <li>Clique no icone de instalar na barra de endereco.</li>
+              <li>Depois abra como app independente.</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+    </main>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+      }
+    </script>
+  </body>
+</html>

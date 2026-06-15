@@ -13,6 +13,8 @@ import { criaGato, atualizaGato, PETS } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
 import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
+import { criaPatchNotes } from './jogo/patchNotes.js';
+import { precoCompra } from './jogo/calendario.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
@@ -72,7 +74,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV7.0 (v55)';
+const VERSAO = 'RV8.0 (v56)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -91,6 +93,7 @@ const VERSAO = 'RV7.0 (v55)';
     + 'color:rgba(255,255,255,.45);text-shadow:0 1px 2px #000;pointer-events:none;';
   document.body.appendChild(selo);
 }
+const patchNotes = criaPatchNotes();
 renderer.domElement.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   mostraMensagem('⚠️ O 3D perdeu o contexto no aparelho. Recarregue a página; reduzi a carga mobile nesta versão.');
@@ -1184,6 +1187,9 @@ const PRECOS = {
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
+function tabelaComEscassez(tabela) {
+  return Object.fromEntries(Object.entries(tabela).map(([nome, base]) => [nome, precoCompra(base)]));
+}
 // ESTOQUE REGIONAL: o que você vende pra cada NPC fica registrado (e salvo);
 // ao atingir a meta, a OFERTA RARA dele entra na loja pra sempre.
 const economia = {}; // nomeNpc -> { total, liberadas: [] }
@@ -1277,7 +1283,8 @@ function abreDialogo(npc) {
   // e o que você vende ABASTECE o NPC → destrava OFERTAS RARAS na loja dele!
   const ehMercador = npc.prof === 'Mercador' || npc.prof === 'Mercadora';
   if (ehMercador || npc.compra) {
-    const tabela = ehMercador ? PRECOS : Object.fromEntries(npc.compra.filter((n) => PRECOS[n]).map((n) => [n, PRECOS[n]]));
+    const tabelaBase = ehMercador ? PRECOS : Object.fromEntries(npc.compra.filter((n) => PRECOS[n]).map((n) => [n, PRECOS[n]]));
+    const tabela = tabelaComEscassez(tabelaBase);
     opcoes.splice(opcoes.length - 1, 0, { texto: ehMercador ? '💰 Vender tesouros' : '💰 Vender materiais', onClick: () => {
       const v = inventario.vendeItens(tabela);
       if (v.itens) {

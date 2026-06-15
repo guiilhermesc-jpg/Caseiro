@@ -6,6 +6,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { criaAvatar, animaAvatar, giraSuave } from './avatar.js';
+import { mascateHoje } from './calendario.js';
 
 const TAU = Math.PI * 2;
 const PELE = [0xf2d6b8, 0xe0b088, 0xc89060, 0x9c6a42, 0x6e4628];
@@ -16,7 +17,8 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 // Cada NPC fica NO SEU comércio/posto (espalhados pela cidade, não no meio da praça)
 // RV5.7: acampamento do Mascate sorteado a cada sessão (os 3 pontos têm
 // fogueira na beira da estrada de Thais)
-const POSTO_MASCATE = [[122, 17], [210, -17], [382, 19]][Math.floor(Math.random() * 3)];
+const ESTADO_MASCATE = mascateHoje();
+const POSTO_MASCATE = [ESTADO_MASCATE.posto.x, ESTADO_MASCATE.posto.z];
 
 const ROSTER = [
   { nome: 'Otto', prof: 'Mercador', post: { x: 17, z: 11 }, cor: 0x7a4632, humor: 'bom', sexo: 'homem', tipo: 'aldeao',
@@ -189,6 +191,8 @@ const ROSTER = [
 
 // casas (residências) — pontos LIVRES na rua em frente às casas (os antigos
 // caíam DENTRO dos prédios e o NPC andava contra a parede a noite inteira!)
+const ROSTER_ATIVO = ROSTER.filter((d) => d.prof !== 'Mascate' || ESTADO_MASCATE.aberto);
+
 const HOMES = [[24, 24], [-24, 24], [24, -24], [-24, -24], [56, 8], [-56, 8], [8, 56], [8, -56], [24, 40], [-24, 40], [40, -24]];
 const NOTURNOS = new Set(['Otto', 'Greta', 'Bram', 'Vasco', 'Dorian', 'Yara', 'Bruno', 'Tobias', 'Eldra', 'Falk',
   'Anselmo', 'Berta', 'Grom', 'Ilda', 'Capitã Mara', 'Tessa', 'Ulric', 'Hela',
@@ -219,7 +223,7 @@ function alvoPertoDoPosto(post, colide) {
 
 export function criaNPCs(scene, colide) {
   const npcs = [];
-  ROSTER.forEach((d, i) => {
+  ROSTER_ATIVO.forEach((d, i) => {
     const g = criaAvatar({ casaco: d.cor, pele: pick(PELE), cabelo: pick(CABELO), sexo: d.sexo, tipo: d.tipo });
     let sx = d.post.x, sz = d.post.z;
     for (let t = 0; t < 16; t++) {

@@ -49,5 +49,7 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. RV6.8 entregue: trilhas/caminhos melhores, lama, pegadas, bordas de estrada e transicao cidade-campo.
 4. RV6.9 entregue: vegetacao premium por bioma com mais volume, vento e variacao de silhueta.
 5. RV7.0 entregue: monstros principais com telegraph no chao, aggro claro e investida telegrafada.
-6. RV7.1 proxima: pagina `/baixar` + PWA instalavel.
-7. RV7.2: GLBs CC0 nos slots de vegetacao/monstros ou masmorra interna da Fenda, conforme material do maestro.
+6. RV8.0 entregue: PWA/offline-first, pagina `/baixar`, arte oficial do patch, tela de patch, calendario semanal e mascate raro.
+7. RV8.1 proxima: auditoria de proporcoes/ruas/interiores e correcao de leitura no celular.
+8. RV8.2: interiores premium e padrao de entrada/saida em casas, lojas e templos.
+9. RV8.3: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.

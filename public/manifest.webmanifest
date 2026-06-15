@@ -1,0 +1,24 @@
+{
+  "name": "Venor",
+  "short_name": "Venor",
+  "description": "RPG autoral em mundo aberto: explore Venor, evolua, negocie e sobreviva.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#111827",
+  "theme_color": "#1e293b",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/patches/rv8-pacto-da-semana.png",
+      "sizes": "1792x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Venor - Pacto da Semana"
+    }
+  ]
+}
