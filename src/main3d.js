@@ -75,7 +75,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV8.2 (v58)';
+const VERSAO = 'RV8.3 (v59)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1782,8 +1782,19 @@ function desce(i = 0) {
 function sobe(i = acessoAtual) {
   subsoloAtual.grupo.visible = false;
   chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false;
-  // cada subsolo tem suas SAÍDAS pareadas com os acessos (esgoto = bueiros)
-  const b = (subsoloAtual.saidas && subsoloAtual.saidas[i]) || BUEIROS[i] || BUEIROS[0];
+  // RV8.3 FIX: cada masmorra define suas SAÍDAS; o ESGOTO (rede que liga as
+  // cidades) sobe pelo BUEIRO MAIS PRÓXIMO da posição atual — antes o
+  // pareamento por índice surgia o jogador em Thais saindo de Venore.
+  let b;
+  if (subsoloAtual.saidas && subsoloAtual.saidas[i]) {
+    b = subsoloAtual.saidas[i];
+  } else {
+    b = BUEIROS[0]; let melhor = Infinity;
+    for (const bp of BUEIROS) {
+      const dd = (bp.x - avatar.position.x) ** 2 + (bp.z - avatar.position.z) ** 2;
+      if (dd < melhor) { melhor = dd; b = bp; }
+    }
+  }
   avatar.position.set(b.x, alturaTerreno(b.x, b.z + 2.5), b.z + 2.5); vy = 0; noChao = true;
   subsoloAtual = esgoto;
   minimapa.mostra(); sons.corda(); mostraMensagem('Você sobe pela corda de volta à superfície. 🪢☀️'); // luz volta pelo ciclo dia/noite
@@ -1885,6 +1896,9 @@ function aplicaDiaNoite(dt) {
   // lampiões e o luar viram a diferença entre andar e tropeçar
   sun.intensity = 0.04 + d * 1.01;
   hemi.intensity = 0.07 + d * 0.57;
+  // RV8.3: a EXPOSIÇÃO do tonemap também escurece à noite (antes ficava fixa
+  // em 0.80 o tempo todo) — a "madrugada de verdade" agora bate com o grading.
+  renderer.toneMappingExposure = 0.58 + d * 0.22; // noite ~0.58, dia 0.80 (sem estourar branco)
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
     ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
   } else {
@@ -2677,6 +2691,9 @@ function morre() {
   mostraTelaMorte(xpPerdido, perdidos.length > 0);
 }
 function reviveBicho(r) {
+  // RV8.3 FIX: ao renascer (dragão/boss do esgoto trocam o r.g), a barra de
+  // vida antiga ficava órfã e o chefe renascia SEM barra — limpa pra recriar.
+  if (r.barraHP) { clearTimeout(r._barraTimer); r.barraHP.parent && r.barraHP.parent.remove(r.barraHP); r.barraHP = null; r.barraCnv = null; r._barraTimer = null; }
   if (r.dragao) {
     // raramente (20%), no lugar do dragão verde nasce o DRAGON LORD vermelho,
     // 5× mais forte; quando o Lord morre, volta o dragão verde de sempre.
@@ -3583,7 +3600,7 @@ function passo() {
   }
   if (jogoIniciado) {
     for (const r of ratos) {
-      if (r.vivo && r.contato && tempo > (r.proxAtaque || 0)) {
+      if (r.vivo && r.contato && !r._rv70Investida && tempo > (r.proxAtaque || 0)) { // RV8.3: investida não soma com mordida (fim do double-dip)
         r.proxAtaque = tempo + 1.1;
         if (!gmImortal) { // GM imortal não toma dano
           if (r.veneno && Math.random() < 0.35 && tempo > envenenadoAte) { // mordida venenosa

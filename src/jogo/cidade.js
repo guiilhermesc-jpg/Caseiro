@@ -1113,7 +1113,7 @@ export function criaCidade() {
     muroNoct(-550, -58, 4, 46); muroNoct(-550, -2, 4, 46);
     [[-690, 23], [-550, 23], [-690, -83], [-550, -83]].forEach(([x, z]) => torreNoct(x, z));
     add(criaPlaca(-548, -20, 'NOCTARIA', -Math.PI / 2));
-  add(criaPlaca(-692, -20, 'SANTUÁRIO DA LUA PARTIDA', Math.PI / 2));
+  add(criaPlaca(-692, -20, 'SANTUÁRIO DA LUA PARTIDA  ⟶', Math.PI / 2)); // RV8.3: placa direcional (o santuário fica adiante, em -742)
 
     const ob = new THREE.Group(); ob.position.set(NX, 0, NZ - 4);
     const baseOb = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 0.8, 8), pedraClara);
