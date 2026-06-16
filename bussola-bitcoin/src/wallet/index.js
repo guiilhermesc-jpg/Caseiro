@@ -12,6 +12,7 @@ import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/b
 import { wordlist } from '@scure/bip39/wordlists/english';
 import * as btc from '@scure/btc-signer';
 import qrcode from 'qrcode-generator';
+import jsQR from 'jsqr';
 
 const NET = btc.TEST_NETWORK;
 
@@ -164,6 +165,12 @@ export function makeQR(text, cell = 3) {
     const qr = qrcode(0, 'L'); qr.addData(String(text)); qr.make();
     return qr.createSvgTag({ cellSize: cell, margin: 2, scalable: true });
   } catch { return null; }
+}
+
+/* Decodifica um QR a partir de pixels RGBA (ImageData da câmera). Retorna o texto ou null. */
+export function decodeQR(data, width, height) {
+  const r = jsQR(data, width, height);
+  return r ? r.data : null;
 }
 
 /* =================== Prova de integridade =================== */

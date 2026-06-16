@@ -544,6 +544,43 @@ function viewRegistro() {
   renderList(); renderSummary();
 }
 
+/* Scanner de QR pela câmera (offline-friendly). Chama onResult(texto) ao ler. */
+async function openScanner(onResult) {
+  const W = window.BussolaWallet;
+  if (!W || !W.decodeQR) { alert('Núcleo da carteira não carregou.'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { alert('Câmera indisponível neste navegador/contexto (precisa de HTTPS).'); return; }
+  const ov = document.createElement('div');
+  ov.className = 'scanner';
+  ov.innerHTML = `<div class="scanner-box"><video playsinline muted></video>
+    <div class="scanner-bar"><span>Aponte para o QR…</span><button type="button" class="btn-ghost" data-x>Cancelar</button></div></div>`;
+  document.body.appendChild(ov);
+  const video = ov.querySelector('video');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let stream = null, raf = 0, done = false;
+  function cleanup() { done = true; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); ov.remove(); }
+  ov.querySelector('[data-x]').addEventListener('click', cleanup);
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream; await video.play();
+  } catch { cleanup(); alert('Não consegui acessar a câmera (permissão negada?).'); return; }
+  function tick() {
+    if (done) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const w = video.videoWidth, h = video.videoHeight;
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(video, 0, 0, w, h);
+      try {
+        const img = ctx.getImageData(0, 0, w, h);
+        const text = W.decodeQR(img.data, w, h);
+        if (text) { cleanup(); onResult(text); return; }
+      } catch {}
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+}
+
 /* =================== Carteira =================== */
 const EXAMPLE_XPUB = 'xpub6Bqrcfo7nB1ywHwEvjikTNcd2jyTksXZLFkwJxUyeHJy8USaxusZpdfYUjMHoL1rAswEHBBoFX9gPW6uJy5EBoVc4NgWZfG21sDG8XSU7q6';
 const TESTNET_API = 'https://mempool.space/testnet/api';
@@ -618,19 +655,21 @@ function viewCarteira() {
           <h3>2) Assinar <span class="muted small">offline · com a seed</span></h3>
           <div class="banner warn">Faça este passo no <strong>aparelho offline</strong>. A seed só é usada aqui e some ao concluir.</div>
           <form id="agSign" class="regform">
-            <label style="grid-column:1/-1">PSBT a assinar (cole)<textarea id="agPsbtIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">PSBT a assinar (cole ou 📷)<textarea id="agPsbtIn" rows="3" spellcheck="false"></textarea></label>
             <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="text" id="agSeed" autocomplete="off" spellcheck="false"></label>
             <button type="submit">Assinar (offline)</button>
           </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="agScanPsbt">📷 Escanear PSBT</button></div>
           <div id="agSignOut"></div>
         </div>
 
         <div class="agstep">
           <h3>3) Transmitir <span class="muted small">online · sem chave</span></h3>
           <form id="agSend" class="regform">
-            <label style="grid-column:1/-1">PSBT assinado (cole)<textarea id="agSignedIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">PSBT assinado (cole ou 📷)<textarea id="agSignedIn" rows="3" spellcheck="false"></textarea></label>
             <button type="submit">Finalizar e transmitir</button>
           </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="agScanSigned">📷 Escanear PSBT assinado</button></div>
           <div id="agSendOut"></div>
         </div>
       </section>
@@ -790,6 +829,9 @@ function viewCarteira() {
       renderPayload(document.getElementById('agHexPay'), 'Transação final (hex)', fin.hex);
     }
   });
+
+  document.getElementById('agScanPsbt')?.addEventListener('click', () => openScanner(t => { document.getElementById('agPsbtIn').value = t; }));
+  document.getElementById('agScanSigned')?.addEventListener('click', () => openScanner(t => { document.getElementById('agSignedIn').value = t; }));
 
   // sugestão de taxa (testnet, mempool.space) — prefill se o usuário não mexeu
   const feeEl = document.getElementById('agFee');
