@@ -1,0 +1,20 @@
+{
+  "name": "bussola-wallet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Núcleo da carteira soberana da Bússola (watch-only testnet, libs auditadas).",
+  "scripts": {
+    "build": "esbuild src/wallet/index.js --bundle --format=iife --global-name=BussolaWallet --outfile=assets/vendor/wallet-bundle.js --minify --legal-comments=none",
+    "test": "node test/wallet.test.mjs"
+  },
+  "devDependencies": {
+    "@noble/hashes": "^1.4.0",
+    "@scure/base": "^1.1.6",
+    "@scure/bip32": "^1.4.0",
+    "esbuild": "^0.28.1"
+  },
+  "dependencies": {
+    "@scure/bip39": "^1.6.0"
+  }
+}

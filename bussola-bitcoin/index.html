@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1220" />
+    <meta name="description" content="Bússola — book + app de bitcoin: comprar, custódia própria soberana (air-gap), declarar, histórico e cotação. PT-BR, offline-first." />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/style.css" />
+    <title>Bússola — Bitcoin soberano (book + app)</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <button id="menuBtn" class="menu-btn" aria-label="Abrir menu de capítulos" hidden>☰</button>
+      <div class="brand">
+        <span class="logo">🧭</span>
+        <div>
+          <strong>Bússola</strong>
+          <small>Bitcoin soberano — <em>do off ao online</em></small>
+        </div>
+      </div>
+      <span id="netStatus" class="net" title="Status de conexão">●</span>
+    </header>
+
+    <div class="disclaimer">
+      ⚠️ <strong>Educacional + software em construção.</strong> Não é recomendação de
+      investimento. Bitcoin é volátil e de risco. <strong>Nunca pedimos sua seed/chave.</strong>
+      A carteira nasce <strong>testnet-first</strong> (dinheiro de teste).
+    </div>
+
+    <nav class="tabs" id="tabs" aria-label="Seções">
+      <a href="#painel"    data-tab="painel">📊 <span>Painel</span></a>
+      <a href="#book"      data-tab="book">📖 <span>Book</span></a>
+      <a href="#historico" data-tab="historico">🕰️ <span>Histórico</span></a>
+      <a href="#checklist" data-tab="checklist">✅ <span>Checklist</span></a>
+      <a href="#registro"  data-tab="registro">🧮 <span>Registro</span></a>
+      <a href="#carteira"  data-tab="carteira">🔐 <span>Carteira</span></a>
+    </nav>
+
+    <main id="app" class="app"><p class="loading">Carregando…</p></main>
+
+    <div id="backdrop" class="backdrop" hidden></div>
+    <script src="assets/vendor/wallet-bundle.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
