@@ -1,0 +1,8 @@
+{
+  "appId": "app.bussola.bitcoin",
+  "appName": "Bússola",
+  "webDir": "www",
+  "backgroundColor": "#0b1220",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "always" }
+}
