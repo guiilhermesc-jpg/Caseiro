@@ -741,6 +741,21 @@ function viewCarteira() {
       </section>
 
       <section class="watchonly">
+        <h2>💸 Pagar Silent Payment <span class="soon">BIP-352 · testnet</span></h2>
+        <p class="muted">Envie da sua carteira testnet para um endereço <strong>sp1…/tsp1…</strong>. O endereço
+        on-chain do destino é derivado por você (privacidade) — núcleo validado contra o vetor oficial do BIP-352.</p>
+        <div class="banner warn">⚠️ Consolida TODAS as UTXOs da carteira numa transação. Pede a sua frase (assina no aparelho, nada sai daqui sem ser a transação final).</div>
+        <form id="spsForm" class="regform">
+          <label style="grid-column:1/-1">Destino (sp1…/tsp1…)<input id="spsTo" spellcheck="false" autocomplete="off"></label>
+          <label>Valor (sats)<input type="number" id="spsAmt" min="1" step="1"></label>
+          <label>Taxa (sat/vB)<input type="number" id="spsFee" min="1" step="1" value="2"></label>
+          <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="spsSeed" spellcheck="false" autocomplete="off"></label>
+          <button type="submit">Pagar</button>
+        </form>
+        <div id="spsOut"></div>
+      </section>
+
+      <section class="watchonly">
         <h2>🏛️ Cofre de herança <span class="soon">timelock · testnet beta</span></h2>
         <p class="muted">Um cofre com dois caminhos de gasto: <strong>2-de-3</strong> agora (você + pessoas de confiança),
         OU o <strong>herdeiro sozinho</strong> depois de um tempo sem movimento (timelock). Se você sumir, a herança
@@ -1136,6 +1151,35 @@ function viewCarteira() {
       const body = (await r.text()).trim(); if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
       o.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
     } catch (err) { o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="ihHexPay"></div>`; renderPayload(ihEl('ihHexPay'), 'Tx final (hex)', fin.hex); }
+  });
+
+  // ---- Pagar Silent Payment ----
+  document.getElementById('spsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('spsOut');
+    if (!wallet) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const to = document.getElementById('spsTo').value.trim();
+    const amt = parseInt(document.getElementById('spsAmt').value, 10);
+    const fee = parseInt(document.getElementById('spsFee').value, 10) || 2;
+    const seed = document.getElementById('spsSeed').value;
+    if (!to || !(amt > 0) || !seed) { o.innerHTML = '<p class="muted">Preencha destino, valor e frase.</p>'; return; }
+    o.innerHTML = '<p class="loading">Derivando carteira e buscando UTXOs…</p>';
+    try {
+      const acct = wallet.restoreTestnetWallet(seed);
+      const utxos = await scanUtxos(acct.accountXpub);
+      if (!utxos.length) throw new Error('Sem saldo na carteira testnet (envie tBTC primeiro).');
+      const r = wallet.silentPaymentSend({ mnemonic: seed, accountXpub: acct.accountXpub, utxos, toAddress: to, amountSats: amt, feeRate: fee });
+      document.getElementById('spsSeed').value = '';
+      o.innerHTML = '<p class="loading">Transmitindo…</p>';
+      try {
+        const resp = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: r.hex });
+        const body = (await resp.text()).trim(); if (!resp.ok) throw new Error(body || ('HTTP ' + resp.status));
+        o.innerHTML = `<div class="banner ok">✅ Pago via Silent Payment! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a><br><span class="muted small">saída derivada (x-only): ${esc(r.outputXonly)} · troco ${r.change} sats</span></div>`;
+      } catch (err) {
+        o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="spsHexPay"></div>`;
+        renderPayload(document.getElementById('spsHexPay'), 'Tx final (hex)', r.hex);
+      }
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
 
   const doc = document.getElementById('doc');

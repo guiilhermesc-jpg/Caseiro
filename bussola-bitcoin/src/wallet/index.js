@@ -8,6 +8,7 @@ import { HDKey } from '@scure/bip32';
 import { base58check, bech32, bech32m, base64, hex } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
+import { secp256k1 } from '@noble/curves/secp256k1';
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic, mnemonicToEntropy, entropyToMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import * as btc from '@scure/btc-signer';
@@ -377,6 +378,62 @@ export function silentPaymentAddress(mnemonic, network = 'test') {
   const scanPub = root.derive(cfg.scan).publicKey, spendPub = root.derive(cfg.spend).publicKey;
   if (!scanPub || !spendPub) throw new Error('Falha ao derivar chaves de Silent Payment.');
   return { address: encodeSilentPaymentAddress(scanPub, spendPub, network), scanPub: hex.encode(scanPub), spendPub: hex.encode(spendPub), network };
+}
+
+/* Deriva o scriptPubKey (P2TR) de saída de um pagamento Silent Payment a partir das chaves
+ * privadas das entradas e dos outpoints. Núcleo validado contra o vetor oficial do BIP-352. */
+function spTagged(tag, msg) { const t = sha256(new TextEncoder().encode(tag)); return sha256(new Uint8Array([...t, ...t, ...msg])); }
+function spOutpointSer(txid, vout) { const t = hex.decode(txid).slice().reverse(); const v = new Uint8Array(4); new DataView(v.buffer).setUint32(0, vout, true); return new Uint8Array([...t, ...v]); }
+export function silentPaymentOutputScript({ inputPrivKeys, outpoints, scanPub, spendPub, k = 0 }) {
+  const P = secp256k1.ProjectivePoint, n = secp256k1.CURVE.n;
+  const toB = b => BigInt('0x' + hex.encode(b));
+  const privs = inputPrivKeys.map(p => (typeof p === 'string' ? hex.decode(p) : p));
+  let a = privs.reduce((s, p) => (s + toB(p)) % n, 0n); // P2WPKH: sem negação
+  if (a === 0n) throw new Error('Soma das chaves de entrada é inválida.');
+  const A = P.BASE.multiply(a);
+  const opL = outpoints.map(o => spOutpointSer(o.txid, o.vout)).sort((x, y) => { for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; })[0];
+  const inputHash = toB(spTagged('BIP0352/Inputs', new Uint8Array([...opL, ...A.toRawBytes(true)]))) % n;
+  if (inputHash === 0n) throw new Error('input_hash inválido.');
+  const ecdh = P.fromHex(typeof scanPub === 'string' ? scanPub : hex.encode(scanPub)).multiply((inputHash * a) % n);
+  const kb = new Uint8Array(4); new DataView(kb.buffer).setUint32(0, k, false); // ser32(k) big-endian
+  const tk = toB(spTagged('BIP0352/SharedSecret', new Uint8Array([...ecdh.toRawBytes(true), ...kb]))) % n;
+  if (tk === 0n) throw new Error('tweak t_k inválido.');
+  const Pout = P.fromHex(typeof spendPub === 'string' ? spendPub : hex.encode(spendPub)).add(P.BASE.multiply(tk));
+  const xonly = Pout.toRawBytes(true).slice(1);
+  return { script: new Uint8Array([0x51, 0x20, ...xonly]), xonly: hex.encode(xonly) };
+}
+
+/* Envia para um endereço Silent Payment a partir da carteira testnet (entradas P2WPKH).
+ * Usa TODAS as UTXOs passadas como entradas (consolidação) e monta→assina→finaliza em um passo. */
+export function silentPaymentSend({ mnemonic, accountXpub, utxos, toAddress, amountSats, feeRate = 2, changeIndex = 0 }) {
+  const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
+  if (!utxos || !utxos.length) throw new Error('Sem UTXOs (sem saldo na carteira testnet?).');
+  const amount = Math.floor(Number(amountSats));
+  if (!(amount > 0)) throw new Error('Valor inválido.');
+  const { scanPub, spendPub } = decodeSilentPaymentAddress(toAddress);
+  const acct = HDKey.fromMasterSeed(mnemonicToSeedSync(mm)).derive(TESTNET_ACCOUNT_PATH);
+  const xpub = accountXpub || acct.publicExtendedKey;
+  const tx = new btc.Transaction();
+  const inputPrivKeys = [], outpoints = []; let totalIn = 0;
+  for (const u of utxos) {
+    const c = acct.deriveChild(u.chain).deriveChild(u.index);
+    if (!c.privateKey) throw new Error('Falha ao derivar chave de uma entrada.');
+    inputPrivKeys.push(c.privateKey); outpoints.push({ txid: u.txid, vout: u.vout });
+    tx.addInput({ txid: hex.decode(u.txid), index: u.vout, witnessUtxo: { script: scriptAt(xpub, u.chain, u.index), amount: BigInt(u.valueSats) } });
+    totalIn += u.valueSats;
+  }
+  const spOut = silentPaymentOutputScript({ inputPrivKeys, outpoints, scanPub, spendPub, k: 0 });
+  const vsize = utxos.length * 68 + 43 + 31 + 11; // entradas p2wpkh + saída p2tr + troco + overhead
+  const fee = Math.ceil(vsize * Math.max(1, feeRate));
+  const change = totalIn - amount - fee;
+  if (change < 0) throw new Error(`Saldo insuficiente: tem ${totalIn} sats, precisa de ${amount + fee} (valor + taxa).`);
+  tx.addOutput({ script: spOut.script, amount: BigInt(amount) });
+  const hasChange = change >= 294;
+  if (hasChange) tx.addOutputAddress(addressAt(xpub, 1, changeIndex), BigInt(change), NET);
+  for (const p of inputPrivKeys) { try { tx.sign(p); } catch { /* entrada de outra chave */ } }
+  tx.finalize();
+  return { hex: tx.hex, txid: tx.id, outputXonly: spOut.xonly, fee, totalIn, change: hasChange ? change : 0 };
 }
 
 export function makeQR(text, cell = 3) {
