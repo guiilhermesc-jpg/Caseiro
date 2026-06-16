@@ -544,9 +544,48 @@ function viewRegistro() {
   renderList(); renderSummary();
 }
 
+/* Scanner de QR pela câmera (offline-friendly). Chama onResult(texto) ao ler. */
+async function openScanner(onResult) {
+  const W = window.BussolaWallet;
+  if (!W || !W.decodeQR) { alert('Núcleo da carteira não carregou.'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { alert('Câmera indisponível neste navegador/contexto (precisa de HTTPS).'); return; }
+  const ov = document.createElement('div');
+  ov.className = 'scanner';
+  ov.innerHTML = `<div class="scanner-box"><video playsinline muted></video>
+    <div class="scanner-bar"><span>Aponte para o QR…</span><button type="button" class="btn-ghost" data-x>Cancelar</button></div></div>`;
+  document.body.appendChild(ov);
+  const video = ov.querySelector('video');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let stream = null, raf = 0, done = false;
+  function cleanup() { done = true; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); ov.remove(); }
+  ov.querySelector('[data-x]').addEventListener('click', cleanup);
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream; await video.play();
+  } catch { cleanup(); alert('Não consegui acessar a câmera (permissão negada?).'); return; }
+  function tick() {
+    if (done) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const w = video.videoWidth, h = video.videoHeight;
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(video, 0, 0, w, h);
+      try {
+        const img = ctx.getImageData(0, 0, w, h);
+        const text = W.decodeQR(img.data, w, h);
+        if (text) { cleanup(); onResult(text); return; }
+      } catch {}
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+}
+
 /* =================== Carteira =================== */
 const EXAMPLE_XPUB = 'xpub6Bqrcfo7nB1ywHwEvjikTNcd2jyTksXZLFkwJxUyeHJy8USaxusZpdfYUjMHoL1rAswEHBBoFX9gPW6uJy5EBoVc4NgWZfG21sDG8XSU7q6';
-const TESTNET_API = 'https://mempool.space/testnet/api';
+const DEFAULT_ESPLORA = 'https://mempool.space/testnet/api';
+const ESPLORA_KEY = 'bussola.esplora.v1';
+function esploraBase() { try { return (localStorage.getItem(ESPLORA_KEY) || DEFAULT_ESPLORA).replace(/\/+$/, ''); } catch { return DEFAULT_ESPLORA; } }
 
 function viewCarteira() {
   menuBtn.hidden = true;
@@ -559,6 +598,19 @@ function viewCarteira() {
         <div class="banner warn">🧪 <strong>Testnet-first.</strong> Bibliotecas auditadas
         (@scure/bip32). Dinheiro real só após auditoria. <strong>Nunca pedimos sua seed.</strong></div>
       </div>
+
+      <section class="watchonly">
+        <h2>🌐 Conexão <span class="muted small">privacidade</span></h2>
+        <p class="muted">Por padrão consultamos saldos/UTXOs via mempool.space (testnet). Para
+        <strong>não revelar seus endereços</strong> a terceiros, aponte para o <strong>seu próprio nó</strong>
+        (Esplora/Electrs).</p>
+        <form id="cxForm" class="regform">
+          <label style="grid-column:1/-1">Endpoint Esplora (testnet)<input type="text" id="cxUrl" spellcheck="false" placeholder="${DEFAULT_ESPLORA}"></label>
+          <button type="submit">Salvar</button>
+        </form>
+        <div class="regactions"><button id="cxReset" class="btn-ghost" type="button">Voltar ao padrão</button></div>
+        <div id="cxOut"></div>
+      </section>
 
       <section class="watchonly">
         <h2>🔑 Criar / Restaurar carteira (testnet)</h2>
@@ -618,20 +670,72 @@ function viewCarteira() {
           <h3>2) Assinar <span class="muted small">offline · com a seed</span></h3>
           <div class="banner warn">Faça este passo no <strong>aparelho offline</strong>. A seed só é usada aqui e some ao concluir.</div>
           <form id="agSign" class="regform">
-            <label style="grid-column:1/-1">PSBT a assinar (cole)<textarea id="agPsbtIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">PSBT a assinar (cole ou 📷)<textarea id="agPsbtIn" rows="3" spellcheck="false"></textarea></label>
             <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="text" id="agSeed" autocomplete="off" spellcheck="false"></label>
             <button type="submit">Assinar (offline)</button>
           </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="agScanPsbt">📷 Escanear PSBT</button></div>
           <div id="agSignOut"></div>
         </div>
 
         <div class="agstep">
           <h3>3) Transmitir <span class="muted small">online · sem chave</span></h3>
           <form id="agSend" class="regform">
-            <label style="grid-column:1/-1">PSBT assinado (cole)<textarea id="agSignedIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">PSBT assinado (cole ou 📷)<textarea id="agSignedIn" rows="3" spellcheck="false"></textarea></label>
             <button type="submit">Finalizar e transmitir</button>
           </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="agScanSigned">📷 Escanear PSBT assinado</button></div>
           <div id="agSendOut"></div>
+        </div>
+      </section>
+
+      <section class="watchonly">
+        <h2>🔗 Multisig 2-de-3 <span class="soon">testnet beta</span></h2>
+        <p class="muted">Custódia colaborativa / herança: 3 chaves, <strong>2 assinaturas</strong> para
+        gastar. Cada cosigner gera a sua e compartilha só a <strong>xpub</strong>. Ninguém sozinho move os fundos.</p>
+
+        <div class="agstep">
+          <h3>1) Sua chave de cosigner</h3>
+          <div class="regactions"><button type="button" class="btn-ghost" id="msGen">🎲 Gerar minha chave</button></div>
+          <div id="msGenOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>2) O grupo (3 xpubs de cosigner)</h3>
+          <form id="msGroup" class="regform">
+            <label style="grid-column:1/-1">Cosigner A (xpub)<input id="msA" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Cosigner B (xpub)<input id="msB" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Cosigner C (xpub)<input id="msC" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">Ver endereços do cofre</button>
+          </form>
+          <div id="msAddrs"></div>
+        </div>
+        <div class="agstep">
+          <h3>3) Enviar (online, sem chave)</h3>
+          <form id="msSend" class="regform">
+            <label style="grid-column:1/-1">Destino (tb1…)<input id="msTo" spellcheck="false" autocomplete="off"></label>
+            <label>Valor (sats)<input type="number" id="msAmt" min="1" step="1"></label>
+            <label>Taxa (sat/vB)<input type="number" id="msFee" min="1" step="1" value="2"></label>
+            <button type="submit">Montar PSBT</button>
+          </form>
+          <div id="msBuildOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>4) Assinar (cada cosigner, offline)</h3>
+          <form id="msSign" class="regform">
+            <label style="grid-column:1/-1">PSBT (cole ou 📷)<textarea id="msPsbtIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">Sua frase (cosigner)<input id="msSeed" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">Assinar</button>
+          </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="msScan">📷 Escanear PSBT</button></div>
+          <div id="msSignOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>5) Transmitir (com 2 assinaturas)</h3>
+          <form id="msSendTx" class="regform">
+            <label style="grid-column:1/-1">PSBT assinado por 2 (cole)<textarea id="msSignedIn" rows="3" spellcheck="false"></textarea></label>
+            <button type="submit">Finalizar e transmitir</button>
+          </form>
+          <div id="msTxOut"></div>
         </div>
       </section>
 
@@ -642,6 +746,20 @@ function viewCarteira() {
   let current = [];
   const out = document.getElementById('woOut');
   const wallet = window.BussolaWallet;
+
+  // ---- Conexão (Esplora) ----
+  const cxUrl = document.getElementById('cxUrl');
+  cxUrl.value = esploraBase();
+  document.getElementById('cxForm').addEventListener('submit', e => {
+    e.preventDefault();
+    try { localStorage.setItem(ESPLORA_KEY, cxUrl.value.trim() || DEFAULT_ESPLORA); } catch {}
+    document.getElementById('cxOut').innerHTML = '<div class="banner ok">Conexão salva. Saldos/UTXOs usarão este endpoint.</div>';
+  });
+  document.getElementById('cxReset').addEventListener('click', () => {
+    try { localStorage.removeItem(ESPLORA_KEY); } catch {}
+    cxUrl.value = DEFAULT_ESPLORA;
+    document.getElementById('cxOut').innerHTML = '<div class="banner ok">Voltou ao padrão (mempool.space testnet).</div>';
+  });
 
   function useAccount(accountXpub) {
     document.getElementById('woXpub').value = accountXpub;
@@ -699,7 +817,7 @@ function viewCarteira() {
     out.innerHTML = '<p class="loading">Consultando saldo na testnet…</p>';
     try {
       const results = await Promise.all(current.map(async a => {
-        const r = await fetch(`${TESTNET_API}/address/${a.address}`, { cache: 'no-store' });
+        const r = await fetch(`${esploraBase()}/address/${a.address}`, { cache: 'no-store' });
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
         return { ...a, sats: d.chain_stats.funded_txo_sum - d.chain_stats.spent_txo_sum };
@@ -730,7 +848,7 @@ function viewCarteira() {
     const utxos = [];
     await Promise.all(targets.map(async t => {
       try {
-        const r = await fetch(`${TESTNET_API}/address/${t.address}/utxo`, { cache: 'no-store' });
+        const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' });
         if (!r.ok) return;
         for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index });
       } catch { /* ignora endereço */ }
@@ -780,7 +898,7 @@ function viewCarteira() {
     catch (err) { o.innerHTML = `<p class="muted">${err.message}</p>`; return; }
     o.innerHTML = '<p class="loading">Transmitindo na testnet…</p>';
     try {
-      const r = await fetch(`${TESTNET_API}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
       const body = (await r.text()).trim();
       if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
       o.innerHTML = `<div class="banner ok">✅ Transmitido!<br>txid: <span class="mono">${esc(body)}</span><br>
@@ -791,12 +909,94 @@ function viewCarteira() {
     }
   });
 
+  document.getElementById('agScanPsbt')?.addEventListener('click', () => openScanner(t => { document.getElementById('agPsbtIn').value = t; }));
+  document.getElementById('agScanSigned')?.addEventListener('click', () => openScanner(t => { document.getElementById('agSignedIn').value = t; }));
+
   // sugestão de taxa (testnet, mempool.space) — prefill se o usuário não mexeu
   const feeEl = document.getElementById('agFee');
   feeEl.addEventListener('input', () => { feeEl.dataset.touched = '1'; });
-  fetch(`${TESTNET_API}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+  fetch(`${esploraBase()}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
     if (d && d.halfHourFee && !feeEl.dataset.touched) feeEl.value = Math.max(1, d.halfHourFee);
   }).catch(() => {});
+
+  // ---- Multisig 2-de-3 ----
+  const MSG_KEY = 'bussola.msgroup.v1';
+  const msXpubs = () => [document.getElementById('msA').value.trim(), document.getElementById('msB').value.trim(), document.getElementById('msC').value.trim()];
+  (() => { try { const g = JSON.parse(localStorage.getItem(MSG_KEY) || 'null'); if (g) { document.getElementById('msA').value = g[0] || ''; document.getElementById('msB').value = g[1] || ''; document.getElementById('msC').value = g[2] || ''; } } catch {} })();
+  async function scanUtxosMs(xpubs) {
+    const targets = [...wallet.multisigAddresses(xpubs, 2, 10, 0), ...wallet.multisigAddresses(xpubs, 2, 5, 1)];
+    const utxos = [];
+    await Promise.all(targets.map(async t => {
+      try { const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!r.ok) return;
+        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index }); } catch {}
+    }));
+    return utxos;
+  }
+  document.getElementById('msGen')?.addEventListener('click', () => {
+    if (!wallet) return;
+    const c = wallet.createMultisigCosigner(), o = document.getElementById('msGenOut');
+    o.innerHTML = `<div class="seedbox"><h3>📝 Anote sua frase (cosigner):</h3>
+      <ol class="seedwords">${c.mnemonic.split(' ').map(w => `<li>${esc(w)}</li>`).join('')}</ol>
+      <div class="banner warn">Guarde offline. Compartilhe com o grupo APENAS a xpub abaixo (nunca a frase).</div>
+      <div class="muted small">Sua xpub de cosigner (compartilhe):</div><textarea class="mono" rows="2" readonly></textarea></div>`;
+    o.querySelector('textarea').value = c.accountXpub;
+  });
+  document.getElementById('msGroup').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = document.getElementById('msAddrs'), xpubs = msXpubs();
+    if (xpubs.some(x => !x)) { o.innerHTML = '<p class="muted">Preencha as 3 xpubs de cosigner.</p>'; return; }
+    try {
+      const addrs = wallet.multisigAddresses(xpubs, 2, 5, 0);
+      try { localStorage.setItem(MSG_KEY, JSON.stringify(xpubs)); } catch {}
+      o.innerHTML = `<div class="banner ok">Cofre 2-de-3 criado.</div>
+        <div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço</th><th></th></tr></thead><tbody>
+        ${addrs.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td><button type="button" class="btn-ghost qrbtn" data-addr="${a.address}">QR</button></td></tr>`).join('')}
+        </tbody></table></div><div class="regactions"><button type="button" class="btn-ghost" id="msBal">Consultar saldo do cofre</button></div><div id="msQr"></div>`;
+      o.querySelectorAll('.qrbtn').forEach(b => b.addEventListener('click', () => { const q = wallet.makeQR(b.dataset.addr); document.getElementById('msQr').innerHTML = q ? `<div class="muted small mono">${esc(b.dataset.addr)}</div><div class="qr">${q}</div>` : ''; }));
+      document.getElementById('msBal').addEventListener('click', async () => {
+        document.getElementById('msQr').innerHTML = '<p class="loading">Consultando…</p>';
+        const u = await scanUtxosMs(xpubs); const total = u.reduce((s, x) => s + x.valueSats, 0);
+        document.getElementById('msQr').innerHTML = `<div class="banner ok">Saldo do cofre: <strong>${BTC.format(total / 1e8)} tBTC</strong> (${u.length} UTXOs).</div>`;
+      });
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('msSend').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('msBuildOut'), xpubs = msXpubs();
+    if (xpubs.some(x => !x)) { o.innerHTML = '<p class="muted">Defina o grupo (passo 2).</p>'; return; }
+    const to = document.getElementById('msTo').value.trim(), amt = parseInt(document.getElementById('msAmt').value, 10), fee = parseInt(document.getElementById('msFee').value, 10) || 2;
+    if (!to || !(amt > 0)) { o.innerHTML = '<p class="muted">Preencha destino e valor.</p>'; return; }
+    o.innerHTML = '<p class="loading">Buscando UTXOs do cofre…</p>';
+    try {
+      const utxos = await scanUtxosMs(xpubs);
+      const res = wallet.buildMultisigPsbt({ xpubs, m: 2, utxos, toAddress: to, amountSats: amt, feeRate: fee });
+      o.innerHTML = `<div class="banner ok">Montado: entrada ${res.totalIn} · taxa ${res.fee} · troco ${res.change} sats.</div><div id="msPay"></div><p class="muted small">Leve a 2 cosigners para assinar (passo 4).</p>`;
+      renderPayload(document.getElementById('msPay'), 'PSBT multisig (não assinado)', res.psbt);
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('msScan')?.addEventListener('click', () => openScanner(t => { document.getElementById('msPsbtIn').value = t; }));
+  document.getElementById('msSign').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = document.getElementById('msSignOut');
+    try {
+      const r = wallet.signMultisigPsbt(document.getElementById('msPsbtIn').value, document.getElementById('msSeed').value);
+      o.innerHTML = `<div class="banner ok">Assinado (${r.signedInputs}). Passe ao próximo cosigner; com 2 assinaturas, transmita (passo 5).</div><div id="msSignedPay"></div>`;
+      renderPayload(document.getElementById('msSignedPay'), 'PSBT assinado', r.psbt);
+      document.getElementById('msSeed').value = '';
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('msSendTx').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('msTxOut'); let fin;
+    try { fin = wallet.finalizePsbt(document.getElementById('msSignedIn').value); }
+    catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)} (faltam assinaturas?)</p>`; return; }
+    o.innerHTML = '<p class="loading">Transmitindo…</p>';
+    try {
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const body = (await r.text()).trim(); if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
+      o.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
+    } catch (err) { o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="msHexPay"></div>`; renderPayload(document.getElementById('msHexPay'), 'Tx final (hex)', fin.hex); }
+  });
 
   const doc = document.getElementById('doc');
   fetchMd('docs/06-CARTEIRA-SOBERANA.md')

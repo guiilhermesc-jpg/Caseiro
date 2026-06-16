@@ -192,6 +192,12 @@ tr:nth-child(even) td { background: #0e1727; }
   border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
 .install-btn:hover { background: #1f2c49; }
 
+/* Scanner de câmera */
+.scanner { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.92); display: grid; place-items: center; }
+.scanner-box { width: min(94vw, 460px); }
+.scanner video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 1/1; object-fit: cover; }
+.scanner-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; color: #fff; }
+
 /* Acessibilidade */
 :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) {
