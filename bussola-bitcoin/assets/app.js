@@ -92,6 +92,8 @@ const CHAPTERS = [
   { id: '04', file: 'docs/04-GANHAR-HOJE.md',   emoji: '⛏️', title: 'Ganhar BTC hoje' },
   { id: '05', file: 'docs/05-MAPA-HISTORICO.md',emoji: '🗺️', title: 'Mapa do passado' },
   { id: '07', file: 'docs/07-NORTE-PRODUTO.md', emoji: '🚀', title: 'Norte do produto' },
+  { id: '08', file: 'docs/08-ESTRATEGIA.md',    emoji: '♟️', title: 'Estratégia (longo prazo)' },
+  { id: '09', file: 'docs/09-SEGURANCA.md',     emoji: '🛡️', title: 'Segurança & Confiança' },
   { id: '99', file: 'docs/99-FONTES.md',        emoji: '📚', title: 'Fontes' },
 ];
 

@@ -79,3 +79,8 @@ A Bússola vai ser três coisas num produto só, em PT-BR, mobile-first, soberan
   testado contra o vetor oficial do **BIP84**. Primeiro recurso: **watch-only testnet** —
   derivar endereços e ver saldo a partir de um `xpub`, **sem chaves privadas**. Workflow de
   publicação no GitHub Pages criado (PR aberto; publicação só quando o maestro quiser).
+- **16/06/2026 — v0.4:** Carteira **air-gap** completa na testnet (montar→assinar→transmitir,
+  PSBT + QR), criar/restaurar (BIP39). Módulo **Soberania**: Raio-X (nota), **Legado**
+  (herança) e **Cofre** (backup AES-256-GCM). Seriedade de board: docs **08-ESTRATEGIA** e
+  **09-SEGURANCA**, **LICENSE/SECURITY/CONTRIBUTING** e **CI** (testes + build). Publicação no
+  Pages exige ativar o Pages 1x nas Settings (token do Actions não pode criar o site).

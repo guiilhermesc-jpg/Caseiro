@@ -10,19 +10,22 @@ ganhava/ganha BTC** (mapa histórico). Site estático, **offline-first** (PWA), 
 
 ---
 
-## Estado atual (v0.2 — 16/06/2026)
+## Estado atual (v0.4 — 16/06/2026)
 
 App PWA com abas, offline-first, em PT-BR. Tudo só-leitura no que toca dinheiro; nunca pede seed/chave.
+Núcleo da carteira com **libs auditadas** e **testes automatizados** (CI).
 
-- ✅ **Camada 1 — Book**: pasta `docs/` (caps. 00–07 + fontes), lida no app.
-- ✅ **Camada 2 — App**: **Painel** (preço ao vivo, índice **Medo & Ganância**, contagem pro
-  **halving**, "leitura do momento" educacional), **Histórico** (timeline), **Checklist**
-  guiado (salva no aparelho), **Carteira** (arquitetura da carteira soberana, em construção).
-- ⏳ Camada 3+ — Planilha/CSV pro contador, simulador de DCA, carteira testnet → air-gap →
-  notarização → mainnet auditada.
+- ✅ **Book**: `docs/` (caps. 00–09 + fontes), lido no app.
+- ✅ **Painel**: preço ao vivo, **Medo & Ganância**, contagem pro **halving**, leitura educacional.
+- ✅ **Histórico**: linha do tempo do bitcoin. **Checklist** guiado. **Registro**: planilha + CSV + simulador de DCA.
+- ✅ **Carteira (testnet)**: criar/restaurar (BIP39), watch-only por xpub, e **air-gap PSBT**
+  (montar → assinar offline → transmitir) — testado contra o vetor oficial do BIP84.
+- ✅ **Soberania**: **Raio-X** (nota), **Legado** (herança) e **Cofre** (backup AES-256-GCM).
+- ⏳ Próximos: notarização (OpenTimestamps), leitura de QR por câmera, calculadora fiscal,
+  multisig guiado, auditoria → mainnet. Ver [`docs/08-ESTRATEGIA.md`](docs/08-ESTRATEGIA.md).
 
-Visão e roadmap: [`docs/00-VISAO.md`](docs/00-VISAO.md) · [`docs/07-NORTE-PRODUTO.md`](docs/07-NORTE-PRODUTO.md)
-· carteira: [`docs/06-CARTEIRA-SOBERANA.md`](docs/06-CARTEIRA-SOBERANA.md)
+Visão/estratégia: [`docs/00-VISAO.md`](docs/00-VISAO.md) · [`docs/08-ESTRATEGIA.md`](docs/08-ESTRATEGIA.md)
+· segurança: [`docs/09-SEGURANCA.md`](docs/09-SEGURANCA.md) · carteira: [`docs/06-CARTEIRA-SOBERANA.md`](docs/06-CARTEIRA-SOBERANA.md)
 
 > Dados ao vivo (públicos, só-leitura): preço (CoinGecko), medo&ganância (alternative.me),
 > altura de bloco (mempool.space). Funcionam no navegador do usuário; offline, o app usa cache.
@@ -31,24 +34,25 @@ Visão e roadmap: [`docs/00-VISAO.md`](docs/00-VISAO.md) · [`docs/07-NORTE-PROD
 
 ```
 bussola-bitcoin/
-├── index.html              # o site (leitor do book)
+├── index.html              # app (abas)
 ├── assets/style.css        # tema
-├── assets/app.js           # app: abas (Painel/Book/Histórico/Checklist/Carteira) + render Markdown
+├── assets/app.js           # app: roteador + views + render Markdown
+├── assets/vendor/wallet-bundle.js  # núcleo da carteira (libs auditadas, empacotado)
+├── src/wallet/index.js     # fonte do núcleo (BIP39/32/84, PSBT, QR)
+├── test/                   # testes (carteira contra vetor BIP84; cofre cripto)
+├── package.json            # build (esbuild) + test
 ├── manifest.webmanifest    # PWA
 ├── sw.js                   # service worker (offline)
-├── icon.svg                # ícone
-├── publicar.md             # como publicar (link provisório) e virar repo próprio
-└── docs/                   # O BOOK (fonte única de verdade, em Markdown)
-    ├── 00-VISAO.md         # visão + pipeline "do prompt ao produto"
-    ├── 01-COMPRAR.md       # comprar no Brasil (off→online)
-    ├── 02-CARTEIRA.md      # custódia própria, seed, segurança
-    ├── 03-DECLARACAO.md    # fiscal Brasil (estado atual + risco de mudança)
-    ├── 04-GANHAR-HOJE.md   # formas viáveis de conseguir BTC + golpes
-    ├── 05-MAPA-HISTORICO.md# a "máquina de extração" educacional (o que ficou)
-    ├── 06-CARTEIRA-SOBERANA.md # arquitetura da carteira air-gap (joia da coroa)
-    ├── 07-NORTE-PRODUTO.md  # visão de produto + etapas
-    └── 99-FONTES.md        # fontes checadas
+├── LICENSE · SECURITY.md · CONTRIBUTING.md
+└── docs/                   # O BOOK (Markdown)
+    ├── 00-VISAO.md · 01-COMPRAR · 02-CARTEIRA · 03-DECLARACAO · 04-GANHAR-HOJE
+    ├── 05-MAPA-HISTORICO · 06-CARTEIRA-SOBERANA · 07-NORTE-PRODUTO
+    ├── 08-ESTRATEGIA.md    # tese, fosso, riscos, sustentabilidade (longo prazo)
+    ├── 09-SEGURANCA.md     # modelo de ameaças, privacidade, promessas
+    └── 99-FONTES.md
 ```
+
+CI: `.github/workflows/ci.yml` roda `npm test` + build a cada push/PR.
 
 ## Rodar localmente
 
