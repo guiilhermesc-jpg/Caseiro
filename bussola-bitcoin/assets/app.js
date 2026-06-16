@@ -742,8 +742,202 @@ function viewCarteira() {
     .catch(e => { doc.innerHTML = mdErr('docs/06-CARTEIRA-SOBERANA.md', e); });
 }
 
+/* =================== Soberania (Raio-X + Legado + Cofre) =================== */
+const RAIOX = [
+  { id: 'saque', w: 3, q: 'Já tirei meu bitcoin da corretora para uma carteira própria (self-custody).', tip: 'Enquanto está na corretora, não é 100% seu.', link: '#book/02' },
+  { id: 'seed', w: 3, q: 'Tenho a seed (12/24 palavras) anotada offline (papel/metal), nunca digital.', tip: 'Seed em foto/nuvem é alvo de roubo. Use papel/metal.', link: '#book/02' },
+  { id: 'teste', w: 2, q: 'Já TESTEI restaurar a carteira a partir da seed.', tip: 'Backup não testado pode falhar na hora H.', link: '#book/02' },
+  { id: 'cold', w: 2, q: 'Guardo a maior parte em cold wallet (hardware / air-gap).', tip: 'Para valores maiores, cold storage reduz muito o risco.', link: '#carteira' },
+  { id: '2fa', w: 1, q: 'Uso 2FA por app (não SMS) nas contas ligadas a cripto.', tip: 'SMS é vulnerável a SIM swap. Use um app autenticador.', link: '#book/01' },
+  { id: 'heranca', w: 3, q: 'Tenho plano de herança: alguém de confiança recuperaria meu bitcoin se eu faltasse.', tip: 'Sem plano, o bitcoin some para sempre. Monte seu Legado abaixo.', link: '#soberania' },
+  { id: 'lastro', w: 1, q: 'Guardo comprovação de origem e custo (lastro) para a declaração.', tip: 'Facilita o IRPF. Veja Declaração e a aba Registro.', link: '#book/03' },
+  { id: 'golpe', w: 2, q: 'Nunca compartilhei minha seed e reconheço golpes comuns.', tip: 'Ninguém legítimo pede sua seed. Veja o cap. de golpes.', link: '#book/04' },
+  { id: 'priv', w: 1, q: 'Cuido de privacidade (evito reusar endereços, não exponho saldos).', tip: 'Endereço novo a cada recebimento melhora a privacidade.', link: '#carteira' },
+];
+function scoreRaioX(set) {
+  let got = 0, total = 0; const gaps = [];
+  for (const it of RAIOX) { total += it.w; if (set.has(it.id)) got += it.w; else gaps.push(it); }
+  const score = Math.round(got / total * 100);
+  const tier = score < 40 ? 'Iniciante' : score < 75 ? 'Em evolução' : 'Soberano';
+  const cls = score < 40 ? 'red' : score < 75 ? 'orange' : 'green';
+  return { score, tier, cls, gaps };
+}
+
+const LEGADO_FIELDS = [
+  { k: 'titular', label: 'Seu nome (titular)', type: 'text' },
+  { k: 'data', label: 'Data do plano', type: 'date' },
+  { k: 'herdeiros', label: 'Herdeiros / pessoa(s) de confiança', type: 'textarea', ph: 'Nomes e como contatá-los' },
+  { k: 'custodia', label: 'Tipo de custódia', type: 'select', opts: ['Hot wallet (celular/PC)', 'Cold wallet (hardware)', 'Multisig', 'Misto'] },
+  { k: 'localSeed', label: 'ONDE está a seed (⚠️ NÃO escreva a seed aqui!)', type: 'textarea', ph: 'Ex.: cofre em casa; placa de aço no banco. NUNCA as palavras.' },
+  { k: 'localBackup', label: 'Backups / cópias (onde estão)', type: 'textarea', ph: 'Ex.: cópia na casa dos pais; arquivo do Cofre no pendrive X.' },
+  { k: 'instrucoes', label: 'Instruções para o herdeiro', type: 'textarea', ph: 'Passo a passo simples de como acessar/recuperar.' },
+  { k: 'carta', label: 'Carta pessoal (opcional)', type: 'textarea', ph: 'Uma mensagem para quem for cuidar disso.' },
+];
+function legadoMarkdown(d) {
+  const v = x => (x && String(x).trim()) || '—';
+  return `# Plano de Legado — Bitcoin\n\n**Titular:** ${v(d.titular)}\n\n**Data:** ${v(d.data)}\n\n` +
+    `## Pessoas de confiança / herdeiros\n${v(d.herdeiros)}\n\n## Custódia\n${v(d.custodia)}\n\n` +
+    `## Onde encontrar (NUNCA contém a seed)\n- Seed: ${v(d.localSeed)}\n- Backups: ${v(d.localBackup)}\n\n` +
+    `## Instruções para o herdeiro\n${v(d.instrucoes)}\n\n## Carta\n${v(d.carta)}\n\n` +
+    `---\n*Gerado pela Bússola. Guarde em local seguro. NÃO substitui orientação jurídica (testamento/inventário).*\n`;
+}
+
+/* Cofre — backup criptografado (WebCrypto: PBKDF2 + AES-GCM). Padrões, não cripto caseira. */
+const b64u = {
+  enc: u8 => { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); },
+  dec: s => Uint8Array.from(atob(s), c => c.charCodeAt(0)),
+};
+async function deriveAesKey(pass, salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function encryptJSON(obj, pass) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveAesKey(pass, salt);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
+  return { app: 'bussola', v: 1, kdf: 'PBKDF2-SHA256-150000', alg: 'AES-256-GCM', salt: b64u.enc(salt), iv: b64u.enc(iv), data: b64u.enc(ct) };
+}
+async function decryptJSON(blob, pass) {
+  const key = await deriveAesKey(pass, b64u.dec(blob.salt));
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64u.dec(blob.iv) }, key, b64u.dec(blob.data));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function collectAppData() { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('bussola.')) o[k] = localStorage.getItem(k); } return o; }
+
+function viewSoberania() {
+  menuBtn.hidden = true;
+  const RX_KEY = 'bussola.raiox.v1', LG_KEY = 'bussola.legado.v1';
+  const rxSet = (() => { try { return new Set(JSON.parse(localStorage.getItem(RX_KEY) || '[]')); } catch { return new Set(); } })();
+  const lg = (() => { try { return JSON.parse(localStorage.getItem(LG_KEY) || '{}'); } catch { return {}; } })();
+
+  appEl.innerHTML = `
+    <div class="pad">
+      <h1>🛡️ Soberania <span class="muted small">segurança para a vida toda</span></h1>
+      <p class="muted">O que o mercado esquece: bitcoin não é só comprar e guardar — é <strong>manter
+      seguro</strong> e <strong>transmitir</strong>. Aqui você se autoavalia, monta seu plano de
+      herança e protege seus dados. Tudo <strong>no seu aparelho</strong>.</p>
+
+      <section class="watchonly">
+        <h2>📡 Raio-X da Soberania</h2>
+        <p class="muted">Marque o que já é verdade. Vira uma nota e um plano de ação.</p>
+        <div id="rxList"></div>
+        <div id="rxResult"></div>
+      </section>
+
+      <section class="watchonly">
+        <h2>🕊️ Legado — plano de herança</h2>
+        <div class="banner warn">⚠️ <strong>Nunca</strong> escreva sua seed aqui — só <strong>onde
+        encontrá-la</strong>. Este plano não substitui testamento/inventário (procure orientação jurídica).</div>
+        <form id="lgForm" class="regform">
+          ${LEGADO_FIELDS.map(f => {
+            const val = lg[f.k] ? esc(lg[f.k]) : '';
+            if (f.type === 'textarea') return `<label style="grid-column:1/-1">${f.label}<textarea id="lg_${f.k}" rows="2" spellcheck="false" placeholder="${f.ph || ''}">${val}</textarea></label>`;
+            if (f.type === 'select') return `<label>${f.label}<select id="lg_${f.k}">${['', ...f.opts].map(o => `<option ${lg[f.k] === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
+            return `<label${f.k === 'titular' ? ' style="grid-column:1/-1"' : ''}>${f.label}<input type="${f.type}" id="lg_${f.k}" value="${val}"></label>`;
+          }).join('')}
+          <button type="submit">Salvar plano</button>
+        </form>
+        <div class="regactions">
+          <button id="lgPrint" class="btn-ghost">🖨️ Imprimir / PDF</button>
+          <button id="lgExport" class="btn-ghost">⬇️ Exportar (.md)</button>
+        </div>
+        <div id="lgOut"></div>
+      </section>
+
+      <section class="watchonly">
+        <h2>🔒 Cofre — backup criptografado</h2>
+        <p class="muted">Exporte tudo (checklist, registro, raio-x, legado) num arquivo
+        <strong>criptografado</strong> (AES-256-GCM) com uma senha. Sem a senha, ninguém abre.</p>
+        <div class="banner warn">Guarde a senha com cuidado: <strong>sem ela o backup é irrecuperável</strong>
+        (é essa a ideia). Este cofre <strong>não</strong> contém sua seed.</div>
+        <form id="cfForm" class="regform">
+          <label style="grid-column:1/-1">Senha do backup<input type="password" id="cfPass" autocomplete="new-password"></label>
+          <button type="submit">Exportar cofre</button>
+        </form>
+        <div class="regactions">
+          <label class="btn-ghost" style="cursor:pointer">⬆️ Restaurar backup<input type="file" id="cfFile" accept="application/json" hidden></label>
+        </div>
+        <div id="cfOut"></div>
+      </section>
+    </div>`;
+
+  // ---- Raio-X ----
+  const rxList = document.getElementById('rxList');
+  function renderRX() {
+    rxList.innerHTML = RAIOX.map(it => `<label class="ck-item"><input type="checkbox" data-id="${it.id}" ${rxSet.has(it.id) ? 'checked' : ''}><span>${esc(it.q)}</span></label>`).join('');
+    rxList.querySelectorAll('input').forEach(inp => inp.addEventListener('change', () => {
+      inp.checked ? rxSet.add(inp.dataset.id) : rxSet.delete(inp.dataset.id);
+      try { localStorage.setItem(RX_KEY, JSON.stringify([...rxSet])); } catch {}
+      renderResult();
+    }));
+  }
+  function renderResult() {
+    const r = scoreRaioX(rxSet);
+    document.getElementById('rxResult').innerHTML = `
+      <div class="rxhead"><div class="gauge ${r.cls}"><div class="gnum">${r.score}</div></div>
+        <div><span class="badge ${r.cls}">${r.tier}</span><div class="muted small">nota de soberania (0–100)</div></div></div>
+      ${r.gaps.length ? `<h3>Próximos passos</h3><ul class="gaps">${r.gaps.map(g => `<li>${esc(g.tip)} <a href="${g.link}">ver →</a></li>`).join('')}</ul>`
+        : '<div class="banner ok">🏆 Soberania plena nos itens essenciais. Excelente!</div>'}`;
+  }
+  renderRX(); renderResult();
+
+  // ---- Legado ----
+  function legadoData() { const d = {}; LEGADO_FIELDS.forEach(f => { d[f.k] = (document.getElementById('lg_' + f.k) || {}).value || ''; }); return d; }
+  document.getElementById('lgForm').addEventListener('submit', e => {
+    e.preventDefault();
+    try { localStorage.setItem(LG_KEY, JSON.stringify(legadoData())); } catch {}
+    document.getElementById('lgOut').innerHTML = '<div class="banner ok">✅ Plano salvo no aparelho.</div>';
+  });
+  document.getElementById('lgExport').addEventListener('click', () => {
+    const md = legadoMarkdown(legadoData());
+    const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'plano-de-legado.md'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById('lgPrint').addEventListener('click', () => {
+    const md = legadoMarkdown(legadoData());
+    const w = window.open('', '_blank');
+    if (!w) { document.getElementById('lgOut').innerHTML = '<p class="muted">Permita pop-ups para imprimir, ou use Exportar (.md).</p>'; return; }
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>Plano de Legado</title>
+      <style>body{font:15px/1.6 system-ui,Arial;max-width:720px;margin:32px auto;padding:0 16px;color:#111}
+      h1{font-size:24px}h2{font-size:17px;border-bottom:1px solid #ccc;padding-bottom:4px;margin-top:24px}</style>
+      <pre style="white-space:pre-wrap;font:inherit">${md.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</pre>`);
+    w.document.close(); w.focus(); setTimeout(() => w.print(), 250);
+  });
+
+  // ---- Cofre ----
+  document.getElementById('cfForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('cfOut');
+    const pass = document.getElementById('cfPass').value;
+    if (pass.length < 6) { o.innerHTML = '<p class="muted">Use uma senha de pelo menos 6 caracteres.</p>'; return; }
+    try {
+      const blob = await encryptJSON(collectAppData(), pass);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(blob, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a'); a.href = url; a.download = 'bussola-cofre.json'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      document.getElementById('cfPass').value = '';
+      o.innerHTML = '<div class="banner ok">🔒 Cofre exportado e criptografado.</div>';
+    } catch (err) { o.innerHTML = `<p class="muted">Falha ao criptografar: ${esc(err.message)}</p>`; }
+  });
+  document.getElementById('cfFile').addEventListener('change', async e => {
+    const o = document.getElementById('cfOut');
+    const file = e.target.files[0]; if (!file) return;
+    const pass = prompt('Senha do backup:'); if (!pass) return;
+    try {
+      const blob = JSON.parse(await file.text());
+      const data = await decryptJSON(blob, pass);
+      Object.entries(data).forEach(([k, v]) => { if (k.startsWith('bussola.')) localStorage.setItem(k, v); });
+      o.innerHTML = '<div class="banner ok">✅ Backup restaurado. Recarregando…</div>';
+      setTimeout(() => location.reload(), 900);
+    } catch (err) { o.innerHTML = `<p class="muted">Não consegui restaurar (senha errada ou arquivo inválido).</p>`; }
+    finally { e.target.value = ''; }
+  });
+}
+
 /* =================== Roteador =================== */
-const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira };
+const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira, soberania: viewSoberania };
 function route() {
   const raw = location.hash.replace(/^#/, '') || 'painel';
   const [tab, sub] = raw.split('/');
