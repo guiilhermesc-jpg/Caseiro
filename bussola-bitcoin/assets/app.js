@@ -891,6 +891,18 @@ function viewSoberania() {
         </div>
         <div id="cfOut"></div>
       </section>
+
+      <section class="watchonly">
+        <h2>🔗 Prova de Integridade <span class="muted small">SHA-256</span></h2>
+        <p class="muted">Gere a "impressão digital" de um comprovante, declaração ou do seu plano.
+        Se o arquivo mudar 1 byte, o hash muda. Guarde o hash para provar depois que o documento é o mesmo.</p>
+        <div class="regform"><label style="grid-column:1/-1">Escolha um arquivo<input type="file" id="piFile"></label></div>
+        <div id="piOut"></div>
+        <p class="muted small">Próximo passo (roadmap): ancorar este hash no Bitcoin via
+        <a href="https://opentimestamps.org" target="_blank" rel="noopener">OpenTimestamps</a> — prova de
+        data inviolável, que só fica mais forte com o tempo.</p>
+        <div id="piList"></div>
+      </section>
     </div>`;
 
   // ---- Raio-X ----
@@ -965,6 +977,35 @@ function viewSoberania() {
     } catch (err) { o.innerHTML = `<p class="muted">Não consegui restaurar (senha errada ou arquivo inválido).</p>`; }
     finally { e.target.value = ''; }
   });
+
+  // ---- Prova de Integridade ----
+  const PI_KEY = 'bussola.provas.v1';
+  const piLoad = () => { try { return JSON.parse(localStorage.getItem(PI_KEY) || '[]'); } catch { return []; } };
+  const piSave = a => { try { localStorage.setItem(PI_KEY, JSON.stringify(a)); } catch {} };
+  function piRender() {
+    const a = piLoad(), el = document.getElementById('piList');
+    el.innerHTML = a.length ? `<h3>Provas guardadas</h3><div class="tablewrap"><table><thead><tr><th>Quando</th><th>Arquivo</th><th>SHA-256</th></tr></thead><tbody>
+      ${a.map(p => `<tr><td>${esc(p.date)}</td><td>${esc(p.name)}</td><td class="mono">${esc(p.hash)}</td></tr>`).join('')}</tbody></table></div>` : '';
+  }
+  document.getElementById('piFile').addEventListener('change', async e => {
+    const o = document.getElementById('piOut'), f = e.target.files[0]; if (!f) return;
+    const W = window.BussolaWallet;
+    if (!W || !W.sha256Hex) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    o.innerHTML = '<p class="loading">Calculando SHA-256…</p>';
+    try {
+      const hash = W.sha256Hex(new Uint8Array(await f.arrayBuffer()));
+      o.innerHTML = `<div class="banner ok">SHA-256 de <strong>${esc(f.name)}</strong>:</div>
+        <textarea class="mono" rows="2" readonly></textarea>
+        <div class="regactions"><button type="button" class="btn-ghost" id="piSaveBtn">Guardar prova</button></div>`;
+      o.querySelector('textarea').value = hash;
+      const name = f.name;
+      document.getElementById('piSaveBtn').addEventListener('click', () => {
+        const a = piLoad(); a.unshift({ date: new Date().toLocaleString('pt-BR'), name, hash }); piSave(a); piRender();
+      });
+    } catch (err) { o.innerHTML = `<p class="muted">Falha ao ler o arquivo: ${esc(err.message)}</p>`; }
+    finally { e.target.value = ''; }
+  });
+  piRender();
 }
 
 /* =================== Roteador =================== */

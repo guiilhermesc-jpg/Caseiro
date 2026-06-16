@@ -166,6 +166,11 @@ export function makeQR(text, cell = 3) {
   } catch { return null; }
 }
 
+/* =================== Prova de integridade =================== */
+/* SHA-256 (hex) de bytes — impressão digital de um documento. Base para notarização
+ * (ancoragem no Bitcoin via OpenTimestamps é o próximo passo). */
+export function sha256Hex(bytes) { return hex.encode(sha256(bytes)); }
+
 /* =================== Util fiscal (estimativa educacional) =================== */
 /* Estimativa de ganho de capital em VENDA. Parâmetros (limite/alíquota) são EDITÁVEIS pelo
  * usuário porque as regras mudam — isto NÃO é cálculo oficial nem recomendação. */
