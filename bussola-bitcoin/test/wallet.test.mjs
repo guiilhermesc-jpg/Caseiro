@@ -5,10 +5,14 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   splitMnemonic, combineMnemonic,
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
   encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
-  silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan } from '../src/wallet/index.js';
+  silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan,
+  silentPaymentSpend } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
+import { secp256k1, schnorr } from '@noble/curves/secp256k1';
+import { hex } from '@scure/base';
+import * as btc from '@scure/btc-signer';
 
 let fail = 0;
 function eq(name, got, exp) {
@@ -161,6 +165,34 @@ eq('SP/scan: encontra 1 output', spScan.length, 1);
 eq('SP/scan: output x-only == vetor', spScan[0].xonly, '3e9fce73d4e77a4809908e3c3a2e54ee147b9312dc5044a193d1fc85de46e3c1');
 eq('SP/scan: tweak == vetor', spScan[0].tweak, 'f438b40179a3c4262de12986c0e6cce0634007cdc79c1dcd3e20b9ebc2e7eef6');
 eq('SP/scan: nada quando não é seu', silentPaymentScanTx({ scanPriv: '0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c', spendPub: '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36', inputPubKeys: ['025a1e61f898173040e20616d43e9f496fba90338a39faa1ed98fcbaeee4dd9be5', '03bd85685d03d111699b15d046319febe77f8de5286e9e512703cdee1bf3be3792'], outpoints: [{ txid: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16', vout: 0 }, { txid: 'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d', vout: 0 }], outputs: [{ vout: 0, xonly: '0000000000000000000000000000000000000000000000000000000000000001', valueSats: 1 }] }).length, 0);
+
+/* Silent Payments GASTO: monta o sweep de um output SP e a assinatura Schnorr confere
+ * (independentemente) com a chave de saída sobre o sighash BIP-341 canônico. */
+{
+  const Pt = secp256k1.ProjectivePoint, nn = secp256k1.CURVE.n;
+  const M = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+  const tweak = 'f438b40179a3c4262de12986c0e6cce0634007cdc79c1dcd3e20b9ebc2e7eef6';
+  const B = Pt.fromHex(silentPaymentAddress(M, 'test').spendPub);
+  const xonly = hex.encode(B.add(Pt.BASE.multiply(BigInt('0x' + tweak) % nn)).toRawBytes(true).slice(1)); // P_k = B_spend + t·G
+  const toAddr = 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx';
+  const src = 'aa'.repeat(32);
+  const r = silentPaymentSpend({ mnemonic: M, network: 'test', sourceTxid: src, outputs: [{ vout: 0, xonly, tweak, valueSats: 100000 }], toAddress: toAddr, feeRate: 2 });
+  eq('SP/spend: gera txid', /^[0-9a-f]{64}$/.test(r.txid), true);
+  eq('SP/spend: 1 entrada', r.inputs, 1);
+  eq('SP/spend: valor após taxa', r.sent, 100000 - r.fee);
+  const dtx = btc.Transaction.fromRaw(hex.decode(r.hex));
+  const wsig = dtx.getInput(0).finalScriptWitness[0];
+  eq('SP/spend: assinatura key-path 64 bytes', wsig.length, 64);
+  const v = new btc.Transaction();
+  v.addInput({ txid: hex.decode(src), index: 0, witnessUtxo: { script: hex.decode('5120' + xonly), amount: 100000n } });
+  v.addOutputAddress(toAddr, BigInt(r.sent), btc.TEST_NETWORK);
+  const sh = v.preimageWitnessV1(0, [hex.decode('5120' + xonly)], 0, [100000n]);
+  eq('SP/spend: testemunha confere com a chave de saída (independente)', schnorr.verify(wsig, sh, hex.decode(xonly)), true);
+  let threw = false; try { silentPaymentSpend({ mnemonic: M, network: 'test', sourceTxid: src, outputs: [{ vout: 0, xonly, tweak: '00'.repeat(31) + '01', valueSats: 100000 }], toAddress: toAddr }); } catch { threw = true; }
+  eq('SP/spend: recusa output que não é seu', threw, true);
+  let dust = false; try { silentPaymentSpend({ mnemonic: M, network: 'test', sourceTxid: src, outputs: [{ vout: 0, xonly, tweak, valueSats: 200 }], toAddress: toAddr }); } catch { dust = true; }
+  eq('SP/spend: recusa valor abaixo do mínimo', dust, true);
+}
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

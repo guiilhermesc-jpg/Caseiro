@@ -1580,8 +1580,41 @@ function viewSoberania() {
       } else {
         const total = res.found.reduce((s, f) => s + (f.valueSats || 0), 0);
         o.innerHTML = `<div class="banner ok">🎉 ${res.found.length} output(s) seu(s)! Total ${(total / 1e8).toFixed(8)} tBTC.</div>`
-          + res.found.map(f => `<div class="payload"><div class="muted small">vout ${f.vout} · ${f.valueSats} sats</div><div class="mono small" style="word-break:break-all">chave: ${esc(f.xonly)}<br>tweak p/ gastar: ${esc(f.tweak)}</div></div>`).join('')
-          + `${nota}<p class="muted small">Para gastar: chave privada = (spend_priv + tweak) mod n. (Gasto dos recebimentos SP: roadmap.)</p>`;
+          + res.found.map(f => `<div class="payload"><div class="muted small">vout ${f.vout} · ${f.valueSats} sats</div><div class="mono small" style="word-break:break-all">chave: ${esc(f.xonly)}</div></div>`).join('')
+          + nota
+          + `<div class="agstep" style="margin-top:12px"><h3>Gastar estes recebimentos</h3>
+              <p class="muted small">Varre <strong>todos</strong> os ${res.found.length} output(s) acima para um endereço só.</p>
+              <form id="spSpend" class="regform">
+                <label style="grid-column:1/-1">Enviar tudo para (endereço testnet)<input id="spDest" spellcheck="false" autocomplete="off" placeholder="tb1q…"></label>
+                <label style="grid-column:1/-1">Sua frase<input id="spSpendMn" autocomplete="off" spellcheck="false"></label>
+                <label>Taxa (sat/vB)<input type="number" id="spFee" min="1" step="1" value="2"></label>
+                <button type="submit">Montar transação</button>
+              </form><div id="spSpendOut"></div></div>`;
+        document.getElementById('spSpend').addEventListener('submit', async ev => {
+          ev.preventDefault();
+          const so = document.getElementById('spSpendOut');
+          const dest = document.getElementById('spDest').value.trim();
+          const smn = document.getElementById('spSpendMn').value;
+          const fee = parseInt(document.getElementById('spFee').value, 10) || 2;
+          if (!dest) { so.innerHTML = '<p class="muted">Informe o endereço de destino.</p>'; return; }
+          so.innerHTML = '<p class="loading">Montando e assinando…</p>';
+          try {
+            const built = Wsh.silentPaymentSpend({ mnemonic: smn, network: net, sourceTxid: txid, outputs: res.found, toAddress: dest, feeRate: fee });
+            document.getElementById('spSpendMn').value = '';
+            so.innerHTML = `<div class="banner ok">Transação pronta — <strong>${built.sent} sats</strong> para o destino (taxa ${built.fee} sats).</div>
+              <div class="payload"><div class="muted small">txid: ${esc(built.txid)}</div><textarea readonly rows="3" class="mono small" style="width:100%">${esc(built.hex)}</textarea></div>
+              <button id="spBroadcast" class="btn">📡 Transmitir agora</button><div id="spBcOut"></div>`;
+            document.getElementById('spBroadcast').addEventListener('click', async () => {
+              const bo = document.getElementById('spBcOut'); bo.innerHTML = '<p class="loading">Transmitindo…</p>';
+              try {
+                const rr = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: built.hex });
+                const body = await rr.text();
+                if (!rr.ok) throw new Error(body || ('HTTP ' + rr.status));
+                bo.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">ver no explorer</a></div>`;
+              } catch (be) { bo.innerHTML = `<p class="muted">Falha ao transmitir: ${esc(be.message)}</p>`; }
+            });
+          } catch (er) { so.innerHTML = `<p class="muted">${esc(er.message)}</p>`; }
+        });
       }
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
