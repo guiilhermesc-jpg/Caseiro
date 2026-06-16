@@ -4,7 +4,8 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
   splitMnemonic, combineMnemonic,
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
-  encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress } from '../src/wallet/index.js';
+  encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
+  silentPaymentOutputScript, silentPaymentSend } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -131,6 +132,22 @@ const spA = silentPaymentAddress(createTestnetWallet().mnemonic, 'test');
 eq('SP: endereço testnet começa com tsp1', /^tsp1[0-9a-z]+$/.test(spA.address), true);
 const spDec = decodeSilentPaymentAddress(spA.address);
 eq('SP: decode recupera scan+spend', spDec.scanPub === spA.scanPub && spDec.spendPub === spA.spendPub, true);
+
+/* Silent Payments ENVIO: kernel confere com o vetor oficial "Simple send: two inputs" */
+const spVecOut = silentPaymentOutputScript({
+  inputPrivKeys: ['eadc78165ff1f8ea94ad7cfdc54990738a4c53f6e0507b42154201b8e5dff3b1', '93f5ed907ad5b2bdbbdcb5d9116ebc0a4e1f92f910d5260237fa45a9408aad16'],
+  outpoints: [{ txid: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16', vout: 0 }, { txid: 'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d', vout: 0 }],
+  scanPub: '0220bcfac5b99e04ad1a06ddfb016ee13582609d60b6291e98d01a9bc9a16c96d4',
+  spendPub: '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36', k: 0,
+});
+eq('SP/envio: output x-only == vetor oficial', spVecOut.xonly, '3e9fce73d4e77a4809908e3c3a2e54ee147b9312dc5044a193d1fc85de46e3c1');
+/* Envio integrado: monta→assina→finaliza um tx testnet pagando um endereço SP */
+const spSender = createTestnetWallet();
+const spRecv = silentPaymentAddress(createTestnetWallet().mnemonic, 'test').address;
+const spUtxo = [{ txid: '33'.repeat(32), vout: 0, chain: 0, index: 0, valueSats: 200000 }];
+const spSent = silentPaymentSend({ mnemonic: spSender.mnemonic, accountXpub: spSender.accountXpub, utxos: spUtxo, toAddress: spRecv, amountSats: 150000, feeRate: 1 });
+eq('SP/envio: txid 64 hex', /^[0-9a-f]{64}$/.test(spSent.txid), true);
+eq('SP/envio: output x-only 64 hex', /^[0-9a-f]{64}$/.test(spSent.outputXonly), true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */
