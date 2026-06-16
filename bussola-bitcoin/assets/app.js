@@ -175,6 +175,12 @@ async function viewPainel() {
       </div>
       <p class="muted small">Dados ao vivo: CoinGecko (preço), alternative.me (medo &amp; ganância),
       mempool.space (altura de bloco). Tudo público e só-leitura.</p>
+
+      <h2>Sobre</h2>
+      <div class="banner ok">🔓 Código aberto • 🙈 sem coleta de dados • 🏦 sem custódia • 📚 educacional (não é recomendação).</div>
+      <p class="muted small">Bússola • PWA offline-first • leia a <a href="#book/08">Estratégia</a> e a
+      <a href="#book/09">Segurança</a> · monte sua <a href="#carteira">carteira soberana</a> e seu
+      <a href="#soberania">Legado</a>.</p>
     </div>`;
   loadPrice(); loadFng(); loadHalving();
 }
@@ -656,9 +662,15 @@ function viewCarteira() {
 
   function showAddrs(list) {
     current = list;
-    out.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço (tb1…)</th></tr></thead><tbody>
-      ${list.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td></tr>`).join('')}
-    </tbody></table></div>`;
+    out.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço (tb1…)</th><th></th></tr></thead><tbody>
+      ${list.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td><button type="button" class="btn-ghost qrbtn" data-addr="${a.address}">QR</button></td></tr>`).join('')}
+    </tbody></table></div><div id="woQr"></div>`;
+    out.querySelectorAll('.qrbtn').forEach(b => b.addEventListener('click', () => {
+      const qr = (wallet && wallet.makeQR) ? wallet.makeQR(b.dataset.addr) : null;
+      document.getElementById('woQr').innerHTML = qr
+        ? `<div class="muted small">Receber em: <span class="mono">${esc(b.dataset.addr)}</span></div><div class="qr">${qr}</div>`
+        : '<p class="muted small">Não foi possível gerar o QR.</p>';
+    }));
   }
   document.getElementById('woExample').addEventListener('click', () => { document.getElementById('woXpub').value = EXAMPLE_XPUB; });
   document.getElementById('woForm').addEventListener('submit', e => {
@@ -766,6 +778,13 @@ function viewCarteira() {
       renderPayload(document.getElementById('agHexPay'), 'Transação final (hex)', fin.hex);
     }
   });
+
+  // sugestão de taxa (testnet, mempool.space) — prefill se o usuário não mexeu
+  const feeEl = document.getElementById('agFee');
+  feeEl.addEventListener('input', () => { feeEl.dataset.touched = '1'; });
+  fetch(`${TESTNET_API}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+    if (d && d.halfHourFee && !feeEl.dataset.touched) feeEl.value = Math.max(1, d.halfHourFee);
+  }).catch(() => {});
 
   const doc = document.getElementById('doc');
   fetchMd('docs/06-CARTEIRA-SOBERANA.md')
@@ -1033,9 +1052,18 @@ window.addEventListener('online', updNet);
 window.addEventListener('offline', updNet);
 updNet();
 
-/* PWA */
+/* PWA: registro + prompt de instalação */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; if (installBtn) installBtn.hidden = false; });
+installBtn?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt(); await deferredPrompt.userChoice;
+  deferredPrompt = null; installBtn.hidden = true;
+});
+window.addEventListener('appinstalled', () => { if (installBtn) installBtn.hidden = true; });
 
 route();
