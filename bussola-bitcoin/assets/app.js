@@ -583,7 +583,9 @@ async function openScanner(onResult) {
 
 /* =================== Carteira =================== */
 const EXAMPLE_XPUB = 'xpub6Bqrcfo7nB1ywHwEvjikTNcd2jyTksXZLFkwJxUyeHJy8USaxusZpdfYUjMHoL1rAswEHBBoFX9gPW6uJy5EBoVc4NgWZfG21sDG8XSU7q6';
-const TESTNET_API = 'https://mempool.space/testnet/api';
+const DEFAULT_ESPLORA = 'https://mempool.space/testnet/api';
+const ESPLORA_KEY = 'bussola.esplora.v1';
+function esploraBase() { try { return (localStorage.getItem(ESPLORA_KEY) || DEFAULT_ESPLORA).replace(/\/+$/, ''); } catch { return DEFAULT_ESPLORA; } }
 
 function viewCarteira() {
   menuBtn.hidden = true;
@@ -596,6 +598,19 @@ function viewCarteira() {
         <div class="banner warn">🧪 <strong>Testnet-first.</strong> Bibliotecas auditadas
         (@scure/bip32). Dinheiro real só após auditoria. <strong>Nunca pedimos sua seed.</strong></div>
       </div>
+
+      <section class="watchonly">
+        <h2>🌐 Conexão <span class="muted small">privacidade</span></h2>
+        <p class="muted">Por padrão consultamos saldos/UTXOs via mempool.space (testnet). Para
+        <strong>não revelar seus endereços</strong> a terceiros, aponte para o <strong>seu próprio nó</strong>
+        (Esplora/Electrs).</p>
+        <form id="cxForm" class="regform">
+          <label style="grid-column:1/-1">Endpoint Esplora (testnet)<input type="text" id="cxUrl" spellcheck="false" placeholder="${DEFAULT_ESPLORA}"></label>
+          <button type="submit">Salvar</button>
+        </form>
+        <div class="regactions"><button id="cxReset" class="btn-ghost" type="button">Voltar ao padrão</button></div>
+        <div id="cxOut"></div>
+      </section>
 
       <section class="watchonly">
         <h2>🔑 Criar / Restaurar carteira (testnet)</h2>
@@ -682,6 +697,20 @@ function viewCarteira() {
   const out = document.getElementById('woOut');
   const wallet = window.BussolaWallet;
 
+  // ---- Conexão (Esplora) ----
+  const cxUrl = document.getElementById('cxUrl');
+  cxUrl.value = esploraBase();
+  document.getElementById('cxForm').addEventListener('submit', e => {
+    e.preventDefault();
+    try { localStorage.setItem(ESPLORA_KEY, cxUrl.value.trim() || DEFAULT_ESPLORA); } catch {}
+    document.getElementById('cxOut').innerHTML = '<div class="banner ok">Conexão salva. Saldos/UTXOs usarão este endpoint.</div>';
+  });
+  document.getElementById('cxReset').addEventListener('click', () => {
+    try { localStorage.removeItem(ESPLORA_KEY); } catch {}
+    cxUrl.value = DEFAULT_ESPLORA;
+    document.getElementById('cxOut').innerHTML = '<div class="banner ok">Voltou ao padrão (mempool.space testnet).</div>';
+  });
+
   function useAccount(accountXpub) {
     document.getElementById('woXpub').value = accountXpub;
     document.getElementById('woForm').dispatchEvent(new Event('submit', { cancelable: true }));
@@ -738,7 +767,7 @@ function viewCarteira() {
     out.innerHTML = '<p class="loading">Consultando saldo na testnet…</p>';
     try {
       const results = await Promise.all(current.map(async a => {
-        const r = await fetch(`${TESTNET_API}/address/${a.address}`, { cache: 'no-store' });
+        const r = await fetch(`${esploraBase()}/address/${a.address}`, { cache: 'no-store' });
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
         return { ...a, sats: d.chain_stats.funded_txo_sum - d.chain_stats.spent_txo_sum };
@@ -769,7 +798,7 @@ function viewCarteira() {
     const utxos = [];
     await Promise.all(targets.map(async t => {
       try {
-        const r = await fetch(`${TESTNET_API}/address/${t.address}/utxo`, { cache: 'no-store' });
+        const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' });
         if (!r.ok) return;
         for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index });
       } catch { /* ignora endereço */ }
@@ -819,7 +848,7 @@ function viewCarteira() {
     catch (err) { o.innerHTML = `<p class="muted">${err.message}</p>`; return; }
     o.innerHTML = '<p class="loading">Transmitindo na testnet…</p>';
     try {
-      const r = await fetch(`${TESTNET_API}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
       const body = (await r.text()).trim();
       if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
       o.innerHTML = `<div class="banner ok">✅ Transmitido!<br>txid: <span class="mono">${esc(body)}</span><br>
@@ -836,7 +865,7 @@ function viewCarteira() {
   // sugestão de taxa (testnet, mempool.space) — prefill se o usuário não mexeu
   const feeEl = document.getElementById('agFee');
   feeEl.addEventListener('input', () => { feeEl.dataset.touched = '1'; });
-  fetch(`${TESTNET_API}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+  fetch(`${esploraBase()}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
     if (d && d.halfHourFee && !feeEl.dataset.touched) feeEl.value = Math.max(1, d.halfHourFee);
   }).catch(() => {});
 
