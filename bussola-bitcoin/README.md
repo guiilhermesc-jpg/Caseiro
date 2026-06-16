@@ -20,8 +20,12 @@ Núcleo da carteira com **libs auditadas** e **testes automatizados** (CI).
 - ✅ **Histórico**: linha do tempo do bitcoin. **Checklist** guiado. **Registro**: planilha + CSV + simulador de DCA.
 - ✅ **Carteira (testnet)**: criar/restaurar (BIP39), watch-only por xpub, e **air-gap PSBT**
   (montar → assinar offline → transmitir) — testado contra o vetor oficial do BIP84.
-- ✅ **Soberania**: **Raio-X** (nota), **Legado** (herança) e **Cofre** (backup AES-256-GCM).
-- ⏳ Próximos: notarização (OpenTimestamps), leitura de QR por câmera, calculadora fiscal,
+- ✅ **Soberania**: **Raio-X** (nota), **Legado** (herança), **Cofre** (backup AES-256-GCM),
+  **Recuperação social** (Shamir k-de-N) e **Silent Payments** (endereço/envio/scanner, BIP-352).
+- ✅ **Cofre de herança com timelock** (covenant P2WSH testnet) · **Guia IA** (chave própria, BYO-key)
+  · **tema claro** · leitura de **QR pela câmera**.
+- ✅ **Registro/DCA**: simulador com fonte dupla (CoinGecko até 1 ano; **brapi.dev** BRL multi-ano via BYO-key).
+- ⏳ Próximos: notarização (OpenTimestamps), gasto de recebimentos SP, calculadora fiscal,
   multisig guiado, auditoria → mainnet. Ver [`docs/08-ESTRATEGIA.md`](docs/08-ESTRATEGIA.md).
 
 Visão/estratégia: [`docs/00-VISAO.md`](docs/00-VISAO.md) · [`docs/08-ESTRATEGIA.md`](docs/08-ESTRATEGIA.md)

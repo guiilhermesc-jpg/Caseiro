@@ -423,8 +423,12 @@ function viewRegistro() {
       <form id="dcaForm" class="regform">
         <label>Valor por mês (R$)<input type="number" id="dValor" min="0" step="10" value="200"></label>
         <label>Período<select id="dAnos"><option value="1">1 ano</option><option value="2">2 anos</option><option value="3" selected>3 anos</option><option value="5">5 anos</option></select></label>
+        <label style="grid-column:1/-1">Chave brapi.dev <span class="muted small">(opcional — necessária p/ mais de 1 ano)</span>
+          <input type="password" id="dKey" autocomplete="off" spellcheck="false" placeholder="cole a chave — fica só neste navegador, nunca sai daqui"></label>
         <button type="submit">Simular</button>
       </form>
+      <p class="muted small">Sem chave, uso o CoinGecko (grátis, até 1 ano). Para 2–5 anos em BRL, pegue uma
+      chave gratuita em <strong>brapi.dev</strong> — ela é salva <strong>só no seu aparelho</strong>.</p>
       <div id="dcaOut"></div>
 
       <h2>🧾 Estimador de imposto <span class="muted small">venda · educacional</span></h2>
@@ -500,18 +504,53 @@ function viewRegistro() {
     if (confirm('Apagar todas as compras registradas?')) { regSave([]); renderList(); renderSummary(); }
   });
 
+  const dKeyEl = document.getElementById('dKey');
+  try { const sk = localStorage.getItem('bussola_brapi_key'); if (sk && dKeyEl) dKeyEl.value = sk; } catch {}
+
+  // brapi.dev (BRL nativo, histórico multi-ano) — usa a chave do próprio usuário (BYO-key)
+  async function dcaBrapi(years, key) {
+    const range = years <= 1 ? '1y' : years <= 2 ? '2y' : '5y';
+    const url = `https://brapi.dev/api/v2/crypto?coin=BTC&currency=BRL&range=${range}&interval=1mo&token=${encodeURIComponent(key)}`;
+    const r = await fetch(url, { cache: 'no-store' });
+    if (r.status === 401 || r.status === 403) throw new Error('chave brapi recusada (401/403)');
+    if (!r.ok) throw new Error('brapi HTTP ' + r.status);
+    const j = await r.json();
+    const coin = (j.coins && j.coins[0]) || (j.results && j.results[0]);
+    const hist = coin && coin.historicalDataPrice;
+    if (!Array.isArray(hist) || hist.length < 2) throw new Error('brapi sem histórico (confira o plano da chave)');
+    const cutoff = Date.now() - years * 365.25 * 86400e3;
+    const prices = hist.filter(h => h && h.close > 0).map(h => [h.date * 1000, h.close]).filter(p => p[0] >= cutoff);
+    if (coin.regularMarketPrice > 0) prices.push([Date.now(), coin.regularMarketPrice]); // preço de hoje ao vivo
+    return prices;
+  }
+  // CoinGecko grátis (sem chave) — limite de 365 dias no plano público
+  async function dcaGecko(years) {
+    if (years > 1) throw new Error('NEED_KEY');
+    const r = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=365', { cache: 'no-store' });
+    if (!r.ok) throw new Error('CoinGecko HTTP ' + r.status);
+    const prices = (await r.json()).prices || [];
+    if (prices.length < 2) throw new Error('sem dados');
+    return prices;
+  }
+
   document.getElementById('dcaForm').addEventListener('submit', async e => {
     e.preventDefault();
     const monthly = parseFloat(document.getElementById('dValor').value);
     const years = parseInt(document.getElementById('dAnos').value, 10);
+    const key = (dKeyEl && dKeyEl.value.trim()) || '';
     const out = document.getElementById('dcaOut');
     if (!(monthly > 0)) { out.innerHTML = '<p class="muted">Informe um valor mensal maior que zero.</p>'; return; }
     out.innerHTML = '<p class="loading">Buscando preços históricos reais…</p>';
     try {
-      const r = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=${years * 365}`, { cache: 'no-store' });
-      if (!r.ok) throw new Error(r.status);
-      const prices = (await r.json()).prices || [];
-      if (prices.length < 2) throw new Error('sem dados');
+      let prices, source;
+      if (key) { try { localStorage.setItem('bussola_brapi_key', key); } catch {} prices = await dcaBrapi(years, key); source = 'brapi.dev'; }
+      else {
+        try { prices = await dcaGecko(years); source = 'CoinGecko'; }
+        catch (ne) {
+          if (ne.message === 'NEED_KEY') { out.innerHTML = `<div class="banner warn">Para <strong>${years} anos</strong> em BRL preciso de uma chave gratuita do <strong>brapi.dev</strong> — o CoinGecko grátis só vai até 1 ano. Cole a chave no campo acima (fica só neste navegador).</div>`; return; }
+          throw ne;
+        }
+      }
       const s = simulateDCA(prices, monthly);
       const lucro = s.value - s.invested, pct = s.invested > 0 ? lucro / s.invested * 100 : 0, up = lucro >= 0;
       out.innerHTML = `<div class="cards">
@@ -520,10 +559,10 @@ function viewRegistro() {
         <div class="card"><h3>Valor hoje</h3><div class="big">${BRL.format(s.value)}</div>
           <div class="sub"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${BRL.format(Math.abs(lucro))} (${Math.abs(pct).toFixed(0)}%)</span></div></div>
       </div>
-      <div class="banner warn">⚠️ Simulação com <strong>dados reais do passado</strong> (CoinGecko).
+      <div class="banner warn">⚠️ Simulação com <strong>dados reais do passado</strong> (${source}).
       <strong>Resultado passado NÃO garante futuro.</strong> Educacional, não é recomendação.</div>`;
     } catch (err) {
-      out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${err.message}). Tente de novo online.</p>`;
+      out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${esc(String(err.message))}). ${key ? 'Confira sua chave/plano no brapi.dev.' : 'Tente online ou adicione uma chave brapi.dev para períodos longos.'}</p>`;
     }
   });
 

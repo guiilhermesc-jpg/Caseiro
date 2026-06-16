@@ -84,3 +84,7 @@ A Bússola vai ser três coisas num produto só, em PT-BR, mobile-first, soberan
   (herança) e **Cofre** (backup AES-256-GCM). Seriedade de board: docs **08-ESTRATEGIA** e
   **09-SEGURANCA**, **LICENSE/SECURITY/CONTRIBUTING** e **CI** (testes + build). Publicação no
   Pages exige ativar o Pages 1x nas Settings (token do Actions não pode criar o site).
+- **16/06/2026 — v0.5:** **Silent Payments (BIP-352)** ponta a ponta (endereço/envio/scanner,
+  conferidos contra os vetores oficiais), **Cofre de herança com timelock** (covenant P2WSH
+  testnet), **Recuperação social (Shamir)**, **Guia IA** (BYO-key client-side), **tema claro** e
+  **DCA** com fonte dupla (CoinGecko/brapi BYO-key). Tudo testnet-first, custo operacional zero.
