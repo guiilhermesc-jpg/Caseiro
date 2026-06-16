@@ -1,11 +1,12 @@
 /* Bússola — service worker (offline-first do shell + book). */
-const CACHE = 'bussola-v12';
+const CACHE = 'bussola-v13';
 const ASSETS = [
   './',
   'index.html',
   'assets/style.css',
   'assets/app.js',
   'assets/vendor/wallet-bundle.js',
+  'assets/hero.svg',
   'manifest.webmanifest',
   'icon.svg',
   'docs/00-VISAO.md',
