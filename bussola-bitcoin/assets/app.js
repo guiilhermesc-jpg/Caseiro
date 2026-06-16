@@ -440,7 +440,8 @@ function viewRegistro() {
         <label>Valor desta venda (R$)<input type="number" id="txVenda" min="0" step="0.01"></label>
         <label>Custo de aquisição vendido (R$)<input type="number" id="txCusto" min="0" step="0.01"></label>
         <label>Limite de isenção mensal (R$)<input type="number" id="txLimite" min="0" step="0.01" value="35000"></label>
-        <label>Alíquota (%)<input type="number" id="txAliq" min="0" step="0.1" value="15"></label>
+        <label style="grid-column:1/-1"><input type="checkbox" id="txProg" checked> Usar tabela progressiva de ganho de capital (15% → 22,5%)</label>
+        <label>Alíquota fixa (%) <span class="muted small">se desmarcar acima</span><input type="number" id="txAliq" min="0" step="0.1" value="15"></label>
         <button type="submit">Estimar</button>
       </form>
       <div id="taxOut"></div>
@@ -570,14 +571,19 @@ function viewRegistro() {
     e.preventDefault();
     const W = window.BussolaWallet, o = document.getElementById('taxOut');
     if (!W || !W.estimarImposto) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const prog = document.getElementById('txProg').checked;
     const r = W.estimarImposto({
       vendaMes: parseFloat(document.getElementById('txMes').value) || 0,
       valorVenda: parseFloat(document.getElementById('txVenda').value) || 0,
       custo: parseFloat(document.getElementById('txCusto').value) || 0,
       limite: parseFloat(document.getElementById('txLimite').value) || 35000,
-      aliquota: parseFloat(document.getElementById('txAliq').value) || 15,
+      progressivo: prog,
+      aliquota: prog ? null : (parseFloat(document.getElementById('txAliq').value) || 15),
     });
-    o.innerHTML = `<div class="banner ${r.isento ? 'ok' : 'warn'}">Ganho estimado: <strong>${BRL.format(r.ganho)}</strong> · ${r.isento ? '<strong>Isento</strong> nesta estimativa' : 'Imposto estimado: <strong>' + BRL.format(r.imposto) + '</strong>'}.</div>
+    const detalhe = r.isento ? '<strong>Isento</strong> nesta estimativa'
+      : `Imposto estimado: <strong>${BRL.format(r.imposto)}</strong> <span class="muted small">(alíq. efetiva ${r.aliquotaEfetiva.toFixed(1)}%${r.progressivo ? ', tabela progressiva' : ''})</span>`;
+    o.innerHTML = `<div class="banner ${r.isento ? 'ok' : 'warn'}">Ganho estimado: <strong>${BRL.format(r.ganho)}</strong> · ${detalhe}.</div>
+      ${r.isento ? '' : '<p class="muted small">Recolhimento via <strong>DARF</strong> (ganho de capital, pessoa física) até o último dia útil do mês seguinte à venda.</p>'}
       <p class="muted small">Estimativa educacional. Confirme as regras vigentes e seu enquadramento com contador(a).</p>`;
   });
 

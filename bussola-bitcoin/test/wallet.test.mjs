@@ -1,6 +1,6 @@
 /* Valida o núcleo da carteira contra o vetor oficial do BIP84 e gera uma xpub de exemplo. */
 import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestnetWallet,
-  addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, sha256Hex, decodeQR,
+  addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, impostoProgressivo, sha256Hex, decodeQR,
   createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
   splitMnemonic, combineMnemonic,
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
@@ -64,6 +64,13 @@ eq('makeQR retorna SVG', typeof makeQR('teste') === 'string' && makeQR('teste').
 eq('isento quando vendas do mes <= limite', estimarImposto({ vendaMes: 10000, valorVenda: 8000, custo: 5000, limite: 35000, aliquota: 15 }).isento, true);
 eq('tributa quando acima do limite', Math.round(estimarImposto({ vendaMes: 40000, valorVenda: 8000, custo: 5000, limite: 35000, aliquota: 15 }).imposto), 450);
 eq('sem ganho => isento', estimarImposto({ vendaMes: 40000, valorVenda: 5000, custo: 6000, limite: 35000, aliquota: 15 }).isento, true);
+/* Tabela progressiva de ganho de capital (15/17,5/20/22,5%) */
+eq('progressivo: ganho 3M => 15%', Math.round(impostoProgressivo(3_000_000)), 450000);
+eq('progressivo: ganho 5M => 15%', Math.round(impostoProgressivo(5_000_000)), 750000);
+eq('progressivo: ganho 7M => 5M*15% + 2M*17,5%', Math.round(impostoProgressivo(7_000_000)), 750000 + 350000);
+eq('progressivo: ganho 40M topo 22,5%', Math.round(impostoProgressivo(40_000_000)), 750000 + 875000 + 4_000_000 + 2_250_000);
+eq('estimarImposto progressivo default', Math.round(estimarImposto({ vendaMes: 8_000_000, valorVenda: 7_000_000, custo: 0, limite: 35000 }).imposto), 1_100_000);
+eq('estimarImposto alíquota efetiva 7M', estimarImposto({ vendaMes: 8_000_000, valorVenda: 7_000_000, custo: 0, limite: 35000 }).aliquotaEfetiva.toFixed(2), (1_100_000 / 7_000_000 * 100).toFixed(2));
 
 /* Prova de integridade (vetor SHA-256 de "abc") */
 eq('sha256("abc")', sha256Hex(new TextEncoder().encode('abc')), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');

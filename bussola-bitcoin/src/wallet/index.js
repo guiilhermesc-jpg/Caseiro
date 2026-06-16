@@ -551,11 +551,33 @@ export function sha256Hex(bytes) { return hex.encode(sha256(bytes)); }
 /* =================== Util fiscal (estimativa educacional) =================== */
 /* Estimativa de ganho de capital em VENDA. Parâmetros (limite/alíquota) são EDITÁVEIS pelo
  * usuário porque as regras mudam — isto NÃO é cálculo oficial nem recomendação. */
-export function estimarImposto({ vendaMes = 0, valorVenda = 0, custo = 0, limite = 35000, aliquota = 15 }) {
+/* Tabela progressiva de ganho de capital (pessoa física, Brasil): alíquota por faixa de ganho. */
+export const FAIXAS_GANHO_CAPITAL = [
+  { ate: 5_000_000, aliq: 15 },
+  { ate: 10_000_000, aliq: 17.5 },
+  { ate: 30_000_000, aliq: 20 },
+  { ate: Infinity, aliq: 22.5 },
+];
+/* Imposto sobre o ganho aplicando a tabela progressiva faixa a faixa. */
+export function impostoProgressivo(ganho) {
+  let resto = Math.max(0, Number(ganho)), base = 0, imposto = 0;
+  for (const f of FAIXAS_GANHO_CAPITAL) {
+    const faixa = Math.min(resto, f.ate - base);
+    if (faixa > 0) { imposto += faixa * f.aliq / 100; resto -= faixa; }
+    base = f.ate;
+    if (resto <= 0) break;
+  }
+  return imposto;
+}
+/* Estimador educacional. Isenção quando as vendas do mês ≤ limite (ou sem ganho). Por padrão usa a
+ * tabela progressiva; passe `aliquota` (e progressivo:false) para forçar uma alíquota fixa. */
+export function estimarImposto({ vendaMes = 0, valorVenda = 0, custo = 0, limite = 35000, aliquota = null, progressivo = true }) {
   const ganho = Number(valorVenda) - Number(custo);
   const isento = Number(vendaMes) <= Number(limite) || ganho <= 0;
-  const imposto = isento ? 0 : ganho * (Number(aliquota) / 100);
-  return { ganho, isento, imposto };
+  const usaProg = progressivo && (aliquota === null || aliquota === undefined);
+  const imposto = isento ? 0 : (usaProg ? impostoProgressivo(ganho) : ganho * (Number(aliquota) / 100));
+  const aliquotaEfetiva = (!isento && ganho > 0) ? imposto / ganho * 100 : 0;
+  return { ganho, isento, imposto, aliquotaEfetiva, progressivo: usaProg };
 }
 
 export const version = '0.3.0';
