@@ -186,3 +186,7 @@ tr:nth-child(even) td { background: #0e1727; }
 .del { background: transparent; border: 1px solid var(--line); color: var(--red); border-radius: 8px;
   padding: 2px 9px; cursor: pointer; }
 .del:hover { border-color: var(--red); }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; word-break: break-all; }
+.watchonly { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; margin: 12px 0 18px; }
+.watchonly h2 { margin-top: 4px; border: 0; }

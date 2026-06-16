@@ -496,19 +496,82 @@ function viewRegistro() {
 }
 
 /* =================== Carteira =================== */
+const EXAMPLE_XPUB = 'xpub6Bqrcfo7nB1ywHwEvjikTNcd2jyTksXZLFkwJxUyeHJy8USaxusZpdfYUjMHoL1rAswEHBBoFX9gPW6uJy5EBoVc4NgWZfG21sDG8XSU7q6';
+const TESTNET_API = 'https://mempool.space/testnet/api';
+
 function viewCarteira() {
   menuBtn.hidden = true;
   appEl.innerHTML = `
     <div class="pad">
       <div class="crown">
-        <h1>🔐 Carteira Soberana <span class="soon">em construção</span></h1>
+        <h1>🔐 Carteira Soberana <span class="soon">testnet • watch-only</span></h1>
         <p>A <strong>joia da coroa</strong>: uma carteira que <em>"funciona desligada mesmo
         conectada"</em> — as chaves <strong>nunca</strong> tocam a internet.</p>
-        <div class="banner warn">🧪 <strong>Testnet-first.</strong> Nasce com dinheiro de teste
-        (sem valor) e bibliotecas auditadas. Dinheiro real só após auditoria. Nunca pedimos sua seed.</div>
+        <div class="banner warn">🧪 <strong>Testnet-first.</strong> Bibliotecas auditadas
+        (@scure/bip32). Dinheiro real só após auditoria. <strong>Nunca pedimos sua seed.</strong></div>
       </div>
+
+      <section class="watchonly">
+        <h2>🔭 Watch-only (testnet)</h2>
+        <p class="muted">Cole uma <strong>chave pública estendida</strong> de conta (xpub/tpub/vpub) e
+        veja os endereços e o saldo — <strong>sem chave privada</strong>. Só observação, derivada
+        <strong>no seu aparelho</strong>. Rede de teste (sem valor real).</p>
+        <form id="woForm" class="regform">
+          <label style="grid-column:1/-1">Chave pública estendida (xpub / tpub / vpub)
+            <input type="text" id="woXpub" placeholder="vpub… / tpub… / xpub…" autocomplete="off" spellcheck="false"></label>
+          <label>Nº de endereços<select id="woN"><option>5</option><option>10</option><option>20</option></select></label>
+          <button type="submit">Ver endereços</button>
+        </form>
+        <div class="regactions">
+          <button id="woExample" class="btn-ghost">Usar xpub de exemplo</button>
+          <button id="woBalance" class="btn-ghost">Consultar saldo (testnet)</button>
+        </div>
+        <div id="woOut"></div>
+        <p class="muted small">Saldo via mempool.space (testnet), só-leitura. Para testar com fundos,
+        use um <em>faucet</em> de testnet num endereço derivado.</p>
+      </section>
+
+      <h2>Arquitetura completa</h2>
       <article id="doc" class="doc"><p class="loading">Carregando arquitetura…</p></article>
     </div>`;
+
+  let current = [];
+  const out = document.getElementById('woOut');
+  const wallet = window.BussolaWallet;
+  function showAddrs(list) {
+    current = list;
+    out.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço (tb1…)</th></tr></thead><tbody>
+      ${list.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+  document.getElementById('woExample').addEventListener('click', () => { document.getElementById('woXpub').value = EXAMPLE_XPUB; });
+  document.getElementById('woForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const xpub = document.getElementById('woXpub').value.trim();
+    const n = parseInt(document.getElementById('woN').value, 10) || 5;
+    if (!xpub) { out.innerHTML = '<p class="muted">Cole uma chave pública estendida (ou use o exemplo).</p>'; return; }
+    if (!wallet) { out.innerHTML = '<p class="muted">Núcleo da carteira não carregou. Recarregue a página.</p>'; return; }
+    try { showAddrs(wallet.deriveTestnetAddresses(xpub, n)); }
+    catch (err) { out.innerHTML = `<p class="muted">Chave inválida: ${err.message}</p>`; }
+  });
+  document.getElementById('woBalance').addEventListener('click', async () => {
+    if (!current.length) { out.innerHTML = '<p class="muted">Primeiro clique em "Ver endereços".</p>'; return; }
+    out.innerHTML = '<p class="loading">Consultando saldo na testnet…</p>';
+    try {
+      const results = await Promise.all(current.map(async a => {
+        const r = await fetch(`${TESTNET_API}/address/${a.address}`, { cache: 'no-store' });
+        if (!r.ok) throw new Error(r.status);
+        const d = await r.json();
+        return { ...a, sats: d.chain_stats.funded_txo_sum - d.chain_stats.spent_txo_sum };
+      }));
+      const total = results.reduce((s, a) => s + a.sats, 0);
+      out.innerHTML = `<div class="banner ok">💰 Saldo confirmado: <strong>${BTC.format(total / 1e8)} tBTC</strong> em ${results.length} endereços (testnet).</div>
+        <div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço</th><th>tBTC</th></tr></thead><tbody>
+        ${results.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td>${BTC.format(a.sats / 1e8)}</td></tr>`).join('')}
+        </tbody></table></div>`;
+    } catch (err) { out.innerHTML = `<p class="muted">Não consegui consultar agora (${err.message}). Tente online.</p>`; }
+  });
+
   const doc = document.getElementById('doc');
   fetchMd('docs/06-CARTEIRA-SOBERANA.md')
     .then(md => { doc.innerHTML = mdToHtml(md); })

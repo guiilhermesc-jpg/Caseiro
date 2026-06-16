@@ -73,3 +73,9 @@ A Bússola vai ser três coisas num produto só, em PT-BR, mobile-first, soberan
   (timeline), **Cotação** (ao vivo só-leitura) e **Checklist** (salva localmente). Aba
   **Carteira** com a arquitetura (em breve, testnet-first). Doc novo
   `06-CARTEIRA-SOBERANA.md`.
+- **16/06/2026 — v0.3:** **Painel** (preço, Medo & Ganância, halving, leitura educacional),
+  aba **Registro** (planilha + CSV + simulador de DCA) e doc `07-NORTE-PRODUTO.md`. Iniciada
+  a **carteira (Plano B)**: build com **esbuild** + libs **auditadas** (`@scure/bip32`),
+  testado contra o vetor oficial do **BIP84**. Primeiro recurso: **watch-only testnet** —
+  derivar endereços e ver saldo a partir de um `xpub`, **sem chaves privadas**. Workflow de
+  publicação no GitHub Pages criado (PR aberto; publicação só quando o maestro quiser).
