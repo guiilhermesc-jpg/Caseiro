@@ -355,6 +355,98 @@ function viewChecklist() {
   refresh();
 }
 
+/* =================== Registro / Planilha =================== */
+const REG_KEY = 'bussola.registro.v1';
+function regLoad() { try { return JSON.parse(localStorage.getItem(REG_KEY) || '[]'); } catch { return []; } }
+function regSave(a) { try { localStorage.setItem(REG_KEY, JSON.stringify(a)); } catch {} }
+const BTC = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 8 });
+
+function viewRegistro() {
+  menuBtn.hidden = true;
+  const today = new Date().toISOString().slice(0, 10);
+  appEl.innerHTML = `
+    <div class="pad">
+      <h1>🧮 Registro de compras <span class="muted small">sua planilha, no seu aparelho</span></h1>
+      <p class="muted">Lance cada compra para acompanhar <strong>preço médio</strong>, total investido e
+      resultado — e <strong>exporte um CSV</strong> pro contador (lastro/custo de aquisição, cap. 03).
+      Fica salvo só aqui; nada vai pra internet.</p>
+      <div class="banner warn">ℹ️ Ferramenta de <strong>conferência</strong>, não cálculo oficial de
+      imposto. Confirme tudo com contador(a).</div>
+      <form id="regForm" class="regform">
+        <label>Data<input type="date" id="rData" value="${today}" required></label>
+        <label>Valor investido (R$)<input type="number" id="rValor" min="0" step="0.01" placeholder="500.00" required></label>
+        <label>Preço do BTC na compra (R$)<input type="number" id="rPreco" min="0" step="0.01" placeholder="350000.00" required></label>
+        <button type="submit">+ Adicionar</button>
+      </form>
+      <div id="regSummary" class="cards"></div>
+      <div id="regList" class="tablewrap"></div>
+      <div class="regactions">
+        <button id="regCsv" class="btn-ghost">⬇️ Exportar CSV</button>
+        <button id="regClear" class="btn-ghost">Limpar tudo</button>
+      </div>
+    </div>`;
+
+  let live = null;
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null).then(d => { live = d?.bitcoin?.brl ?? null; renderSummary(); }).catch(() => {});
+
+  function totals() {
+    let inv = 0, btc = 0;
+    regLoad().forEach(e => { inv += e.valor; btc += (e.preco > 0 ? e.valor / e.preco : 0); });
+    return { inv, btc, avg: btc > 0 ? inv / btc : 0 };
+  }
+  function renderSummary() {
+    const box = document.getElementById('regSummary'); if (!box) return;
+    const t = totals();
+    const atual = live != null ? t.btc * live : null;
+    const lucro = atual != null ? atual - t.inv : null;
+    const pct = (atual != null && t.inv > 0) ? (lucro / t.inv * 100) : null;
+    box.innerHTML = `
+      <div class="card"><h3>Total investido</h3><div class="big">${BRL.format(t.inv)}</div></div>
+      <div class="card"><h3>Bitcoin acumulado</h3><div class="big">${BTC.format(t.btc)}</div><div class="sub muted">preço médio ${t.avg ? BRL.format(t.avg) : '—'}</div></div>
+      <div class="card"><h3>Valor hoje</h3><div class="big">${atual != null ? BRL.format(atual) : '—'}</div>
+        <div class="sub">${pct != null ? `<span class="${lucro >= 0 ? 'up' : 'down'}">${lucro >= 0 ? '▲' : '▼'} ${BRL.format(Math.abs(lucro))} (${Math.abs(pct).toFixed(1)}%)</span>` : '<span class="muted">preço ao vivo indisponível</span>'}</div></div>`;
+  }
+  function renderList() {
+    const box = document.getElementById('regList'); if (!box) return;
+    const a = regLoad();
+    if (!a.length) { box.innerHTML = '<p class="muted">Nenhuma compra ainda. Adicione a primeira acima.</p>'; return; }
+    box.innerHTML = `<table><thead><tr><th>Data</th><th>Investido</th><th>Preço BTC</th><th>BTC</th><th></th></tr></thead><tbody>
+      ${a.map((e, i) => `<tr><td>${e.data}</td><td>${BRL.format(e.valor)}</td><td>${BRL.format(e.preco)}</td><td>${BTC.format(e.preco > 0 ? e.valor / e.preco : 0)}</td>
+        <td><button class="del" data-i="${i}" title="Remover">✕</button></td></tr>`).join('')}
+    </tbody></table>`;
+    box.querySelectorAll('.del').forEach(b => b.addEventListener('click', () => {
+      const a2 = regLoad(); a2.splice(+b.dataset.i, 1); regSave(a2); renderList(); renderSummary();
+    }));
+  }
+
+  document.getElementById('regForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const data = document.getElementById('rData').value;
+    const valor = parseFloat(document.getElementById('rValor').value);
+    const preco = parseFloat(document.getElementById('rPreco').value);
+    if (!data || !(valor > 0) || !(preco > 0)) return;
+    const a = regLoad(); a.push({ data, valor, preco }); a.sort((x, y) => x.data < y.data ? -1 : 1); regSave(a);
+    document.getElementById('rValor').value = ''; document.getElementById('rPreco').value = '';
+    renderList(); renderSummary();
+  });
+  document.getElementById('regCsv').addEventListener('click', () => {
+    const a = regLoad();
+    if (!a.length) { alert('Nada para exportar ainda.'); return; }
+    const linhas = a.map(e => [e.data, e.valor.toFixed(2), e.preco.toFixed(2), (e.preco > 0 ? e.valor / e.preco : 0).toFixed(8)]
+      .map(v => String(v).replace('.', ',')).join(';'));
+    const csv = '﻿data;valor_investido_brl;preco_btc_brl;quantidade_btc\n' + linhas.join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'bussola-compras.csv'; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById('regClear').addEventListener('click', () => {
+    if (confirm('Apagar todas as compras registradas?')) { regSave([]); renderList(); renderSummary(); }
+  });
+
+  renderList(); renderSummary();
+}
+
 /* =================== Carteira =================== */
 function viewCarteira() {
   menuBtn.hidden = true;
@@ -376,7 +468,7 @@ function viewCarteira() {
 }
 
 /* =================== Roteador =================== */
-const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, carteira: viewCarteira };
+const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira };
 function route() {
   const raw = location.hash.replace(/^#/, '') || 'painel';
   const [tab, sub] = raw.split('/');

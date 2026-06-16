@@ -171,3 +171,18 @@ tr:nth-child(even) td { background: #0e1727; }
   .sidebar.open { transform: translateX(0); }
 }
 @media (min-width: 861px) { .menu-btn { display: none !important; } }
+
+/* Registro / planilha */
+.regform { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;
+  align-items: end; margin: 14px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.regform label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); }
+.regform input { background: #0c1322; border: 1px solid var(--line); border-radius: 9px; color: var(--text);
+  padding: 9px 10px; font-size: 15px; }
+.regform input:focus { outline: 2px solid var(--accent); }
+.regform button { background: var(--accent); color: #1a1205; border: 0; border-radius: 10px;
+  padding: 11px 16px; font-weight: 800; cursor: pointer; height: 40px; }
+.regform button:hover { filter: brightness(1.08); }
+.regactions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.del { background: transparent; border: 1px solid var(--line); color: var(--red); border-radius: 8px;
+  padding: 2px 9px; cursor: pointer; }
+.del:hover { border-color: var(--red); }
