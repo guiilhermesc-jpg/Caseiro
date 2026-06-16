@@ -162,6 +162,7 @@ async function viewPainel() {
     <button id="welcomeX" type="button" class="btn-ghost">Entendi</button></div>`;
   appEl.innerHTML = `
     <div class="pad">
+      <div class="hero"><img src="assets/hero.svg" alt="Bússola — bitcoin soberano"></div>
       <h1>📊 Painel <span class="muted small">tudo pra decidir, num lugar só</span></h1>
       ${welcome}
       <div class="banner ok">🔒 Tudo aqui é <strong>só-leitura e educacional</strong>: não conecta
