@@ -92,6 +92,10 @@ const CHAPTERS = [
   { id: '04', file: 'docs/04-GANHAR-HOJE.md',   emoji: '⛏️', title: 'Ganhar BTC hoje' },
   { id: '05', file: 'docs/05-MAPA-HISTORICO.md',emoji: '🗺️', title: 'Mapa do passado' },
   { id: '07', file: 'docs/07-NORTE-PRODUTO.md', emoji: '🚀', title: 'Norte do produto' },
+  { id: '08', file: 'docs/08-ESTRATEGIA.md',    emoji: '♟️', title: 'Estratégia (longo prazo)' },
+  { id: '09', file: 'docs/09-SEGURANCA.md',     emoji: '🛡️', title: 'Segurança & Confiança' },
+  { id: '10', file: 'docs/10-GLOSSARIO.md',     emoji: '📖', title: 'Glossário' },
+  { id: '11', file: 'docs/11-FAQ.md',           emoji: '❓', title: 'Perguntas frequentes' },
   { id: '99', file: 'docs/99-FONTES.md',        emoji: '📚', title: 'Fontes' },
 ];
 
@@ -151,9 +155,15 @@ const NUM = new Intl.NumberFormat('pt-BR');
 /* =================== Painel =================== */
 async function viewPainel() {
   menuBtn.hidden = true;
+  const seen = (() => { try { return localStorage.getItem('bussola.seen.v1'); } catch { return '1'; } })();
+  const welcome = seen ? '' : `<div class="banner ok" id="welcome">👋 <strong>Bem-vindo à Bússola.</strong>
+    Aprenda, decida e conquiste sua soberania em bitcoin — do off ao online, em PT-BR, sem coleta de
+    dados. Comece pelo <a href="#book/00">Book</a> ou pelo <a href="#checklist">Checklist</a>.
+    <button id="welcomeX" type="button" class="btn-ghost">Entendi</button></div>`;
   appEl.innerHTML = `
     <div class="pad">
       <h1>📊 Painel <span class="muted small">tudo pra decidir, num lugar só</span></h1>
+      ${welcome}
       <div class="banner ok">🔒 Tudo aqui é <strong>só-leitura e educacional</strong>: não conecta
         em conta, não pede chave, e <strong>não é recomendação</strong> de compra/venda.</div>
       <div class="cards">
@@ -173,7 +183,17 @@ async function viewPainel() {
       </div>
       <p class="muted small">Dados ao vivo: CoinGecko (preço), alternative.me (medo &amp; ganância),
       mempool.space (altura de bloco). Tudo público e só-leitura.</p>
+
+      <h2>Sobre</h2>
+      <div class="banner ok">🔓 Código aberto • 🙈 sem coleta de dados • 🏦 sem custódia • 📚 educacional (não é recomendação).</div>
+      <p class="muted small">Bússola • PWA offline-first • leia a <a href="#book/08">Estratégia</a> e a
+      <a href="#book/09">Segurança</a> · monte sua <a href="#carteira">carteira soberana</a> e seu
+      <a href="#soberania">Legado</a>.</p>
     </div>`;
+  document.getElementById('welcomeX')?.addEventListener('click', () => {
+    try { localStorage.setItem('bussola.seen.v1', '1'); } catch {}
+    document.getElementById('welcome')?.remove();
+  });
   loadPrice(); loadFng(); loadHalving();
 }
 
@@ -405,6 +425,20 @@ function viewRegistro() {
         <button type="submit">Simular</button>
       </form>
       <div id="dcaOut"></div>
+
+      <h2>🧾 Estimador de imposto <span class="muted small">venda · educacional</span></h2>
+      <div class="banner warn">⚠️ Isenção e alíquotas <strong>mudam</strong> e dependem do seu caso
+      (corretora nacional × exterior). Isto é só uma estimativa matemática — <strong>confirme com
+      contador(a)</strong>. Não é cálculo oficial.</div>
+      <form id="taxForm" class="regform">
+        <label>Total de vendas no mês (R$)<input type="number" id="txMes" min="0" step="0.01" placeholder="0.00"></label>
+        <label>Valor desta venda (R$)<input type="number" id="txVenda" min="0" step="0.01"></label>
+        <label>Custo de aquisição vendido (R$)<input type="number" id="txCusto" min="0" step="0.01"></label>
+        <label>Limite de isenção mensal (R$)<input type="number" id="txLimite" min="0" step="0.01" value="35000"></label>
+        <label>Alíquota (%)<input type="number" id="txAliq" min="0" step="0.1" value="15"></label>
+        <button type="submit">Estimar</button>
+      </form>
+      <div id="taxOut"></div>
     </div>`;
 
   let live = null;
@@ -490,6 +524,21 @@ function viewRegistro() {
     } catch (err) {
       out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${err.message}). Tente de novo online.</p>`;
     }
+  });
+
+  document.getElementById('taxForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const W = window.BussolaWallet, o = document.getElementById('taxOut');
+    if (!W || !W.estimarImposto) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const r = W.estimarImposto({
+      vendaMes: parseFloat(document.getElementById('txMes').value) || 0,
+      valorVenda: parseFloat(document.getElementById('txVenda').value) || 0,
+      custo: parseFloat(document.getElementById('txCusto').value) || 0,
+      limite: parseFloat(document.getElementById('txLimite').value) || 35000,
+      aliquota: parseFloat(document.getElementById('txAliq').value) || 15,
+    });
+    o.innerHTML = `<div class="banner ${r.isento ? 'ok' : 'warn'}">Ganho estimado: <strong>${BRL.format(r.ganho)}</strong> · ${r.isento ? '<strong>Isento</strong> nesta estimativa' : 'Imposto estimado: <strong>' + BRL.format(r.imposto) + '</strong>'}.</div>
+      <p class="muted small">Estimativa educacional. Confirme as regras vigentes e seu enquadramento com contador(a).</p>`;
   });
 
   renderList(); renderSummary();
@@ -625,9 +674,15 @@ function viewCarteira() {
 
   function showAddrs(list) {
     current = list;
-    out.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço (tb1…)</th></tr></thead><tbody>
-      ${list.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td></tr>`).join('')}
-    </tbody></table></div>`;
+    out.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço (tb1…)</th><th></th></tr></thead><tbody>
+      ${list.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td><button type="button" class="btn-ghost qrbtn" data-addr="${a.address}">QR</button></td></tr>`).join('')}
+    </tbody></table></div><div id="woQr"></div>`;
+    out.querySelectorAll('.qrbtn').forEach(b => b.addEventListener('click', () => {
+      const qr = (wallet && wallet.makeQR) ? wallet.makeQR(b.dataset.addr) : null;
+      document.getElementById('woQr').innerHTML = qr
+        ? `<div class="muted small">Receber em: <span class="mono">${esc(b.dataset.addr)}</span></div><div class="qr">${qr}</div>`
+        : '<p class="muted small">Não foi possível gerar o QR.</p>';
+    }));
   }
   document.getElementById('woExample').addEventListener('click', () => { document.getElementById('woXpub').value = EXAMPLE_XPUB; });
   document.getElementById('woForm').addEventListener('submit', e => {
@@ -736,14 +791,256 @@ function viewCarteira() {
     }
   });
 
+  // sugestão de taxa (testnet, mempool.space) — prefill se o usuário não mexeu
+  const feeEl = document.getElementById('agFee');
+  feeEl.addEventListener('input', () => { feeEl.dataset.touched = '1'; });
+  fetch(`${TESTNET_API}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+    if (d && d.halfHourFee && !feeEl.dataset.touched) feeEl.value = Math.max(1, d.halfHourFee);
+  }).catch(() => {});
+
   const doc = document.getElementById('doc');
   fetchMd('docs/06-CARTEIRA-SOBERANA.md')
     .then(md => { doc.innerHTML = mdToHtml(md); })
     .catch(e => { doc.innerHTML = mdErr('docs/06-CARTEIRA-SOBERANA.md', e); });
 }
 
+/* =================== Soberania (Raio-X + Legado + Cofre) =================== */
+const RAIOX = [
+  { id: 'saque', w: 3, q: 'Já tirei meu bitcoin da corretora para uma carteira própria (self-custody).', tip: 'Enquanto está na corretora, não é 100% seu.', link: '#book/02' },
+  { id: 'seed', w: 3, q: 'Tenho a seed (12/24 palavras) anotada offline (papel/metal), nunca digital.', tip: 'Seed em foto/nuvem é alvo de roubo. Use papel/metal.', link: '#book/02' },
+  { id: 'teste', w: 2, q: 'Já TESTEI restaurar a carteira a partir da seed.', tip: 'Backup não testado pode falhar na hora H.', link: '#book/02' },
+  { id: 'cold', w: 2, q: 'Guardo a maior parte em cold wallet (hardware / air-gap).', tip: 'Para valores maiores, cold storage reduz muito o risco.', link: '#carteira' },
+  { id: '2fa', w: 1, q: 'Uso 2FA por app (não SMS) nas contas ligadas a cripto.', tip: 'SMS é vulnerável a SIM swap. Use um app autenticador.', link: '#book/01' },
+  { id: 'heranca', w: 3, q: 'Tenho plano de herança: alguém de confiança recuperaria meu bitcoin se eu faltasse.', tip: 'Sem plano, o bitcoin some para sempre. Monte seu Legado abaixo.', link: '#soberania' },
+  { id: 'lastro', w: 1, q: 'Guardo comprovação de origem e custo (lastro) para a declaração.', tip: 'Facilita o IRPF. Veja Declaração e a aba Registro.', link: '#book/03' },
+  { id: 'golpe', w: 2, q: 'Nunca compartilhei minha seed e reconheço golpes comuns.', tip: 'Ninguém legítimo pede sua seed. Veja o cap. de golpes.', link: '#book/04' },
+  { id: 'priv', w: 1, q: 'Cuido de privacidade (evito reusar endereços, não exponho saldos).', tip: 'Endereço novo a cada recebimento melhora a privacidade.', link: '#carteira' },
+];
+function scoreRaioX(set) {
+  let got = 0, total = 0; const gaps = [];
+  for (const it of RAIOX) { total += it.w; if (set.has(it.id)) got += it.w; else gaps.push(it); }
+  const score = Math.round(got / total * 100);
+  const tier = score < 40 ? 'Iniciante' : score < 75 ? 'Em evolução' : 'Soberano';
+  const cls = score < 40 ? 'red' : score < 75 ? 'orange' : 'green';
+  return { score, tier, cls, gaps };
+}
+
+const LEGADO_FIELDS = [
+  { k: 'titular', label: 'Seu nome (titular)', type: 'text' },
+  { k: 'data', label: 'Data do plano', type: 'date' },
+  { k: 'herdeiros', label: 'Herdeiros / pessoa(s) de confiança', type: 'textarea', ph: 'Nomes e como contatá-los' },
+  { k: 'custodia', label: 'Tipo de custódia', type: 'select', opts: ['Hot wallet (celular/PC)', 'Cold wallet (hardware)', 'Multisig', 'Misto'] },
+  { k: 'localSeed', label: 'ONDE está a seed (⚠️ NÃO escreva a seed aqui!)', type: 'textarea', ph: 'Ex.: cofre em casa; placa de aço no banco. NUNCA as palavras.' },
+  { k: 'localBackup', label: 'Backups / cópias (onde estão)', type: 'textarea', ph: 'Ex.: cópia na casa dos pais; arquivo do Cofre no pendrive X.' },
+  { k: 'instrucoes', label: 'Instruções para o herdeiro', type: 'textarea', ph: 'Passo a passo simples de como acessar/recuperar.' },
+  { k: 'carta', label: 'Carta pessoal (opcional)', type: 'textarea', ph: 'Uma mensagem para quem for cuidar disso.' },
+];
+function legadoMarkdown(d) {
+  const v = x => (x && String(x).trim()) || '—';
+  return `# Plano de Legado — Bitcoin\n\n**Titular:** ${v(d.titular)}\n\n**Data:** ${v(d.data)}\n\n` +
+    `## Pessoas de confiança / herdeiros\n${v(d.herdeiros)}\n\n## Custódia\n${v(d.custodia)}\n\n` +
+    `## Onde encontrar (NUNCA contém a seed)\n- Seed: ${v(d.localSeed)}\n- Backups: ${v(d.localBackup)}\n\n` +
+    `## Instruções para o herdeiro\n${v(d.instrucoes)}\n\n## Carta\n${v(d.carta)}\n\n` +
+    `---\n*Gerado pela Bússola. Guarde em local seguro. NÃO substitui orientação jurídica (testamento/inventário).*\n`;
+}
+
+/* Cofre — backup criptografado (WebCrypto: PBKDF2 + AES-GCM). Padrões, não cripto caseira. */
+const b64u = {
+  enc: u8 => { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); },
+  dec: s => Uint8Array.from(atob(s), c => c.charCodeAt(0)),
+};
+async function deriveAesKey(pass, salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function encryptJSON(obj, pass) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveAesKey(pass, salt);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
+  return { app: 'bussola', v: 1, kdf: 'PBKDF2-SHA256-150000', alg: 'AES-256-GCM', salt: b64u.enc(salt), iv: b64u.enc(iv), data: b64u.enc(ct) };
+}
+async function decryptJSON(blob, pass) {
+  const key = await deriveAesKey(pass, b64u.dec(blob.salt));
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64u.dec(blob.iv) }, key, b64u.dec(blob.data));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function collectAppData() { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('bussola.')) o[k] = localStorage.getItem(k); } return o; }
+
+function viewSoberania() {
+  menuBtn.hidden = true;
+  const RX_KEY = 'bussola.raiox.v1', LG_KEY = 'bussola.legado.v1';
+  const rxSet = (() => { try { return new Set(JSON.parse(localStorage.getItem(RX_KEY) || '[]')); } catch { return new Set(); } })();
+  const lg = (() => { try { return JSON.parse(localStorage.getItem(LG_KEY) || '{}'); } catch { return {}; } })();
+
+  appEl.innerHTML = `
+    <div class="pad">
+      <h1>🛡️ Soberania <span class="muted small">segurança para a vida toda</span></h1>
+      <p class="muted">O que o mercado esquece: bitcoin não é só comprar e guardar — é <strong>manter
+      seguro</strong> e <strong>transmitir</strong>. Aqui você se autoavalia, monta seu plano de
+      herança e protege seus dados. Tudo <strong>no seu aparelho</strong>.</p>
+
+      <section class="watchonly">
+        <h2>📡 Raio-X da Soberania</h2>
+        <p class="muted">Marque o que já é verdade. Vira uma nota e um plano de ação.</p>
+        <div id="rxList"></div>
+        <div id="rxResult"></div>
+      </section>
+
+      <section class="watchonly">
+        <h2>🕊️ Legado — plano de herança</h2>
+        <div class="banner warn">⚠️ <strong>Nunca</strong> escreva sua seed aqui — só <strong>onde
+        encontrá-la</strong>. Este plano não substitui testamento/inventário (procure orientação jurídica).</div>
+        <form id="lgForm" class="regform">
+          ${LEGADO_FIELDS.map(f => {
+            const val = lg[f.k] ? esc(lg[f.k]) : '';
+            if (f.type === 'textarea') return `<label style="grid-column:1/-1">${f.label}<textarea id="lg_${f.k}" rows="2" spellcheck="false" placeholder="${f.ph || ''}">${val}</textarea></label>`;
+            if (f.type === 'select') return `<label>${f.label}<select id="lg_${f.k}">${['', ...f.opts].map(o => `<option ${lg[f.k] === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
+            return `<label${f.k === 'titular' ? ' style="grid-column:1/-1"' : ''}>${f.label}<input type="${f.type}" id="lg_${f.k}" value="${val}"></label>`;
+          }).join('')}
+          <button type="submit">Salvar plano</button>
+        </form>
+        <div class="regactions">
+          <button id="lgPrint" class="btn-ghost">🖨️ Imprimir / PDF</button>
+          <button id="lgExport" class="btn-ghost">⬇️ Exportar (.md)</button>
+        </div>
+        <div id="lgOut"></div>
+      </section>
+
+      <section class="watchonly">
+        <h2>🔒 Cofre — backup criptografado</h2>
+        <p class="muted">Exporte tudo (checklist, registro, raio-x, legado) num arquivo
+        <strong>criptografado</strong> (AES-256-GCM) com uma senha. Sem a senha, ninguém abre.</p>
+        <div class="banner warn">Guarde a senha com cuidado: <strong>sem ela o backup é irrecuperável</strong>
+        (é essa a ideia). Este cofre <strong>não</strong> contém sua seed.</div>
+        <form id="cfForm" class="regform">
+          <label style="grid-column:1/-1">Senha do backup<input type="password" id="cfPass" autocomplete="new-password"></label>
+          <button type="submit">Exportar cofre</button>
+        </form>
+        <div class="regactions">
+          <label class="btn-ghost" style="cursor:pointer">⬆️ Restaurar backup<input type="file" id="cfFile" accept="application/json" hidden></label>
+        </div>
+        <div id="cfOut"></div>
+      </section>
+
+      <section class="watchonly">
+        <h2>🔗 Prova de Integridade <span class="muted small">SHA-256</span></h2>
+        <p class="muted">Gere a "impressão digital" de um comprovante, declaração ou do seu plano.
+        Se o arquivo mudar 1 byte, o hash muda. Guarde o hash para provar depois que o documento é o mesmo.</p>
+        <div class="regform"><label style="grid-column:1/-1">Escolha um arquivo<input type="file" id="piFile"></label></div>
+        <div id="piOut"></div>
+        <p class="muted small">Próximo passo (roadmap): ancorar este hash no Bitcoin via
+        <a href="https://opentimestamps.org" target="_blank" rel="noopener">OpenTimestamps</a> — prova de
+        data inviolável, que só fica mais forte com o tempo.</p>
+        <div id="piList"></div>
+      </section>
+    </div>`;
+
+  // ---- Raio-X ----
+  const rxList = document.getElementById('rxList');
+  function renderRX() {
+    rxList.innerHTML = RAIOX.map(it => `<label class="ck-item"><input type="checkbox" data-id="${it.id}" ${rxSet.has(it.id) ? 'checked' : ''}><span>${esc(it.q)}</span></label>`).join('');
+    rxList.querySelectorAll('input').forEach(inp => inp.addEventListener('change', () => {
+      inp.checked ? rxSet.add(inp.dataset.id) : rxSet.delete(inp.dataset.id);
+      try { localStorage.setItem(RX_KEY, JSON.stringify([...rxSet])); } catch {}
+      renderResult();
+    }));
+  }
+  function renderResult() {
+    const r = scoreRaioX(rxSet);
+    document.getElementById('rxResult').innerHTML = `
+      <div class="rxhead"><div class="gauge ${r.cls}"><div class="gnum">${r.score}</div></div>
+        <div><span class="badge ${r.cls}">${r.tier}</span><div class="muted small">nota de soberania (0–100)</div></div></div>
+      ${r.gaps.length ? `<h3>Próximos passos</h3><ul class="gaps">${r.gaps.map(g => `<li>${esc(g.tip)} <a href="${g.link}">ver →</a></li>`).join('')}</ul>`
+        : '<div class="banner ok">🏆 Soberania plena nos itens essenciais. Excelente!</div>'}`;
+  }
+  renderRX(); renderResult();
+
+  // ---- Legado ----
+  function legadoData() { const d = {}; LEGADO_FIELDS.forEach(f => { d[f.k] = (document.getElementById('lg_' + f.k) || {}).value || ''; }); return d; }
+  document.getElementById('lgForm').addEventListener('submit', e => {
+    e.preventDefault();
+    try { localStorage.setItem(LG_KEY, JSON.stringify(legadoData())); } catch {}
+    document.getElementById('lgOut').innerHTML = '<div class="banner ok">✅ Plano salvo no aparelho.</div>';
+  });
+  document.getElementById('lgExport').addEventListener('click', () => {
+    const md = legadoMarkdown(legadoData());
+    const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'plano-de-legado.md'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById('lgPrint').addEventListener('click', () => {
+    const md = legadoMarkdown(legadoData());
+    const w = window.open('', '_blank');
+    if (!w) { document.getElementById('lgOut').innerHTML = '<p class="muted">Permita pop-ups para imprimir, ou use Exportar (.md).</p>'; return; }
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>Plano de Legado</title>
+      <style>body{font:15px/1.6 system-ui,Arial;max-width:720px;margin:32px auto;padding:0 16px;color:#111}
+      h1{font-size:24px}h2{font-size:17px;border-bottom:1px solid #ccc;padding-bottom:4px;margin-top:24px}</style>
+      <pre style="white-space:pre-wrap;font:inherit">${md.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</pre>`);
+    w.document.close(); w.focus(); setTimeout(() => w.print(), 250);
+  });
+
+  // ---- Cofre ----
+  document.getElementById('cfForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('cfOut');
+    const pass = document.getElementById('cfPass').value;
+    if (pass.length < 6) { o.innerHTML = '<p class="muted">Use uma senha de pelo menos 6 caracteres.</p>'; return; }
+    try {
+      const blob = await encryptJSON(collectAppData(), pass);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(blob, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a'); a.href = url; a.download = 'bussola-cofre.json'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      document.getElementById('cfPass').value = '';
+      o.innerHTML = '<div class="banner ok">🔒 Cofre exportado e criptografado.</div>';
+    } catch (err) { o.innerHTML = `<p class="muted">Falha ao criptografar: ${esc(err.message)}</p>`; }
+  });
+  document.getElementById('cfFile').addEventListener('change', async e => {
+    const o = document.getElementById('cfOut');
+    const file = e.target.files[0]; if (!file) return;
+    const pass = prompt('Senha do backup:'); if (!pass) return;
+    try {
+      const blob = JSON.parse(await file.text());
+      const data = await decryptJSON(blob, pass);
+      Object.entries(data).forEach(([k, v]) => { if (k.startsWith('bussola.')) localStorage.setItem(k, v); });
+      o.innerHTML = '<div class="banner ok">✅ Backup restaurado. Recarregando…</div>';
+      setTimeout(() => location.reload(), 900);
+    } catch (err) { o.innerHTML = `<p class="muted">Não consegui restaurar (senha errada ou arquivo inválido).</p>`; }
+    finally { e.target.value = ''; }
+  });
+
+  // ---- Prova de Integridade ----
+  const PI_KEY = 'bussola.provas.v1';
+  const piLoad = () => { try { return JSON.parse(localStorage.getItem(PI_KEY) || '[]'); } catch { return []; } };
+  const piSave = a => { try { localStorage.setItem(PI_KEY, JSON.stringify(a)); } catch {} };
+  function piRender() {
+    const a = piLoad(), el = document.getElementById('piList');
+    el.innerHTML = a.length ? `<h3>Provas guardadas</h3><div class="tablewrap"><table><thead><tr><th>Quando</th><th>Arquivo</th><th>SHA-256</th></tr></thead><tbody>
+      ${a.map(p => `<tr><td>${esc(p.date)}</td><td>${esc(p.name)}</td><td class="mono">${esc(p.hash)}</td></tr>`).join('')}</tbody></table></div>` : '';
+  }
+  document.getElementById('piFile').addEventListener('change', async e => {
+    const o = document.getElementById('piOut'), f = e.target.files[0]; if (!f) return;
+    const W = window.BussolaWallet;
+    if (!W || !W.sha256Hex) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    o.innerHTML = '<p class="loading">Calculando SHA-256…</p>';
+    try {
+      const hash = W.sha256Hex(new Uint8Array(await f.arrayBuffer()));
+      o.innerHTML = `<div class="banner ok">SHA-256 de <strong>${esc(f.name)}</strong>:</div>
+        <textarea class="mono" rows="2" readonly></textarea>
+        <div class="regactions"><button type="button" class="btn-ghost" id="piSaveBtn">Guardar prova</button></div>`;
+      o.querySelector('textarea').value = hash;
+      const name = f.name;
+      document.getElementById('piSaveBtn').addEventListener('click', () => {
+        const a = piLoad(); a.unshift({ date: new Date().toLocaleString('pt-BR'), name, hash }); piSave(a); piRender();
+      });
+    } catch (err) { o.innerHTML = `<p class="muted">Falha ao ler o arquivo: ${esc(err.message)}</p>`; }
+    finally { e.target.value = ''; }
+  });
+  piRender();
+}
+
 /* =================== Roteador =================== */
-const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira };
+const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira, soberania: viewSoberania };
 function route() {
   const raw = location.hash.replace(/^#/, '') || 'painel';
   const [tab, sub] = raw.split('/');
@@ -767,9 +1064,18 @@ window.addEventListener('online', updNet);
 window.addEventListener('offline', updNet);
 updNet();
 
-/* PWA */
+/* PWA: registro + prompt de instalação */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; if (installBtn) installBtn.hidden = false; });
+installBtn?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt(); await deferredPrompt.userChoice;
+  deferredPrompt = null; installBtn.hidden = true;
+});
+window.addEventListener('appinstalled', () => { if (installBtn) installBtn.hidden = true; });
 
 route();

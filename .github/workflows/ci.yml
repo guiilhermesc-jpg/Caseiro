@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    paths: ['bussola-bitcoin/**', '.github/workflows/ci.yml']
+  pull_request:
+    paths: ['bussola-bitcoin/**', '.github/workflows/ci.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bussola-bitcoin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: bussola-bitcoin/package-lock.json
+      - name: Instalar dependências
+        run: npm ci
+      - name: Testes (carteira + cofre)
+        run: npm test
+      - name: Build do bundle
+        run: npm run build
+      - name: Verificar que o bundle commitado está atualizado
+        run: |
+          git diff --exit-code assets/vendor/wallet-bundle.js \
+            || (echo "::error::Bundle desatualizado — rode 'npm run build' e commite." && exit 1)

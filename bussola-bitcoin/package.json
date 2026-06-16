@@ -6,7 +6,7 @@
   "description": "Núcleo da carteira soberana da Bússola (watch-only testnet, libs auditadas).",
   "scripts": {
     "build": "esbuild src/wallet/index.js --bundle --format=iife --global-name=BussolaWallet --outfile=assets/vendor/wallet-bundle.js --minify --legal-comments=none",
-    "test": "node test/wallet.test.mjs"
+    "test": "node test/wallet.test.mjs && node test/backup.test.mjs"
   },
   "devDependencies": {
     "@noble/hashes": "^1.4.0",
