@@ -5,7 +5,7 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   splitMnemonic, combineMnemonic,
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
   encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
-  silentPaymentOutputScript, silentPaymentSend } from '../src/wallet/index.js';
+  silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -148,6 +148,19 @@ const spUtxo = [{ txid: '33'.repeat(32), vout: 0, chain: 0, index: 0, valueSats:
 const spSent = silentPaymentSend({ mnemonic: spSender.mnemonic, accountXpub: spSender.accountXpub, utxos: spUtxo, toAddress: spRecv, amountSats: 150000, feeRate: 1 });
 eq('SP/envio: txid 64 hex', /^[0-9a-f]{64}$/.test(spSent.txid), true);
 eq('SP/envio: output x-only 64 hex', /^[0-9a-f]{64}$/.test(spSent.outputXonly), true);
+
+/* Silent Payments RECEBIMENTO: scanner confere com o vetor oficial (output + tweak) */
+const spScan = silentPaymentScanTx({
+  scanPriv: '0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c',
+  spendPub: '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36',
+  inputPubKeys: ['025a1e61f898173040e20616d43e9f496fba90338a39faa1ed98fcbaeee4dd9be5', '03bd85685d03d111699b15d046319febe77f8de5286e9e512703cdee1bf3be3792'],
+  outpoints: [{ txid: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16', vout: 0 }, { txid: 'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d', vout: 0 }],
+  outputs: [{ vout: 0, xonly: '3e9fce73d4e77a4809908e3c3a2e54ee147b9312dc5044a193d1fc85de46e3c1', valueSats: 1000 }],
+});
+eq('SP/scan: encontra 1 output', spScan.length, 1);
+eq('SP/scan: output x-only == vetor', spScan[0].xonly, '3e9fce73d4e77a4809908e3c3a2e54ee147b9312dc5044a193d1fc85de46e3c1');
+eq('SP/scan: tweak == vetor', spScan[0].tweak, 'f438b40179a3c4262de12986c0e6cce0634007cdc79c1dcd3e20b9ebc2e7eef6');
+eq('SP/scan: nada quando não é seu', silentPaymentScanTx({ scanPriv: '0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c', spendPub: '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36', inputPubKeys: ['025a1e61f898173040e20616d43e9f496fba90338a39faa1ed98fcbaeee4dd9be5', '03bd85685d03d111699b15d046319febe77f8de5286e9e512703cdee1bf3be3792'], outpoints: [{ txid: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16', vout: 0 }, { txid: 'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d', vout: 0 }], outputs: [{ vout: 0, xonly: '0000000000000000000000000000000000000000000000000000000000000001', valueSats: 1 }] }).length, 0);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

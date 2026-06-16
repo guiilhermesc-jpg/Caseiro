@@ -436,6 +436,59 @@ export function silentPaymentSend({ mnemonic, accountXpub, utxos, toAddress, amo
   return { hex: tx.hex, txid: tx.id, outputXonly: spOut.xonly, fee, totalIn, change: hasChange ? change : 0 };
 }
 
+/* Scanner de recebimentos SP: dados as chaves de visão (scan) + a spend pubkey, descobre quais
+ * outputs taproot de uma transação são seus. Núcleo validado contra o vetor oficial do BIP-352. */
+export function silentPaymentScanTx({ scanPriv, spendPub, inputPubKeys, outpoints, outputs }) {
+  const P = secp256k1.ProjectivePoint, n = secp256k1.CURVE.n;
+  const toB = b => BigInt('0x' + (typeof b === 'string' ? b : hex.encode(b)));
+  const bn32 = x => hex.decode(x.toString(16).padStart(64, '0'));
+  if (!inputPubKeys || !inputPubKeys.length || !outputs || !outputs.length) return [];
+  let A = null;
+  for (const p of inputPubKeys) { const pt = P.fromHex(typeof p === 'string' ? p : hex.encode(p)); A = A ? A.add(pt) : pt; }
+  const opL = outpoints.map(o => spOutpointSer(o.txid, o.vout)).sort((x, y) => { for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; })[0];
+  const inputHash = toB(spTagged('BIP0352/Inputs', new Uint8Array([...opL, ...A.toRawBytes(true)]))) % n;
+  const ecdh = A.multiply((inputHash * toB(scanPriv)) % n);
+  const B = P.fromHex(typeof spendPub === 'string' ? spendPub : hex.encode(spendPub));
+  const left = new Map(outputs.map(o => [o.xonly, o]));
+  const found = []; let k = 0;
+  while (left.size) {
+    const kb = new Uint8Array(4); new DataView(kb.buffer).setUint32(0, k, false);
+    const tk = toB(spTagged('BIP0352/SharedSecret', new Uint8Array([...ecdh.toRawBytes(true), ...kb]))) % n;
+    const xonly = hex.encode(B.add(P.BASE.multiply(tk)).toRawBytes(true).slice(1));
+    if (left.has(xonly)) { found.push({ ...left.get(xonly), xonly, tweak: hex.encode(bn32(tk)) }); left.delete(xonly); k++; }
+    else break;
+  }
+  return found;
+}
+/* Extrai a pubkey elegível de uma entrada (vin do Esplora): P2WPKH, P2TR key-path, P2SH-P2WPKH. */
+function spInputPubFromVin(vin) {
+  const t = vin.prevout && vin.prevout.scriptpubkey_type, w = vin.witness || [];
+  if (t === 'v0_p2wpkh' && w.length >= 2) return w[w.length - 1];
+  if (t === 'p2sh' && w.length >= 2) return w[w.length - 1]; // provável P2SH-P2WPKH
+  if (t === 'v1_p2tr') {
+    const annex = w.length >= 2 && w[w.length - 1].startsWith('50');
+    const eff = annex ? w.length - 1 : w.length;
+    const spk = vin.prevout.scriptpubkey;
+    if (eff === 1 && spk && spk.startsWith('5120')) return '02' + spk.slice(4); // key-path
+    return null; // script-path: excluído pelo BIP-352
+  }
+  return null;
+}
+/* Varre UMA transação (objeto do Esplora) procurando recebimentos SP da carteira (via frase). */
+export function silentPaymentScan({ mnemonic, network = 'test', tx }) {
+  const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
+  const cfg = SP_NET[network] || SP_NET.test;
+  const root = HDKey.fromMasterSeed(mnemonicToSeedSync(mm));
+  const scanPriv = root.derive(cfg.scan).privateKey, spendPub = root.derive(cfg.spend).publicKey;
+  const vin = tx.vin || [], vout = tx.vout || [];
+  const inputPubKeys = vin.map(spInputPubFromVin).filter(Boolean);
+  const outpoints = vin.map(v => ({ txid: v.txid, vout: v.vout }));
+  const outputs = vout.map((o, i) => { const spk = o.scriptpubkey || ''; return spk.startsWith('5120') ? { vout: i, xonly: spk.slice(4), valueSats: o.value } : null; }).filter(Boolean);
+  const found = (outputs.length && inputPubKeys.length) ? silentPaymentScanTx({ scanPriv, spendPub, inputPubKeys, outpoints, outputs }) : [];
+  return { found, scannedOutputs: outputs.length, inputsUsed: inputPubKeys.length, inputsTotal: vin.length };
+}
+
 export function makeQR(text, cell = 3) {
   try {
     const qr = qrcode(0, 'L'); qr.addData(String(text)); qr.make();

@@ -1330,6 +1330,18 @@ function viewSoberania() {
           <button type="submit">Gerar endereço SP</button>
         </form>
         <div id="spOut"></div>
+        <div class="agstep" style="margin-top:14px">
+          <h3>Verificar um recebimento</h3>
+          <p class="muted small">Cole o <strong>txid</strong> de uma transação e eu descubro se algum output é seu (SP).
+          Varredura automática da chain exige um node indexado (roadmap) — aqui é por transação.</p>
+          <form id="spScan" class="regform">
+            <label style="grid-column:1/-1">txid da transação<input id="spTxid" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Sua frase<input id="spScanMn" autocomplete="off" spellcheck="false"></label>
+            <label>Rede<select id="spScanNet"><option value="test">Testnet</option><option value="main">Mainnet</option></select></label>
+            <button type="submit">Verificar</button>
+          </form>
+          <div id="spScanOut"></div>
+        </div>
       </section>
 
       <section class="watchonly">
@@ -1506,6 +1518,32 @@ function viewSoberania() {
         <details class="small"><summary>chaves de visão/gasto (avançado)</summary>
         <div class="muted small mono" style="word-break:break-all">scan: ${esc(r.scanPub)}<br>spend: ${esc(r.spendPub)}</div></details>`;
       document.getElementById('spMn').value = '';
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('spScan').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('spScanOut');
+    if (!Wsh) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const txid = document.getElementById('spTxid').value.trim().toLowerCase();
+    const mn = document.getElementById('spScanMn').value;
+    const net = document.getElementById('spScanNet').value;
+    if (!/^[0-9a-f]{64}$/.test(txid)) { o.innerHTML = '<p class="muted">Informe um txid válido (64 hex).</p>'; return; }
+    o.innerHTML = '<p class="loading">Buscando transação e verificando…</p>';
+    try {
+      const r = await fetch(`${esploraBase()}/tx/${txid}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error('Transação não encontrada neste endpoint.');
+      const tx = await r.json();
+      const res = Wsh.silentPaymentScan({ mnemonic: mn, network: net, tx });
+      document.getElementById('spScanMn').value = '';
+      const nota = `<p class="muted small">Verifiquei ${res.scannedOutputs} saída(s) taproot; usei ${res.inputsUsed}/${res.inputsTotal} entradas.${res.inputsUsed < res.inputsTotal ? ' Algumas entradas não são suportadas — a detecção pode falhar nesta tx.' : ''}</p>`;
+      if (!res.found.length) {
+        o.innerHTML = `<div class="banner warn">Nenhum output desta transação é seu (SP).</div>${nota}`;
+      } else {
+        const total = res.found.reduce((s, f) => s + (f.valueSats || 0), 0);
+        o.innerHTML = `<div class="banner ok">🎉 ${res.found.length} output(s) seu(s)! Total ${(total / 1e8).toFixed(8)} tBTC.</div>`
+          + res.found.map(f => `<div class="payload"><div class="muted small">vout ${f.vout} · ${f.valueSats} sats</div><div class="mono small" style="word-break:break-all">chave: ${esc(f.xonly)}<br>tweak p/ gastar: ${esc(f.tweak)}</div></div>`).join('')
+          + `${nota}<p class="muted small">Para gastar: chave privada = (spend_priv + tweak) mod n. (Gasto dos recebimentos SP: roadmap.)</p>`;
+      }
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
 }
