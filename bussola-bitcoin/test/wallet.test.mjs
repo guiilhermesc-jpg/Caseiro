@@ -1,7 +1,8 @@
 /* Valida o núcleo da carteira contra o vetor oficial do BIP84 e gera uma xpub de exemplo. */
 import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestnetWallet,
   addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, sha256Hex, decodeQR,
-  createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt } from '../src/wallet/index.js';
+  createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
+  splitMnemonic, combineMnemonic } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -89,6 +90,12 @@ const s2 = signMultisigPsbt(s1.psbt, c1.mnemonic);
 eq('cosigner 2 assinou', s2.signedInputs, 1);
 const mfin = finalizePsbt(s2.psbt);
 eq('multisig: txid final 64 hex', /^[0-9a-f]{64}$/.test(mfin.txid), true);
+
+/* Recuperação social (Shamir): split 3-de-5 + recompor */
+const shMn = createTestnetWallet().mnemonic;
+const shares = await splitMnemonic(shMn, 5, 3);
+eq('shamir gera 5 partes', shares.length, 5);
+eq('shamir recompõe 3-de-5 == original', await combineMnemonic([shares[0], shares[2], shares[4]]), shMn);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

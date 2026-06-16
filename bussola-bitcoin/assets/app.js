@@ -1109,6 +1109,32 @@ function viewSoberania() {
       </section>
 
       <section class="watchonly">
+        <h2>🧩 Recuperação social <span class="muted small">Shamir k-de-N</span></h2>
+        <p class="muted">Divida sua frase em N partes e guarde com pessoas/locais de confiança.
+        Recompõe com k partes — herança e fim do "perdi a seed". Abaixo de k, nenhuma parte revela nada.</p>
+        <div class="banner warn">⚠️ Cada parte é sensível: juntar k delas = a carteira. Distribua com
+        cuidado, teste a recomposição e faça isto num aparelho offline.</div>
+        <div class="agstep">
+          <h3>Dividir a frase</h3>
+          <form id="shSplit" class="regform">
+            <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="shMn" autocomplete="off" spellcheck="false"></label>
+            <label>Total de partes (N)<input type="number" id="shN" min="2" max="10" value="5"></label>
+            <label>Mínimo p/ recompor (k)<input type="number" id="shK" min="2" max="10" value="3"></label>
+            <button type="submit">Gerar partes</button>
+          </form>
+          <div id="shSplitOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>Recompor a frase</h3>
+          <form id="shJoin" class="regform">
+            <label style="grid-column:1/-1">Cole as partes (uma por linha)<textarea id="shParts" rows="4" spellcheck="false"></textarea></label>
+            <button type="submit">Recompor</button>
+          </form>
+          <div id="shJoinOut"></div>
+        </div>
+      </section>
+
+      <section class="watchonly">
         <h2>🔒 Cofre — backup criptografado</h2>
         <p class="muted">Exporte tudo (checklist, registro, raio-x, legado) num arquivo
         <strong>criptografado</strong> (AES-256-GCM) com uma senha. Sem a senha, ninguém abre.</p>
@@ -1238,6 +1264,35 @@ function viewSoberania() {
     finally { e.target.value = ''; }
   });
   piRender();
+
+  // ---- Recuperação social (Shamir) ----
+  const Wsh = window.BussolaWallet;
+  document.getElementById('shSplit').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('shSplitOut');
+    if (!Wsh) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const mn = document.getElementById('shMn').value;
+    const n = parseInt(document.getElementById('shN').value, 10) || 5;
+    const k = parseInt(document.getElementById('shK').value, 10) || 3;
+    o.innerHTML = '<p class="loading">Gerando partes…</p>';
+    try {
+      const shares = await Wsh.splitMnemonic(mn, n, k);
+      o.innerHTML = `<div class="banner ok">${shares.length} partes geradas — guarde cada uma em local/pessoa diferente. Recompõe com ${Math.min(k, n)}.</div>` +
+        shares.map((s, i) => { const qr = Wsh.makeQR(s); return `<div class="payload"><div class="muted small">Parte ${i + 1}/${shares.length}</div><textarea class="mono" rows="2" readonly>${esc(s)}</textarea>${qr ? `<div class="qr">${qr}</div>` : ''}</div>`; }).join('');
+      document.getElementById('shMn').value = '';
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('shJoin').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('shJoinOut');
+    if (!Wsh) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const parts = document.getElementById('shParts').value.split(/\s+/).map(x => x.trim()).filter(Boolean);
+    o.innerHTML = '<p class="loading">Recompondo…</p>';
+    try {
+      const mn = await Wsh.combineMnemonic(parts);
+      o.innerHTML = `<div class="banner ok">Frase recomposta:</div><textarea class="mono" rows="2" readonly>${esc(mn)}</textarea><p class="muted small">Confira se faz sentido — partes insuficientes geram frase errada, sem aviso.</p>`;
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
 }
 
 /* =================== Roteador =================== */
