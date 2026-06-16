@@ -10,12 +10,22 @@ ganhava/ganha BTC** (mapa histórico). Site estático, **offline-first** (PWA), 
 
 ---
 
-## Estado atual (v0.1 — 15/06/2026)
+## Estado atual (v0.2 — 16/06/2026)
 
-- ✅ **Camada 1 — o Book**: site navegável + pasta `docs/` (caps. 00–05 + fontes), PWA offline.
-- ⏳ Camada 2 — App "off→online" (checklists guiados, cotação só-leitura, planilha p/ contador).
+App PWA com abas, offline-first, em PT-BR. Tudo só-leitura no que toca dinheiro; nunca pede seed/chave.
 
-Roadmap completo em [`docs/00-VISAO.md`](docs/00-VISAO.md).
+- ✅ **Camada 1 — Book**: pasta `docs/` (caps. 00–07 + fontes), lida no app.
+- ✅ **Camada 2 — App**: **Painel** (preço ao vivo, índice **Medo & Ganância**, contagem pro
+  **halving**, "leitura do momento" educacional), **Histórico** (timeline), **Checklist**
+  guiado (salva no aparelho), **Carteira** (arquitetura da carteira soberana, em construção).
+- ⏳ Camada 3+ — Planilha/CSV pro contador, simulador de DCA, carteira testnet → air-gap →
+  notarização → mainnet auditada.
+
+Visão e roadmap: [`docs/00-VISAO.md`](docs/00-VISAO.md) · [`docs/07-NORTE-PRODUTO.md`](docs/07-NORTE-PRODUTO.md)
+· carteira: [`docs/06-CARTEIRA-SOBERANA.md`](docs/06-CARTEIRA-SOBERANA.md)
+
+> Dados ao vivo (públicos, só-leitura): preço (CoinGecko), medo&ganância (alternative.me),
+> altura de bloco (mempool.space). Funcionam no navegador do usuário; offline, o app usa cache.
 
 ## Estrutura
 
@@ -23,7 +33,7 @@ Roadmap completo em [`docs/00-VISAO.md`](docs/00-VISAO.md).
 bussola-bitcoin/
 ├── index.html              # o site (leitor do book)
 ├── assets/style.css        # tema
-├── assets/app.js           # navegação + renderizador de Markdown
+├── assets/app.js           # app: abas (Painel/Book/Histórico/Checklist/Carteira) + render Markdown
 ├── manifest.webmanifest    # PWA
 ├── sw.js                   # service worker (offline)
 ├── icon.svg                # ícone
@@ -35,6 +45,8 @@ bussola-bitcoin/
     ├── 03-DECLARACAO.md    # fiscal Brasil (estado atual + risco de mudança)
     ├── 04-GANHAR-HOJE.md   # formas viáveis de conseguir BTC + golpes
     ├── 05-MAPA-HISTORICO.md# a "máquina de extração" educacional (o que ficou)
+    ├── 06-CARTEIRA-SOBERANA.md # arquitetura da carteira air-gap (joia da coroa)
+    ├── 07-NORTE-PRODUTO.md  # visão de produto + etapas
     └── 99-FONTES.md        # fontes checadas
 ```
 

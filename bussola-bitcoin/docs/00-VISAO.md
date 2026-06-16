@@ -1,102 +1,75 @@
-# Bússola — Documento de Visão (v0.1)
+# Bússola — Documento de Visão (v0.2)
 
-> **Documento VIVO.** Você é o maestro: tudo aqui é seu para editar e redirecionar.
-> Última atualização: 15/06/2026.
-> Nome de trabalho: **Bússola**. Pode rebatizar (ex.: "Norte BTC", "Carteira Soberana").
+> **Documento VIVO.** Você é o maestro. Última atualização: 16/06/2026.
+> Nome de trabalho: **Bússola**. Pode rebatizar.
 
-> ⚠️ **AVISO IMPORTANTE (leia antes de tudo).** Este material é **educacional**. Não é
-> recomendação de investimento, nem consultoria financeira, tributária ou jurídica.
-> Bitcoin é um ativo **volátil e de risco** — você pode perder dinheiro. Regras fiscais
-> mudam (veja o cap. 03). **Confirme sempre com um(a) contador(a) e faça sua própria
-> pesquisa.** Ninguém da equipe Bússola tem acesso, nem pede, sua *seed phrase* / chave.
+> ⚠️ **AVISO.** Material **educacional** + software em construção. Não é recomendação de
+> investimento nem consultoria. Bitcoin é volátil e de risco. **Ninguém legítimo pede sua
+> seed/chave** — a Bússola **nunca** vai pedir.
 
 ---
 
-## 1. O que é a Bússola
+## 🔭 Rumo atual (o sonho grande — e como torná-lo real)
 
-Um **guia + ferramenta** que pega uma pessoa no "off" (só tem conta de banco / Pix) e a
-leva ao "online" de forma **soberana**: comprar bitcoin no Brasil, **tirar da corretora
-para uma carteira própria** (custódia própria) e **declarar** corretamente, de modo que o
-patrimônio seja **comprovadamente seu** (com lastro e origem), e não algo em zona cinzenta.
+A Bússola vai ser três coisas num produto só, em PT-BR, mobile-first, soberano e **premium**:
 
-Em paralelo, a Bússola tem um **book de pesquisa** (este conjunto de documentos) que
-mapeia **como se ganhava/ganha bitcoin** — do passado ao presente — para enxergar, com a
-visão de hoje, **o que ficou pelo caminho** e o que ainda é viável.
+1. **Book (ebook)** — ensina o caminho (já construído).
+2. **App** — te acompanha e organiza (checklist, cotação só-leitura, histórico, planilha).
+3. **Carteira soberana** — *a joia da coroa*: uma carteira que **"funciona desligada mesmo
+   conectada"** — ou seja, **as chaves nunca tocam a internet**, mesmo o app estando online.
 
-## 2. Os 3 entregáveis
+> 💡 A sua ideia — *"uma carteira fora da rede, que funciona desligada mesmo conectada"* — já
+> existe no estado da arte e se chama **carteira air-gapped com watch-only + PSBT**. A parte
+> online só **observa** e **monta** transações; a parte offline (suas chaves) só **assina**.
+> Detalhe completo em **`06-CARTEIRA-SOBERANA.md`**. Nós vamos fazer isso **bonito, simples e
+> brasileiro** — esse é o gap real do mercado.
 
-1. **O Book (site + docs)** — *este, o 1º a ser produzido.* Site com **link provisório** +
-   esta pasta `docs/`. É a base de conhecimento navegável.
-2. **O App "off→online"** — ferramenta guiada passo a passo (comprar → sacar p/ carteira
-   própria → checklist de declaração). *Fase seguinte.*
-3. **A Pesquisa (mapa histórico)** — cap. 04 e 05: formas de conseguir BTC hoje + o
-   "mapa do passado" (a "máquina de extração com mapeamento", **educacional**).
+## 🧱 Princípios inegociáveis (o que separa "premium" de "perigoso")
 
-## 3. O pipeline "do prompt ao produto" (o fim concreto: BTC na sua carteira)
+1. **Não reinventamos criptografia nem blockchain.** Usamos **o Bitcoin** (a rede mais
+   segura e validada que existe) e **bibliotecas auditadas** (ex.: `bitcoinjs-lib`, BDK).
+   Código de carteira caseiro e "não auditado" guardando dinheiro real = irresponsável.
+2. **Testnet/Signet primeiro.** A carteira nasce com **dinheiro de mentira** até estar
+   redonda e revisada. Só depois liberamos mainnet, com avisos claros.
+3. **Chave nunca online.** Modelo air-gap (assinatura offline via QR/arquivo PSBT). O app
+   online é **watch-only** (só enxerga, via `xpub`).
+4. **Privacidade local.** Dados do usuário ficam **no aparelho** (localStorage/arquivo).
+   Nada de servidor obrigatório, nada de coletar dados.
+5. **Verdade > hype.** Dizemos o que é viável e onde mora golpe. "Disruptivo" aqui é
+   **fazer o básico difícil com excelência**, não prometer mágica.
 
-O "produto" tem um **estado final verificável**: *bitcoin sob sua custódia, declarado.*
+## 🧩 Como atendemos cada desejo seu (tradução fiel)
 
-```
-[OFF]  Conta no banco (BRL) — XP, Nubank, qualquer banco com Pix
-   │
-   ▼  (1) Escolher corretora/serviço nacional regulamentado
-[KYC]  Cadastro + verificação de identidade (obrigatório por lei)
-   │
-   ▼  (2) Depósito via Pix (BRL → saldo na plataforma)
-[BUY]  Comprar bitcoin (à vista; ideal: aos poucos / DCA)
-   │
-   ▼  (3) SAQUE para carteira PRÓPRIA (self-custody)  ← o passo que muita gente pula
-[SELF-CUSTODY]  BTC na sua wallet; você controla as chaves
-   │
-   ▼  (4) Registrar custo de aquisição + DECLARAR (Bens e Direitos / IN 1888 se aplicável)
-[PRODUTO]  Patrimônio comprovadamente seu, com lastro e em conformidade fiscal
-```
+| Você pediu | Como vira realidade (de verdade) |
+|---|---|
+| "carteira fora da rede, funciona desligada mesmo online" | **Watch-only (xpub) online + assinatura offline PSBT** via QR (air-gap). Chave nunca conecta. |
+| "alocar no mesmo blockchain seguro e válido p/ garantir os processos/informações" | Custódia **no próprio Bitcoin** + **notarização** dos seus registros via **OpenTimestamps** (ancora um *hash* no Bitcoin = prova de data/integridade, **sem** expor seus dados). |
+| "informações do bitcoin de quando lançou, o histórico" | Aba **Histórico**: linha do tempo interativa (gênese 03/01/2009, halvings, marcos) + dados de preço. |
+| "cotação só pra ver" | Aba **Cotação**: preço ao vivo (API pública, **só-leitura**), com aviso. Nunca conecta em conta. |
+| "planilha pro contador" | App registra compras e **exporta CSV** (custo de aquisição, lastro) — resolve a comprovação do cap. 03. |
+| "premium, disruptivo, fora da casinha" | Tudo **integrado** (book → app → carteira), **brasileiro**, **soberano**, **air-gap fácil** — ninguém entrega esse combo bem feito hoje. |
 
-Cada etapa vira uma tela/checklist no App (entregável 2). O Book explica cada uma.
+## 🗺️ Roadmap por camadas
 
-## 4. Custodial vs. custódia própria (o ponto central do seu pedido)
+- **Camada 1 ✅ — Book**: site + `docs/` (caps. 00–05 + fontes), offline-first.
+- **Camada 2 (em construção) — App**: shell com abas; **Histórico** (timeline), **Cotação**
+  (ao vivo só-leitura), **Checklist** guiado (salva no aparelho). [esta entrega]
+- **Camada 3 — Planilha/Contador**: registro de compras + **export CSV** + estimativa de
+  ganho de capital (com avisos).
+- **Camada 4 — Carteira (testnet/signet)**: gerar/restaurar carteira **na testnet** com lib
+  auditada; **watch-only** por `xpub`; receber/ver saldo; **construir PSBT**.
+- **Camada 5 — Air-gap & assinatura offline**: fluxo de QR/arquivo PSBT (assinar offline,
+  transmitir online). Este é o "funciona desligada mesmo online".
+- **Camada 6 — Notarização (OpenTimestamps)**: carimbar no Bitcoin os comprovantes/declaração.
+- **Camada 7 — Mainnet + auditoria**: revisão de segurança, então liberar dinheiro real,
+  com onboarding e avisos. Empacotar PWA instalável.
 
-- **Custodial (corretora/banco)** — XP, Nubank Cripto, Mynt (BTG), Mercado Bitcoin,
-  Binance etc. **Fácil e gratuito de guardar**, mas *as chaves são deles*. Bom para
-  começar e comprar; **não é** posse soberana. Lema: *"not your keys, not your coins."*
-- **Custódia própria (self-custody)** — sua *wallet* (hot/cold). Você guarda a *seed*.
-  É aqui que o bitcoin vira **inegociavelmente seu**. Detalhes no cap. 02.
+## 📒 Diário de bordo
 
-> A frase do seu pedido — *"senão seriam consideradas universais"* — traduzimos como:
-> sem **saque para carteira própria + declaração**, fica difícil **comprovar que é seu**
-> (origem/lastro). O cap. 03 cuida da parte de declaração; o cap. 02, da posse real.
-
-## 5. Princípios (o que nunca pode faltar)
-
-1. **Soberania** — o destino padrão é a custódia própria, não a corretora.
-2. **Verdade e risco** — dizer o que é viável e o que **não** compensa (faucet ~ centavos),
-   e onde mora **golpe** (falsa "recuperação", "cloud mining", airdrop falso).
-3. **Conformidade** — declarar certo; nunca otimizar imposto à base de "achismo".
-4. **Segurança em 1º lugar** — *seed* nunca em foto/nuvem/chat; ninguém legítimo a pede.
-5. **Documento vivo** — você redireciona; a Bússola se ajusta.
-
-## 6. Pilha técnica (igual à metodologia que já usamos)
-
-- **Site:** estático (HTML/CSS/JS puro), **offline-first** (PWA: `manifest` + `sw.js`),
-  sem build obrigatório. Publica em **link provisório** tipo `*.pages.dev` (Cloudflare
-  Pages), como fizemos no jogo.
-- **Book:** Markdown em `docs/` (fonte única de verdade); o site **renderiza** esses `.md`.
-- **App (fase 2):** mesma base estática + fluxo guiado; integrações só de **leitura**
-  (preço, links) — nunca pedimos chave/seed.
-
-## 7. Roadmap por camadas
-
-- **Camada 1 (esta) ✅** — Book: site navegável + `docs/` (caps. 00–05 + fontes),
-  com link provisório e PWA offline.
-- **Camada 2** — App "off→online": telas de checklist (comprar → sacar → declarar),
-  cotação ao vivo (somente leitura), gerador de checklist de declaração.
-- **Camada 3** — Calculadora de custo médio / ganho de capital (estimativa, com avisos)
-  e exportável para o contador.
-- **Camada 4** — Empacotar como PWA instalável (Android/iOS via "adicionar à tela").
-
-## 8. Diário de bordo
-
-- **15/06/2026 — v0.1:** Visão definida. Camada 1 (Book) em construção. Pesquisa de base
-  feita e checada (imposto BR em transição — MP 1303 caducou, isenção R$35 mil/mês segue
-  em 2026; formas de ganhar BTC hoje; mapa histórico de faucets/airdrops; bitcoins
-  perdidos). Estrutura `docs/` + site offline-first criada.
+- **15/06/2026 — v0.1:** Visão + Book (Camada 1). Pesquisa de base checada.
+- **15/06/2026 — v0.1.1:** Caminhos relativos (portável raiz/subpasta).
+- **16/06/2026 — v0.2:** Visão **ampliada** (carteira soberana air-gapped como joia da
+  coroa) + princípios de segurança. App vira **shell com abas**: Book, **Histórico**
+  (timeline), **Cotação** (ao vivo só-leitura) e **Checklist** (salva localmente). Aba
+  **Carteira** com a arquitetura (em breve, testnet-first). Doc novo
+  `06-CARTEIRA-SOBERANA.md`.
