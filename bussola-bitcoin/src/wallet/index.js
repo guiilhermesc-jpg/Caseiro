@@ -8,11 +8,12 @@ import { HDKey } from '@scure/bip32';
 import { base58check, bech32, base64, hex } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
-import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/bip39';
+import { generateMnemonic, mnemonicToSeedSync, validateMnemonic, mnemonicToEntropy, entropyToMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import * as btc from '@scure/btc-signer';
 import qrcode from 'qrcode-generator';
 import jsQR from 'jsqr';
+import { split as shamirSplit, combine as shamirCombine } from 'shamir-secret-sharing';
 
 const NET = btc.TEST_NETWORK;
 
@@ -37,6 +38,23 @@ export function restoreTestnetWallet(mnemonic) {
   const m = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
   if (!validateMnemonic(m, wordlist)) throw new Error('Frase de recuperação inválida (12/24 palavras BIP39).');
   return { mnemonic: m, ...accountFromMnemonic(m) };
+}
+
+/* =================== Recuperação social (Shamir k-de-N) =================== */
+/* Divide a entropia da seed em N partes; recompõe com k. Abaixo de k não revela nada. */
+export async function splitMnemonic(mnemonic, total, threshold) {
+  const m = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(m, wordlist)) throw new Error('Frase de recuperação inválida.');
+  const t = Math.max(2, Math.min(10, total | 0));
+  const k = Math.max(2, Math.min(t, threshold | 0));
+  const shares = await shamirSplit(mnemonicToEntropy(m, wordlist), t, k);
+  return shares.map(s => hex.encode(s));
+}
+export async function combineMnemonic(shareHexes) {
+  const shares = shareHexes.map(s => hex.decode(String(s).trim()));
+  if (shares.length < 2) throw new Error('Forneça pelo menos 2 partes.');
+  const ent = await shamirCombine(shares);
+  return entropyToMnemonic(ent, wordlist);
 }
 
 const b58c = base58check(sha256);
