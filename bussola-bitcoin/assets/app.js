@@ -689,6 +689,56 @@ function viewCarteira() {
         </div>
       </section>
 
+      <section class="watchonly">
+        <h2>🔗 Multisig 2-de-3 <span class="soon">testnet beta</span></h2>
+        <p class="muted">Custódia colaborativa / herança: 3 chaves, <strong>2 assinaturas</strong> para
+        gastar. Cada cosigner gera a sua e compartilha só a <strong>xpub</strong>. Ninguém sozinho move os fundos.</p>
+
+        <div class="agstep">
+          <h3>1) Sua chave de cosigner</h3>
+          <div class="regactions"><button type="button" class="btn-ghost" id="msGen">🎲 Gerar minha chave</button></div>
+          <div id="msGenOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>2) O grupo (3 xpubs de cosigner)</h3>
+          <form id="msGroup" class="regform">
+            <label style="grid-column:1/-1">Cosigner A (xpub)<input id="msA" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Cosigner B (xpub)<input id="msB" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Cosigner C (xpub)<input id="msC" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">Ver endereços do cofre</button>
+          </form>
+          <div id="msAddrs"></div>
+        </div>
+        <div class="agstep">
+          <h3>3) Enviar (online, sem chave)</h3>
+          <form id="msSend" class="regform">
+            <label style="grid-column:1/-1">Destino (tb1…)<input id="msTo" spellcheck="false" autocomplete="off"></label>
+            <label>Valor (sats)<input type="number" id="msAmt" min="1" step="1"></label>
+            <label>Taxa (sat/vB)<input type="number" id="msFee" min="1" step="1" value="2"></label>
+            <button type="submit">Montar PSBT</button>
+          </form>
+          <div id="msBuildOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>4) Assinar (cada cosigner, offline)</h3>
+          <form id="msSign" class="regform">
+            <label style="grid-column:1/-1">PSBT (cole ou 📷)<textarea id="msPsbtIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">Sua frase (cosigner)<input id="msSeed" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">Assinar</button>
+          </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="msScan">📷 Escanear PSBT</button></div>
+          <div id="msSignOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>5) Transmitir (com 2 assinaturas)</h3>
+          <form id="msSendTx" class="regform">
+            <label style="grid-column:1/-1">PSBT assinado por 2 (cole)<textarea id="msSignedIn" rows="3" spellcheck="false"></textarea></label>
+            <button type="submit">Finalizar e transmitir</button>
+          </form>
+          <div id="msTxOut"></div>
+        </div>
+      </section>
+
       <h2>Arquitetura completa</h2>
       <article id="doc" class="doc"><p class="loading">Carregando arquitetura…</p></article>
     </div>`;
@@ -868,6 +918,85 @@ function viewCarteira() {
   fetch(`${esploraBase()}/v1/fees/recommended`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
     if (d && d.halfHourFee && !feeEl.dataset.touched) feeEl.value = Math.max(1, d.halfHourFee);
   }).catch(() => {});
+
+  // ---- Multisig 2-de-3 ----
+  const MSG_KEY = 'bussola.msgroup.v1';
+  const msXpubs = () => [document.getElementById('msA').value.trim(), document.getElementById('msB').value.trim(), document.getElementById('msC').value.trim()];
+  (() => { try { const g = JSON.parse(localStorage.getItem(MSG_KEY) || 'null'); if (g) { document.getElementById('msA').value = g[0] || ''; document.getElementById('msB').value = g[1] || ''; document.getElementById('msC').value = g[2] || ''; } } catch {} })();
+  async function scanUtxosMs(xpubs) {
+    const targets = [...wallet.multisigAddresses(xpubs, 2, 10, 0), ...wallet.multisigAddresses(xpubs, 2, 5, 1)];
+    const utxos = [];
+    await Promise.all(targets.map(async t => {
+      try { const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!r.ok) return;
+        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index }); } catch {}
+    }));
+    return utxos;
+  }
+  document.getElementById('msGen')?.addEventListener('click', () => {
+    if (!wallet) return;
+    const c = wallet.createMultisigCosigner(), o = document.getElementById('msGenOut');
+    o.innerHTML = `<div class="seedbox"><h3>📝 Anote sua frase (cosigner):</h3>
+      <ol class="seedwords">${c.mnemonic.split(' ').map(w => `<li>${esc(w)}</li>`).join('')}</ol>
+      <div class="banner warn">Guarde offline. Compartilhe com o grupo APENAS a xpub abaixo (nunca a frase).</div>
+      <div class="muted small">Sua xpub de cosigner (compartilhe):</div><textarea class="mono" rows="2" readonly></textarea></div>`;
+    o.querySelector('textarea').value = c.accountXpub;
+  });
+  document.getElementById('msGroup').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = document.getElementById('msAddrs'), xpubs = msXpubs();
+    if (xpubs.some(x => !x)) { o.innerHTML = '<p class="muted">Preencha as 3 xpubs de cosigner.</p>'; return; }
+    try {
+      const addrs = wallet.multisigAddresses(xpubs, 2, 5, 0);
+      try { localStorage.setItem(MSG_KEY, JSON.stringify(xpubs)); } catch {}
+      o.innerHTML = `<div class="banner ok">Cofre 2-de-3 criado.</div>
+        <div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço</th><th></th></tr></thead><tbody>
+        ${addrs.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td><button type="button" class="btn-ghost qrbtn" data-addr="${a.address}">QR</button></td></tr>`).join('')}
+        </tbody></table></div><div class="regactions"><button type="button" class="btn-ghost" id="msBal">Consultar saldo do cofre</button></div><div id="msQr"></div>`;
+      o.querySelectorAll('.qrbtn').forEach(b => b.addEventListener('click', () => { const q = wallet.makeQR(b.dataset.addr); document.getElementById('msQr').innerHTML = q ? `<div class="muted small mono">${esc(b.dataset.addr)}</div><div class="qr">${q}</div>` : ''; }));
+      document.getElementById('msBal').addEventListener('click', async () => {
+        document.getElementById('msQr').innerHTML = '<p class="loading">Consultando…</p>';
+        const u = await scanUtxosMs(xpubs); const total = u.reduce((s, x) => s + x.valueSats, 0);
+        document.getElementById('msQr').innerHTML = `<div class="banner ok">Saldo do cofre: <strong>${BTC.format(total / 1e8)} tBTC</strong> (${u.length} UTXOs).</div>`;
+      });
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('msSend').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('msBuildOut'), xpubs = msXpubs();
+    if (xpubs.some(x => !x)) { o.innerHTML = '<p class="muted">Defina o grupo (passo 2).</p>'; return; }
+    const to = document.getElementById('msTo').value.trim(), amt = parseInt(document.getElementById('msAmt').value, 10), fee = parseInt(document.getElementById('msFee').value, 10) || 2;
+    if (!to || !(amt > 0)) { o.innerHTML = '<p class="muted">Preencha destino e valor.</p>'; return; }
+    o.innerHTML = '<p class="loading">Buscando UTXOs do cofre…</p>';
+    try {
+      const utxos = await scanUtxosMs(xpubs);
+      const res = wallet.buildMultisigPsbt({ xpubs, m: 2, utxos, toAddress: to, amountSats: amt, feeRate: fee });
+      o.innerHTML = `<div class="banner ok">Montado: entrada ${res.totalIn} · taxa ${res.fee} · troco ${res.change} sats.</div><div id="msPay"></div><p class="muted small">Leve a 2 cosigners para assinar (passo 4).</p>`;
+      renderPayload(document.getElementById('msPay'), 'PSBT multisig (não assinado)', res.psbt);
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('msScan')?.addEventListener('click', () => openScanner(t => { document.getElementById('msPsbtIn').value = t; }));
+  document.getElementById('msSign').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = document.getElementById('msSignOut');
+    try {
+      const r = wallet.signMultisigPsbt(document.getElementById('msPsbtIn').value, document.getElementById('msSeed').value);
+      o.innerHTML = `<div class="banner ok">Assinado (${r.signedInputs}). Passe ao próximo cosigner; com 2 assinaturas, transmita (passo 5).</div><div id="msSignedPay"></div>`;
+      renderPayload(document.getElementById('msSignedPay'), 'PSBT assinado', r.psbt);
+      document.getElementById('msSeed').value = '';
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  document.getElementById('msSendTx').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('msTxOut'); let fin;
+    try { fin = wallet.finalizePsbt(document.getElementById('msSignedIn').value); }
+    catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)} (faltam assinaturas?)</p>`; return; }
+    o.innerHTML = '<p class="loading">Transmitindo…</p>';
+    try {
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const body = (await r.text()).trim(); if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
+      o.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
+    } catch (err) { o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="msHexPay"></div>`; renderPayload(document.getElementById('msHexPay'), 'Tx final (hex)', fin.hex); }
+  });
 
   const doc = document.getElementById('doc');
   fetchMd('docs/06-CARTEIRA-SOBERANA.md')

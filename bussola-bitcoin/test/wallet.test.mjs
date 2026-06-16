@@ -1,6 +1,7 @@
 /* Valida o núcleo da carteira contra o vetor oficial do BIP84 e gera uma xpub de exemplo. */
 import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestnetWallet,
-  addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, sha256Hex, decodeQR } from '../src/wallet/index.js';
+  addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, sha256Hex, decodeQR,
+  createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -74,6 +75,20 @@ function qrToRGBA(text, scale = 5, margin = 4) {
 }
 const qimg = qrToRGBA('PSBT-TESTE-air-gap-123');
 eq('QR roundtrip (encode->decode)', decodeQR(qimg.data, qimg.width, qimg.height), 'PSBT-TESTE-air-gap-123');
+
+/* Multisig 2-de-3: endereço determinístico (BIP67) + roundtrip montar->assinar(x2)->finalizar */
+const c0 = createMultisigCosigner(), c1 = createMultisigCosigner(), c2 = createMultisigCosigner();
+const grp = [c0.accountXpub, c1.accountXpub, c2.accountXpub];
+eq('multisig endereço é tb1 (P2WSH)', multisigAddresses(grp, 2, 1)[0].address.startsWith('tb1'), true);
+eq('multisig endereço independe da ordem (BIP67)',
+  multisigAddresses(grp, 2, 1)[0].address, multisigAddresses([c2.accountXpub, c0.accountXpub, c1.accountXpub], 2, 1)[0].address);
+const mb = buildMultisigPsbt({ xpubs: grp, m: 2, utxos: [{ txid: 'bb' + '00'.repeat(31), vout: 0, valueSats: 200000, chain: 0, index: 0 }], toAddress: multisigAddresses(grp, 2, 2)[1].address, amountSats: 100000, feeRate: 2 });
+const s1 = signMultisigPsbt(mb.psbt, c0.mnemonic);
+eq('cosigner 1 assinou', s1.signedInputs, 1);
+const s2 = signMultisigPsbt(s1.psbt, c1.mnemonic);
+eq('cosigner 2 assinou', s2.signedInputs, 1);
+const mfin = finalizePsbt(s2.psbt);
+eq('multisig: txid final 64 hex', /^[0-9a-f]{64}$/.test(mfin.txid), true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

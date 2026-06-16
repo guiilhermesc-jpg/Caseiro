@@ -159,6 +159,67 @@ export function finalizePsbt(psbtB64) {
   return { hex: tx.hex, txid: tx.id };
 }
 
+/* =================== Multisig 2-de-3 (P2WSH, testnet) =================== */
+const MULTISIG_PATH = "m/48'/1'/0'/2'"; // BIP48 P2WSH testnet
+
+function msPubsSorted(xpubs, chain, index) { // BIP67: pubkeys ordenadas
+  return xpubs.map(x => {
+    const k = HDKey.fromExtendedKey(normalizeToXpub(x)).deriveChild(chain).deriveChild(index).publicKey;
+    if (!k) throw new Error('Chave estendida inválida no multisig.');
+    return k;
+  }).sort((a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; });
+}
+function msPayment(xpubs, m, chain, index) { return btc.p2wsh(btc.p2ms(m, msPubsSorted(xpubs, chain, index)), NET); }
+
+/* Gera um cosigner: frase + xpub de conta multisig (m/48'/1'/0'/2') para compartilhar. */
+export function createMultisigCosigner() {
+  const mnemonic = generateMnemonic(wordlist, 128);
+  const accountXpub = HDKey.fromMasterSeed(mnemonicToSeedSync(mnemonic)).derive(MULTISIG_PATH).publicExtendedKey;
+  return { mnemonic, accountXpub };
+}
+export function multisigAccountXpub(mnemonic) {
+  const m = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(m, wordlist)) throw new Error('Frase de recuperação inválida.');
+  return HDKey.fromMasterSeed(mnemonicToSeedSync(m)).derive(MULTISIG_PATH).publicExtendedKey;
+}
+export function multisigAddresses(xpubs, m, count = 5, chain = 0) {
+  const n = Math.max(1, Math.min(50, count | 0)), out = [];
+  for (let i = 0; i < n; i++) out.push({ path: `${chain}/${i}`, chain, index: i, address: msPayment(xpubs, m, chain, i).address });
+  return out;
+}
+export function buildMultisigPsbt({ xpubs, m, utxos, toAddress, amountSats, feeRate = 2, changeIndex = 0 }) {
+  if (!utxos || !utxos.length) throw new Error('Sem UTXOs (endereços multisig sem saldo?).');
+  const amount = Math.floor(Number(amountSats));
+  if (!(amount > 0)) throw new Error('Valor inválido.');
+  const tx = new btc.Transaction();
+  let totalIn = 0;
+  for (const u of utxos) {
+    const pay = msPayment(xpubs, m, u.chain, u.index);
+    tx.addInput({ txid: hex.decode(u.txid), index: u.vout, witnessUtxo: { script: pay.script, amount: BigInt(u.valueSats) }, witnessScript: pay.witnessScript });
+    totalIn += u.valueSats;
+  }
+  const vsize = utxos.length * 105 + 2 * 43 + 11;
+  const fee = Math.ceil(vsize * Math.max(1, feeRate));
+  const change = totalIn - amount - fee;
+  if (change < 0) throw new Error(`Saldo insuficiente: tem ${totalIn} sats, precisa de ${amount + fee} (valor + taxa).`);
+  tx.addOutputAddress(toAddress, BigInt(amount), NET);
+  const hasChange = change >= 330;
+  if (hasChange) tx.addOutputAddress(msPayment(xpubs, m, 1, changeIndex).address, BigInt(change), NET);
+  return { psbt: base64.encode(tx.toPSBT()), fee, totalIn, change: hasChange ? change : 0 };
+}
+/* Assina como cosigner (chaves de m/48'/1'/0'/2'). Passe o PSBT ao próximo cosigner; ao
+ * atingir m assinaturas, use finalizePsbt e transmita. */
+export function signMultisigPsbt(psbtB64, mnemonic, scan = 30) {
+  const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
+  const acct = HDKey.fromMasterSeed(mnemonicToSeedSync(mm)).derive(MULTISIG_PATH);
+  let tx; try { tx = btc.Transaction.fromPSBT(base64.decode(String(psbtB64).trim())); } catch { throw new Error('PSBT inválido.'); }
+  let signed = 0;
+  for (const chain of [0, 1]) { const br = acct.deriveChild(chain); for (let i = 0; i < scan; i++) { const c = br.deriveChild(i); if (!c.privateKey) continue; try { signed += tx.sign(c.privateKey); } catch {} } }
+  if (!signed) throw new Error('Nenhuma entrada combinou com esta seed (cosigner não pertence ao grupo?).');
+  return { psbt: base64.encode(tx.toPSBT()), signedInputs: signed };
+}
+
 /* QR (SVG string) para transportar PSBT/hex entre aparelhos. null se grande demais. */
 export function makeQR(text, cell = 3) {
   try {
