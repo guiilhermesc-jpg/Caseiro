@@ -1,5 +1,5 @@
 /* Valida o núcleo da carteira contra o vetor oficial do BIP84 e gera uma xpub de exemplo. */
-import { deriveAddresses, isValidExtendedKey } from '../src/wallet/index.js';
+import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestnetWallet } from '../src/wallet/index.js';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
 
@@ -18,6 +18,15 @@ eq('BIP84 m/84\'/0\'/0\'/0/1', addrs[1].address, 'bc1qnjg0jd8228aq7egyzacy8cys3k
 
 eq('isValidExtendedKey(zpub)', isValidExtendedKey(zpub), true);
 eq('isValidExtendedKey(lixo)', isValidExtendedKey('nao-e-uma-chave'), false);
+
+/* Criar e restaurar carteira testnet (roundtrip determinístico) */
+const w = createTestnetWallet();
+eq('mnemônico tem 12 palavras', w.mnemonic.split(' ').length, 12);
+const r = restoreTestnetWallet(w.mnemonic);
+eq('restaurar gera a mesma conta xpub', r.accountXpub, w.accountXpub);
+eq('endereços derivam da carteira criada', deriveAddresses(w.accountXpub, 1, 'tb').length, 1);
+let restoreErro = false; try { restoreTestnetWallet('palavra palavra palavra'); } catch { restoreErro = true; }
+eq('restaurar frase inválida lança erro', restoreErro, true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

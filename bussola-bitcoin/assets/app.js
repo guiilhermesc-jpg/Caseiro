@@ -512,6 +512,21 @@ function viewCarteira() {
       </div>
 
       <section class="watchonly">
+        <h2>🔑 Criar / Restaurar carteira (testnet)</h2>
+        <p class="muted">Gera uma carteira de <strong>teste</strong> (12 palavras) ou restaura a sua.
+        A seed fica <strong>só na memória</strong> deste aparelho e <strong>some ao sair</strong> — nada é salvo.</p>
+        <div class="banner warn">⚠️ <strong>Rede de teste, sem valor real.</strong> Nunca use uma seed de
+        teste para dinheiro de verdade. Anote a frase no papel e <strong>nunca</strong> compartilhe.</div>
+        <div class="regactions"><button id="wgCreate" class="btn-ghost">🎲 Criar nova (testnet)</button></div>
+        <form id="wgRestore" class="regform">
+          <label style="grid-column:1/-1">Restaurar (12/24 palavras)
+            <input type="text" id="wgWords" placeholder="palavra1 palavra2 … (separadas por espaço)" autocomplete="off" spellcheck="false"></label>
+          <button type="submit">Restaurar</button>
+        </form>
+        <div id="wgOut"></div>
+      </section>
+
+      <section class="watchonly">
         <h2>🔭 Watch-only (testnet)</h2>
         <p class="muted">Cole uma <strong>chave pública estendida</strong> de conta (xpub/tpub/vpub) e
         veja os endereços e o saldo — <strong>sem chave privada</strong>. Só observação, derivada
@@ -538,6 +553,36 @@ function viewCarteira() {
   let current = [];
   const out = document.getElementById('woOut');
   const wallet = window.BussolaWallet;
+
+  function useAccount(accountXpub) {
+    document.getElementById('woXpub').value = accountXpub;
+    document.getElementById('woForm').dispatchEvent(new Event('submit', { cancelable: true }));
+    document.getElementById('woOut').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  const wgOut = document.getElementById('wgOut');
+  document.getElementById('wgCreate').addEventListener('click', () => {
+    if (!wallet) { wgOut.innerHTML = '<p class="muted">Núcleo da carteira não carregou. Recarregue a página.</p>'; return; }
+    const w = wallet.createTestnetWallet();
+    wgOut.innerHTML = `
+      <div class="seedbox">
+        <h3>📝 Anote estas 12 palavras (em ordem), no papel:</h3>
+        <ol class="seedwords">${w.mnemonic.split(' ').map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+        <div class="banner warn">Quem tem estas palavras controla os fundos. Aqui é testnet (sem valor),
+        mas <strong>crie o hábito certo</strong>: nunca tire foto, nunca digite num site, nunca compartilhe.</div>
+        <button id="wgDone" class="btn-ghost">Já anotei — ver meus endereços</button>
+      </div>`;
+    document.getElementById('wgDone').addEventListener('click', () => useAccount(w.accountXpub));
+  });
+  document.getElementById('wgRestore').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!wallet) { wgOut.innerHTML = '<p class="muted">Núcleo da carteira não carregou. Recarregue a página.</p>'; return; }
+    try {
+      const w = wallet.restoreTestnetWallet(document.getElementById('wgWords').value);
+      wgOut.innerHTML = '<div class="banner ok">✅ Carteira restaurada. Veja os endereços abaixo.</div>';
+      useAccount(w.accountXpub);
+    } catch (err) { wgOut.innerHTML = `<p class="muted">${err.message}</p>`; }
+  });
+
   function showAddrs(list) {
     current = list;
     out.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço (tb1…)</th></tr></thead><tbody>

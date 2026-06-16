@@ -8,6 +8,31 @@ import { HDKey } from '@scure/bip32';
 import { base58check, bech32 } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
+import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/bip39';
+import { wordlist } from '@scure/bip39/wordlists/english';
+
+/* Caminho da conta BIP84 na testnet (m/84'/1'/0'). */
+const TESTNET_ACCOUNT_PATH = "m/84'/1'/0'";
+
+function accountFromMnemonic(mnemonic) {
+  const seed = mnemonicToSeedSync(mnemonic);
+  const account = HDKey.fromMasterSeed(seed).derive(TESTNET_ACCOUNT_PATH);
+  return { accountXpub: account.publicExtendedKey };
+}
+
+/* Cria uma carteira de TESTE (12 palavras). A seed é retornada UMA vez para o chamador
+ * mostrar e o usuário anotar — este módulo não persiste nada. */
+export function createTestnetWallet() {
+  const mnemonic = generateMnemonic(wordlist, 128);
+  return { mnemonic, ...accountFromMnemonic(mnemonic) };
+}
+
+/* Restaura a partir de 12/24 palavras (valida o checksum BIP39). */
+export function restoreTestnetWallet(mnemonic) {
+  const m = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(m, wordlist)) throw new Error('Frase de recuperação inválida (12/24 palavras BIP39).');
+  return { mnemonic: m, ...accountFromMnemonic(m) };
+}
 
 const b58c = base58check(sha256);
 
