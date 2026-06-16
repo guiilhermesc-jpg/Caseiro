@@ -218,6 +218,17 @@ tr:nth-child(even) td { background: #faf7fc; }
   box-shadow: 0 4px 12px rgba(124,58,237,.30); }
 .install-btn:hover { filter: brightness(1.05); }
 
+/* Guia (chat IA) */
+.chat { display: flex; flex-direction: column; gap: 10px; min-height: 220px; max-height: 60vh;
+  overflow-y: auto; padding: 8px 2px; margin: 10px 0; }
+.msg { display: flex; }
+.msg.user { justify-content: flex-end; }
+.msg .bubble { max-width: 86%; padding: 10px 14px; border-radius: 14px; font-size: 14.5px; line-height: 1.55; }
+.msg.user .bubble { background: var(--grad); color: #fff; border-bottom-right-radius: 4px; }
+.msg.assistant .bubble { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.msg.assistant .bubble p:first-child { margin-top: 0; } .msg.assistant .bubble p:last-child { margin-bottom: 0; }
+.msg.assistant .bubble code { background: #f3eef8; border-radius: 5px; padding: 1px 5px; font-size: 13px; }
+
 /* Scanner de câmera (mantém escuro para foco) */
 .scanner { position: fixed; inset: 0; z-index: 50; background: rgba(20,10,30,.92); display: grid; place-items: center; }
 .scanner-box { width: min(94vw, 460px); }

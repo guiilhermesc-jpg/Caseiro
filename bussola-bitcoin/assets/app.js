@@ -1295,8 +1295,93 @@ function viewSoberania() {
   });
 }
 
+/* =================== Guia (assistente educacional com IA) =================== */
+const AI_KEY = 'bussola.aikey.v1';
+const AI_MODEL = 'claude-sonnet-4-6';
+const AI_SYSTEM = `Você é o Guia da Bússola, um assistente EDUCACIONAL sobre Bitcoin e autocustódia, em português do Brasil. Explique de forma clara, didática e concisa: comprar bitcoin no Brasil, carteira própria, seed, air-gap/PSBT, multisig, herança, recuperação social (Shamir), declaração (IRPF) e segurança.
+REGRAS INEGOCIÁVEIS:
+- NUNCA dê recomendação de compra/venda nem preveja preço ou rendimento.
+- NUNCA peça nem aceite a seed/chave privada; se o usuário tentar colar, oriente a NÃO compartilhar.
+- Alerte sobre golpes; ninguém legítimo pede a seed.
+- Em temas fiscais, lembre que as regras mudam e sugira confirmar com contador(a).
+- Se fugir de bitcoin/autocustódia, redirecione gentilmente.
+Seja prático, use exemplos e responda em português do Brasil.`;
+
+let aiConversation = [];
+
+function viewGuia() {
+  menuBtn.hidden = true;
+  let key = ''; try { key = localStorage.getItem(AI_KEY) || ''; } catch {}
+  if (!key) {
+    appEl.innerHTML = `
+      <div class="pad">
+        <h1>🤖 Guia <span class="muted small">assistente educacional</span></h1>
+        <div class="banner warn">Usa a <strong>sua própria chave</strong> da API da Anthropic. A chave fica
+        <strong>só no seu aparelho</strong> e as mensagens vão direto do seu navegador para a Anthropic —
+        <strong>não passam por nós</strong>. Nunca escreva sua seed aqui.</div>
+        <form id="aiKeyForm" class="regform">
+          <label style="grid-column:1/-1">Chave da API Anthropic (sk-ant-…)<input type="password" id="aiKeyInput" autocomplete="off" spellcheck="false"></label>
+          <button type="submit">Salvar e abrir o Guia</button>
+        </form>
+        <p class="muted small">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Educacional — não é recomendação de investimento.</p>
+      </div>`;
+    document.getElementById('aiKeyForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = document.getElementById('aiKeyInput').value.trim(); if (!v) return;
+      try { localStorage.setItem(AI_KEY, v); } catch {}
+      viewGuia();
+    });
+    return;
+  }
+  appEl.innerHTML = `
+    <div class="pad">
+      <h1>🤖 Guia <span class="muted small">educacional · não é recomendação</span></h1>
+      <div id="chat" class="chat"></div>
+      <form id="aiForm" class="regform">
+        <label style="grid-column:1/-1">Pergunte sobre bitcoin, carteira, herança, IRPF…<textarea id="aiInput" rows="2" spellcheck="false"></textarea></label>
+        <button type="submit" id="aiSend">Enviar</button>
+      </form>
+      <div class="regactions">
+        <button type="button" class="btn-ghost" id="aiClear">Limpar conversa</button>
+        <button type="button" class="btn-ghost" id="aiForget">Remover minha chave</button>
+      </div>
+      <p class="muted small">⚠️ Nunca escreva sua seed/chave aqui. As mensagens vão do seu navegador para a Anthropic com a sua chave.</p>
+    </div>`;
+  const chat = document.getElementById('chat');
+  const bubbles = () => aiConversation.map(m => `<div class="msg ${m.role}"><div class="bubble">${m.role === 'assistant' ? mdToHtml(m.content) : esc(m.content)}</div></div>`).join('');
+  function renderChat(extra) {
+    chat.innerHTML = (aiConversation.length ? bubbles() : '<p class="muted">Comece perguntando. Ex.: "Como tiro meu bitcoin da corretora com segurança?"</p>') + (extra || '');
+    chat.scrollTop = chat.scrollHeight;
+  }
+  renderChat();
+  document.getElementById('aiClear').addEventListener('click', () => { aiConversation = []; renderChat(); });
+  document.getElementById('aiForget').addEventListener('click', () => { try { localStorage.removeItem(AI_KEY); } catch {} aiConversation = []; viewGuia(); });
+  document.getElementById('aiForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const inp = document.getElementById('aiInput'), q = inp.value.trim(); if (!q) return;
+    inp.value = '';
+    aiConversation.push({ role: 'user', content: q });
+    renderChat('<div class="msg assistant"><div class="bubble"><span class="loading">pensando…</span></div></div>');
+    const btn = document.getElementById('aiSend'); btn.disabled = true;
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: AI_MODEL, max_tokens: 1024, system: AI_SYSTEM, messages: aiConversation }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.error?.message || ('HTTP ' + r.status));
+      const text = (d.content || []).map(b => b.text || '').join('').trim() || '(sem resposta)';
+      aiConversation.push({ role: 'assistant', content: text });
+      renderChat();
+    } catch (err) {
+      renderChat(`<div class="msg assistant"><div class="bubble">⚠️ Erro: ${esc(err.message)}</div></div>`);
+    } finally { btn.disabled = false; }
+  });
+}
+
 /* =================== Roteador =================== */
-const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira, soberania: viewSoberania };
+const ROUTES = { painel: viewPainel, book: viewBook, historico: viewHistorico, checklist: viewChecklist, registro: viewRegistro, carteira: viewCarteira, soberania: viewSoberania, guia: viewGuia };
 function route() {
   const raw = location.hash.replace(/^#/, '') || 'painel';
   const [tab, sub] = raw.split('/');
