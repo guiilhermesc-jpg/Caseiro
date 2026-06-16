@@ -361,6 +361,17 @@ function regLoad() { try { return JSON.parse(localStorage.getItem(REG_KEY) || '[
 function regSave(a) { try { localStorage.setItem(REG_KEY, JSON.stringify(a)); } catch {} }
 const BTC = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 8 });
 
+/* DCA: compra 1x por mês (no 1º preço observado do mês) sobre uma série diária ascendente */
+function simulateDCA(prices, monthly) {
+  let invested = 0, btc = 0; const seen = new Set();
+  for (const [ts, p] of prices) {
+    const d = new Date(ts); const key = d.getFullYear() + '-' + d.getMonth();
+    if (!seen.has(key) && p > 0) { seen.add(key); invested += monthly; btc += monthly / p; }
+  }
+  const last = prices.length ? prices[prices.length - 1][1] : 0;
+  return { invested, btc, value: btc * last, months: seen.size, last };
+}
+
 function viewRegistro() {
   menuBtn.hidden = true;
   const today = new Date().toISOString().slice(0, 10);
@@ -384,6 +395,16 @@ function viewRegistro() {
         <button id="regCsv" class="btn-ghost">⬇️ Exportar CSV</button>
         <button id="regClear" class="btn-ghost">Limpar tudo</button>
       </div>
+
+      <h2>📈 Simulador de DCA <span class="muted small">e se eu comprasse todo mês?</span></h2>
+      <p class="muted">DCA = comprar um valor fixo todo mês, sem tentar adivinhar o momento. Veja como
+      teria sido <strong>no passado</strong> (preços reais). Passado <strong>não</strong> garante futuro.</p>
+      <form id="dcaForm" class="regform">
+        <label>Valor por mês (R$)<input type="number" id="dValor" min="0" step="10" value="200"></label>
+        <label>Período<select id="dAnos"><option value="1">1 ano</option><option value="2">2 anos</option><option value="3" selected>3 anos</option><option value="5">5 anos</option></select></label>
+        <button type="submit">Simular</button>
+      </form>
+      <div id="dcaOut"></div>
     </div>`;
 
   let live = null;
@@ -442,6 +463,33 @@ function viewRegistro() {
   });
   document.getElementById('regClear').addEventListener('click', () => {
     if (confirm('Apagar todas as compras registradas?')) { regSave([]); renderList(); renderSummary(); }
+  });
+
+  document.getElementById('dcaForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const monthly = parseFloat(document.getElementById('dValor').value);
+    const years = parseInt(document.getElementById('dAnos').value, 10);
+    const out = document.getElementById('dcaOut');
+    if (!(monthly > 0)) { out.innerHTML = '<p class="muted">Informe um valor mensal maior que zero.</p>'; return; }
+    out.innerHTML = '<p class="loading">Buscando preços históricos reais…</p>';
+    try {
+      const r = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=${years * 365}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      const prices = (await r.json()).prices || [];
+      if (prices.length < 2) throw new Error('sem dados');
+      const s = simulateDCA(prices, monthly);
+      const lucro = s.value - s.invested, pct = s.invested > 0 ? lucro / s.invested * 100 : 0, up = lucro >= 0;
+      out.innerHTML = `<div class="cards">
+        <div class="card"><h3>Investido (${s.months} meses)</h3><div class="big">${BRL.format(s.invested)}</div></div>
+        <div class="card"><h3>BTC acumulado</h3><div class="big">${BTC.format(s.btc)}</div><div class="sub muted">${BRL.format(s.last)} / BTC hoje</div></div>
+        <div class="card"><h3>Valor hoje</h3><div class="big">${BRL.format(s.value)}</div>
+          <div class="sub"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${BRL.format(Math.abs(lucro))} (${Math.abs(pct).toFixed(0)}%)</span></div></div>
+      </div>
+      <div class="banner warn">⚠️ Simulação com <strong>dados reais do passado</strong> (CoinGecko).
+      <strong>Resultado passado NÃO garante futuro.</strong> Educacional, não é recomendação.</div>`;
+    } catch (err) {
+      out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${err.message}). Tente de novo online.</p>`;
+    }
   });
 
   renderList(); renderSummary();
