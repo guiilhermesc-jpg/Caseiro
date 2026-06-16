@@ -1,6 +1,6 @@
 /* Valida o núcleo da carteira contra o vetor oficial do BIP84 e gera uma xpub de exemplo. */
 import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestnetWallet,
-  addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR } from '../src/wallet/index.js';
+  addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto } from '../src/wallet/index.js';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
 
@@ -49,6 +49,11 @@ eq('txid final tem 64 hex', /^[0-9a-f]{64}$/.test(fin.txid), true);
 eq('hex final não vazio', fin.hex.length > 100, true);
 eq('saldo insuficiente lança erro', (() => { try { buildPsbt({ accountXpub: w2.accountXpub, utxos: [{ txid: 'aa' + '00'.repeat(31), vout: 0, valueSats: 100, chain: 0, index: 0 }], toAddress: addressAt(w2.accountXpub, 0, 1), amountSats: 50000 }); return false; } catch { return true; } })(), true);
 eq('makeQR retorna SVG', typeof makeQR('teste') === 'string' && makeQR('teste').includes('<svg'), true);
+
+/* Estimador fiscal (math) */
+eq('isento quando vendas do mes <= limite', estimarImposto({ vendaMes: 10000, valorVenda: 8000, custo: 5000, limite: 35000, aliquota: 15 }).isento, true);
+eq('tributa quando acima do limite', Math.round(estimarImposto({ vendaMes: 40000, valorVenda: 8000, custo: 5000, limite: 35000, aliquota: 15 }).imposto), 450);
+eq('sem ganho => isento', estimarImposto({ vendaMes: 40000, valorVenda: 5000, custo: 6000, limite: 35000, aliquota: 15 }).isento, true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

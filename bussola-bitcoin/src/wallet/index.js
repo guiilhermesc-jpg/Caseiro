@@ -166,4 +166,14 @@ export function makeQR(text, cell = 3) {
   } catch { return null; }
 }
 
-export const version = '0.2.0';
+/* =================== Util fiscal (estimativa educacional) =================== */
+/* Estimativa de ganho de capital em VENDA. Parâmetros (limite/alíquota) são EDITÁVEIS pelo
+ * usuário porque as regras mudam — isto NÃO é cálculo oficial nem recomendação. */
+export function estimarImposto({ vendaMes = 0, valorVenda = 0, custo = 0, limite = 35000, aliquota = 15 }) {
+  const ganho = Number(valorVenda) - Number(custo);
+  const isento = Number(vendaMes) <= Number(limite) || ganho <= 0;
+  const imposto = isento ? 0 : ganho * (Number(aliquota) / 100);
+  return { ganho, isento, imposto };
+}
+
+export const version = '0.3.0';

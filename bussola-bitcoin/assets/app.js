@@ -407,6 +407,20 @@ function viewRegistro() {
         <button type="submit">Simular</button>
       </form>
       <div id="dcaOut"></div>
+
+      <h2>🧾 Estimador de imposto <span class="muted small">venda · educacional</span></h2>
+      <div class="banner warn">⚠️ Isenção e alíquotas <strong>mudam</strong> e dependem do seu caso
+      (corretora nacional × exterior). Isto é só uma estimativa matemática — <strong>confirme com
+      contador(a)</strong>. Não é cálculo oficial.</div>
+      <form id="taxForm" class="regform">
+        <label>Total de vendas no mês (R$)<input type="number" id="txMes" min="0" step="0.01" placeholder="0.00"></label>
+        <label>Valor desta venda (R$)<input type="number" id="txVenda" min="0" step="0.01"></label>
+        <label>Custo de aquisição vendido (R$)<input type="number" id="txCusto" min="0" step="0.01"></label>
+        <label>Limite de isenção mensal (R$)<input type="number" id="txLimite" min="0" step="0.01" value="35000"></label>
+        <label>Alíquota (%)<input type="number" id="txAliq" min="0" step="0.1" value="15"></label>
+        <button type="submit">Estimar</button>
+      </form>
+      <div id="taxOut"></div>
     </div>`;
 
   let live = null;
@@ -492,6 +506,21 @@ function viewRegistro() {
     } catch (err) {
       out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${err.message}). Tente de novo online.</p>`;
     }
+  });
+
+  document.getElementById('taxForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const W = window.BussolaWallet, o = document.getElementById('taxOut');
+    if (!W || !W.estimarImposto) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const r = W.estimarImposto({
+      vendaMes: parseFloat(document.getElementById('txMes').value) || 0,
+      valorVenda: parseFloat(document.getElementById('txVenda').value) || 0,
+      custo: parseFloat(document.getElementById('txCusto').value) || 0,
+      limite: parseFloat(document.getElementById('txLimite').value) || 35000,
+      aliquota: parseFloat(document.getElementById('txAliq').value) || 15,
+    });
+    o.innerHTML = `<div class="banner ${r.isento ? 'ok' : 'warn'}">Ganho estimado: <strong>${BRL.format(r.ganho)}</strong> · ${r.isento ? '<strong>Isento</strong> nesta estimativa' : 'Imposto estimado: <strong>' + BRL.format(r.imposto) + '</strong>'}.</div>
+      <p class="muted small">Estimativa educacional. Confirme as regras vigentes e seu enquadramento com contador(a).</p>`;
   });
 
   renderList(); renderSummary();
