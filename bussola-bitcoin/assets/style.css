@@ -176,9 +176,15 @@ tr:nth-child(even) td { background: #0e1727; }
 .regform { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;
   align-items: end; margin: 14px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .regform label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); }
-.regform input, .regform select { background: #0c1322; border: 1px solid var(--line); border-radius: 9px;
-  color: var(--text); padding: 9px 10px; font-size: 15px; }
-.regform input:focus, .regform select:focus { outline: 2px solid var(--accent); }
+.regform input, .regform select, .regform textarea { background: #0c1322; border: 1px solid var(--line);
+  border-radius: 9px; color: var(--text); padding: 9px 10px; font-size: 15px; width: 100%; }
+.regform textarea { font-family: ui-monospace, Menlo, monospace; font-size: 13px; resize: vertical; }
+.regform input:focus, .regform select:focus, .regform textarea:focus { outline: 2px solid var(--accent); }
+.agstep { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 4px; }
+.agstep h3 { margin: 10px 0 6px; }
+.payload textarea { width: 100%; }
+.qr { background: #fff; padding: 8px; display: inline-block; border-radius: 8px; margin-top: 8px; }
+.qr svg { width: 180px; height: 180px; display: block; }
 .regform button { background: var(--accent); color: #1a1205; border: 0; border-radius: 10px;
   padding: 11px 16px; font-weight: 800; cursor: pointer; height: 40px; }
 .regform button:hover { filter: brightness(1.08); }

@@ -546,6 +546,46 @@ function viewCarteira() {
         use um <em>faucet</em> de testnet num endereço derivado.</p>
       </section>
 
+      <section class="watchonly">
+        <h2>📡 Enviar — air-gap <span class="soon">testnet beta</span></h2>
+        <p class="muted">O fluxo soberano em 3 passos: <strong>monta</strong> no online (sem chave),
+        <strong>assina</strong> no offline (com a seed), <strong>transmite</strong> no online. A chave
+        nunca toca a internet. Transporte por <strong>QR</strong> (mostre numa tela, leia na outra) ou copiar/colar.</p>
+        <div class="banner warn">🧪 Testnet beta. Teste com fundos de <em>faucet</em> e confira no explorer.</div>
+
+        <div class="agstep">
+          <h3>1) Montar <span class="muted small">online · sem chave</span></h3>
+          <p class="muted small" id="agXpubInfo">Carteira: defina acima (criar/restaurar ou colar xpub no watch-only).</p>
+          <form id="agBuild" class="regform">
+            <label style="grid-column:1/-1">Endereço de destino (tb1…)<input type="text" id="agTo" autocomplete="off" spellcheck="false"></label>
+            <label>Valor (sats)<input type="number" id="agAmt" min="1" step="1" placeholder="10000"></label>
+            <label>Taxa (sat/vB)<input type="number" id="agFee" min="1" step="1" value="2"></label>
+            <button type="submit">Montar PSBT</button>
+          </form>
+          <div id="agBuildOut"></div>
+        </div>
+
+        <div class="agstep">
+          <h3>2) Assinar <span class="muted small">offline · com a seed</span></h3>
+          <div class="banner warn">Faça este passo no <strong>aparelho offline</strong>. A seed só é usada aqui e some ao concluir.</div>
+          <form id="agSign" class="regform">
+            <label style="grid-column:1/-1">PSBT a assinar (cole)<textarea id="agPsbtIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="text" id="agSeed" autocomplete="off" spellcheck="false"></label>
+            <button type="submit">Assinar (offline)</button>
+          </form>
+          <div id="agSignOut"></div>
+        </div>
+
+        <div class="agstep">
+          <h3>3) Transmitir <span class="muted small">online · sem chave</span></h3>
+          <form id="agSend" class="regform">
+            <label style="grid-column:1/-1">PSBT assinado (cole)<textarea id="agSignedIn" rows="3" spellcheck="false"></textarea></label>
+            <button type="submit">Finalizar e transmitir</button>
+          </form>
+          <div id="agSendOut"></div>
+        </div>
+      </section>
+
       <h2>Arquitetura completa</h2>
       <article id="doc" class="doc"><p class="loading">Carregando arquitetura…</p></article>
     </div>`;
@@ -615,6 +655,85 @@ function viewCarteira() {
         ${results.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td>${BTC.format(a.sats / 1e8)}</td></tr>`).join('')}
         </tbody></table></div>`;
     } catch (err) { out.innerHTML = `<p class="muted">Não consegui consultar agora (${err.message}). Tente online.</p>`; }
+  });
+
+  // ---- Air-gap (3 passos) ----
+  function currentXpub() { return document.getElementById('woXpub').value.trim(); }
+  function renderPayload(el, label, text) {
+    const qr = (wallet && wallet.makeQR) ? wallet.makeQR(text) : null;
+    el.innerHTML = `<div class="payload"><div class="muted small">${label}</div>
+      <textarea class="mono" rows="3" readonly></textarea>
+      <div class="regactions"><button type="button" class="btn-ghost" data-act="copy">Copiar</button></div>
+      ${qr ? `<div class="qr">${qr}</div>` : '<p class="muted small">(Grande demais p/ 1 QR — use copiar/colar.)</p>'}</div>`;
+    const ta = el.querySelector('textarea'); ta.value = text;
+    el.querySelector('[data-act=copy]').addEventListener('click', () => { ta.select(); navigator.clipboard?.writeText(text); });
+  }
+  async function scanUtxos(xpub) {
+    const targets = [];
+    for (let i = 0; i < 10; i++) targets.push({ chain: 0, index: i, address: wallet.addressAt(xpub, 0, i) });
+    for (let i = 0; i < 5; i++) targets.push({ chain: 1, index: i, address: wallet.addressAt(xpub, 1, i) });
+    const utxos = [];
+    await Promise.all(targets.map(async t => {
+      try {
+        const r = await fetch(`${TESTNET_API}/address/${t.address}/utxo`, { cache: 'no-store' });
+        if (!r.ok) return;
+        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index });
+      } catch { /* ignora endereço */ }
+    }));
+    return utxos;
+  }
+
+  document.getElementById('agBuild').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('agBuildOut');
+    const xpub = currentXpub();
+    if (!wallet) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    if (!xpub) { o.innerHTML = '<p class="muted">Defina a carteira primeiro (criar/restaurar acima ou colar um xpub no watch-only).</p>'; return; }
+    const to = document.getElementById('agTo').value.trim();
+    const amt = parseInt(document.getElementById('agAmt').value, 10);
+    const fee = parseInt(document.getElementById('agFee').value, 10) || 2;
+    if (!to || !(amt > 0)) { o.innerHTML = '<p class="muted">Preencha destino e valor (em sats).</p>'; return; }
+    o.innerHTML = '<p class="loading">Buscando UTXOs na testnet…</p>';
+    try {
+      const utxos = await scanUtxos(xpub);
+      const res = wallet.buildPsbt({ accountXpub: xpub, utxos, toAddress: to, amountSats: amt, feeRate: fee });
+      o.innerHTML = `<div class="banner ok">Montado: entrada ${res.totalIn} sats · taxa ${res.fee} · troco ${res.change} sats.${res.note ? ' ' + res.note : ''}</div>
+        <div id="agPsbtPay"></div><p class="muted small">Leve este PSBT ao aparelho offline (QR ou copiar) e cole no passo 2.</p>`;
+      renderPayload(document.getElementById('agPsbtPay'), 'PSBT não assinado', res.psbt);
+    } catch (err) { o.innerHTML = `<p class="muted">${err.message}</p>`; }
+  });
+
+  document.getElementById('agSign').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = document.getElementById('agSignOut');
+    if (!wallet) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    try {
+      const r = wallet.signPsbtWithMnemonic(document.getElementById('agPsbtIn').value, document.getElementById('agSeed').value);
+      o.innerHTML = `<div class="banner ok">Assinado (${r.signedInputs} entrada(s)).</div>
+        <div id="agSignedPay"></div><p class="muted small">Leve de volta ao aparelho online e cole no passo 3.</p>`;
+      renderPayload(document.getElementById('agSignedPay'), 'PSBT assinado', r.psbt);
+      document.getElementById('agSeed').value = ''; // higiene: limpa a seed da tela
+    } catch (err) { o.innerHTML = `<p class="muted">${err.message}</p>`; }
+  });
+
+  document.getElementById('agSend').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = document.getElementById('agSendOut');
+    if (!wallet) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    let fin;
+    try { fin = wallet.finalizePsbt(document.getElementById('agSignedIn').value); }
+    catch (err) { o.innerHTML = `<p class="muted">${err.message}</p>`; return; }
+    o.innerHTML = '<p class="loading">Transmitindo na testnet…</p>';
+    try {
+      const r = await fetch(`${TESTNET_API}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const body = (await r.text()).trim();
+      if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
+      o.innerHTML = `<div class="banner ok">✅ Transmitido!<br>txid: <span class="mono">${esc(body)}</span><br>
+        <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">ver no explorer</a></div>`;
+    } catch (err) {
+      o.innerHTML = `<div class="banner warn">Não transmitiu agora (${esc(err.message)}). Dá pra transmitir este tx (hex) manualmente:</div><div id="agHexPay"></div>`;
+      renderPayload(document.getElementById('agHexPay'), 'Transação final (hex)', fin.hex);
+    }
   });
 
   const doc = document.getElementById('doc');

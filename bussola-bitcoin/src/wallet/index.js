@@ -5,11 +5,15 @@
  * Bibliotecas auditadas (pure-JS, sem WASM): @scure/bip32, @scure/base, @noble/hashes.
  */
 import { HDKey } from '@scure/bip32';
-import { base58check, bech32 } from '@scure/base';
+import { base58check, bech32, base64, hex } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
+import * as btc from '@scure/btc-signer';
+import qrcode from 'qrcode-generator';
+
+const NET = btc.TEST_NETWORK;
 
 /* Caminho da conta BIP84 na testnet (m/84'/1'/0'). */
 const TESTNET_ACCOUNT_PATH = "m/84'/1'/0'";
@@ -81,4 +85,85 @@ export function isValidExtendedKey(extKey) {
   try { deriveAddresses(extKey, 1, 'tb'); return true; } catch { return false; }
 }
 
-export const version = '0.1.0';
+/* =================== Air-gap (PSBT) — testnet =================== */
+
+function pubAt(accountXpub, chain, index) {
+  const acc = HDKey.fromExtendedKey(normalizeToXpub(accountXpub));
+  const pk = acc.deriveChild(chain).deriveChild(index).publicKey;
+  if (!pk) throw new Error('Não foi possível derivar a chave pública.');
+  return pk;
+}
+function scriptAt(accountXpub, chain, index) { return btc.p2wpkh(pubAt(accountXpub, chain, index), NET).script; }
+
+/* Endereço (tb1…) para uma derivação (chain 0 = recebimento, 1 = troco). */
+export function addressAt(accountXpub, chain, index) {
+  return btc.p2wpkh(pubAt(accountXpub, chain, index), NET).address;
+}
+
+/* 1) MONTAR (online, watch-only, SEM chaves): monta um PSBT não assinado.
+ * utxos: [{ txid (hex do explorer), vout, valueSats, chain, index }] */
+export function buildPsbt({ accountXpub, utxos, toAddress, amountSats, feeRate = 2, changeIndex = 0 }) {
+  if (!utxos || !utxos.length) throw new Error('Sem UTXOs (endereços sem saldo na testnet?).');
+  const amount = Math.floor(Number(amountSats));
+  if (!(amount > 0)) throw new Error('Valor inválido.');
+  const tx = new btc.Transaction();
+  let totalIn = 0;
+  for (const u of utxos) {
+    tx.addInput({
+      txid: hex.decode(u.txid), index: u.vout,
+      witnessUtxo: { script: scriptAt(accountXpub, u.chain, u.index), amount: BigInt(u.valueSats) },
+    });
+    totalIn += u.valueSats;
+  }
+  const vsize = utxos.length * 68 + 2 * 31 + 11;
+  const fee = Math.ceil(vsize * Math.max(1, feeRate));
+  const change = totalIn - amount - fee;
+  if (change < 0) throw new Error(`Saldo insuficiente: tem ${totalIn} sats, precisa de ${amount + fee} (valor + taxa).`);
+  tx.addOutputAddress(toAddress, BigInt(amount), NET);
+  const hasChange = change >= 294; // poeira
+  if (hasChange) tx.addOutputAddress(addressAt(accountXpub, 1, changeIndex), BigInt(change), NET);
+  return {
+    psbt: base64.encode(tx.toPSBT()), fee, totalIn, change: hasChange ? change : 0,
+    note: change > 0 && !hasChange ? 'Troco abaixo da poeira foi somado à taxa.' : '',
+  };
+}
+
+/* 2) ASSINAR (offline, COM a seed): as chaves só existem aqui. */
+export function signPsbtWithMnemonic(psbtB64, mnemonic, scan = 30) {
+  const m = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(m, wordlist)) throw new Error('Frase de recuperação inválida.');
+  const acct = HDKey.fromMasterSeed(mnemonicToSeedSync(m)).derive(TESTNET_ACCOUNT_PATH);
+  let tx;
+  try { tx = btc.Transaction.fromPSBT(base64.decode(String(psbtB64).trim())); }
+  catch { throw new Error('PSBT inválido (confira o texto colado).'); }
+  let signed = 0;
+  for (const chain of [0, 1]) {
+    const branch = acct.deriveChild(chain);
+    for (let i = 0; i < scan; i++) {
+      const child = branch.deriveChild(i);
+      if (!child.privateKey) continue;
+      try { signed += tx.sign(child.privateKey); } catch { /* chave não combina com esta entrada */ }
+    }
+  }
+  if (!signed) throw new Error('Nenhuma entrada combinou com esta seed (carteira/derivação diferente).');
+  return { psbt: base64.encode(tx.toPSBT()), signedInputs: signed };
+}
+
+/* 3) FINALIZAR: devolve o tx bruto (hex) + txid, pronto pra transmitir. */
+export function finalizePsbt(psbtB64) {
+  let tx;
+  try { tx = btc.Transaction.fromPSBT(base64.decode(String(psbtB64).trim())); }
+  catch { throw new Error('PSBT inválido.'); }
+  tx.finalize();
+  return { hex: tx.hex, txid: tx.id };
+}
+
+/* QR (SVG string) para transportar PSBT/hex entre aparelhos. null se grande demais. */
+export function makeQR(text, cell = 3) {
+  try {
+    const qr = qrcode(0, 'L'); qr.addData(String(text)); qr.make();
+    return qr.createSvgTag({ cellSize: cell, margin: 2, scalable: true });
+  } catch { return null; }
+}
+
+export const version = '0.2.0';
