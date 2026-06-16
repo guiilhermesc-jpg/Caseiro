@@ -5,7 +5,7 @@
  * Bibliotecas auditadas (pure-JS, sem WASM): @scure/bip32, @scure/base, @noble/hashes.
  */
 import { HDKey } from '@scure/bip32';
-import { base58check, bech32, base64, hex } from '@scure/base';
+import { base58check, bech32, bech32m, base64, hex } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic, mnemonicToEntropy, entropyToMnemonic } from '@scure/bip39';
@@ -343,6 +343,41 @@ export function finalizeInheritancePsbt(psbtB64, mode = 'normal') {
   return { hex: tx.hex, txid: tx.id };
 }
 
+/* =================== Silent Payments (BIP-352) — endereço reutilizável =================== */
+/* Um endereço estático que pode ser publicado e reusado sem perder privacidade: cada pagamento
+ * cai num endereço on-chain diferente. Aqui geramos a IDENTIDADE (endereço + chaves de visão/gasto).
+ * Codificação bech32m validada contra o vetor oficial do BIP-352. */
+const SP_NET = {
+  test: { scan: "m/352'/1'/0'/1'/0", spend: "m/352'/1'/0'/0'/0", hrp: 'tsp' },
+  main: { scan: "m/352'/0'/0'/1'/0", spend: "m/352'/0'/0'/0'/0", hrp: 'sp' },
+};
+export function encodeSilentPaymentAddress(scanPub, spendPub, network = 'test') {
+  const hrp = (SP_NET[network] || SP_NET.test).hrp;
+  const sp = typeof scanPub === 'string' ? hex.decode(scanPub) : scanPub;
+  const bp = typeof spendPub === 'string' ? hex.decode(spendPub) : spendPub;
+  if (sp.length !== 33 || bp.length !== 33) throw new Error('Pubkeys devem ter 33 bytes (comprimidas).');
+  // versão 0 (caractere "q") + bech32m(scan || spend)
+  return bech32m.encode(hrp, [0, ...bech32m.toWords(new Uint8Array([...sp, ...bp]))], 1023);
+}
+export function decodeSilentPaymentAddress(addr) {
+  const a = String(addr).trim().toLowerCase();
+  const hrp = a.startsWith('tsp1') ? 'tsp' : a.startsWith('sp1') ? 'sp' : null;
+  if (!hrp) throw new Error('Endereço Silent Payment inválido (sp1…/tsp1…).');
+  let dec; try { dec = bech32m.decode(a, 1023); } catch { throw new Error('Endereço SP inválido (bech32m).'); }
+  if (dec.prefix !== hrp || dec.words[0] !== 0) throw new Error('Versão/prefixo de SP não suportado.');
+  const payload = bech32m.fromWords(dec.words.slice(1));
+  if (payload.length !== 66) throw new Error('Payload SP inválido (esperado 66 bytes).');
+  return { network: hrp === 'sp' ? 'main' : 'test', scanPub: hex.encode(payload.slice(0, 33)), spendPub: hex.encode(payload.slice(33)) };
+}
+export function silentPaymentAddress(mnemonic, network = 'test') {
+  const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
+  const cfg = SP_NET[network] || SP_NET.test;
+  const root = HDKey.fromMasterSeed(mnemonicToSeedSync(mm));
+  const scanPub = root.derive(cfg.scan).publicKey, spendPub = root.derive(cfg.spend).publicKey;
+  if (!scanPub || !spendPub) throw new Error('Falha ao derivar chaves de Silent Payment.');
+  return { address: encodeSilentPaymentAddress(scanPub, spendPub, network), scanPub: hex.encode(scanPub), spendPub: hex.encode(spendPub), network };
+}
 
 export function makeQR(text, cell = 3) {
   try {

@@ -3,7 +3,8 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, sha256Hex, decodeQR,
   createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
   splitMnemonic, combineMnemonic,
-  inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt } from '../src/wallet/index.js';
+  inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
+  encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -121,6 +122,15 @@ eq('herança/normal: 2-de-3 finaliza, txid 64 hex', /^[0-9a-f]{64}$/.test(nf.txi
 // Negativo: uma assinatura só não fecha o caminho normal
 let needs2 = false; try { finalizeInheritancePsbt(signInheritancePsbt(nb.psbt, ihA.mnemonic).psbt, 'normal'); } catch { needs2 = true; }
 eq('herança/normal: 1 assinatura não finaliza (precisa de 2)', needs2, true);
+
+/* Silent Payments (BIP-352): codificador confere com o vetor oficial + roundtrip */
+eq('SP: endereço == vetor oficial BIP-352 (mainnet)',
+  encodeSilentPaymentAddress('0220bcfac5b99e04ad1a06ddfb016ee13582609d60b6291e98d01a9bc9a16c96d4', '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36', 'main'),
+  'sp1qqgste7k9hx0qftg6qmwlkqtwuy6cycyavzmzj85c6qdfhjdpdjtdgqjuexzk6murw56suy3e0rd2cgqvycxttddwsvgxe2usfpxumr70xc9pkqwv');
+const spA = silentPaymentAddress(createTestnetWallet().mnemonic, 'test');
+eq('SP: endereço testnet começa com tsp1', /^tsp1[0-9a-z]+$/.test(spA.address), true);
+const spDec = decodeSilentPaymentAddress(spA.address);
+eq('SP: decode recupera scan+spend', spDec.scanPub === spA.scanPub && spDec.spendPub === spA.spendPub, true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */
