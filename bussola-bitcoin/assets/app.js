@@ -94,6 +94,8 @@ const CHAPTERS = [
   { id: '07', file: 'docs/07-NORTE-PRODUTO.md', emoji: '🚀', title: 'Norte do produto' },
   { id: '08', file: 'docs/08-ESTRATEGIA.md',    emoji: '♟️', title: 'Estratégia (longo prazo)' },
   { id: '09', file: 'docs/09-SEGURANCA.md',     emoji: '🛡️', title: 'Segurança & Confiança' },
+  { id: '10', file: 'docs/10-GLOSSARIO.md',     emoji: '📖', title: 'Glossário' },
+  { id: '11', file: 'docs/11-FAQ.md',           emoji: '❓', title: 'Perguntas frequentes' },
   { id: '99', file: 'docs/99-FONTES.md',        emoji: '📚', title: 'Fontes' },
 ];
 
@@ -153,9 +155,15 @@ const NUM = new Intl.NumberFormat('pt-BR');
 /* =================== Painel =================== */
 async function viewPainel() {
   menuBtn.hidden = true;
+  const seen = (() => { try { return localStorage.getItem('bussola.seen.v1'); } catch { return '1'; } })();
+  const welcome = seen ? '' : `<div class="banner ok" id="welcome">👋 <strong>Bem-vindo à Bússola.</strong>
+    Aprenda, decida e conquiste sua soberania em bitcoin — do off ao online, em PT-BR, sem coleta de
+    dados. Comece pelo <a href="#book/00">Book</a> ou pelo <a href="#checklist">Checklist</a>.
+    <button id="welcomeX" type="button" class="btn-ghost">Entendi</button></div>`;
   appEl.innerHTML = `
     <div class="pad">
       <h1>📊 Painel <span class="muted small">tudo pra decidir, num lugar só</span></h1>
+      ${welcome}
       <div class="banner ok">🔒 Tudo aqui é <strong>só-leitura e educacional</strong>: não conecta
         em conta, não pede chave, e <strong>não é recomendação</strong> de compra/venda.</div>
       <div class="cards">
@@ -182,6 +190,10 @@ async function viewPainel() {
       <a href="#book/09">Segurança</a> · monte sua <a href="#carteira">carteira soberana</a> e seu
       <a href="#soberania">Legado</a>.</p>
     </div>`;
+  document.getElementById('welcomeX')?.addEventListener('click', () => {
+    try { localStorage.setItem('bussola.seen.v1', '1'); } catch {}
+    document.getElementById('welcome')?.remove();
+  });
   loadPrice(); loadFng(); loadHalving();
 }
 
