@@ -2,7 +2,8 @@
 import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestnetWallet,
   addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, sha256Hex, decodeQR,
   createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
-  splitMnemonic, combineMnemonic } from '../src/wallet/index.js';
+  splitMnemonic, combineMnemonic,
+  inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -96,6 +97,30 @@ const shMn = createTestnetWallet().mnemonic;
 const shares = await splitMnemonic(shMn, 5, 3);
 eq('shamir gera 5 partes', shares.length, 5);
 eq('shamir recompõe 3-de-5 == original', await combineMnemonic([shares[0], shares[2], shares[4]]), shMn);
+
+/* Herança com timelock (cofre P2WSH): endereço + resgate (herdeiro+timelock) + normal (2-de-3) */
+const ihA = createMultisigCosigner(), ihB = createMultisigCosigner(), ihC = createMultisigCosigner(), ihH = createMultisigCosigner();
+const cox = [ihA.accountXpub, ihB.accountXpub, ihC.accountXpub];
+const TL = 144;
+const vault = inheritanceAddresses({ cosignerXpubs: cox, heirXpub: ihH.accountXpub, timelock: TL, count: 1 })[0];
+eq('herança: endereço P2WSH (tb1q…)', /^tb1q[0-9a-z]{50,}$/.test(vault.address), true);
+const vaultR = inheritanceAddresses({ cosignerXpubs: [cox[2], cox[0], cox[1]], heirXpub: ihH.accountXpub, timelock: TL, count: 1 })[0];
+eq('herança: endereço independe da ordem dos cosigners (BIP67)', vaultR.address, vault.address);
+
+const utxo = [{ txid: '11'.repeat(32), vout: 0, chain: 0, index: 0, valueSats: 100000 }];
+const dest = 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx';
+// Resgate: herdeiro sozinho após o timelock
+const rb = buildInheritancePsbt({ cosignerXpubs: cox, heirXpub: ihH.accountXpub, timelock: TL, utxos: utxo, toAddress: dest, amountSats: 90000, feeRate: 1, mode: 'recovery' });
+const rs = signInheritancePsbt(rb.psbt, ihH.mnemonic);
+eq('herança/resgate: herdeiro assina a entrada', rs.signedInputs, 1);
+eq('herança/resgate: txid 64 hex', /^[0-9a-f]{64}$/.test(finalizeInheritancePsbt(rs.psbt, 'recovery').txid), true);
+// Normal: 2 de 3 co-signatários
+const nb = buildInheritancePsbt({ cosignerXpubs: cox, heirXpub: ihH.accountXpub, timelock: TL, utxos: utxo, toAddress: dest, amountSats: 90000, feeRate: 1, mode: 'normal' });
+const nf = finalizeInheritancePsbt(signInheritancePsbt(signInheritancePsbt(nb.psbt, ihA.mnemonic).psbt, ihC.mnemonic).psbt, 'normal');
+eq('herança/normal: 2-de-3 finaliza, txid 64 hex', /^[0-9a-f]{64}$/.test(nf.txid), true);
+// Negativo: uma assinatura só não fecha o caminho normal
+let needs2 = false; try { finalizeInheritancePsbt(signInheritancePsbt(nb.psbt, ihA.mnemonic).psbt, 'normal'); } catch { needs2 = true; }
+eq('herança/normal: 1 assinatura não finaliza (precisa de 2)', needs2, true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */

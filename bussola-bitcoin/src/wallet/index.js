@@ -238,7 +238,112 @@ export function signMultisigPsbt(psbtB64, mnemonic, scan = 30) {
   return { psbt: base64.encode(tx.toPSBT()), signedInputs: signed };
 }
 
-/* QR (SVG string) para transportar PSBT/hex entre aparelhos. null se grande demais. */
+/* =================== Herança com timelock (cofre P2WSH, testnet) =================== */
+/* Cofre: gasto NORMAL 2-de-3 OU resgate pelo HERDEIRO sozinho após `timelock` blocos
+ * (OP_CHECKSEQUENCEVERIFY, relativo). Membros (co-signatários e herdeiro) usam o mesmo
+ * caminho do multisig (m/48'/1'/0'/2'), então reutilizam createMultisigCosigner. */
+const INH_TRUE = new Uint8Array([1]);
+const INH_EMPTY = new Uint8Array(0);
+
+function inhWitnessScript(cosignerXpubs, heirXpub, timelock, chain, index) {
+  if (!Array.isArray(cosignerXpubs) || cosignerXpubs.length !== 3) throw new Error('Use exatamente 3 co-signatários.');
+  const tl = timelock | 0;
+  if (tl < 1 || tl > 65535) throw new Error('Timelock deve ser entre 1 e 65535 blocos.');
+  const pks = cosignerXpubs.map(x => {
+    const k = HDKey.fromExtendedKey(normalizeToXpub(x)).deriveChild(chain).deriveChild(index).publicKey;
+    if (!k) throw new Error('xpub de co-signatário inválida.');
+    return k;
+  }).sort((a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; });
+  const heir = HDKey.fromExtendedKey(normalizeToXpub(heirXpub)).deriveChild(chain).deriveChild(index).publicKey;
+  if (!heir) throw new Error('xpub do herdeiro inválida.');
+  // IF 2 <A><B><C> 3 CHECKMULTISIG ELSE <tl> CSV DROP <heir> CHECKSIG ENDIF
+  return btc.Script.encode(['IF', 2, pks[0], pks[1], pks[2], 3, 'CHECKMULTISIG',
+    'ELSE', tl, 'CHECKSEQUENCEVERIFY', 'DROP', heir, 'CHECKSIG', 'ENDIF']);
+}
+function inhPayment(cosignerXpubs, heirXpub, timelock, chain, index) {
+  const witnessScript = inhWitnessScript(cosignerXpubs, heirXpub, timelock, chain, index);
+  const pay = btc.p2wsh({ type: 'wsh', script: witnessScript }, NET);
+  return { address: pay.address, script: pay.script, witnessScript };
+}
+function inhPubkeyOrder(witnessScript) { // ordem dos pubkeys (33b) no script, p/ ordenar as assinaturas
+  return btc.Script.decode(witnessScript).filter(x => x instanceof Uint8Array && x.length === 33).map(x => hex.encode(x));
+}
+
+export function inheritanceAddresses({ cosignerXpubs, heirXpub, timelock, count = 5, chain = 0 }) {
+  const n = Math.max(1, Math.min(50, count | 0)), out = [];
+  for (let i = 0; i < n; i++) out.push({ path: `${chain}/${i}`, chain, index: i, address: inhPayment(cosignerXpubs, heirXpub, timelock, chain, i).address });
+  return out;
+}
+
+/* Monta o gasto do cofre. mode: 'normal' (2-de-3) ou 'recovery' (herdeiro; define o sequence=timelock). */
+export function buildInheritancePsbt({ cosignerXpubs, heirXpub, timelock, utxos, toAddress, amountSats, feeRate = 2, changeIndex = 0, mode = 'normal' }) {
+  if (!utxos || !utxos.length) throw new Error('Sem UTXOs no cofre (sem saldo?).');
+  const amount = Math.floor(Number(amountSats));
+  if (!(amount > 0)) throw new Error('Valor inválido.');
+  const tl = timelock | 0;
+  const tx = new btc.Transaction();
+  let totalIn = 0;
+  for (const u of utxos) {
+    const p = inhPayment(cosignerXpubs, heirXpub, tl, u.chain, u.index);
+    const inp = { txid: hex.decode(u.txid), index: u.vout, witnessUtxo: { script: p.script, amount: BigInt(u.valueSats) }, witnessScript: p.witnessScript };
+    if (mode === 'recovery') inp.sequence = tl; // CSV relativo em blocos
+    tx.addInput(inp);
+    totalIn += u.valueSats;
+  }
+  const perIn = mode === 'recovery' ? 73 : 108; // vbytes aprox. por entrada
+  const vsize = utxos.length * perIn + 2 * 43 + 11;
+  const fee = Math.ceil(vsize * Math.max(1, feeRate));
+  const change = totalIn - amount - fee;
+  if (change < 0) throw new Error(`Saldo insuficiente: tem ${totalIn} sats, precisa de ${amount + fee} (valor + taxa).`);
+  tx.addOutputAddress(toAddress, BigInt(amount), NET);
+  const hasChange = change >= 330;
+  if (hasChange) tx.addOutputAddress(inhPayment(cosignerXpubs, heirXpub, tl, 1, changeIndex).address, BigInt(change), NET);
+  return { psbt: base64.encode(tx.toPSBT()), fee, totalIn, change: hasChange ? change : 0, mode };
+}
+
+/* Assina o cofre com UMA seed (co-signatário no normal, ou herdeiro no resgate). Só assina
+ * entradas cujo pubkey derivado aparece no script. Guarda partialSig; finalize depois. */
+export function signInheritancePsbt(psbtB64, mnemonic, scan = 30) {
+  const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
+  const acct = HDKey.fromMasterSeed(mnemonicToSeedSync(mm)).derive(MULTISIG_PATH);
+  let tx; try { tx = btc.Transaction.fromPSBT(base64.decode(String(psbtB64).trim())); } catch { throw new Error('PSBT inválido.'); }
+  const cands = [];
+  for (const chain of [0, 1]) { const br = acct.deriveChild(chain); for (let i = 0; i < scan; i++) { const c = br.deriveChild(i); if (c.privateKey) cands.push(c); } }
+  let signed = 0;
+  for (let idx = 0; idx < tx.inputsLength; idx++) {
+    const ws = tx.getInput(idx).witnessScript; if (!ws) continue;
+    const wsHex = hex.encode(ws);
+    for (const c of cands) {
+      if (wsHex.includes(hex.encode(c.publicKey))) { try { if (tx.signIdx(c.privateKey, idx)) signed++; } catch { /* segue */ } }
+    }
+  }
+  if (!signed) throw new Error('Esta seed não pertence ao cofre (nenhuma chave combinou).');
+  return { psbt: base64.encode(tx.toPSBT()), signedInputs: signed };
+}
+
+/* Finaliza montando o witness do ramo certo e devolve tx bruto (hex)+txid.
+ * normal: [<vazio> sigs... <true> script]  |  recovery: [sig <vazio> script]. */
+export function finalizeInheritancePsbt(psbtB64, mode = 'normal') {
+  let tx; try { tx = btc.Transaction.fromPSBT(base64.decode(String(psbtB64).trim())); } catch { throw new Error('PSBT inválido.'); }
+  for (let idx = 0; idx < tx.inputsLength; idx++) {
+    const inp = tx.getInput(idx);
+    const ws = inp.witnessScript; if (!ws) throw new Error('Entrada sem witnessScript.');
+    const ps = inp.partialSig || [];
+    if (mode === 'recovery') {
+      if (ps.length < 1) throw new Error('Falta a assinatura do herdeiro.');
+      tx.updateInput(idx, { finalScriptWitness: [ps[0][1], INH_EMPTY, ws] });
+    } else {
+      if (ps.length < 2) throw new Error('Faltam assinaturas (precisa de 2 de 3).');
+      const order = inhPubkeyOrder(ws);
+      const sigs = ps.slice().sort((a, b) => order.indexOf(hex.encode(a[0])) - order.indexOf(hex.encode(b[0]))).slice(0, 2).map(x => x[1]);
+      tx.updateInput(idx, { finalScriptWitness: [INH_EMPTY, ...sigs, INH_TRUE, ws] });
+    }
+  }
+  return { hex: tx.hex, txid: tx.id };
+}
+
+
 export function makeQR(text, cell = 3) {
   try {
     const qr = qrcode(0, 'L'); qr.addData(String(text)); qr.make();

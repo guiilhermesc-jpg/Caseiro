@@ -740,6 +740,62 @@ function viewCarteira() {
         </div>
       </section>
 
+      <section class="watchonly">
+        <h2>🏛️ Cofre de herança <span class="soon">timelock · testnet beta</span></h2>
+        <p class="muted">Um cofre com dois caminhos de gasto: <strong>2-de-3</strong> agora (você + pessoas de confiança),
+        OU o <strong>herdeiro sozinho</strong> depois de um tempo sem movimento (timelock). Se você sumir, a herança
+        destrava; enquanto usa, ninguém mais consegue mexer.</p>
+        <div class="banner warn">⚠️ Protótipo testnet. Timelock é <strong>relativo</strong> (conta blocos desde que a UTXO foi recebida). ~144 blocos ≈ 1 dia.</div>
+
+        <div class="agstep">
+          <h3>1) Chaves (3 guardiões + 1 herdeiro)</h3>
+          <div class="regactions"><button type="button" class="btn-ghost" id="ihGen">🎲 Gerar uma chave</button></div>
+          <div id="ihGenOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>2) Montar o cofre</h3>
+          <form id="ihGroup" class="regform">
+            <label style="grid-column:1/-1">Guardião A (xpub)<input id="ihA" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Guardião B (xpub)<input id="ihB" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Guardião C (xpub)<input id="ihC" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Herdeiro (xpub)<input id="ihHeir" spellcheck="false" autocomplete="off"></label>
+            <label>Timelock (blocos)<input type="number" id="ihTL" min="1" max="65535" value="144"></label>
+            <button type="submit">Ver endereços do cofre</button>
+          </form>
+          <div id="ihAddrs"></div>
+        </div>
+        <div class="agstep">
+          <h3>3) Enviar do cofre (online, sem chave)</h3>
+          <form id="ihSend" class="regform">
+            <label style="grid-column:1/-1">Destino (tb1…)<input id="ihTo" spellcheck="false" autocomplete="off"></label>
+            <label>Valor (sats)<input type="number" id="ihAmt" min="1" step="1"></label>
+            <label>Taxa (sat/vB)<input type="number" id="ihFee" min="1" step="1" value="2"></label>
+            <label style="grid-column:1/-1">Caminho<select id="ihMode"><option value="normal">Normal — 2 de 3 guardiões</option><option value="recovery">Resgate — herdeiro após o timelock</option></select></label>
+            <button type="submit">Montar PSBT</button>
+          </form>
+          <div id="ihBuildOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>4) Assinar (guardião ou herdeiro, offline)</h3>
+          <form id="ihSign" class="regform">
+            <label style="grid-column:1/-1">PSBT (cole ou 📷)<textarea id="ihPsbtIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">Sua frase<input id="ihSeed" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">Assinar</button>
+          </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="ihScan">📷 Escanear PSBT</button></div>
+          <div id="ihSignOut"></div>
+        </div>
+        <div class="agstep">
+          <h3>5) Finalizar e transmitir</h3>
+          <form id="ihSendTx" class="regform">
+            <label style="grid-column:1/-1">PSBT assinado (cole)<textarea id="ihSignedIn" rows="3" spellcheck="false"></textarea></label>
+            <label style="grid-column:1/-1">Caminho usado<select id="ihMode2"><option value="normal">Normal — 2 de 3</option><option value="recovery">Resgate — herdeiro</option></select></label>
+            <button type="submit">Finalizar e transmitir</button>
+          </form>
+          <div id="ihTxOut"></div>
+        </div>
+      </section>
+
       <h2>Arquitetura completa</h2>
       <article id="doc" class="doc"><p class="loading">Carregando arquitetura…</p></article>
     </div>`;
@@ -997,6 +1053,89 @@ function viewCarteira() {
       const body = (await r.text()).trim(); if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
       o.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
     } catch (err) { o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="msHexPay"></div>`; renderPayload(document.getElementById('msHexPay'), 'Tx final (hex)', fin.hex); }
+  });
+
+  // ---- Cofre de herança (timelock) ----
+  const IHG_KEY = 'bussola.ihgroup.v1';
+  const ihEl = id => document.getElementById(id);
+  const ihCfg = () => ({ cosignerXpubs: [ihEl('ihA').value.trim(), ihEl('ihB').value.trim(), ihEl('ihC').value.trim()], heirXpub: ihEl('ihHeir').value.trim(), timelock: parseInt(ihEl('ihTL').value, 10) || 144 });
+  (() => { try { const g = JSON.parse(localStorage.getItem(IHG_KEY) || 'null'); if (g) { ihEl('ihA').value = g.c?.[0] || ''; ihEl('ihB').value = g.c?.[1] || ''; ihEl('ihC').value = g.c?.[2] || ''; ihEl('ihHeir').value = g.h || ''; ihEl('ihTL').value = g.t || 144; } } catch {} })();
+  async function scanUtxosIh(cfg) {
+    const targets = [...wallet.inheritanceAddresses({ ...cfg, count: 10, chain: 0 }), ...wallet.inheritanceAddresses({ ...cfg, count: 5, chain: 1 })];
+    const utxos = [];
+    await Promise.all(targets.map(async t => {
+      try { const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!r.ok) return;
+        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index }); } catch {}
+    }));
+    return utxos;
+  }
+  ihEl('ihGen')?.addEventListener('click', () => {
+    if (!wallet) return;
+    const c = wallet.createMultisigCosigner(), o = ihEl('ihGenOut');
+    o.innerHTML = `<div class="seedbox"><h3>📝 Anote esta frase:</h3>
+      <ol class="seedwords">${c.mnemonic.split(' ').map(w => `<li>${esc(w)}</li>`).join('')}</ol>
+      <div class="banner warn">Guarde offline. Compartilhe APENAS a xpub (nunca a frase). Use uma frase diferente para cada papel (cada guardião e o herdeiro).</div>
+      <div class="muted small">Sua xpub (compartilhe):</div><textarea class="mono" rows="2" readonly></textarea></div>`;
+    o.querySelector('textarea').value = c.accountXpub;
+  });
+  ihEl('ihGroup').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = ihEl('ihAddrs'), cfg = ihCfg();
+    if (cfg.cosignerXpubs.some(x => !x) || !cfg.heirXpub) { o.innerHTML = '<p class="muted">Preencha as 3 xpubs dos guardiões e a do herdeiro.</p>'; return; }
+    try {
+      const addrs = wallet.inheritanceAddresses({ ...cfg, count: 5, chain: 0 });
+      try { localStorage.setItem(IHG_KEY, JSON.stringify({ c: cfg.cosignerXpubs, h: cfg.heirXpub, t: cfg.timelock })); } catch {}
+      o.innerHTML = `<div class="banner ok">Cofre criado: 2-de-3 OU herdeiro após ${cfg.timelock} blocos.</div>
+        <div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço</th><th></th></tr></thead><tbody>
+        ${addrs.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td><button type="button" class="btn-ghost qrbtn" data-addr="${a.address}">QR</button></td></tr>`).join('')}
+        </tbody></table></div><div class="regactions"><button type="button" class="btn-ghost" id="ihBal">Consultar saldo</button></div><div id="ihQr"></div>`;
+      o.querySelectorAll('.qrbtn').forEach(b => b.addEventListener('click', () => { const q = wallet.makeQR(b.dataset.addr); ihEl('ihQr').innerHTML = q ? `<div class="muted small mono">${esc(b.dataset.addr)}</div><div class="qr">${q}</div>` : ''; }));
+      ihEl('ihBal').addEventListener('click', async () => {
+        ihEl('ihQr').innerHTML = '<p class="loading">Consultando…</p>';
+        const u = await scanUtxosIh(cfg), total = u.reduce((s, x) => s + x.valueSats, 0);
+        ihEl('ihQr').innerHTML = `<div class="banner ok">Saldo do cofre: <strong>${BTC.format(total / 1e8)} tBTC</strong> (${u.length} UTXOs).</div>`;
+      });
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  ihEl('ihSend').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = ihEl('ihBuildOut'), cfg = ihCfg();
+    if (cfg.cosignerXpubs.some(x => !x) || !cfg.heirXpub) { o.innerHTML = '<p class="muted">Monte o cofre (passo 2).</p>'; return; }
+    const to = ihEl('ihTo').value.trim(), amt = parseInt(ihEl('ihAmt').value, 10), fee = parseInt(ihEl('ihFee').value, 10) || 2, mode = ihEl('ihMode').value;
+    if (!to || !(amt > 0)) { o.innerHTML = '<p class="muted">Preencha destino e valor.</p>'; return; }
+    o.innerHTML = '<p class="loading">Buscando UTXOs do cofre…</p>';
+    try {
+      const utxos = await scanUtxosIh(cfg);
+      const res = wallet.buildInheritancePsbt({ ...cfg, utxos, toAddress: to, amountSats: amt, feeRate: fee, mode });
+      const aviso = mode === 'recovery'
+        ? '<p class="muted small">⚠️ Resgate só é aceito após o timelock (blocos desde o recebimento da UTXO). Assine com a frase do herdeiro e finalize escolhendo “Resgate”.</p>'
+        : '<p class="muted small">Leve a 2 guardiões para assinar (passo 4).</p>';
+      o.innerHTML = `<div class="banner ok">Montado (${mode === 'recovery' ? 'resgate' : 'normal'}): entrada ${res.totalIn} · taxa ${res.fee} · troco ${res.change} sats.</div><div id="ihPay"></div>${aviso}`;
+      renderPayload(ihEl('ihPay'), 'PSBT do cofre (não assinado)', res.psbt);
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  ihEl('ihScan')?.addEventListener('click', () => openScanner(t => { ihEl('ihPsbtIn').value = t; }));
+  ihEl('ihSign').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = ihEl('ihSignOut');
+    try {
+      const r = wallet.signInheritancePsbt(ihEl('ihPsbtIn').value, ihEl('ihSeed').value);
+      o.innerHTML = `<div class="banner ok">Assinado (${r.signedInputs}). No normal junte 2 guardiões; no resgate basta o herdeiro. Depois finalize (passo 5).</div><div id="ihSignedPay"></div>`;
+      renderPayload(ihEl('ihSignedPay'), 'PSBT assinado', r.psbt);
+      ihEl('ihSeed').value = '';
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+  ihEl('ihSendTx').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = ihEl('ihTxOut'), mode = ihEl('ihMode2').value; let fin;
+    try { fin = wallet.finalizeInheritancePsbt(ihEl('ihSignedIn').value, mode); }
+    catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)} (assinaturas insuficientes para esse caminho?)</p>`; return; }
+    o.innerHTML = '<p class="loading">Transmitindo…</p>';
+    try {
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const body = (await r.text()).trim(); if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
+      o.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
+    } catch (err) { o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="ihHexPay"></div>`; renderPayload(ihEl('ihHexPay'), 'Tx final (hex)', fin.hex); }
   });
 
   const doc = document.getElementById('doc');
