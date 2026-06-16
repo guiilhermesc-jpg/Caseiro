@@ -1274,6 +1274,21 @@ function viewSoberania() {
       </section>
 
       <section class="watchonly">
+        <h2>🛰️ Silent Payments <span class="muted small">BIP-352 · endereço reutilizável</span></h2>
+        <p class="muted">Um único endereço estático que você publica e reusa <strong>sem perder privacidade</strong>:
+        cada pagamento cai num endereço on-chain diferente, derivado por você. Fim do "gere um endereço novo toda vez".</p>
+        <div class="banner warn">A Bússola gera sua <strong>identidade SP</strong> (endereço + chaves de visão/gasto).
+        Para <strong>enviar</strong> a um sp1… ou <strong>escanear</strong> recebimentos, use hoje uma carteira compatível com SP
+        (ex.: Cake Wallet). Codificação validada contra o vetor oficial do BIP-352.</div>
+        <form id="spForm" class="regform">
+          <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="spMn" autocomplete="off" spellcheck="false"></label>
+          <label>Rede<select id="spNet"><option value="test">Testnet (tsp1)</option><option value="main">Mainnet (sp1)</option></select></label>
+          <button type="submit">Gerar endereço SP</button>
+        </form>
+        <div id="spOut"></div>
+      </section>
+
+      <section class="watchonly">
         <h2>🔒 Cofre — backup criptografado</h2>
         <p class="muted">Exporte tudo (checklist, registro, raio-x, legado) num arquivo
         <strong>criptografado</strong> (AES-256-GCM) com uma senha. Sem a senha, ninguém abre.</p>
@@ -1430,6 +1445,23 @@ function viewSoberania() {
     try {
       const mn = await Wsh.combineMnemonic(parts);
       o.innerHTML = `<div class="banner ok">Frase recomposta:</div><textarea class="mono" rows="2" readonly>${esc(mn)}</textarea><p class="muted small">Confira se faz sentido — partes insuficientes geram frase errada, sem aviso.</p>`;
+    } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  });
+
+  // ---- Silent Payments (BIP-352) ----
+  document.getElementById('spForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = document.getElementById('spOut');
+    if (!Wsh) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    try {
+      const r = Wsh.silentPaymentAddress(document.getElementById('spMn').value, document.getElementById('spNet').value);
+      const qr = Wsh.makeQR(r.address);
+      o.innerHTML = `<div class="banner ok">Seu endereço Silent Payment (${r.network === 'main' ? 'mainnet' : 'testnet'}):</div>
+        <textarea class="mono" rows="3" readonly>${esc(r.address)}</textarea>
+        ${qr ? `<div class="qr">${qr}</div>` : ''}
+        <details class="small"><summary>chaves de visão/gasto (avançado)</summary>
+        <div class="muted small mono" style="word-break:break-all">scan: ${esc(r.scanPub)}<br>spend: ${esc(r.spendPub)}</div></details>`;
+      document.getElementById('spMn').value = '';
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
 }
