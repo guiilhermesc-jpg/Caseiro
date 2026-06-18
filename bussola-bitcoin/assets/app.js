@@ -1560,8 +1560,27 @@ function viewSoberania() {
       o.innerHTML = `<div class="banner ok">Seu endereço Silent Payment (${r.network === 'main' ? 'mainnet' : 'testnet'}):</div>
         <textarea class="mono" rows="3" readonly>${esc(r.address)}</textarea>
         ${qr ? `<div class="qr">${qr}</div>` : ''}
+        <details class="agstep" style="margin-top:12px"><summary><strong>💳 Gerar cobrança</strong> — peça um valor (vira link + QR)</summary>
+          <form id="spReq" class="regform" style="margin-top:8px">
+            <label>Valor (BTC)<input id="spReqAmt" type="number" min="0" step="0.00000001" placeholder="0.001"></label>
+            <label style="grid-column:1/-1">Mensagem (opcional)<input id="spReqMsg" autocomplete="off" placeholder="ex.: fatura #123"></label>
+            <button type="submit">Gerar link + QR</button>
+          </form><div id="spReqOut"></div></details>
         <details class="small"><summary>chaves de visão/gasto (avançado)</summary>
         <div class="muted small mono" style="word-break:break-all">scan: ${esc(r.scanPub)}<br>spend: ${esc(r.spendPub)}</div></details>`;
+      document.getElementById('spReq').addEventListener('submit', ev => {
+        ev.preventDefault();
+        const ro = document.getElementById('spReqOut');
+        try {
+          const uri = Wsh.buildPaymentURI({ address: r.address, amountBtc: document.getElementById('spReqAmt').value, message: document.getElementById('spReqMsg').value.trim() });
+          const rq = Wsh.makeQR(uri);
+          ro.innerHTML = `<div class="banner ok">Cobrança pronta — envie o link ou mostre o QR:</div>
+            <textarea class="mono" rows="3" readonly>${esc(uri)}</textarea>
+            ${rq ? `<div class="qr">${rq}</div>` : ''}
+            <button type="button" id="spReqCopy" class="btn-ghost">📋 Copiar link</button>`;
+          document.getElementById('spReqCopy').addEventListener('click', () => { try { navigator.clipboard.writeText(uri); } catch {} document.getElementById('spReqCopy').textContent = '✓ copiado'; });
+        } catch (e2) { ro.innerHTML = `<p class="muted">${esc(e2.message)}</p>`; }
+      });
       document.getElementById('spMn').value = '';
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });

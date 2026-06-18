@@ -6,7 +6,7 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
   encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
   silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan,
-  silentPaymentSpend } from '../src/wallet/index.js';
+  silentPaymentSpend, buildPaymentURI } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -204,6 +204,14 @@ eq('SP/scan: nada quando não é seu', silentPaymentScanTx({ scanPriv: '0f694e06
   eq('SP/spend: sweep multi-txid 2 entradas', r2.inputsCount, 2);
   eq('SP/spend: multi soma entradas', r2.sent, 150000 - r2.fee);
 }
+
+/* Cobrança BIP-21 (buildPaymentURI) */
+eq('URI: só endereço', buildPaymentURI({ address: 'tb1qx' }), 'bitcoin:tb1qx');
+eq('URI: valor sem zeros supérfluos', buildPaymentURI({ address: 'tsp1q', amountBtc: 0.001 }), 'bitcoin:tsp1q?amount=0.001');
+eq('URI: inteiro vira sem casas', buildPaymentURI({ address: 'a', amountBtc: 1 }), 'bitcoin:a?amount=1');
+eq('URI: label e message encoded', buildPaymentURI({ address: 'a', amountBtc: 0.5, label: 'Loja X', message: 'pão & café' }), 'bitcoin:a?amount=0.5&label=Loja%20X&message=p%C3%A3o%20%26%20caf%C3%A9');
+eq('URI: valor inválido lança', (() => { try { buildPaymentURI({ address: 'a', amountBtc: -1 }); return false; } catch { return true; } })(), true);
+eq('URI: sem endereço lança', (() => { try { buildPaymentURI({ address: '' }); return false; } catch { return true; } })(), true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */
