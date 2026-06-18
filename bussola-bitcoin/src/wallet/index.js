@@ -489,34 +489,35 @@ export function silentPaymentScan({ mnemonic, network = 'test', tx }) {
   return { found, scannedOutputs: outputs.length, inputsUsed: inputPubKeys.length, inputsTotal: vin.length };
 }
 
-/* Gasta (sweep) recebimentos Silent Payment detectados pelo scanner. Cada output é taproot
- * key-path cuja chave de saída é o próprio P_k (sem o tweak do BIP-341): a chave de gasto é
- * d = (b_spend + tweak) mod n. Assina via Schnorr (BIP-340) sobre o sighash BIP-341 e finaliza. */
-export function silentPaymentSpend({ mnemonic, network = 'test', sourceTxid, outputs, toAddress, feeRate = 2 }) {
+/* Gasta (sweep) recebimentos Silent Payment detectados pelo scanner — de um ou vários txids.
+ * `inputs`: [{ txid, vout, xonly, tweak, valueSats }]. Cada output é taproot key-path cuja chave
+ * de saída é o próprio P_k (sem o tweak do BIP-341): a chave de gasto é d = (b_spend + tweak) mod n.
+ * Assina via Schnorr (BIP-340) sobre o sighash BIP-341 e finaliza. */
+export function silentPaymentSpend({ mnemonic, network = 'test', inputs, toAddress, feeRate = 2 }) {
   const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
   if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
-  if (!/^[0-9a-fA-F]{64}$/.test(String(sourceTxid || ''))) throw new Error('txid de origem inválido.');
-  if (!outputs || !outputs.length) throw new Error('Nenhum output Silent Payment para gastar.');
+  if (!inputs || !inputs.length) throw new Error('Nenhum recebimento Silent Payment para gastar.');
   if (!toAddress) throw new Error('Informe o endereço de destino.');
   const cfg = SP_NET[network] || SP_NET.test;
   const P = secp256k1.ProjectivePoint, n = secp256k1.CURVE.n;
   const bSpend = BigInt('0x' + hex.encode(HDKey.fromMasterSeed(mnemonicToSeedSync(mm)).derive(cfg.spend).privateKey));
   const tx = new btc.Transaction();
   const signers = []; let totalIn = 0n;
-  for (const o of outputs) {
-    if (!/^[0-9a-f]{64}$/.test(String(o.xonly)) || !/^[0-9a-f]{64}$/.test(String(o.tweak))) throw new Error('Output SP inválido (xonly/tweak).');
+  for (const o of inputs) {
+    if (!/^[0-9a-fA-F]{64}$/.test(String(o.txid || ''))) throw new Error('txid de origem inválido.');
+    if (!/^[0-9a-f]{64}$/.test(String(o.xonly)) || !/^[0-9a-f]{64}$/.test(String(o.tweak))) throw new Error('Recebimento SP inválido (xonly/tweak).');
     const script = hex.decode('5120' + o.xonly), amount = BigInt(o.valueSats);
     const d = (bSpend + BigInt('0x' + o.tweak)) % n;
     if (d === 0n) throw new Error('Chave de gasto derivada é inválida.');
-    if (hex.encode(P.BASE.multiply(d).toRawBytes(true).slice(1)) !== o.xonly) throw new Error('Output não confere com a sua chave (seed/tweak errado?).');
-    tx.addInput({ txid: hex.decode(sourceTxid), index: o.vout, witnessUtxo: { script, amount } });
+    if (hex.encode(P.BASE.multiply(d).toRawBytes(true).slice(1)) !== o.xonly) throw new Error('Recebimento não confere com a sua chave (seed/tweak errado?).');
+    tx.addInput({ txid: hex.decode(o.txid), index: o.vout, witnessUtxo: { script, amount } });
     signers.push({ d, script, amount, xonly: o.xonly });
     totalIn += amount;
   }
-  const vsize = outputs.length * 58 + 43 + 11; // entradas taproot key-path + 1 saída + overhead
+  const vsize = inputs.length * 58 + 43 + 11; // entradas taproot key-path + 1 saída + overhead
   const fee = BigInt(Math.ceil(vsize * Math.max(1, feeRate)));
   const send = totalIn - fee;
-  if (send < 546n) throw new Error(`Valor após a taxa (${send} sats) fica abaixo do mínimo. Junte mais outputs ou reduza a taxa.`);
+  if (send < 546n) throw new Error(`Valor após a taxa (${send} sats) fica abaixo do mínimo. Junte mais recebimentos ou reduza a taxa.`);
   tx.addOutputAddress(toAddress, send, NET);
   const scripts = signers.map(s => s.script), amounts = signers.map(s => s.amount);
   for (let i = 0; i < signers.length; i++) {
@@ -527,7 +528,7 @@ export function silentPaymentSpend({ mnemonic, network = 'test', sourceTxid, out
     tx.updateInput(i, { tapKeySig: sig });
   }
   tx.finalize();
-  return { hex: tx.hex, txid: tx.id, fee: Number(fee), totalIn: Number(totalIn), sent: Number(send), inputs: outputs.length };
+  return { hex: tx.hex, txid: tx.id, fee: Number(fee), totalIn: Number(totalIn), sent: Number(send), inputsCount: inputs.length };
 }
 
 export function makeQR(text, cell = 3) {

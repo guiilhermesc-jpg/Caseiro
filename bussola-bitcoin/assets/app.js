@@ -1366,9 +1366,8 @@ function viewSoberania() {
         <h2>🛰️ Silent Payments <span class="muted small">BIP-352 · endereço reutilizável</span></h2>
         <p class="muted">Um único endereço estático que você publica e reusa <strong>sem perder privacidade</strong>:
         cada pagamento cai num endereço on-chain diferente, derivado por você. Fim do "gere um endereço novo toda vez".</p>
-        <div class="banner warn">A Bússola gera sua <strong>identidade SP</strong> (endereço + chaves de visão/gasto).
-        Para <strong>enviar</strong> a um sp1… ou <strong>escanear</strong> recebimentos, use hoje uma carteira compatível com SP
-        (ex.: Cake Wallet). Codificação validada contra o vetor oficial do BIP-352.</div>
+        <div class="banner ok">Ciclo SP completo aqui: <strong>gerar</strong> identidade → <strong>receber</strong> (verificar txid + salvar no painel)
+        → <strong>gastar</strong> (varrer o saldo). Enviar a um sp1… está na aba Carteira. Tudo validado contra o vetor oficial do BIP-352.</div>
         <form id="spForm" class="regform">
           <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="spMn" autocomplete="off" spellcheck="false"></label>
           <label>Rede<select id="spNet"><option value="test">Testnet (tsp1)</option><option value="main">Mainnet (sp1)</option></select></label>
@@ -1387,6 +1386,7 @@ function viewSoberania() {
           </form>
           <div id="spScanOut"></div>
         </div>
+        <div id="spPanel" class="agstep" style="margin-top:14px"></div>
       </section>
 
       <section class="watchonly">
@@ -1565,6 +1565,74 @@ function viewSoberania() {
       document.getElementById('spMn').value = '';
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
+
+  /* ---- Painel de recebimentos (ledger SP persistido no aparelho) ---- */
+  const SP_LEDGER = 'bussola.sp.ledger.v1';
+  const spLedgerLoad = () => { try { return JSON.parse(localStorage.getItem(SP_LEDGER) || '[]'); } catch { return []; } };
+  const spLedgerSave = a => { try { localStorage.setItem(SP_LEDGER, JSON.stringify(a)); } catch {} };
+  function spLedgerAdd(items, label, net) {
+    const a = spLedgerLoad(), have = new Set(a.map(e => e.txid + ':' + e.vout)); let added = 0;
+    for (const it of items) { const k = it.txid + ':' + it.vout; if (have.has(k)) continue; a.push({ ...it, label: label || '', net: net || 'test', addedAt: Date.now() }); have.add(k); added++; }
+    spLedgerSave(a); return added;
+  }
+  function renderSpLedger() {
+    const box = document.getElementById('spPanel'); if (!box) return;
+    const a = spLedgerLoad();
+    if (!a.length) { box.innerHTML = `<h3>📥 Painel de recebimentos</h3><p class="muted small">Seus recebimentos SP salvos ficam aqui (só neste aparelho). Verifique um txid acima e clique em <strong>Salvar no painel</strong>.</p>`; return; }
+    const total = a.reduce((s, e) => s + (e.valueSats || 0), 0);
+    box.innerHTML = `<h3>📥 Painel de recebimentos</h3>
+      <div class="cards"><div class="card"><h3>Recebido (saldo)</h3><div class="big">${(total / 1e8).toFixed(8)} tBTC</div><div class="sub muted">${a.length} recebimento(s) · ${total} sats</div></div></div>
+      <div class="tablewrap"><table><thead><tr><th>Quando</th><th>Valor</th><th>Rótulo</th><th>Origem</th><th></th></tr></thead><tbody>
+        ${a.map((e, i) => `<tr><td>${new Date(e.addedAt).toLocaleDateString('pt-BR')}</td><td>${e.valueSats} sats</td><td>${esc(e.label || '—')}</td><td class="mono small">${esc(e.txid.slice(0, 8))}…:${e.vout}</td><td><button class="del" data-i="${i}" title="Remover">✕</button></td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="regactions"><button id="spLedgerSpend" class="btn">💸 Gastar saldo do painel</button><button id="spLedgerExport" class="btn-ghost">⬇️ Exportar CSV</button></div>
+      <div id="spLedgerOut"></div>`;
+    box.querySelectorAll('.del').forEach(b => b.addEventListener('click', () => { const a2 = spLedgerLoad(); a2.splice(+b.dataset.i, 1); spLedgerSave(a2); renderSpLedger(); }));
+    document.getElementById('spLedgerExport').addEventListener('click', () => {
+      const a2 = spLedgerLoad(); if (!a2.length) return;
+      const linhas = a2.map(e => [new Date(e.addedAt).toISOString().slice(0, 10), e.valueSats, (e.valueSats / 1e8).toFixed(8), String(e.label || '').replace(/;/g, ','), e.txid + ':' + e.vout].join(';'));
+      const csv = '﻿data;valor_sats;valor_btc;rotulo;origem\n' + linhas.join('\n');
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'bussola-recebimentos-sp.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    document.getElementById('spLedgerSpend').addEventListener('click', () => {
+      const lo = document.getElementById('spLedgerOut');
+      lo.innerHTML = `<form id="spLedgerForm" class="regform" style="margin-top:8px">
+          <label style="grid-column:1/-1">Enviar tudo para (endereço testnet)<input id="slDest" spellcheck="false" autocomplete="off" placeholder="tb1q…"></label>
+          <label style="grid-column:1/-1">Sua frase<input id="slMn" autocomplete="off" spellcheck="false"></label>
+          <label>Taxa (sat/vB)<input type="number" id="slFee" min="1" step="1" value="2"></label>
+          <button type="submit">Montar transação</button>
+        </form><div id="slOut"></div>`;
+      document.getElementById('spLedgerForm').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const out2 = document.getElementById('slOut');
+        const dest = document.getElementById('slDest').value.trim();
+        const smn = document.getElementById('slMn').value;
+        const fee = parseInt(document.getElementById('slFee').value, 10) || 2;
+        const a2 = spLedgerLoad(), net2 = (a2[0] && a2[0].net) || 'test';
+        if (!dest) { out2.innerHTML = '<p class="muted">Informe o destino.</p>'; return; }
+        out2.innerHTML = '<p class="loading">Montando e assinando…</p>';
+        try {
+          const built = Wsh.silentPaymentSpend({ mnemonic: smn, network: net2, inputs: a2, toAddress: dest, feeRate: fee });
+          document.getElementById('slMn').value = '';
+          out2.innerHTML = `<div class="banner ok">Transação pronta — <strong>${built.sent} sats</strong> (taxa ${built.fee}, ${built.inputsCount} entradas).</div>
+            <div class="payload"><div class="muted small">txid: ${esc(built.txid)}</div><textarea readonly rows="3" class="mono small" style="width:100%">${esc(built.hex)}</textarea></div>
+            <button id="slBc" class="btn">📡 Transmitir agora</button><div id="slBcOut"></div>`;
+          document.getElementById('slBc').addEventListener('click', async () => {
+            const bo = document.getElementById('slBcOut'); bo.innerHTML = '<p class="loading">Transmitindo…</p>';
+            try {
+              const rr = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: built.hex });
+              const body = await rr.text();
+              if (!rr.ok) throw new Error(body || ('HTTP ' + rr.status));
+              bo.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">ver no explorer</a></div>`;
+              spLedgerSave([]); renderSpLedger();
+            } catch (be) { bo.innerHTML = `<p class="muted">Falha ao transmitir: ${esc(be.message)}</p>`; }
+          });
+        } catch (er) { out2.innerHTML = `<p class="muted">${esc(er.message)}</p>`; }
+      });
+    });
+  }
+
   document.getElementById('spScan').addEventListener('submit', async e => {
     e.preventDefault();
     const o = document.getElementById('spScanOut');
@@ -1588,6 +1656,7 @@ function viewSoberania() {
         o.innerHTML = `<div class="banner ok">🎉 ${res.found.length} output(s) seu(s)! Total ${(total / 1e8).toFixed(8)} tBTC.</div>`
           + res.found.map(f => `<div class="payload"><div class="muted small">vout ${f.vout} · ${f.valueSats} sats</div><div class="mono small" style="word-break:break-all">chave: ${esc(f.xonly)}</div></div>`).join('')
           + nota
+          + `<div class="regactions"><input id="spSaveLabel" placeholder="rótulo (ex.: cliente X)" autocomplete="off" spellcheck="false" style="flex:1"><button type="button" id="spSaveLedger" class="btn-ghost">💾 Salvar no painel</button></div>`
           + `<div class="agstep" style="margin-top:12px"><h3>Gastar estes recebimentos</h3>
               <p class="muted small">Varre <strong>todos</strong> os ${res.found.length} output(s) acima para um endereço só.</p>
               <form id="spSpend" class="regform">
@@ -1596,6 +1665,12 @@ function viewSoberania() {
                 <label>Taxa (sat/vB)<input type="number" id="spFee" min="1" step="1" value="2"></label>
                 <button type="submit">Montar transação</button>
               </form><div id="spSpendOut"></div></div>`;
+        document.getElementById('spSaveLedger').addEventListener('click', () => {
+          const label = document.getElementById('spSaveLabel').value.trim();
+          const added = spLedgerAdd(res.found.map(f => ({ txid, vout: f.vout, xonly: f.xonly, tweak: f.tweak, valueSats: f.valueSats })), label, net);
+          renderSpLedger();
+          document.getElementById('spSaveLedger').textContent = added > 0 ? `✓ ${added} salvo(s) no painel` : 'já estavam no painel';
+        });
         document.getElementById('spSpend').addEventListener('submit', async ev => {
           ev.preventDefault();
           const so = document.getElementById('spSpendOut');
@@ -1605,7 +1680,7 @@ function viewSoberania() {
           if (!dest) { so.innerHTML = '<p class="muted">Informe o endereço de destino.</p>'; return; }
           so.innerHTML = '<p class="loading">Montando e assinando…</p>';
           try {
-            const built = Wsh.silentPaymentSpend({ mnemonic: smn, network: net, sourceTxid: txid, outputs: res.found, toAddress: dest, feeRate: fee });
+            const built = Wsh.silentPaymentSpend({ mnemonic: smn, network: net, inputs: res.found.map(f => ({ ...f, txid })), toAddress: dest, feeRate: fee });
             document.getElementById('spSpendMn').value = '';
             so.innerHTML = `<div class="banner ok">Transação pronta — <strong>${built.sent} sats</strong> para o destino (taxa ${built.fee} sats).</div>
               <div class="payload"><div class="muted small">txid: ${esc(built.txid)}</div><textarea readonly rows="3" class="mono small" style="width:100%">${esc(built.hex)}</textarea></div>
@@ -1624,6 +1699,7 @@ function viewSoberania() {
       }
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
+  renderSpLedger();
 }
 
 /* =================== Guia (assistente educacional com IA) =================== */

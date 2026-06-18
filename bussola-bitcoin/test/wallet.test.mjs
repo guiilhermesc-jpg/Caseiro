@@ -183,9 +183,9 @@ eq('SP/scan: nada quando não é seu', silentPaymentScanTx({ scanPriv: '0f694e06
   const xonly = hex.encode(B.add(Pt.BASE.multiply(BigInt('0x' + tweak) % nn)).toRawBytes(true).slice(1)); // P_k = B_spend + t·G
   const toAddr = 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx';
   const src = 'aa'.repeat(32);
-  const r = silentPaymentSpend({ mnemonic: M, network: 'test', sourceTxid: src, outputs: [{ vout: 0, xonly, tweak, valueSats: 100000 }], toAddress: toAddr, feeRate: 2 });
+  const r = silentPaymentSpend({ mnemonic: M, network: 'test', inputs: [{ txid: src, vout: 0, xonly, tweak, valueSats: 100000 }], toAddress: toAddr, feeRate: 2 });
   eq('SP/spend: gera txid', /^[0-9a-f]{64}$/.test(r.txid), true);
-  eq('SP/spend: 1 entrada', r.inputs, 1);
+  eq('SP/spend: 1 entrada', r.inputsCount, 1);
   eq('SP/spend: valor após taxa', r.sent, 100000 - r.fee);
   const dtx = btc.Transaction.fromRaw(hex.decode(r.hex));
   const wsig = dtx.getInput(0).finalScriptWitness[0];
@@ -195,10 +195,14 @@ eq('SP/scan: nada quando não é seu', silentPaymentScanTx({ scanPriv: '0f694e06
   v.addOutputAddress(toAddr, BigInt(r.sent), btc.TEST_NETWORK);
   const sh = v.preimageWitnessV1(0, [hex.decode('5120' + xonly)], 0, [100000n]);
   eq('SP/spend: testemunha confere com a chave de saída (independente)', schnorr.verify(wsig, sh, hex.decode(xonly)), true);
-  let threw = false; try { silentPaymentSpend({ mnemonic: M, network: 'test', sourceTxid: src, outputs: [{ vout: 0, xonly, tweak: '00'.repeat(31) + '01', valueSats: 100000 }], toAddress: toAddr }); } catch { threw = true; }
+  let threw = false; try { silentPaymentSpend({ mnemonic: M, network: 'test', inputs: [{ txid: src, vout: 0, xonly, tweak: '00'.repeat(31) + '01', valueSats: 100000 }], toAddress: toAddr }); } catch { threw = true; }
   eq('SP/spend: recusa output que não é seu', threw, true);
-  let dust = false; try { silentPaymentSpend({ mnemonic: M, network: 'test', sourceTxid: src, outputs: [{ vout: 0, xonly, tweak, valueSats: 200 }], toAddress: toAddr }); } catch { dust = true; }
+  let dust = false; try { silentPaymentSpend({ mnemonic: M, network: 'test', inputs: [{ txid: src, vout: 0, xonly, tweak, valueSats: 200 }], toAddress: toAddr }); } catch { dust = true; }
   eq('SP/spend: recusa valor abaixo do mínimo', dust, true);
+  // sweep de DOIS txids diferentes numa só transação
+  const r2 = silentPaymentSpend({ mnemonic: M, network: 'test', inputs: [{ txid: 'aa'.repeat(32), vout: 0, xonly, tweak, valueSats: 100000 }, { txid: 'bb'.repeat(32), vout: 1, xonly, tweak, valueSats: 50000 }], toAddress: toAddr, feeRate: 2 });
+  eq('SP/spend: sweep multi-txid 2 entradas', r2.inputsCount, 2);
+  eq('SP/spend: multi soma entradas', r2.sent, 150000 - r2.fee);
 }
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
