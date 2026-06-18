@@ -531,6 +531,21 @@ export function silentPaymentSpend({ mnemonic, network = 'test', inputs, toAddre
   return { hex: tx.hex, txid: tx.id, fee: Number(fee), totalIn: Number(totalIn), sent: Number(send), inputsCount: inputs.length };
 }
 
+/* Monta um link de cobrança BIP-21 (bitcoin:<endereço>?amount=&label=&message=). Funciona com
+ * endereço SP ou comum. amount em BTC, sem zeros supérfluos; label/message URL-encoded. */
+export function buildPaymentURI({ address, amountBtc, label, message }) {
+  if (!address) throw new Error('Endereço ausente.');
+  const params = [];
+  if (amountBtc != null && String(amountBtc).trim() !== '') {
+    const a = Number(amountBtc);
+    if (!(a > 0)) throw new Error('Valor inválido.');
+    params.push('amount=' + a.toFixed(8).replace(/\.?0+$/, ''));
+  }
+  if (label) params.push('label=' + encodeURIComponent(label));
+  if (message) params.push('message=' + encodeURIComponent(message));
+  return 'bitcoin:' + address + (params.length ? '?' + params.join('&') : '');
+}
+
 export function makeQR(text, cell = 3) {
   try {
     const qr = qrcode(0, 'L'); qr.addData(String(text)); qr.make();

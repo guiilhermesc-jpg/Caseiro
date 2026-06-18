@@ -1560,8 +1560,27 @@ function viewSoberania() {
       o.innerHTML = `<div class="banner ok">Seu endereço Silent Payment (${r.network === 'main' ? 'mainnet' : 'testnet'}):</div>
         <textarea class="mono" rows="3" readonly>${esc(r.address)}</textarea>
         ${qr ? `<div class="qr">${qr}</div>` : ''}
+        <details class="agstep" style="margin-top:12px"><summary><strong>💳 Gerar cobrança</strong> — peça um valor (vira link + QR)</summary>
+          <form id="spReq" class="regform" style="margin-top:8px">
+            <label>Valor (BTC)<input id="spReqAmt" type="number" min="0" step="0.00000001" placeholder="0.001"></label>
+            <label style="grid-column:1/-1">Mensagem (opcional)<input id="spReqMsg" autocomplete="off" placeholder="ex.: fatura #123"></label>
+            <button type="submit">Gerar link + QR</button>
+          </form><div id="spReqOut"></div></details>
         <details class="small"><summary>chaves de visão/gasto (avançado)</summary>
         <div class="muted small mono" style="word-break:break-all">scan: ${esc(r.scanPub)}<br>spend: ${esc(r.spendPub)}</div></details>`;
+      document.getElementById('spReq').addEventListener('submit', ev => {
+        ev.preventDefault();
+        const ro = document.getElementById('spReqOut');
+        try {
+          const uri = Wsh.buildPaymentURI({ address: r.address, amountBtc: document.getElementById('spReqAmt').value, message: document.getElementById('spReqMsg').value.trim() });
+          const rq = Wsh.makeQR(uri);
+          ro.innerHTML = `<div class="banner ok">Cobrança pronta — envie o link ou mostre o QR:</div>
+            <textarea class="mono" rows="3" readonly>${esc(uri)}</textarea>
+            ${rq ? `<div class="qr">${rq}</div>` : ''}
+            <button type="button" id="spReqCopy" class="btn-ghost">📋 Copiar link</button>`;
+          document.getElementById('spReqCopy').addEventListener('click', () => { try { navigator.clipboard.writeText(uri); } catch {} document.getElementById('spReqCopy').textContent = '✓ copiado'; });
+        } catch (e2) { ro.innerHTML = `<p class="muted">${esc(e2.message)}</p>`; }
+      });
       document.getElementById('spMn').value = '';
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
@@ -1582,12 +1601,34 @@ function viewSoberania() {
     const total = a.reduce((s, e) => s + (e.valueSats || 0), 0);
     box.innerHTML = `<h3>📥 Painel de recebimentos</h3>
       <div class="cards"><div class="card"><h3>Recebido (saldo)</h3><div class="big">${(total / 1e8).toFixed(8)} tBTC</div><div class="sub muted">${a.length} recebimento(s) · ${total} sats</div></div></div>
-      <div class="tablewrap"><table><thead><tr><th>Quando</th><th>Valor</th><th>Rótulo</th><th>Origem</th><th></th></tr></thead><tbody>
-        ${a.map((e, i) => `<tr><td>${new Date(e.addedAt).toLocaleDateString('pt-BR')}</td><td>${e.valueSats} sats</td><td>${esc(e.label || '—')}</td><td class="mono small">${esc(e.txid.slice(0, 8))}…:${e.vout}</td><td><button class="del" data-i="${i}" title="Remover">✕</button></td></tr>`).join('')}
+      <div class="tablewrap"><table><thead><tr><th>Quando</th><th>Valor</th><th>Rótulo</th><th>Origem</th><th>IR</th><th></th></tr></thead><tbody>
+        ${a.map((e, i) => `<tr><td>${new Date(e.addedAt).toLocaleDateString('pt-BR')}</td><td>${e.valueSats} sats</td><td>${esc(e.label || '—')}</td><td class="mono small">${esc(e.txid.slice(0, 8))}…:${e.vout}</td><td title="${e.regd ? 'registrado no IR' : 'não registrado'}">${e.regd ? '✓' : '—'}</td><td><button class="del" data-i="${i}" title="Remover">✕</button></td></tr>`).join('')}
       </tbody></table></div>
-      <div class="regactions"><button id="spLedgerSpend" class="btn">💸 Gastar saldo do painel</button><button id="spLedgerExport" class="btn-ghost">⬇️ Exportar CSV</button></div>
+      <div class="regactions"><button id="spLedgerSpend" class="btn">💸 Gastar saldo do painel</button><button id="spLedgerReg" class="btn-ghost">🧮 Registrar pro IR</button><button id="spLedgerExport" class="btn-ghost">⬇️ Exportar CSV</button></div>
       <div id="spLedgerOut"></div>`;
     box.querySelectorAll('.del').forEach(b => b.addEventListener('click', () => { const a2 = spLedgerLoad(); a2.splice(+b.dataset.i, 1); spLedgerSave(a2); renderSpLedger(); }));
+    document.getElementById('spLedgerReg').addEventListener('click', async () => {
+      const lo = document.getElementById('spLedgerOut');
+      const a2 = spLedgerLoad(), pend = a2.filter(e => !e.regd);
+      if (!pend.length) { lo.innerHTML = '<p class="muted small">Todos os recebimentos já estão no Registro (IR).</p>'; return; }
+      lo.innerHTML = '<p class="loading">Buscando o preço do BTC em R$…</p>';
+      try {
+        const rr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl', { cache: 'no-store' });
+        const preco = (await rr.json())?.bitcoin?.brl;
+        if (!(preco > 0)) throw new Error('preço indisponível');
+        const reg = regLoad();
+        let n = 0;
+        for (const e of a2) {
+          if (e.regd) continue;
+          const btc = e.valueSats / 1e8;
+          reg.push({ data: new Date(e.addedAt).toISOString().slice(0, 10), valor: btc * preco, preco });
+          e.regd = true; n++;
+        }
+        reg.sort((x, y) => x.data < y.data ? -1 : 1); regSave(reg); spLedgerSave(a2);
+        renderSpLedger();
+        document.getElementById('spLedgerOut').innerHTML = `<div class="banner ok">✅ ${n} recebimento(s) lançado(s) no Registro a ${BRL.format(preco)}/BTC. Confira/edite na aba <strong>Registro</strong> (o custo de aquisição usa o preço de hoje — ajuste se o recebimento foi em outra data).</div>`;
+      } catch (er) { lo.innerHTML = `<p class="muted">Não consegui o preço em R$ agora (${esc(er.message)}). Tente de novo.</p>`; }
+    });
     document.getElementById('spLedgerExport').addEventListener('click', () => {
       const a2 = spLedgerLoad(); if (!a2.length) return;
       const linhas = a2.map(e => [new Date(e.addedAt).toISOString().slice(0, 10), e.valueSats, (e.valueSats / 1e8).toFixed(8), String(e.label || '').replace(/;/g, ','), e.txid + ':' + e.vout].join(';'));
