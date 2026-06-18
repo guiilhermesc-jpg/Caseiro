@@ -3,6 +3,19 @@
 Formato: data — versão — destaques. Projeto educacional, offline-first, autocustódia
 testnet-first. Não é recomendação de investimento.
 
+## 2026-06-16 — v0.5 (soberania avançada)
+- **Silent Payments (BIP-352)** completo: endereço reutilizável (`sp1…/tsp1…`), **envio** a partir
+  da carteira testnet, e **scanner de recebimentos** (cole um txid → acha os outputs que são seus).
+  Cada etapa validada contra os vetores oficiais (endereço, output x-only e tweak).
+- **Cofre de herança com timelock** (covenant P2WSH na testnet): herdeiro gasta após o tempo,
+  dono gasta a qualquer momento; construção verificada por sighash.
+- **Recuperação social (Shamir k-de-N)**: divide a seed em N partes, recompõe com k.
+- **Guia IA**: assistente educacional client-side com a **chave do próprio usuário** (BYO-key,
+  guardada só no navegador) — custo zero pro app.
+- **Tema claro premium** (bege/branco + roxo) com sombras suaves.
+- **Simulador de DCA** corrigido: fonte dupla — CoinGecko (grátis, até 1 ano) e **brapi.dev**
+  (BRL multi-ano) com **BYO-key** salva só no aparelho.
+
 ## 2026-06-16 — v0.4 (sessão de build profunda)
 - **Soberania** (aba nova): Raio-X (nota + plano de ação), Legado (plano de herança com
   imprimir/PDF/`.md`), Cofre (backup AES-256-GCM), Prova de Integridade (SHA-256).

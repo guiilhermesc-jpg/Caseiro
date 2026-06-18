@@ -8,7 +8,7 @@ import { HDKey } from '@scure/bip32';
 import { base58check, bech32, bech32m, base64, hex } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
-import { secp256k1 } from '@noble/curves/secp256k1';
+import { secp256k1, schnorr } from '@noble/curves/secp256k1';
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic, mnemonicToEntropy, entropyToMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import * as btc from '@scure/btc-signer';
@@ -489,6 +489,47 @@ export function silentPaymentScan({ mnemonic, network = 'test', tx }) {
   return { found, scannedOutputs: outputs.length, inputsUsed: inputPubKeys.length, inputsTotal: vin.length };
 }
 
+/* Gasta (sweep) recebimentos Silent Payment detectados pelo scanner. Cada output é taproot
+ * key-path cuja chave de saída é o próprio P_k (sem o tweak do BIP-341): a chave de gasto é
+ * d = (b_spend + tweak) mod n. Assina via Schnorr (BIP-340) sobre o sighash BIP-341 e finaliza. */
+export function silentPaymentSpend({ mnemonic, network = 'test', sourceTxid, outputs, toAddress, feeRate = 2 }) {
+  const mm = String(mnemonic).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!validateMnemonic(mm, wordlist)) throw new Error('Frase de recuperação inválida.');
+  if (!/^[0-9a-fA-F]{64}$/.test(String(sourceTxid || ''))) throw new Error('txid de origem inválido.');
+  if (!outputs || !outputs.length) throw new Error('Nenhum output Silent Payment para gastar.');
+  if (!toAddress) throw new Error('Informe o endereço de destino.');
+  const cfg = SP_NET[network] || SP_NET.test;
+  const P = secp256k1.ProjectivePoint, n = secp256k1.CURVE.n;
+  const bSpend = BigInt('0x' + hex.encode(HDKey.fromMasterSeed(mnemonicToSeedSync(mm)).derive(cfg.spend).privateKey));
+  const tx = new btc.Transaction();
+  const signers = []; let totalIn = 0n;
+  for (const o of outputs) {
+    if (!/^[0-9a-f]{64}$/.test(String(o.xonly)) || !/^[0-9a-f]{64}$/.test(String(o.tweak))) throw new Error('Output SP inválido (xonly/tweak).');
+    const script = hex.decode('5120' + o.xonly), amount = BigInt(o.valueSats);
+    const d = (bSpend + BigInt('0x' + o.tweak)) % n;
+    if (d === 0n) throw new Error('Chave de gasto derivada é inválida.');
+    if (hex.encode(P.BASE.multiply(d).toRawBytes(true).slice(1)) !== o.xonly) throw new Error('Output não confere com a sua chave (seed/tweak errado?).');
+    tx.addInput({ txid: hex.decode(sourceTxid), index: o.vout, witnessUtxo: { script, amount } });
+    signers.push({ d, script, amount, xonly: o.xonly });
+    totalIn += amount;
+  }
+  const vsize = outputs.length * 58 + 43 + 11; // entradas taproot key-path + 1 saída + overhead
+  const fee = BigInt(Math.ceil(vsize * Math.max(1, feeRate)));
+  const send = totalIn - fee;
+  if (send < 546n) throw new Error(`Valor após a taxa (${send} sats) fica abaixo do mínimo. Junte mais outputs ou reduza a taxa.`);
+  tx.addOutputAddress(toAddress, send, NET);
+  const scripts = signers.map(s => s.script), amounts = signers.map(s => s.amount);
+  for (let i = 0; i < signers.length; i++) {
+    const { d, xonly } = signers[i];
+    const sighash = tx.preimageWitnessV1(i, scripts, btc.SigHash.DEFAULT, amounts);
+    const sig = schnorr.sign(sighash, hex.decode(d.toString(16).padStart(64, '0')));
+    if (!schnorr.verify(sig, sighash, hex.decode(xonly))) throw new Error(`Assinatura Schnorr não verificou (input ${i}).`);
+    tx.updateInput(i, { tapKeySig: sig });
+  }
+  tx.finalize();
+  return { hex: tx.hex, txid: tx.id, fee: Number(fee), totalIn: Number(totalIn), sent: Number(send), inputs: outputs.length };
+}
+
 export function makeQR(text, cell = 3) {
   try {
     const qr = qrcode(0, 'L'); qr.addData(String(text)); qr.make();
@@ -510,11 +551,33 @@ export function sha256Hex(bytes) { return hex.encode(sha256(bytes)); }
 /* =================== Util fiscal (estimativa educacional) =================== */
 /* Estimativa de ganho de capital em VENDA. Parâmetros (limite/alíquota) são EDITÁVEIS pelo
  * usuário porque as regras mudam — isto NÃO é cálculo oficial nem recomendação. */
-export function estimarImposto({ vendaMes = 0, valorVenda = 0, custo = 0, limite = 35000, aliquota = 15 }) {
+/* Tabela progressiva de ganho de capital (pessoa física, Brasil): alíquota por faixa de ganho. */
+export const FAIXAS_GANHO_CAPITAL = [
+  { ate: 5_000_000, aliq: 15 },
+  { ate: 10_000_000, aliq: 17.5 },
+  { ate: 30_000_000, aliq: 20 },
+  { ate: Infinity, aliq: 22.5 },
+];
+/* Imposto sobre o ganho aplicando a tabela progressiva faixa a faixa. */
+export function impostoProgressivo(ganho) {
+  let resto = Math.max(0, Number(ganho)), base = 0, imposto = 0;
+  for (const f of FAIXAS_GANHO_CAPITAL) {
+    const faixa = Math.min(resto, f.ate - base);
+    if (faixa > 0) { imposto += faixa * f.aliq / 100; resto -= faixa; }
+    base = f.ate;
+    if (resto <= 0) break;
+  }
+  return imposto;
+}
+/* Estimador educacional. Isenção quando as vendas do mês ≤ limite (ou sem ganho). Por padrão usa a
+ * tabela progressiva; passe `aliquota` (e progressivo:false) para forçar uma alíquota fixa. */
+export function estimarImposto({ vendaMes = 0, valorVenda = 0, custo = 0, limite = 35000, aliquota = null, progressivo = true }) {
   const ganho = Number(valorVenda) - Number(custo);
   const isento = Number(vendaMes) <= Number(limite) || ganho <= 0;
-  const imposto = isento ? 0 : ganho * (Number(aliquota) / 100);
-  return { ganho, isento, imposto };
+  const usaProg = progressivo && (aliquota === null || aliquota === undefined);
+  const imposto = isento ? 0 : (usaProg ? impostoProgressivo(ganho) : ganho * (Number(aliquota) / 100));
+  const aliquotaEfetiva = (!isento && ganho > 0) ? imposto / ganho * 100 : 0;
+  return { ganho, isento, imposto, aliquotaEfetiva, progressivo: usaProg };
 }
 
 export const version = '0.3.0';

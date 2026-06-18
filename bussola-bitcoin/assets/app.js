@@ -423,8 +423,12 @@ function viewRegistro() {
       <form id="dcaForm" class="regform">
         <label>Valor por mês (R$)<input type="number" id="dValor" min="0" step="10" value="200"></label>
         <label>Período<select id="dAnos"><option value="1">1 ano</option><option value="2">2 anos</option><option value="3" selected>3 anos</option><option value="5">5 anos</option></select></label>
+        <label style="grid-column:1/-1">Chave brapi.dev <span class="muted small">(opcional — necessária p/ mais de 1 ano)</span>
+          <input type="password" id="dKey" autocomplete="off" spellcheck="false" placeholder="cole a chave — fica só neste navegador, nunca sai daqui"></label>
         <button type="submit">Simular</button>
       </form>
+      <p class="muted small">Sem chave, uso o CoinGecko (grátis, até 1 ano). Para 2–5 anos em BRL, pegue uma
+      chave gratuita em <strong>brapi.dev</strong> — ela é salva <strong>só no seu aparelho</strong>.</p>
       <div id="dcaOut"></div>
 
       <h2>🧾 Estimador de imposto <span class="muted small">venda · educacional</span></h2>
@@ -436,7 +440,8 @@ function viewRegistro() {
         <label>Valor desta venda (R$)<input type="number" id="txVenda" min="0" step="0.01"></label>
         <label>Custo de aquisição vendido (R$)<input type="number" id="txCusto" min="0" step="0.01"></label>
         <label>Limite de isenção mensal (R$)<input type="number" id="txLimite" min="0" step="0.01" value="35000"></label>
-        <label>Alíquota (%)<input type="number" id="txAliq" min="0" step="0.1" value="15"></label>
+        <label style="grid-column:1/-1"><input type="checkbox" id="txProg" checked> Usar tabela progressiva de ganho de capital (15% → 22,5%)</label>
+        <label>Alíquota fixa (%) <span class="muted small">se desmarcar acima</span><input type="number" id="txAliq" min="0" step="0.1" value="15"></label>
         <button type="submit">Estimar</button>
       </form>
       <div id="taxOut"></div>
@@ -500,18 +505,53 @@ function viewRegistro() {
     if (confirm('Apagar todas as compras registradas?')) { regSave([]); renderList(); renderSummary(); }
   });
 
+  const dKeyEl = document.getElementById('dKey');
+  try { const sk = localStorage.getItem('bussola_brapi_key'); if (sk && dKeyEl) dKeyEl.value = sk; } catch {}
+
+  // brapi.dev (BRL nativo, histórico multi-ano) — usa a chave do próprio usuário (BYO-key)
+  async function dcaBrapi(years, key) {
+    const range = years <= 1 ? '1y' : years <= 2 ? '2y' : '5y';
+    const url = `https://brapi.dev/api/v2/crypto?coin=BTC&currency=BRL&range=${range}&interval=1mo&token=${encodeURIComponent(key)}`;
+    const r = await fetch(url, { cache: 'no-store' });
+    if (r.status === 401 || r.status === 403) throw new Error('chave brapi recusada (401/403)');
+    if (!r.ok) throw new Error('brapi HTTP ' + r.status);
+    const j = await r.json();
+    const coin = (j.coins && j.coins[0]) || (j.results && j.results[0]);
+    const hist = coin && coin.historicalDataPrice;
+    if (!Array.isArray(hist) || hist.length < 2) throw new Error('brapi sem histórico (confira o plano da chave)');
+    const cutoff = Date.now() - years * 365.25 * 86400e3;
+    const prices = hist.filter(h => h && h.close > 0).map(h => [h.date * 1000, h.close]).filter(p => p[0] >= cutoff);
+    if (coin.regularMarketPrice > 0) prices.push([Date.now(), coin.regularMarketPrice]); // preço de hoje ao vivo
+    return prices;
+  }
+  // CoinGecko grátis (sem chave) — limite de 365 dias no plano público
+  async function dcaGecko(years) {
+    if (years > 1) throw new Error('NEED_KEY');
+    const r = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=365', { cache: 'no-store' });
+    if (!r.ok) throw new Error('CoinGecko HTTP ' + r.status);
+    const prices = (await r.json()).prices || [];
+    if (prices.length < 2) throw new Error('sem dados');
+    return prices;
+  }
+
   document.getElementById('dcaForm').addEventListener('submit', async e => {
     e.preventDefault();
     const monthly = parseFloat(document.getElementById('dValor').value);
     const years = parseInt(document.getElementById('dAnos').value, 10);
+    const key = (dKeyEl && dKeyEl.value.trim()) || '';
     const out = document.getElementById('dcaOut');
     if (!(monthly > 0)) { out.innerHTML = '<p class="muted">Informe um valor mensal maior que zero.</p>'; return; }
     out.innerHTML = '<p class="loading">Buscando preços históricos reais…</p>';
     try {
-      const r = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=${years * 365}`, { cache: 'no-store' });
-      if (!r.ok) throw new Error(r.status);
-      const prices = (await r.json()).prices || [];
-      if (prices.length < 2) throw new Error('sem dados');
+      let prices, source;
+      if (key) { try { localStorage.setItem('bussola_brapi_key', key); } catch {} prices = await dcaBrapi(years, key); source = 'brapi.dev'; }
+      else {
+        try { prices = await dcaGecko(years); source = 'CoinGecko'; }
+        catch (ne) {
+          if (ne.message === 'NEED_KEY') { out.innerHTML = `<div class="banner warn">Para <strong>${years} anos</strong> em BRL preciso de uma chave gratuita do <strong>brapi.dev</strong> — o CoinGecko grátis só vai até 1 ano. Cole a chave no campo acima (fica só neste navegador).</div>`; return; }
+          throw ne;
+        }
+      }
       const s = simulateDCA(prices, monthly);
       const lucro = s.value - s.invested, pct = s.invested > 0 ? lucro / s.invested * 100 : 0, up = lucro >= 0;
       out.innerHTML = `<div class="cards">
@@ -520,10 +560,10 @@ function viewRegistro() {
         <div class="card"><h3>Valor hoje</h3><div class="big">${BRL.format(s.value)}</div>
           <div class="sub"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${BRL.format(Math.abs(lucro))} (${Math.abs(pct).toFixed(0)}%)</span></div></div>
       </div>
-      <div class="banner warn">⚠️ Simulação com <strong>dados reais do passado</strong> (CoinGecko).
+      <div class="banner warn">⚠️ Simulação com <strong>dados reais do passado</strong> (${source}).
       <strong>Resultado passado NÃO garante futuro.</strong> Educacional, não é recomendação.</div>`;
     } catch (err) {
-      out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${err.message}). Tente de novo online.</p>`;
+      out.innerHTML = `<p class="muted">Não consegui buscar o histórico agora (${esc(String(err.message))}). ${key ? 'Confira sua chave/plano no brapi.dev.' : 'Tente online ou adicione uma chave brapi.dev para períodos longos.'}</p>`;
     }
   });
 
@@ -531,14 +571,19 @@ function viewRegistro() {
     e.preventDefault();
     const W = window.BussolaWallet, o = document.getElementById('taxOut');
     if (!W || !W.estimarImposto) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
+    const prog = document.getElementById('txProg').checked;
     const r = W.estimarImposto({
       vendaMes: parseFloat(document.getElementById('txMes').value) || 0,
       valorVenda: parseFloat(document.getElementById('txVenda').value) || 0,
       custo: parseFloat(document.getElementById('txCusto').value) || 0,
       limite: parseFloat(document.getElementById('txLimite').value) || 35000,
-      aliquota: parseFloat(document.getElementById('txAliq').value) || 15,
+      progressivo: prog,
+      aliquota: prog ? null : (parseFloat(document.getElementById('txAliq').value) || 15),
     });
-    o.innerHTML = `<div class="banner ${r.isento ? 'ok' : 'warn'}">Ganho estimado: <strong>${BRL.format(r.ganho)}</strong> · ${r.isento ? '<strong>Isento</strong> nesta estimativa' : 'Imposto estimado: <strong>' + BRL.format(r.imposto) + '</strong>'}.</div>
+    const detalhe = r.isento ? '<strong>Isento</strong> nesta estimativa'
+      : `Imposto estimado: <strong>${BRL.format(r.imposto)}</strong> <span class="muted small">(alíq. efetiva ${r.aliquotaEfetiva.toFixed(1)}%${r.progressivo ? ', tabela progressiva' : ''})</span>`;
+    o.innerHTML = `<div class="banner ${r.isento ? 'ok' : 'warn'}">Ganho estimado: <strong>${BRL.format(r.ganho)}</strong> · ${detalhe}.</div>
+      ${r.isento ? '' : '<p class="muted small">Recolhimento via <strong>DARF</strong> (ganho de capital, pessoa física) até o último dia útil do mês seguinte à venda.</p>'}
       <p class="muted small">Estimativa educacional. Confirme as regras vigentes e seu enquadramento com contador(a).</p>`;
   });
 
@@ -1541,8 +1586,41 @@ function viewSoberania() {
       } else {
         const total = res.found.reduce((s, f) => s + (f.valueSats || 0), 0);
         o.innerHTML = `<div class="banner ok">🎉 ${res.found.length} output(s) seu(s)! Total ${(total / 1e8).toFixed(8)} tBTC.</div>`
-          + res.found.map(f => `<div class="payload"><div class="muted small">vout ${f.vout} · ${f.valueSats} sats</div><div class="mono small" style="word-break:break-all">chave: ${esc(f.xonly)}<br>tweak p/ gastar: ${esc(f.tweak)}</div></div>`).join('')
-          + `${nota}<p class="muted small">Para gastar: chave privada = (spend_priv + tweak) mod n. (Gasto dos recebimentos SP: roadmap.)</p>`;
+          + res.found.map(f => `<div class="payload"><div class="muted small">vout ${f.vout} · ${f.valueSats} sats</div><div class="mono small" style="word-break:break-all">chave: ${esc(f.xonly)}</div></div>`).join('')
+          + nota
+          + `<div class="agstep" style="margin-top:12px"><h3>Gastar estes recebimentos</h3>
+              <p class="muted small">Varre <strong>todos</strong> os ${res.found.length} output(s) acima para um endereço só.</p>
+              <form id="spSpend" class="regform">
+                <label style="grid-column:1/-1">Enviar tudo para (endereço testnet)<input id="spDest" spellcheck="false" autocomplete="off" placeholder="tb1q…"></label>
+                <label style="grid-column:1/-1">Sua frase<input id="spSpendMn" autocomplete="off" spellcheck="false"></label>
+                <label>Taxa (sat/vB)<input type="number" id="spFee" min="1" step="1" value="2"></label>
+                <button type="submit">Montar transação</button>
+              </form><div id="spSpendOut"></div></div>`;
+        document.getElementById('spSpend').addEventListener('submit', async ev => {
+          ev.preventDefault();
+          const so = document.getElementById('spSpendOut');
+          const dest = document.getElementById('spDest').value.trim();
+          const smn = document.getElementById('spSpendMn').value;
+          const fee = parseInt(document.getElementById('spFee').value, 10) || 2;
+          if (!dest) { so.innerHTML = '<p class="muted">Informe o endereço de destino.</p>'; return; }
+          so.innerHTML = '<p class="loading">Montando e assinando…</p>';
+          try {
+            const built = Wsh.silentPaymentSpend({ mnemonic: smn, network: net, sourceTxid: txid, outputs: res.found, toAddress: dest, feeRate: fee });
+            document.getElementById('spSpendMn').value = '';
+            so.innerHTML = `<div class="banner ok">Transação pronta — <strong>${built.sent} sats</strong> para o destino (taxa ${built.fee} sats).</div>
+              <div class="payload"><div class="muted small">txid: ${esc(built.txid)}</div><textarea readonly rows="3" class="mono small" style="width:100%">${esc(built.hex)}</textarea></div>
+              <button id="spBroadcast" class="btn">📡 Transmitir agora</button><div id="spBcOut"></div>`;
+            document.getElementById('spBroadcast').addEventListener('click', async () => {
+              const bo = document.getElementById('spBcOut'); bo.innerHTML = '<p class="loading">Transmitindo…</p>';
+              try {
+                const rr = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: built.hex });
+                const body = await rr.text();
+                if (!rr.ok) throw new Error(body || ('HTTP ' + rr.status));
+                bo.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">ver no explorer</a></div>`;
+              } catch (be) { bo.innerHTML = `<p class="muted">Falha ao transmitir: ${esc(be.message)}</p>`; }
+            });
+          } catch (er) { so.innerHTML = `<p class="muted">${esc(er.message)}</p>`; }
+        });
       }
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
