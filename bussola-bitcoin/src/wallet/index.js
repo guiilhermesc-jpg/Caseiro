@@ -344,6 +344,25 @@ export function finalizeInheritancePsbt(psbtB64, mode = 'normal') {
   return { hex: tx.hex, txid: tx.id };
 }
 
+/* "Interruptor da vida" (dead man's switch): dado o timelock (em blocos) e as UTXOs do cofre com
+ * a altura de confirmação, calcula quantos blocos faltam para o HERDEIRO poder resgatar. O relógio
+ * de cada UTXO reinicia quando ela é movida — mover/renovar = "prova de vida". Retorna a maior
+ * contagem restante (o cofre só fica 100% resgatável quando a UTXO mais recente amadurece). */
+export function inheritanceClaimStatus({ timelock, utxos, tipHeight }) {
+  const tl = Math.max(1, timelock | 0);
+  const tip = tipHeight | 0;
+  const items = (utxos || []).map(u => {
+    const h = u.height | 0;
+    const confs = h > 0 && tip >= h ? (tip - h + 1) : 0; // 0 = ainda na mempool
+    const remaining = Math.max(0, tl - confs);
+    return { valueSats: u.valueSats | 0, height: h, confs, remaining, claimable: confs >= tl };
+  });
+  const totalSats = items.reduce((s, i) => s + i.valueSats, 0);
+  const remaining = items.length ? Math.max(...items.map(i => i.remaining)) : tl;
+  const claimableAll = items.length > 0 && items.every(i => i.claimable);
+  return { timelock: tl, items, totalSats, remaining, remainingDays: Math.ceil(remaining * 10 / 60 / 24), claimableAll };
+}
+
 /* =================== Silent Payments (BIP-352) — endereço reutilizável =================== */
 /* Um endereço estático que pode ser publicado e reusado sem perder privacidade: cada pagamento
  * cai num endereço on-chain diferente. Aqui geramos a IDENTIDADE (endereço + chaves de visão/gasto).

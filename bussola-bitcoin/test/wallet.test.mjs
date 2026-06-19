@@ -3,7 +3,7 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   addressAt, buildPsbt, signPsbtWithMnemonic, finalizePsbt, makeQR, estimarImposto, impostoProgressivo, sha256Hex, decodeQR,
   createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
   splitMnemonic, combineMnemonic,
-  inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt,
+  inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt, inheritanceClaimStatus,
   encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
   silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan,
   silentPaymentSpend, buildPaymentURI } from '../src/wallet/index.js';
@@ -203,6 +203,23 @@ eq('SP/scan: nada quando não é seu', silentPaymentScanTx({ scanPriv: '0f694e06
   const r2 = silentPaymentSpend({ mnemonic: M, network: 'test', inputs: [{ txid: 'aa'.repeat(32), vout: 0, xonly, tweak, valueSats: 100000 }, { txid: 'bb'.repeat(32), vout: 1, xonly, tweak, valueSats: 50000 }], toAddress: toAddr, feeRate: 2 });
   eq('SP/spend: sweep multi-txid 2 entradas', r2.inputsCount, 2);
   eq('SP/spend: multi soma entradas', r2.sent, 150000 - r2.fee);
+}
+
+/* Interruptor da vida (inheritanceClaimStatus): contagem regressiva da prova de vida */
+{
+  const s1 = inheritanceClaimStatus({ timelock: 144, utxos: [{ valueSats: 100000, height: 1000 }], tipHeight: 1050 });
+  eq('interruptor: confs = tip-h+1', s1.items[0].confs, 51);
+  eq('interruptor: faltam 144-51', s1.remaining, 93);
+  eq('interruptor: ainda não resgatável', s1.claimableAll, false);
+  const s2 = inheritanceClaimStatus({ timelock: 10, utxos: [{ valueSats: 5, height: 1000 }, { valueSats: 7, height: 1045 }], tipHeight: 1050 });
+  eq('interruptor: usa a UTXO mais recente (max restante)', s2.remaining, 4);
+  eq('interruptor: soma o saldo', s2.totalSats, 12);
+  const s3 = inheritanceClaimStatus({ timelock: 6, utxos: [{ valueSats: 9, height: 1000 }], tipHeight: 1010 });
+  eq('interruptor: maduro => resgatável', s3.claimableAll, true);
+  eq('interruptor: maduro => 0 restante', s3.remaining, 0);
+  const s4 = inheritanceClaimStatus({ timelock: 144, utxos: [{ valueSats: 9, height: 0 }], tipHeight: 1010 });
+  eq('interruptor: mempool conta 0 confs', s4.items[0].confs, 0);
+  eq('interruptor: dias ~ blocos*10min', inheritanceClaimStatus({ timelock: 144, utxos: [], tipHeight: 0 }).remainingDays, 1);
 }
 
 /* Cobrança BIP-21 (buildPaymentURI) */

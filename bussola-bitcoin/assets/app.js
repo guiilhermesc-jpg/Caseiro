@@ -801,11 +801,12 @@ function viewCarteira() {
       </section>
 
       <section class="watchonly">
-        <h2>🏛️ Cofre de herança <span class="soon">timelock · testnet beta</span></h2>
-        <p class="muted">Um cofre com dois caminhos de gasto: <strong>2-de-3</strong> agora (você + pessoas de confiança),
-        OU o <strong>herdeiro sozinho</strong> depois de um tempo sem movimento (timelock). Se você sumir, a herança
-        destrava; enquanto usa, ninguém mais consegue mexer.</p>
-        <div class="banner warn">⚠️ Protótipo testnet. Timelock é <strong>relativo</strong> (conta blocos desde que a UTXO foi recebida). ~144 blocos ≈ 1 dia.</div>
+        <h2>🏛️ Cofre de herança — <strong>Interruptor da Vida</strong> <span class="soon">timelock · testnet beta</span></h2>
+        <p class="muted">Um <strong>dead man's switch</strong> sem empresa e sem oráculo: <strong>2-de-3</strong> agora (você + pessoas de confiança),
+        OU o <strong>herdeiro sozinho</strong> depois de um tempo <strong>sem movimento</strong> (timelock). Enquanto você toca suas moedas
+        (<strong>prova de vida</strong>), só você manda; se você sumir, a herança abre <strong>sozinha</strong>. Use o botão
+        <strong>🫀 Status do Interruptor</strong> (passo 2) para ver a contagem regressiva.</p>
+        <div class="banner warn">⚠️ Protótipo testnet. Timelock é <strong>relativo</strong> (conta blocos desde que a UTXO foi recebida) — mover o saldo zera o relógio. ~144 blocos ≈ 1 dia.</div>
 
         <div class="agstep">
           <h3>1) Chaves (3 guardiões + 1 herdeiro)</h3>
@@ -1045,7 +1046,7 @@ function viewCarteira() {
     const utxos = [];
     await Promise.all(targets.map(async t => {
       try { const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!r.ok) return;
-        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index }); } catch {}
+        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index, height: u.status?.block_height || 0 }); } catch {}
     }));
     return utxos;
   }
@@ -1125,7 +1126,7 @@ function viewCarteira() {
     const utxos = [];
     await Promise.all(targets.map(async t => {
       try { const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!r.ok) return;
-        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index }); } catch {}
+        for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index, height: u.status?.block_height || 0 }); } catch {}
     }));
     return utxos;
   }
@@ -1148,12 +1149,31 @@ function viewCarteira() {
       o.innerHTML = `<div class="banner ok">Cofre criado: 2-de-3 OU herdeiro após ${cfg.timelock} blocos.</div>
         <div class="tablewrap"><table><thead><tr><th>Caminho</th><th>Endereço</th><th></th></tr></thead><tbody>
         ${addrs.map(a => `<tr><td>${a.path}</td><td class="mono">${a.address}</td><td><button type="button" class="btn-ghost qrbtn" data-addr="${a.address}">QR</button></td></tr>`).join('')}
-        </tbody></table></div><div class="regactions"><button type="button" class="btn-ghost" id="ihBal">Consultar saldo</button></div><div id="ihQr"></div>`;
+        </tbody></table></div><div class="regactions"><button type="button" class="btn-ghost" id="ihBal">Consultar saldo</button><button type="button" class="btn-ghost" id="ihLife">🫀 Status do Interruptor (prova de vida)</button></div><div id="ihQr"></div>`;
       o.querySelectorAll('.qrbtn').forEach(b => b.addEventListener('click', () => { const q = wallet.makeQR(b.dataset.addr); ihEl('ihQr').innerHTML = q ? `<div class="muted small mono">${esc(b.dataset.addr)}</div><div class="qr">${q}</div>` : ''; }));
       ihEl('ihBal').addEventListener('click', async () => {
         ihEl('ihQr').innerHTML = '<p class="loading">Consultando…</p>';
         const u = await scanUtxosIh(cfg), total = u.reduce((s, x) => s + x.valueSats, 0);
         ihEl('ihQr').innerHTML = `<div class="banner ok">Saldo do cofre: <strong>${BTC.format(total / 1e8)} tBTC</strong> (${u.length} UTXOs).</div>`;
+      });
+      ihEl('ihLife').addEventListener('click', async () => {
+        const box = ihEl('ihQr'); box.innerHTML = '<p class="loading">Lendo a chain (saldo + altura dos blocos)…</p>';
+        try {
+          const u = await scanUtxosIh(cfg);
+          if (!u.length) { box.innerHTML = '<div class="banner warn">Cofre vazio — envie fundos para <strong>ligar o interruptor</strong>. Enquanto houver saldo parado, o relógio da herança corre.</div>'; return; }
+          const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+          const st = wallet.inheritanceClaimStatus({ timelock: cfg.timelock, utxos: u, tipHeight: tip });
+          const saldo = `<div class="sub muted">${BTC.format(st.totalSats / 1e8)} tBTC em ${st.items.length} UTXO(s) · timelock ${st.timelock} blocos</div>`;
+          if (st.claimableAll) {
+            box.innerHTML = `<div class="banner warn">⚠️ <strong>Interruptor disparado.</strong> A inatividade atingiu o limite — o <strong>herdeiro já pode resgatar</strong> sozinho (passo 3 → Resgate). ${saldo}</div>
+              <p class="muted small">Se você está vivo e isto não era pra acontecer, <strong>mova o saldo agora</strong> (caminho normal 2-de-3) para reiniciar a prova de vida.</p>`;
+          } else {
+            const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock);
+            box.innerHTML = `<div class="banner ok">🫀 <strong>Interruptor ativo.</strong> Faltam <strong>${st.remaining} blocos (~${st.remainingDays} dias)</strong> de inatividade para a herança abrir. ${saldo}</div>
+              <div class="lifebar" style="background:var(--line);border-radius:8px;height:10px;overflow:hidden;margin:8px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>
+              <p class="muted small">${pct}% do caminho até a abertura. <strong>Prova de vida:</strong> mover o saldo do cofre (caminho normal 2-de-3) para um novo endereço do cofre <strong>zera o relógio</strong>. Mexeu = está vivo.</p>`;
+          }
+        } catch (er) { box.innerHTML = `<p class="muted">Não consegui ler a chain agora (${esc(er.message)}).</p>`; }
       });
     } catch (err) { o.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   });
