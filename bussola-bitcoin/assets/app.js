@@ -882,6 +882,7 @@ function viewCarteira() {
             <label style="grid-column:1/-1">Sua frase de herdeiro (12/24 palavras)<input id="ihhSeed" spellcheck="false" autocomplete="off"></label>
             <button type="submit">🕊️ Resgatar minha herança</button>
           </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="ihhWatch">👁️ Só acompanhar (você vai herdar isto)</button></div>
           <div id="ihHOut"></div>
         </details>
       </section>
@@ -1273,6 +1274,27 @@ function viewCarteira() {
 
   // ---- Modo Herdeiro (resgate guiado, 1 passo) ----
   (() => { try { const g = JSON.parse(localStorage.getItem(IHG_KEY) || 'null'); if (g) { ihEl('ihhA').value = g.c?.[0] || ''; ihEl('ihhB').value = g.c?.[1] || ''; ihEl('ihhC').value = g.c?.[2] || ''; ihEl('ihhHeir').value = g.h || ''; ihEl('ihhTL').value = g.t || 144; } } catch {} })();
+  ihEl('ihhWatch')?.addEventListener('click', async () => {
+    const o = ihEl('ihHOut');
+    const cfg = { cosignerXpubs: [ihEl('ihhA').value.trim(), ihEl('ihhB').value.trim(), ihEl('ihhC').value.trim()], heirXpub: ihEl('ihhHeir').value.trim(), timelock: parseInt(ihEl('ihhTL').value, 10) || 144 };
+    if (cfg.cosignerXpubs.some(x => !x) || !cfg.heirXpub) { o.innerHTML = '<p class="muted">Preencha as xpubs do cofre (estão na Carta ao Herdeiro) para acompanhar.</p>'; return; }
+    o.innerHTML = '<p class="loading">Lendo a chain (saldo + Interruptor)…</p>';
+    try {
+      const utxos = await scanUtxosIh(cfg);
+      if (!utxos.length) { o.innerHTML = '<div class="banner ok">👁️ Cofre acompanhado. Ainda <strong>sem saldo</strong> — nada a herdar por enquanto.</div>'; return; }
+      const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+      const st = wallet.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
+      const saldo = `<div class="sub muted">${BTC.format(st.totalSats / 1e8)} tBTC em ${st.items.length} UTXO(s)</div>`;
+      if (st.claimableAll) {
+        o.innerHTML = `<div class="banner warn">✅ <strong>A herança já está liberada.</strong> Você pode resgatar agora (botão acima, com sua frase de herdeiro). ${saldo}</div>`;
+      } else {
+        const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock);
+        o.innerHTML = `<div class="banner ok">👁️ <strong>Você vai herdar isto.</strong> A herança existe e está protegida; abre após <strong>${st.remaining} blocos (~${st.remainingDays} dias)</strong> de inatividade. ${saldo}</div>
+          <div class="lifebar" style="background:var(--line);border-radius:8px;height:10px;overflow:hidden;margin:8px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>
+          <p class="muted small">${pct}% do caminho até a abertura. Enquanto o titular estiver ativo (movendo o cofre), o relógio reinicia — isso é normal.</p>`;
+      }
+    } catch (er) { o.innerHTML = `<p class="muted">Não consegui ler a chain agora (${esc(er.message)}).</p>`; }
+  });
   ihEl('ihHForm').addEventListener('submit', async e => {
     e.preventDefault();
     const o = ihEl('ihHOut');
@@ -1699,18 +1721,30 @@ function viewSoberania() {
         <details class="agstep" style="margin-top:12px"><summary><strong>💳 Gerar cobrança</strong> — peça um valor (vira link + QR)</summary>
           <form id="spReq" class="regform" style="margin-top:8px">
             <label>Valor (BTC)<input id="spReqAmt" type="number" min="0" step="0.00000001" placeholder="0.001"></label>
+            <label>ou Valor (R$)<input id="spReqBrl" type="number" min="0" step="0.01" placeholder="ex.: 50,00"></label>
             <label style="grid-column:1/-1">Mensagem (opcional)<input id="spReqMsg" autocomplete="off" placeholder="ex.: fatura #123"></label>
             <button type="submit">Gerar link + QR</button>
-          </form><div id="spReqOut"></div></details>
+          </form><p class="muted small">Preencha em BTC <strong>ou</strong> em R$ (converto pelo preço ao vivo).</p><div id="spReqOut"></div></details>
         <details class="small"><summary>chaves de visão/gasto (avançado)</summary>
         <div class="muted small mono" style="word-break:break-all">scan: ${esc(r.scanPub)}<br>spend: ${esc(r.spendPub)}</div></details>`;
-      document.getElementById('spReq').addEventListener('submit', ev => {
+      document.getElementById('spReq').addEventListener('submit', async ev => {
         ev.preventDefault();
         const ro = document.getElementById('spReqOut');
         try {
-          const uri = Wsh.buildPaymentURI({ address: r.address, amountBtc: document.getElementById('spReqAmt').value, message: document.getElementById('spReqMsg').value.trim() });
+          let amountBtc = document.getElementById('spReqAmt').value;
+          const brl = parseFloat(document.getElementById('spReqBrl').value);
+          let nota = '';
+          if (!amountBtc && brl > 0) {
+            ro.innerHTML = '<p class="loading">Convertendo R$ → BTC pelo preço ao vivo…</p>';
+            const rr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl', { cache: 'no-store' });
+            const preco = (await rr.json())?.bitcoin?.brl;
+            if (!(preco > 0)) throw new Error('preço em R$ indisponível agora');
+            amountBtc = (brl / preco).toFixed(8);
+            nota = `<p class="muted small">${BRL.format(brl)} ≈ ${amountBtc} BTC (a ${BRL.format(preco)}/BTC).</p>`;
+          }
+          const uri = Wsh.buildPaymentURI({ address: r.address, amountBtc, message: document.getElementById('spReqMsg').value.trim() });
           const rq = Wsh.makeQR(uri);
-          ro.innerHTML = `<div class="banner ok">Cobrança pronta — envie o link ou mostre o QR:</div>
+          ro.innerHTML = `<div class="banner ok">Cobrança pronta — envie o link ou mostre o QR:</div>${nota}
             <textarea class="mono" rows="3" readonly>${esc(uri)}</textarea>
             ${rq ? `<div class="qr">${rq}</div>` : ''}
             <button type="button" id="spReqCopy" class="btn-ghost">📋 Copiar link</button>`;

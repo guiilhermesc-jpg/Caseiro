@@ -37,19 +37,24 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
   informa só destino + frase; o app confere o Interruptor, monta, assina e transmite o resgate.
 - **Teste de Herança / drill (Fase B, fatia 3):** "Preparar ensaio" cria um cofre de timelock
   curto (~2 blocos) e pré-preenche o Modo Herdeiro — prova ponta a ponta que a herança funciona.
+- **"Você vai herdar isto" (watch-only):** botão no Modo Herdeiro mostra saldo + status do
+  Interruptor sem precisar da frase — o herdeiro sabe, em vida, que a herança existe.
+- **Cobrança em R$:** a cobrança aceita valor em reais e converte para BTC pelo preço ao vivo.
 - **Sistema de evolução diária:** `CLAUDE.md` (regras 1 e 2), este diário e o comando
   `/evolucao`.
 
 ---
 
 ## 🔜 Próximas etapas (backlog priorizado)
-1. **"Você vai herdar isto"** — visão watch-only para o herdeiro saber, em vida, que a herança
-   existe (saldo + status do Interruptor), sem poder tocar antes do prazo.
-2. **Handle legível BIP-353** (`nome@dominio` via DNS) — sensação de chave Pix na entrada.
-   *(Depende de decisão: qual domínio usar.)*
-3. **Tiers graduados** do Interruptor (ex.: 6 meses → executor; 12 meses → herdeiros).
-4. **Lembrete de prova de vida** — alerta local periódico para "renovar" o cofre.
-5. **Cobrança em R$** — digitar o valor em reais e converter para BTC na hora (usa o preço ao vivo).
+1. **Tiers graduados** do Interruptor (ex.: 6 meses → executor; 12 meses → herdeiros). *Mexe no
+   script do covenant — exige core novo em `src/wallet` + testes. Dia dedicado.*
+2. **Lembrete de prova de vida via `.ics`** — exportar um evento de calendário recorrente para
+   "renovar" o cofre. Alerta real, **zero backend** (melhor que timestamp manual, que enganaria).
+3. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
+   — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
+
+## ✅ Entregue do backlog (limpeza de hoje)
+Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança em R$.
 
 ## 💡 Ideias de disrupção (cruas — lapidar ao longo do tempo)
 - **Identidade Bitcoin soberana única:** um só handle (BIP-353) que é como você recebe a vida
