@@ -1284,11 +1284,33 @@ const LEGADO_FIELDS = [
   { k: 'instrucoes', label: 'Instruções para o herdeiro', type: 'textarea', ph: 'Passo a passo simples de como acessar/recuperar.' },
   { k: 'carta', label: 'Carta pessoal (opcional)', type: 'textarea', ph: 'Uma mensagem para quem for cuidar disso.' },
 ];
-function legadoMarkdown(d) {
+/* Seção da Carta ao Herdeiro com os dados do cofre "Interruptor da Vida" (lidos do localStorage
+ * do passo "Montar o cofre"). Inclui xpubs públicas + timelock + passo a passo de resgate. NUNCA
+ * contém a seed. cfg = { c:[xpub1,xpub2,xpub3], h:xpubHerdeiro, t:timelockBlocos }. */
+function inheritanceLetterMarkdown(cfg) {
+  if (!cfg || !Array.isArray(cfg.c) || cfg.c.some(x => !x) || !cfg.h) return '';
+  const tl = (cfg.t | 0) || 144, dias = Math.round(tl * 10 / 60 / 24);
+  return `## Cofre "Interruptor da Vida" (herança automática)\n\n` +
+    `Este bitcoin está num **cofre com timelock** (Bitcoin Script, sem empresa). Dois caminhos:\n` +
+    `1. **Em vida:** 2 das 3 pessoas de confiança assinam juntas.\n` +
+    `2. **Herança:** o **herdeiro sozinho** resgata após **${tl} blocos (~${dias} dias)** sem nenhum movimento no cofre.\n\n` +
+    `### Dados do cofre (públicos — NÃO são a seed)\n` +
+    `- Guardião 1 (xpub): \`${cfg.c[0]}\`\n- Guardião 2 (xpub): \`${cfg.c[1]}\`\n- Guardião 3 (xpub): \`${cfg.c[2]}\`\n` +
+    `- Herdeiro (xpub): \`${cfg.h}\`\n- Timelock: **${tl} blocos**\n\n` +
+    `### Como o herdeiro resgata (passo a passo)\n` +
+    `1. Abra a Bússola → aba **Carteira** → **Cofre de herança (Interruptor da Vida)**.\n` +
+    `2. Preencha as 4 xpubs e o timelock acima (passo "Montar o cofre").\n` +
+    `3. Clique em **🫀 Status do Interruptor** e confirme que o tempo já passou (senão, espere).\n` +
+    `4. Em "Enviar do cofre", escolha o caminho **Resgate**, informe um endereço de destino seu.\n` +
+    `5. Assine com a **frase do herdeiro** (12/24 palavras guardadas à parte) e transmita.\n\n` +
+    `> A **frase do herdeiro** NÃO está neste documento — veja "Onde encontrar".\n\n`;
+}
+function legadoMarkdown(d, cofreCfg) {
   const v = x => (x && String(x).trim()) || '—';
   return `# Plano de Legado — Bitcoin\n\n**Titular:** ${v(d.titular)}\n\n**Data:** ${v(d.data)}\n\n` +
     `## Pessoas de confiança / herdeiros\n${v(d.herdeiros)}\n\n## Custódia\n${v(d.custodia)}\n\n` +
     `## Onde encontrar (NUNCA contém a seed)\n- Seed: ${v(d.localSeed)}\n- Backups: ${v(d.localBackup)}\n\n` +
+    inheritanceLetterMarkdown(cofreCfg) +
     `## Instruções para o herdeiro\n${v(d.instrucoes)}\n\n## Carta\n${v(d.carta)}\n\n` +
     `---\n*Gerado pela Bússola. Guarde em local seguro. NÃO substitui orientação jurídica (testamento/inventário).*\n`;
 }
@@ -1340,6 +1362,7 @@ function viewSoberania() {
         <h2>🕊️ Legado — plano de herança</h2>
         <div class="banner warn">⚠️ <strong>Nunca</strong> escreva sua seed aqui — só <strong>onde
         encontrá-la</strong>. Este plano não substitui testamento/inventário (procure orientação jurídica).</div>
+        <div id="lgCofreNote"></div>
         <form id="lgForm" class="regform">
           ${LEGADO_FIELDS.map(f => {
             const val = lg[f.k] ? esc(lg[f.k]) : '';
@@ -1459,20 +1482,23 @@ function viewSoberania() {
   renderRX(); renderResult();
 
   // ---- Legado ----
+  const cofreCfg = () => { try { return JSON.parse(localStorage.getItem('bussola.ihgroup.v1') || 'null'); } catch { return null; } };
   function legadoData() { const d = {}; LEGADO_FIELDS.forEach(f => { d[f.k] = (document.getElementById('lg_' + f.k) || {}).value || ''; }); return d; }
+  (() => { const c = cofreCfg(); const el = document.getElementById('lgCofreNote');
+    if (el && c && Array.isArray(c.c) && !c.c.some(x => !x) && c.h) el.innerHTML = '<div class="banner ok">🏛️ Cofre "Interruptor da Vida" detectado — seus dados e o passo a passo de resgate entram <strong>automaticamente</strong> na Carta ao Herdeiro.</div>'; })();
   document.getElementById('lgForm').addEventListener('submit', e => {
     e.preventDefault();
     try { localStorage.setItem(LG_KEY, JSON.stringify(legadoData())); } catch {}
     document.getElementById('lgOut').innerHTML = '<div class="banner ok">✅ Plano salvo no aparelho.</div>';
   });
   document.getElementById('lgExport').addEventListener('click', () => {
-    const md = legadoMarkdown(legadoData());
+    const md = legadoMarkdown(legadoData(), cofreCfg());
     const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'plano-de-legado.md'; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   document.getElementById('lgPrint').addEventListener('click', () => {
-    const md = legadoMarkdown(legadoData());
+    const md = legadoMarkdown(legadoData(), cofreCfg());
     const w = window.open('', '_blank');
     if (!w) { document.getElementById('lgOut').innerHTML = '<p class="muted">Permita pop-ups para imprimir, ou use Exportar (.md).</p>'; return; }
     w.document.write(`<!doctype html><meta charset="utf-8"><title>Plano de Legado</title>
