@@ -882,7 +882,10 @@ function viewCarteira() {
             <label style="grid-column:1/-1">Sua frase de herdeiro (12/24 palavras)<input id="ihhSeed" spellcheck="false" autocomplete="off"></label>
             <button type="submit">🕊️ Resgatar minha herança</button>
           </form>
+<<<<<<< HEAD
           <div class="regactions"><button type="button" class="btn-ghost" id="ihhWatch">👁️ Só acompanhar (você vai herdar isto)</button></div>
+=======
+>>>>>>> origin/main
           <div id="ihHOut"></div>
         </details>
       </section>
@@ -1274,6 +1277,7 @@ function viewCarteira() {
 
   // ---- Modo Herdeiro (resgate guiado, 1 passo) ----
   (() => { try { const g = JSON.parse(localStorage.getItem(IHG_KEY) || 'null'); if (g) { ihEl('ihhA').value = g.c?.[0] || ''; ihEl('ihhB').value = g.c?.[1] || ''; ihEl('ihhC').value = g.c?.[2] || ''; ihEl('ihhHeir').value = g.h || ''; ihEl('ihhTL').value = g.t || 144; } } catch {} })();
+<<<<<<< HEAD
   ihEl('ihhWatch')?.addEventListener('click', async () => {
     const o = ihEl('ihHOut');
     const cfg = { cosignerXpubs: [ihEl('ihhA').value.trim(), ihEl('ihhB').value.trim(), ihEl('ihhC').value.trim()], heirXpub: ihEl('ihhHeir').value.trim(), timelock: parseInt(ihEl('ihhTL').value, 10) || 144 };
@@ -1295,6 +1299,8 @@ function viewCarteira() {
       }
     } catch (er) { o.innerHTML = `<p class="muted">Não consegui ler a chain agora (${esc(er.message)}).</p>`; }
   });
+=======
+>>>>>>> origin/main
   ihEl('ihHForm').addEventListener('submit', async e => {
     e.preventDefault();
     const o = ihEl('ihHOut');
