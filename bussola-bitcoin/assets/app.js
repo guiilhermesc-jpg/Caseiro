@@ -855,6 +855,35 @@ function viewCarteira() {
           </form>
           <div id="ihTxOut"></div>
         </div>
+
+        <details class="agstep" id="ihDrill" style="margin-top:14px">
+          <summary><strong>🧪 Teste de Herança</strong> — ensaie o resgate (prova que funciona)</summary>
+          <p class="muted small">Prove que a herança funciona <strong>enquanto você está vivo</strong>. Crio um cofre de
+          ensaio com <strong>timelock curto (~2 blocos)</strong>; você manda um trocado da testnet e resgata pelo Modo Herdeiro.
+          Se o dinheiro voltar, está provado — sem mexer no seu cofre real.</p>
+          <div class="regactions"><button type="button" class="btn-ghost" id="ihDrillGo">Preparar ensaio</button></div>
+          <div id="ihDrillOut"></div>
+        </details>
+
+        <details class="agstep" id="ihHeirMode" style="margin-top:14px;border-top:2px solid var(--line);padding-top:14px">
+          <summary><strong>🕊️ Modo Herdeiro</strong> — você herdou? Resgate aqui, em 1 passo</summary>
+          <p class="muted small">Para quem vai <strong>receber</strong> a herança. Os dados do cofre estão na
+          <strong>Carta ao Herdeiro</strong> (xpubs + timelock) — ou já aparecem preenchidos se este for o aparelho do titular.
+          Você só precisa do <strong>seu endereço de destino</strong> e da <strong>sua frase de herdeiro</strong>. Eu confiro o
+          Interruptor, monto, assino e transmito o resgate pra você.</p>
+          <form id="ihHForm" class="regform">
+            <label style="grid-column:1/-1">Guardião A (xpub)<input id="ihhA" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Guardião B (xpub)<input id="ihhB" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Guardião C (xpub)<input id="ihhC" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Herdeiro (xpub)<input id="ihhHeir" spellcheck="false" autocomplete="off"></label>
+            <label>Timelock (blocos)<input type="number" id="ihhTL" min="1" max="65535" value="144"></label>
+            <label>Taxa (sat/vB)<input type="number" id="ihhFee" min="1" step="1" value="2"></label>
+            <label style="grid-column:1/-1">Para onde enviar — seu endereço (tb1…)<input id="ihhTo" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Sua frase de herdeiro (12/24 palavras)<input id="ihhSeed" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">🕊️ Resgatar minha herança</button>
+          </form>
+          <div id="ihHOut"></div>
+        </details>
       </section>
 
       <h2>Arquitetura completa</h2>
@@ -1216,6 +1245,67 @@ function viewCarteira() {
       const body = (await r.text()).trim(); if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
       o.innerHTML = `<div class="banner ok">✅ Transmitido! txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
     } catch (err) { o.innerHTML = `<div class="banner warn">Não transmitiu (${esc(err.message)}). Hex abaixo:</div><div id="ihHexPay"></div>`; renderPayload(ihEl('ihHexPay'), 'Tx final (hex)', fin.hex); }
+  });
+
+  // ---- Teste de Herança (ensaio com timelock curto) ----
+  ihEl('ihDrillGo')?.addEventListener('click', () => {
+    if (!wallet) return;
+    const o = ihEl('ihDrillOut');
+    const A = wallet.createMultisigCosigner(), B = wallet.createMultisigCosigner(), C = wallet.createMultisigCosigner(), H = wallet.createMultisigCosigner();
+    const cfg = { cosignerXpubs: [A.accountXpub, B.accountXpub, C.accountXpub], heirXpub: H.accountXpub, timelock: 2 };
+    const addr = wallet.inheritanceAddresses({ ...cfg, count: 1, chain: 0 })[0].address;
+    const qr = wallet.makeQR(addr);
+    o.innerHTML = `<div class="banner ok">Cofre de ensaio criado (timelock 2 blocos ≈ 20 min).</div>
+      <ol class="small">
+        <li>Mande um pouco de tBTC para o endereço do cofre:<br><span class="mono small" style="word-break:break-all">${esc(addr)}</span>
+          ${qr ? `<div class="qr">${qr}</div>` : ''}
+          <a href="https://coinfaucet.eu/en/btc-testnet/" target="_blank" rel="noopener">abrir um faucet de testnet →</a></li>
+        <li>Espere ~2 confirmações (uns 20 min).</li>
+        <li>Já preenchi o <strong>Modo Herdeiro</strong> abaixo com este ensaio (inclusive a frase do herdeiro). Coloque <strong>seu endereço de destino</strong> e clique em <strong>Resgatar minha herança</strong>.</li>
+        <li>Se o tBTC voltar pra você, <strong>está provado</strong> ✅.</li>
+      </ol>
+      <details class="small"><summary>frase do herdeiro do ensaio (já preenchida abaixo)</summary>
+        <div class="muted small mono" style="word-break:break-all">${esc(H.mnemonic)}</div></details>`;
+    ihEl('ihhA').value = A.accountXpub; ihEl('ihhB').value = B.accountXpub; ihEl('ihhC').value = C.accountXpub;
+    ihEl('ihhHeir').value = H.accountXpub; ihEl('ihhTL').value = 2; ihEl('ihhSeed').value = H.mnemonic;
+    ihEl('ihHeirMode').open = true;
+  });
+
+  // ---- Modo Herdeiro (resgate guiado, 1 passo) ----
+  (() => { try { const g = JSON.parse(localStorage.getItem(IHG_KEY) || 'null'); if (g) { ihEl('ihhA').value = g.c?.[0] || ''; ihEl('ihhB').value = g.c?.[1] || ''; ihEl('ihhC').value = g.c?.[2] || ''; ihEl('ihhHeir').value = g.h || ''; ihEl('ihhTL').value = g.t || 144; } } catch {} })();
+  ihEl('ihHForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = ihEl('ihHOut');
+    const cfg = { cosignerXpubs: [ihEl('ihhA').value.trim(), ihEl('ihhB').value.trim(), ihEl('ihhC').value.trim()], heirXpub: ihEl('ihhHeir').value.trim(), timelock: parseInt(ihEl('ihhTL').value, 10) || 144 };
+    const to = ihEl('ihhTo').value.trim(), seed = ihEl('ihhSeed').value, feeRate = parseInt(ihEl('ihhFee').value, 10) || 2;
+    if (cfg.cosignerXpubs.some(x => !x) || !cfg.heirXpub) { o.innerHTML = '<p class="muted">Preencha as 3 xpubs dos guardiões e a do herdeiro (estão na Carta ao Herdeiro).</p>'; return; }
+    if (!to || !seed) { o.innerHTML = '<p class="muted">Informe o endereço de destino e a sua frase de herdeiro.</p>'; return; }
+    o.innerHTML = '<p class="loading">Lendo a chain e conferindo o Interruptor…</p>';
+    try {
+      const utxos = await scanUtxosIh(cfg);
+      if (!utxos.length) { o.innerHTML = '<div class="banner warn">Cofre vazio (sem saldo) — não há o que resgatar.</div>'; return; }
+      const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+      const st = wallet.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
+      const saldo = `${BTC.format(st.totalSats / 1e8)} tBTC em ${st.items.length} UTXO(s)`;
+      if (!st.claimableAll) {
+        o.innerHTML = `<div class="banner warn">⏳ Ainda <strong>não dá para resgatar</strong>. Faltam <strong>${st.remaining} blocos (~${st.remainingDays} dias)</strong> de inatividade do cofre. Volte depois desse prazo. (${saldo})</div>`;
+        return;
+      }
+      // resgatável: varre TODO o saldo para o destino do herdeiro
+      const vsize = utxos.length * 73 + 2 * 43 + 11;
+      const fee = Math.ceil(vsize * Math.max(1, feeRate));
+      const amount = st.totalSats - fee;
+      if (amount < 546) { o.innerHTML = '<div class="banner warn">Saldo insuficiente para cobrir a taxa de mineração. Reduza a taxa.</div>'; return; }
+      o.innerHTML = '<p class="loading">Interruptor disparado ✓ — montando, assinando e transmitindo o resgate…</p>';
+      const built = wallet.buildInheritancePsbt({ ...cfg, utxos, toAddress: to, amountSats: amount, feeRate, mode: 'recovery' });
+      const signed = wallet.signInheritancePsbt(built.psbt, seed);
+      const fin = wallet.finalizeInheritancePsbt(signed.psbt, 'recovery');
+      ihEl('ihhSeed').value = '';
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const body = (await r.text()).trim();
+      if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
+      o.innerHTML = `<div class="banner ok">🕊️ <strong>Herança resgatada!</strong> ${amount} sats enviados para o seu endereço (taxa ${fee}).<br>txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">ver no explorer</a></div>`;
+    } catch (err) { o.innerHTML = `<div class="banner warn">Não consegui concluir o resgate: ${esc(err.message)}</div><p class="muted small">Confira se a frase é a do <strong>herdeiro</strong> e se as xpubs/timelock batem com a Carta ao Herdeiro.</p>`; }
   });
 
   // ---- Pagar Silent Payment ----
