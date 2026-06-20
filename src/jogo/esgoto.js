@@ -274,7 +274,7 @@ export function criaCavernasPico() {
   parede(CX - W / 2, CZ, t, D); parede(CX + W / 2, CZ, t, D);
 
   // RIOS DE LAVA cruzando a caverna (visual emissivo; o dano vem dos CAMPOS)
-  const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 1.0, roughness: 0.55 });
+  const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff6a2a, emissive: 0xff3a00, emissiveIntensity: 2.1, roughness: 0.55 });
   const lavas = [];
   [[CX - 14, CZ + 6, 4.2], [CX + 8, CZ - 9, 3.4], [CX + 18, CZ + 11, 2.8]].forEach(([lx, lz, lr]) => {
     const poca = new THREE.Mesh(new THREE.CircleGeometry(lr, 16), lavaMat);
@@ -286,7 +286,7 @@ export function criaCavernasPico() {
   // CRISTAIS do Pico (azuis/roxos, emissivos — os tesouros da montanha)
   [[CX - 22, CZ - 12, 0x6ab0ff], [CX + 2, CZ + 14, 0x9a6aff], [CX + 21, CZ - 4, 0x6ab0ff], [CX - 6, CZ - 16, 0x9a6aff]].forEach(([cx2, cz2, cor]) => {
     const cr = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.8, 6),
-      new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.5, roughness: 0.25 }));
+      new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 1.5, roughness: 0.25 }));
     cr.position.set(cx2, YC + 0.9, cz2); cr.rotation.z = (Math.random() - 0.5) * 0.4; g.add(cr);
   });
   // estalagmites (colisores — o caminho serpenteia)

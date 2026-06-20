@@ -25,6 +25,7 @@ import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
+import { criaAtmosfera } from './jogo/atmosfera.js'; // ✨ poeira/pólen no ar (RV11.0)
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -78,7 +79,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV10.9 (v67)';
+const VERSAO = 'RV11.0 (v68)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -131,7 +132,7 @@ if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.24, 0.5, 1.06));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.32, 0.6, 0.95));
   // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
   // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
   // saturação +12%, split-tone (sombras frias / altas levemente quentes),
@@ -162,6 +163,9 @@ if (!ehMobile) {
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.14; // reflexo sutil; sem clarear rostos/grama
 }
+// ✨ ATMOSFERA (RV11.0): poeira/pólen flutuando no ar, segue o jogador (só PC)
+const atmosfera = criaAtmosfera(ehMobile);
+scene.add(atmosfera.grupo);
 function lapidaMaterialPremium(material, forca = 1) {
   if (!material) return;
   const lista = Array.isArray(material) ? material : [material];
@@ -3707,6 +3711,14 @@ function passo() {
   // ambiente vivo (sempre): ciclo dia/noite (na superfície), nuvens, fonte, gato
   if (!noEsgoto) aplicaDiaNoite(dt);
   atualizaLuzRecorte();
+  // ✨ poeira/pólen no ar segue o jogador (mais densa de dia/aberto, rala em zona)
+  atmosfera.grupo.position.set(avatar.position.x, chaoY, avatar.position.z);
+  atmosfera.atualiza(dt, tempo, noEsgoto ? 0.22 : 0.4 + fatorDiaVisual * 0.25);
+  // 💧 água viva: marola suave (RV11.0)
+  if (aguas) for (const ag of aguas) {
+    if (ag.userData._by === undefined) { ag.userData._by = ag.position.y; ag.userData._ph = (ag.position.x + ag.position.z) % 6.28; }
+    ag.position.y = ag.userData._by + Math.sin(tempo * 1.2 + ag.userData._ph) * 0.035;
+  }
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;

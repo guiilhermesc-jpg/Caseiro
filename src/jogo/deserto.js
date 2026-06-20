@@ -140,7 +140,7 @@ export function criaDeserto() {
   }
   // fachada sul (z=-382): rosácea + portal ogival
   const rosacea = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.6, 16),
-    new THREE.MeshStandardMaterial({ color: 0x1a1020, emissive: 0x3a1f5a, emissiveIntensity: 0.45, roughness: 0.4 }));
+    new THREE.MeshStandardMaterial({ color: 0x1a1020, emissive: 0x5a2f8a, emissiveIntensity: 1.5, roughness: 0.4 }));
   rosacea.rotation.x = Math.PI / 2; rosacea.position.set(610, 17, -382.3); g.add(rosacea);
   const portal = new THREE.Mesh(new THREE.BoxGeometry(5, 9, 1.2), mat(0x140f0a, 1));
   portal.position.set(610, 4.5, -382.3); g.add(portal);
@@ -232,7 +232,7 @@ export function criaCatedralInterior() {
     for (const lado of [-1, 1]) {
       const cor = i % 2 ? 0x6a2fa0 : 0xb8862f;
       const vit = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3),
-        new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.55, side: THREE.DoubleSide }));
+        new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 1.5, side: THREE.DoubleSide }));
       vit.position.set(CX + lado * (W / 2 - 0.45), Y + 4, z); vit.rotation.y = lado > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(vit);
     }
   }
@@ -248,7 +248,7 @@ export function criaCatedralInterior() {
   const relicario = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.7), mat(0x4a4640, 1));
   relicario.position.set(CX, Y + 1.1, altarZ + 2); relicario.castShadow = true; g.add(relicario);
   const veiaPresa = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 6, 8),
-    new THREE.MeshStandardMaterial({ color: 0x6a2fa0, emissive: 0x6a2fa0, emissiveIntensity: 0.85, roughness: 0.3 }));
+    new THREE.MeshStandardMaterial({ color: 0x8a4fd0, emissive: 0x7a3fc0, emissiveIntensity: 2.6, roughness: 0.3 }));
   veiaPresa.position.set(CX, Y + 3.2, altarZ); g.add(veiaPresa);
   const luzVeia = new THREE.PointLight(0x9a4fd0, 1.5, 24, 2); luzVeia.position.set(CX, Y + 4.2, altarZ); g.add(luzVeia);
 
