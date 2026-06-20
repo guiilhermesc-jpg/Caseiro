@@ -75,7 +75,7 @@ export function criaCidade() {
   // === LUA + LUAR + ESTRELAS ===
   // A lua é filha do céu (que segue a câmera) → aparece IGUAL de qualquer lugar do mapa.
   // fog:false em tudo aqui pra a neblina não apagar o céu ao longe.
-  const luaMat = new THREE.MeshStandardMaterial({ color: 0xeef0f5, emissive: 0xcfd6e8, emissiveIntensity: 0.6, roughness: 1, fog: false });
+  const luaMat = new THREE.MeshStandardMaterial({ color: 0xeef0f5, emissive: 0xd6dcee, emissiveIntensity: 1.45, roughness: 1, fog: false });
   const craterMat = new THREE.MeshStandardMaterial({ color: 0xc6cede, roughness: 1, fog: false });
   const lua = new THREE.Group();
   lua.add(new THREE.Mesh(new THREE.SphereGeometry(22, 28, 22), luaMat));
@@ -83,7 +83,7 @@ export function criaCidade() {
     const cr = new THREE.Mesh(new THREE.SphereGeometry(2 + Math.random() * 3, 10, 8), craterMat);
     cr.position.setFromSphericalCoords(21, Math.acos(2 * Math.random() - 1), Math.random() * Math.PI * 2); lua.add(cr);
   }
-  const halo = new THREE.Mesh(new THREE.SphereGeometry(31, 22, 18), new THREE.MeshBasicMaterial({ color: 0xaab8da, transparent: true, opacity: 0.16, fog: false }));
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(33, 22, 18), new THREE.MeshBasicMaterial({ color: 0xaab8da, transparent: true, opacity: 0.26, fog: false }));
   lua.add(halo);
   lua.position.set(190, 340, -250); ceu.add(lua); // posição fixa no céu (acompanha a câmera via ceu)
   const luaLuz = new THREE.DirectionalLight(0x8c9ed6, 0); // luar azulado (intensidade no ciclo dia/noite)

@@ -79,7 +79,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV11.2 (v70)';
+const VERSAO = 'RV11.3 (v71)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2214,7 +2214,7 @@ function aplicaDiaNoite(dt) {
   }
   // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
   luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
-  if (luaMat) luaMat.emissiveIntensity = 0.35 + noite * 0.85;
+  if (luaMat) luaMat.emissiveIntensity = 0.4 + noite * 1.65; // RV11.3: Lua Partida BRILHA à noite (bloom), discreta de dia
   if (estrelas) estrelas.material.opacity = Math.min(1, Math.max(0, noite - 0.3) * 1.4);
   if (vagalumes) { // RV3.0: vagalumes acordam à noite e flutuam de leve
     vagalumes.material.opacity = Math.min(0.95, Math.max(0, noite - 0.45) * 1.8);
