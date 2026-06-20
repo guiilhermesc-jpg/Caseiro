@@ -40,6 +40,11 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 - **"Você vai herdar isto" (watch-only):** botão no Modo Herdeiro mostra saldo + status do
   Interruptor sem precisar da frase — o herdeiro sabe, em vida, que a herança existe.
 - **Cobrança em R$:** a cobrança aceita valor em reais e converte para BTC pelo preço ao vivo.
+- **Lembrete inteligente de prova de vida (`.ics`):** núcleo `lifeProofReminderICS` (testado, 8
+  casos) gera um evento de calendário **recorrente cujo intervalo é derivado do timelock** (~2/3 da
+  janela) — você renova sempre com folga. Botão no cofre baixa o arquivo. Herança vira ritual vivo.
+- **Painel "Conta para a Vida Toda":** card no topo da Soberania mostra as **duas pontas** num lugar
+  só — entrada (recebido via SP) + saída (Interruptor ativo). A visão tangível.
 - **Sistema de evolução diária:** `CLAUDE.md` (regras 1 e 2), este diário e o comando
   `/evolucao`.
 
@@ -48,13 +53,13 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 ## 🔜 Próximas etapas (backlog priorizado)
 1. **Tiers graduados** do Interruptor (ex.: 6 meses → executor; 12 meses → herdeiros). *Mexe no
    script do covenant — exige core novo em `src/wallet` + testes. Dia dedicado.*
-2. **Lembrete de prova de vida via `.ics`** — exportar um evento de calendário recorrente para
-   "renovar" o cofre. Alerta real, **zero backend** (melhor que timestamp manual, que enganaria).
+2. **Status do Interruptor no card "Vida Toda"** — ler a chain e mostrar a contagem regressiva ao
+   vivo no próprio card (hoje mostra só "cofre ativo").
 3. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
    — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
 
-## ✅ Entregue do backlog (limpeza de hoje)
-Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança em R$.
+## ✅ Entregue do backlog (limpeza recente)
+Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança em R$ · Lembrete `.ics` · Card Vida Toda.
 
 ## 💡 Ideias de disrupção (cruas — lapidar ao longo do tempo)
 - **Identidade Bitcoin soberana única:** um só handle (BIP-353) que é como você recebe a vida

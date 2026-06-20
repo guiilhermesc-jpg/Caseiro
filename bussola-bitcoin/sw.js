@@ -1,5 +1,5 @@
 /* Bússola — service worker (offline-first do shell + book). */
-const CACHE = 'bussola-v30';
+const CACHE = 'bussola-v31';
 const ASSETS = [
   './',
   'index.html',

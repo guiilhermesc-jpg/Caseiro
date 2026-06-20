@@ -807,6 +807,8 @@ function viewCarteira() {
         (<strong>prova de vida</strong>), só você manda; se você sumir, a herança abre <strong>sozinha</strong>. Use o botão
         <strong>🫀 Status do Interruptor</strong> (passo 2) para ver a contagem regressiva.</p>
         <div class="banner warn">⚠️ Protótipo testnet. Timelock é <strong>relativo</strong> (conta blocos desde que a UTXO foi recebida) — mover o saldo zera o relógio. ~144 blocos ≈ 1 dia.</div>
+        <div class="regactions"><button type="button" class="btn-ghost" id="ihIcs">📅 Lembrete de prova de vida (.ics)</button></div>
+        <div id="ihIcsOut"><p class="muted small">A herança não pode depender de memória: baixe um lembrete de calendário que <strong>se ajusta ao seu timelock</strong> para renovar o cofre sempre com folga.</p></div>
 
         <div class="agstep">
           <h3>1) Chaves (3 guardiões + 1 herdeiro)</h3>
@@ -1160,6 +1162,15 @@ function viewCarteira() {
     }));
     return utxos;
   }
+  ihEl('ihIcs')?.addEventListener('click', () => {
+    if (!wallet) return;
+    let tl = parseInt(ihEl('ihTL').value, 10);
+    if (!(tl > 0)) { try { tl = (JSON.parse(localStorage.getItem(IHG_KEY) || 'null') || {}).t | 0; } catch {} }
+    const r = wallet.lifeProofReminderICS({ timelock: tl || 144 });
+    const url = URL.createObjectURL(new Blob([r.ics], { type: 'text/calendar;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'bussola-prova-de-vida.ics'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    ihEl('ihIcsOut').innerHTML = `<div class="banner ok">📅 Lembrete baixado. Renove o cofre a cada <strong>~${r.everyDays} dia(s)</strong> (a janela do timelock é ≈ ${r.windowDays} dias). Importe o arquivo no seu calendário — ele repete sozinho.</div>`;
+  });
   ihEl('ihGen')?.addEventListener('click', () => {
     if (!wallet) return;
     const c = wallet.createMultisigCosigner(), o = ihEl('ihGenOut');
@@ -1463,6 +1474,8 @@ function viewSoberania() {
       seguro</strong> e <strong>transmitir</strong>. Aqui você se autoavalia, monta seu plano de
       herança e protege seus dados. Tudo <strong>no seu aparelho</strong>.</p>
 
+      <section class="watchonly" id="vidaCard"></section>
+
       <section class="watchonly">
         <h2>📡 Raio-X da Soberania</h2>
         <p class="muted">Marque o que já é verdade. Vira uma nota e um plano de ação.</p>
@@ -1592,6 +1605,27 @@ function viewSoberania() {
         : '<div class="banner ok">🏆 Soberania plena nos itens essenciais. Excelente!</div>'}`;
   }
   renderRX(); renderResult();
+
+  // ---- Card "Conta para a Vida Toda" (as duas pontas num lugar só) ----
+  function renderVidaCard() {
+    const el = document.getElementById('vidaCard'); if (!el) return;
+    let recebido = 0, nrec = 0;
+    try { const l = JSON.parse(localStorage.getItem('bussola.sp.ledger.v1') || '[]'); nrec = l.length; recebido = l.reduce((s, e) => s + (e.valueSats || 0), 0); } catch {}
+    let cofre = null; try { cofre = JSON.parse(localStorage.getItem('bussola.ihgroup.v1') || 'null'); } catch {}
+    const temCofre = cofre && Array.isArray(cofre.c) && !cofre.c.some(x => !x) && cofre.h;
+    el.innerHTML = `<h2>🧭 Sua Conta para a Vida Toda</h2>
+      <p class="muted">As duas pontas de <strong>uma</strong> identidade soberana: você <strong>recebe</strong> privado a vida inteira
+      e a conta <strong>passa sozinha</strong> aos seus quando você se vai. Sem empresa, sem KYC.</p>
+      <div class="cards">
+        <div class="card"><h3>💸 Entrada — Pix Bitcoin</h3>
+          <div class="big">${(recebido / 1e8).toFixed(8)} <span class="muted small">tBTC</span></div>
+          <div class="sub muted">${nrec ? `${nrec} recebimento(s) no painel` : 'gere seu handle e receba privado'} · <a href="#soberania">Silent Payments ↓</a></div></div>
+        <div class="card"><h3>🏛️ Saída — Interruptor da Vida</h3>
+          <div class="big">${temCofre ? '🫀 Cofre ativo' : '—'}</div>
+          <div class="sub muted">${temCofre ? `dead man's switch · timelock ${cofre.t || 144} blocos · <a href="#carteira">ver cofre →</a>` : '<a href="#carteira">monte seu cofre trustless →</a>'}</div></div>
+      </div>`;
+  }
+  renderVidaCard();
 
   // ---- Legado ----
   const cofreCfg = () => { try { return JSON.parse(localStorage.getItem('bussola.ihgroup.v1') || 'null'); } catch { return null; } };
