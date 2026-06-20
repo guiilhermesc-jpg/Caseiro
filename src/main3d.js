@@ -15,6 +15,7 @@ import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 import { criaPatchNotes } from './jogo/patchNotes.js';
 import { criaQuadroJornadas, pontosJornadaParaMapa, rotasParaMapa } from './jogo/jornadas.js';
+import { criaCodice, PEDRAS_VEIO, TESSITURA } from './jogo/codice.js';
 import { precoCompra } from './jogo/calendario.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
@@ -75,7 +76,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV8.3 (v59)';
+const VERSAO = 'RV9.0 (v60)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -921,6 +922,8 @@ const quadroJornadas = criaQuadroJornadas({
     defineDestinoMapa({ ...destino, dist });
   },
 });
+// === O CÓDICE DA VEIA (RV9.0): a cosmologia profunda de Venor ===
+const codice = criaCodice();
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
@@ -1711,6 +1714,54 @@ TOMOS.forEach((tomo) => {
       dialogo.abre(`${tomo.titulo} (${pag + 1}/${tomo.paginas.length})`, tomo.paginas[pag], ops);
     };
     mostra();
+  };
+  interativos.push(it);
+});
+
+// === PEDRAS-VEIO (RV9.0 — "A Tessitura de Venor"): monólitos gravados nos
+// nós geográficos da Veia Viva; usar AÇÃO numa pedra "sente" aquele veio e o
+// desbloqueia no Códice. A Pedra da Boca (sul, na praia) é a CHAVE do
+// segredo-semente — só revela O Quarto Veio com os 5 veios já sentidos.
+const MAT_PEDRA_VEIO = new THREE.MeshStandardMaterial({ color: 0x6a6660, roughness: 1, flatShading: true });
+PEDRAS_VEIO.forEach((pv) => {
+  const gP = new THREE.Group();
+  gP.position.set(pv.x, (typeof pv.y === 'number') ? pv.y : alturaTerreno(pv.x, pv.z), pv.z);
+  const mono = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.82, 3.4, 6), MAT_PEDRA_VEIO);
+  mono.position.y = 1.6; mono.rotation.y = (pv.x * 0.7 + pv.z) % 6; mono.castShadow = mono.receiveShadow = true; gP.add(mono);
+  const ombro = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.95, 0.5, 6), MAT_PEDRA_VEIO);
+  ombro.position.y = 0.25; gP.add(ombro); // pé alargado (fincada no chão)
+  // glifo GRAVADO, emissivo na cor do veio
+  const cnv = document.createElement('canvas'); cnv.width = cnv.height = 96;
+  const cg = cnv.getContext('2d'); cg.font = '72px serif'; cg.textAlign = 'center'; cg.textBaseline = 'middle';
+  cg.fillText(pv.glifo, 48, 56);
+  const glifo = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.92),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, color: pv.cor, emissive: pv.cor, emissiveIntensity: 0.9, roughness: 0.4 }));
+  glifo.position.set(0, 2.05, 0.84); gP.add(glifo);
+  const luz = new THREE.PointLight(pv.cor, 0.5, 9, 2); luz.position.y = 3.0; gP.add(luz);
+  scene.add(gP);
+  const it = { x: pv.x, z: pv.z, y: pv.y || 0, raio: 2.8, titulo: `🪨 ${pv.nome}`, acao: `Tocar a ${pv.nome}` };
+  it.onAcao = () => {
+    if (pv.segredo) { // a Pedra da Boca — chave do Quarto Veio
+      if (!codice.todosPrincipaisSentidos()) {
+        dialogo.abre(pv.nome, `${pv.fragmento}\n\nMas há um silêncio aqui que os cinco veios não preenchem. Sinta TODAS as Pedras-Veio antes de voltar.`, [{ texto: 'Afastar-se', onClick: () => dialogo.fecha() }]);
+        return;
+      }
+      if (codice.revelaSegredo()) {
+        if (!inventario.temItem('Gota da Veia')) inventario.addItem({ nome: 'Gota da Veia', icone: '💧' });
+        sons.tesouro();
+      }
+      const m = TESSITURA.misterios[0];
+      dialogo.abre('🌑 ' + m.nome, `${pv.fragmento}\n\n${m.texto}\n\n${m.profecia}`, [{ texto: 'Guardar no Códice 📖', onClick: () => dialogo.fecha() }]);
+      salvaJogo();
+      return;
+    }
+    const veio = TESSITURA.veios.find((v) => v.id === pv.id);
+    if (codice.marcaVeio(pv.id)) sons.corda();
+    const completou = codice.todosPrincipaisSentidos() && !codice.segredoJaRevelado();
+    dialogo.abre(pv.nome, `${pv.fragmento}\n\n— Veio sentido: ${veio ? veio.nome : pv.id}. Abra o 📖 Códice (canto direito) pra ler a linha inteira da Veia.`
+      + (completou ? '\n\n🌊 Você sentiu os cinco veios. Falta uma pedra, ao sul, onde o mar começa...' : ''),
+      [{ texto: 'Continuar', onClick: () => dialogo.fecha() }]);
+    salvaJogo();
   };
   interativos.push(it);
 });
@@ -2749,6 +2800,7 @@ function salvaJogo() {
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
       pet: petTipo, pets: petsDomados, // companheiros domados
       quests: questEstado, // missões aceitas/cumpridas
+      codice: codice.estado(), // Códice da Veia: veios sentidos + Quarto Veio
       cofre, // Depósito de Venore (itens guardados em segurança)
       dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
       bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
@@ -2774,6 +2826,7 @@ function carregaJogo(nome) {
     Object.assign(economia, d.economia || {});
     restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
     Object.assign(questEstado, d.quests || {}); // missões continuam de onde pararam
+    codice.carrega(d.codice); // Códice da Veia volta com os veios já sentidos
     cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
@@ -3138,6 +3191,7 @@ criaSelecao({
     { const tEl = document.getElementById('tituloVenor'); if (tEl) tEl.remove(); } // título sai de cena
     minimapa.mostra();
     quadroJornadas.mostra();
+    codice.mostra(); // 📖 Códice da Veia disponível ao entrar
     inventario.mostra();
     hud.mostra();
     const temConta = carregaJogo(nome); // CONTA LOCAL: mesmo nome = mesmo progresso
