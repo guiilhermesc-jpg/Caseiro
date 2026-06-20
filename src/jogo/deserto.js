@@ -187,6 +187,41 @@ export function criaDeserto() {
   placa(584, -250, 'CATEDRAL ↓ 110');
   placa(584, -330, 'CATEDRAL → 50');
 
+  // ---- VEGETAÇÃO E DETALHE (RV11.1): cactos, árvores mortas, ossadas ----
+  const verdeSeco = mat(0x6a7a48, 1), troncoMorto = mat(0x4a3f33, 1);
+  function cacto(x, z) {
+    const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 3.4, 8), verdeSeco);
+    corpo.position.set(x, 1.7, z); corpo.castShadow = true; g.add(corpo);
+    for (const lado of [-1, 1]) if (Math.random() < 0.7) {
+      const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 1.5, 7), verdeSeco);
+      braco.position.set(x + lado * 0.5, 2.0, z); braco.rotation.z = -lado * 0.9; g.add(braco);
+      const up = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 1.0, 7), verdeSeco);
+      up.position.set(x + lado * 0.95, 2.7, z); g.add(up);
+    }
+    col(x, z, 1.1, 1.1);
+  }
+  function arvoreMorta(x, z) {
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.5, 4.5, 6), troncoMorto);
+    tr.position.set(x, 2.2, z); tr.rotation.z = (Math.random() - 0.5) * 0.3; tr.castShadow = true; g.add(tr);
+    for (let i = 0; i < 4; i++) {
+      const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 1.6, 5), troncoMorto);
+      const a = Math.random() * 6.28;
+      galho.position.set(x + Math.cos(a) * 0.6, 3.4 + Math.random() * 1.0, z + Math.sin(a) * 0.6);
+      galho.rotation.set(Math.random() - 0.5, 0, Math.random() - 0.5); g.add(galho);
+    }
+    col(x, z, 0.9, 0.9);
+  }
+  function ossinhos(x, z) {
+    for (let i = 0; i < 5; i++) {
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.9, 5), osso);
+      b.position.set(x + (Math.random() - 0.5) * 2, 0.18, z + (Math.random() - 0.5) * 2);
+      b.rotation.set(Math.PI / 2, Math.random() * 3, Math.random() * 3); g.add(b);
+    }
+  }
+  [[500, -200, 0], [640, -210, 1], [690, -260, 2], [505, -280, 0], [700, -380, 1], [480, -360, 2],
+   [660, -425, 0], [600, -455, 1], [540, -425, 2], [710, -300, 0], [490, -445, 1], [630, -180, 2]]
+    .forEach(([x, z, t]) => { if (t === 0) cacto(x, z); else if (t === 1) arvoreMorta(x, z); else ossinhos(x, z); });
+
   return { grupo: g, colisores, pois };
 }
 

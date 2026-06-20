@@ -82,6 +82,7 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
         if (pd < 1.7) {
           r.contato = true; g.rotation.y = Math.atan2(pdx, pdz);
           const p = g.userData.patas; if (p) { const s = Math.sin(r.tempo * 18) * 0.5; for (let i = 0; i < p.length; i++) p[i].rotation.x = (i % 2 ? -s : s); }
+          if (r._bz !== undefined) g.scale.z = r._bz * (1.18 + Math.max(0, Math.sin(r.tempo * 11)) * 0.22); // bote/mordida pra frente
           continue;
         }
         r.alvo = { x: jog.x, z: jog.z };
