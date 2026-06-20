@@ -17,6 +17,7 @@ export function criaDeserto() {
   const g = new THREE.Group();
   const colisores = [];
   const pois = [];
+  const glows = []; // materiais emissivos que PULSAM no loop (RV11.2)
   const col = (x, z, w, d) => colisores.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
 
   const areia = new THREE.MeshStandardMaterial({ color: 0xd9c089, roughness: 1 });
@@ -139,8 +140,9 @@ export function criaDeserto() {
     }
   }
   // fachada sul (z=-382): rosácea + portal ogival
-  const rosacea = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.6, 16),
-    new THREE.MeshStandardMaterial({ color: 0x1a1020, emissive: 0x5a2f8a, emissiveIntensity: 1.5, roughness: 0.4 }));
+  const rosaceaMat = new THREE.MeshStandardMaterial({ color: 0x1a1020, emissive: 0x5a2f8a, emissiveIntensity: 1.5, roughness: 0.4 });
+  glows.push(rosaceaMat);
+  const rosacea = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.6, 16), rosaceaMat);
   rosacea.rotation.x = Math.PI / 2; rosacea.position.set(610, 17, -382.3); g.add(rosacea);
   const portal = new THREE.Mesh(new THREE.BoxGeometry(5, 9, 1.2), mat(0x140f0a, 1));
   portal.position.set(610, 4.5, -382.3); g.add(portal);
@@ -222,7 +224,7 @@ export function criaDeserto() {
    [660, -425, 0], [600, -455, 1], [540, -425, 2], [710, -300, 0], [490, -445, 1], [630, -180, 2]]
     .forEach(([x, z, t]) => { if (t === 0) cacto(x, z); else if (t === 1) arvoreMorta(x, z); else ossinhos(x, z); });
 
-  return { grupo: g, colisores, pois };
+  return { grupo: g, colisores, pois, glows };
 }
 
 // =============================================================
@@ -239,6 +241,7 @@ export function criaCatedralInterior() {
   const W = 24, D = 44, alt = 8, t = 0.8;
   const pedra = mat(0x322c34, 1), pedraEsc = mat(0x201c24, 1);
   const colisores = [];
+  const glows = []; // emissivos que PULSAM (RV11.2)
 
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
   piso.position.set(CX, Y - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
@@ -266,8 +269,9 @@ export function criaCatedralInterior() {
     const z = CZ - 14 + i * 7;
     for (const lado of [-1, 1]) {
       const cor = i % 2 ? 0x6a2fa0 : 0xb8862f;
-      const vit = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3),
-        new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 1.5, side: THREE.DoubleSide }));
+      const vitMat = new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 1.5, side: THREE.DoubleSide });
+      glows.push(vitMat);
+      const vit = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3), vitMat);
       vit.position.set(CX + lado * (W / 2 - 0.45), Y + 4, z); vit.rotation.y = lado > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(vit);
     }
   }
@@ -282,8 +286,9 @@ export function criaCatedralInterior() {
   estrado.position.set(CX, Y + 0.3, altarZ + 2); g.add(estrado);
   const relicario = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.7), mat(0x4a4640, 1));
   relicario.position.set(CX, Y + 1.1, altarZ + 2); relicario.castShadow = true; g.add(relicario);
-  const veiaPresa = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 6, 8),
-    new THREE.MeshStandardMaterial({ color: 0x8a4fd0, emissive: 0x7a3fc0, emissiveIntensity: 2.6, roughness: 0.3 }));
+  const veiaMat = new THREE.MeshStandardMaterial({ color: 0x8a4fd0, emissive: 0x7a3fc0, emissiveIntensity: 2.6, roughness: 0.3 });
+  glows.push(veiaMat);
+  const veiaPresa = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 6, 8), veiaMat);
   veiaPresa.position.set(CX, Y + 3.2, altarZ); g.add(veiaPresa);
   const luzVeia = new THREE.PointLight(0x9a4fd0, 1.5, 24, 2); luzVeia.position.set(CX, Y + 4.2, altarZ); g.add(luzVeia);
 
@@ -294,7 +299,7 @@ export function criaCatedralInterior() {
   const luzEntrada = new THREE.PointLight(0xffcaa0, 0.8, 15, 2); luzEntrada.position.set(a.x, Y + alt - 1, a.z); g.add(luzEntrada);
 
   return {
-    grupo: g, colisores,
+    grupo: g, colisores, glows,
     bounds: { minX: CX - W / 2 + 1, maxX: CX + W / 2 - 1, minZ: CZ - D / 2 + 1, maxZ: CZ + D / 2 - 1 },
     acessos: [a],
     saidas: [{ x: 610, z: -393 }],   // devolve ao adro da catedral (superfície)

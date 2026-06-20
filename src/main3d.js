@@ -79,7 +79,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV11.1 (v69)';
+const VERSAO = 'RV11.2 (v70)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -343,6 +343,10 @@ deserto.colisores.forEach(addColisorMundo);
 // A NAVE PROFANADA (RV10.8): interior da Catedral da Lua Coada, zona carregada
 const catedralI = criaCatedralInterior(); scene.add(catedralI.grupo);
 catedralI.grupo.visible = false;
+// emissivos que PULSAM com o bloom (RV11.2): a Veia presa, a rosácea e os vitrais
+// respiram — efeito mágico premium.
+const glowsPulsantes = [...(deserto.glows || []), ...(catedralI.glows || [])];
+glowsPulsantes.forEach((m, i) => { m.userData._base = m.emissiveIntensity; m.userData._ph = i * 1.3; });
 { // boca da descida (marca escura no chão da câmara do trono)
   const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
   buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
@@ -3719,6 +3723,8 @@ function passo() {
     if (ag.userData._by === undefined) { ag.userData._by = ag.position.y; ag.userData._ph = (ag.position.x + ag.position.z) % 6.28; }
     ag.position.y = ag.userData._by + Math.sin(tempo * 1.2 + ag.userData._ph) * 0.035;
   }
+  // 🔮 glow pulsante (Veia/rosácea/vitrais respiram com o bloom) — RV11.2
+  for (const m of glowsPulsantes) m.emissiveIntensity = m.userData._base * (0.82 + Math.sin(tempo * 1.8 + m.userData._ph) * 0.22);
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;
