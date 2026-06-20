@@ -48,18 +48,28 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 - **Sistema de evolução diária:** `CLAUDE.md` (regras 1 e 2), este diário e o comando
   `/evolucao`.
 
+### 2026-06-20 — Leva "ousada": identidade viva + dashboard ao vivo
+- **Handle SP persistente + compartilhável:** o endereço (público) é salvo ao gerar; copiar/📤
+  compartilhar (Web Share) no gerador, no painel e no card. O "Pix Bitcoin" virou identidade.
+- **Card "Vida Toda" ao vivo:** mostra o handle, botão lê a chain e exibe a **contagem regressiva
+  do Interruptor** (barra + dias), e dá **próximos passos** inteligentes conforme o que falta.
+- **Lembrete também no Google Agenda:** núcleo `lifeProofGoogleCalUrl` (testado) + link "➕ Adicionar
+  ao Google Agenda" ao lado do `.ics`.
+- **Compartilhar cobrança** (Web Share) além de copiar.
+
 ---
 
 ## 🔜 Próximas etapas (backlog priorizado)
 1. **Tiers graduados** do Interruptor (ex.: 6 meses → executor; 12 meses → herdeiros). *Mexe no
-   script do covenant — exige core novo em `src/wallet` + testes. Dia dedicado.*
-2. **Status do Interruptor no card "Vida Toda"** — ler a chain e mostrar a contagem regressiva ao
-   vivo no próprio card (hoje mostra só "cofre ativo").
+   script do covenant — exige core novo em `src/wallet` + testes. Dia dedicado e cuidadoso.*
+2. **Auto-status do card "Vida Toda"** — disparar a leitura da chain sozinho (hoje é por botão),
+   com cache curto para não pesar.
 3. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
    — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
 
 ## ✅ Entregue do backlog (limpeza recente)
-Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança em R$ · Lembrete `.ics` · Card Vida Toda.
+Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança (BTC/R$ + compartilhar) ·
+Lembrete `.ics` + Google Agenda · Card Vida Toda ao vivo · Handle persistente/compartilhável.
 
 ## 💡 Ideias de disrupção (cruas — lapidar ao longo do tempo)
 - **Identidade Bitcoin soberana única:** um só handle (BIP-353) que é como você recebe a vida

@@ -388,6 +388,20 @@ export function lifeProofReminderICS({ timelock, startDate, label = 'Bússola: p
   return { ics: lines.join('\r\n') + '\r\n', everyDays, windowDays: Math.round(windowDays) };
 }
 
+/* Mesmo lembrete de prova de vida, como link de "adicionar evento" do Google Agenda (recorrente). */
+export function lifeProofGoogleCalUrl({ timelock, startDate, label = 'Bússola: prova de vida do cofre' } = {}) {
+  const tl = Math.max(1, timelock | 0);
+  const everyDays = Math.max(1, Math.round(tl * 10 / 60 / 24 * 2 / 3));
+  const start = startDate instanceof Date ? startDate : new Date();
+  const first = new Date(start.getTime() + everyDays * 86400000);
+  const end = new Date(first.getTime() + 30 * 60000);
+  const pad = n => String(n).padStart(2, '0');
+  const dt = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+  const details = `Renove o saldo do Cofre (Interruptor da Vida) pelo caminho normal 2-de-3 para zerar o relogio do timelock (${tl} blocos). Essa e a sua prova de vida.`;
+  const p = new URLSearchParams({ action: 'TEMPLATE', text: label, dates: `${dt(first)}/${dt(end)}`, details, recur: `RRULE:FREQ=DAILY;INTERVAL=${everyDays}` });
+  return 'https://calendar.google.com/calendar/render?' + p.toString();
+}
+
 /* =================== Silent Payments (BIP-352) — endereço reutilizável =================== */
 /* Um endereço estático que pode ser publicado e reusado sem perder privacidade: cada pagamento
  * cai num endereço on-chain diferente. Aqui geramos a IDENTIDADE (endereço + chaves de visão/gasto).
