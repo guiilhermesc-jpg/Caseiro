@@ -76,7 +76,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV9.1 (v61)';
+const VERSAO = 'RV10.0 (v62)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -3836,6 +3836,9 @@ window.addEventListener('unhandledrejection', (ev) => {
   }
 });
 loop();
+// RV10.0: esconde a tela de carregamento DEPOIS do 1º quadro 3D desenhado
+// (a cena já aparece atrás da seleção, sem flash de tela preta).
+requestAnimationFrame(() => requestAnimationFrame(() => { if (window.__esconderBoot) window.__esconderBoot(); }));
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;

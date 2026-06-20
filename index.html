@@ -6,15 +6,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <title>Projeto Sirene</title>
+    <title>Venor — Era dos Dragões</title>
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#1e293b" />
+    <meta name="theme-color" content="#120a18" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Venor" />
     <style>
       html, body {
         margin: 0; padding: 0; height: 100%;
-        overflow: hidden; background: #1a2230;
+        overflow: hidden; background: #0c0a14;
         font-family: Arial, Helvetica, sans-serif;
         overscroll-behavior: none;
         -webkit-user-select: none;
@@ -23,12 +23,94 @@
       #game { width: 100vw; height: 100vh; }
       #game canvas { display: block; }
       * { -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; }
+
+      /* ===== TELA DE CARREGAMENTO (RV10.0) — pintada INSTANTE, antes do
+         bundle 3D processar; some quando o jogo desenha o 1º quadro. ===== */
+      #bootscreen {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background:
+          radial-gradient(ellipse at 50% 35%, rgba(60,40,90,.55), rgba(12,10,20,0) 60%),
+          linear-gradient(180deg, #15101f 0%, #0c0a14 60%, #07060d 100%);
+        color: #efe6d2; text-align: center; transition: opacity .6s ease;
+      }
+      #bootscreen .marca {
+        font: 900 clamp(46px, 13vw, 92px)/1 Georgia, "Times New Roman", serif;
+        letter-spacing: clamp(8px, 3vw, 18px);
+        color: #f4e9c8; text-shadow: 0 2px 8px #000, 0 0 36px rgba(180,120,255,.45);
+      }
+      #bootscreen .sub {
+        margin-top: 10px; font: 700 clamp(11px, 3.4vw, 15px)/1 Georgia, serif;
+        letter-spacing: clamp(4px, 2vw, 9px); color: #b59bff;
+      }
+      #bootscreen .barra {
+        margin-top: 34px; width: min(280px, 64vw); height: 6px; border-radius: 99px;
+        background: rgba(255,255,255,.08); overflow: hidden; position: relative;
+      }
+      #bootscreen .barra::before {
+        content: ""; position: absolute; inset: 0; width: 40%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, transparent, #b59bff, #6ad0ff, transparent);
+        animation: bootslide 1.15s ease-in-out infinite;
+      }
+      @keyframes bootslide { 0%{left:-40%} 100%{left:100%} }
+      #bootscreen .dica {
+        margin-top: 22px; max-width: min(440px, 86vw); min-height: 34px;
+        font: 400 13px/1.5 Arial, sans-serif; color: #9a90b0; transition: opacity .4s;
+        padding: 0 16px;
+      }
+      #bootscreen .glifo {
+        position: absolute; font: 300 40px serif; color: rgba(181,155,255,.18);
+        animation: bootfloat 6s ease-in-out infinite;
+      }
+      @keyframes bootfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+      #bootscreen.sumindo { opacity: 0; pointer-events: none; }
     </style>
   </head>
   <body>
+    <div id="bootscreen">
+      <span class="glifo" style="top:18%;left:14%">🜂</span>
+      <span class="glifo" style="top:24%;right:16%;animation-delay:1.5s">🜄</span>
+      <span class="glifo" style="bottom:20%;left:20%;animation-delay:3s">🜃</span>
+      <span class="glifo" style="bottom:26%;right:18%;animation-delay:4.5s">🜁</span>
+      <div class="marca">VENOR</div>
+      <div class="sub">ERA DOS DRAGÕES</div>
+      <div class="barra"></div>
+      <div class="dica" id="bootdica">Preparando o mundo da Veia…</div>
+    </div>
+
     <div id="game"></div>
     <script type="module" src="/src/main3d.js"></script>
     <script>
+      // dicas rotativas durante o carregamento (sem custo do bundle)
+      (function () {
+        var dicas = [
+          'A terra LEMBRA: água é memória que corre, pedra é memória presa.',
+          'Toque as Pedras-Veio para revelar como os lugares se ligam — abra o 📖 Códice.',
+          'Use AÇÃO (E / botão ✋) para falar, atacar, pescar, descer e ler.',
+          'À noite, acenda a tocha (T) — a madrugada de Venor é escura de verdade.',
+          'Dome um bicho 🐾 e monte nele (M); o filhote de dragão é o mais veloz.',
+          'Cada estrada tem risco e recompensa. O caminho É o jogo.',
+        ];
+        var el = document.getElementById('bootdica');
+        var i = 0;
+        var t = setInterval(function () {
+          if (!el || !el.isConnected) { clearInterval(t); return; }
+          i = (i + 1) % dicas.length;
+          el.style.opacity = '0';
+          setTimeout(function () { if (el) { el.textContent = dicas[i]; el.style.opacity = '1'; } }, 380);
+        }, 3200);
+      })();
+      // o jogo chama isto quando desenha o 1º quadro; some com fade
+      window.__esconderBoot = function () {
+        var b = document.getElementById('bootscreen');
+        if (!b) return;
+        b.classList.add('sumindo');
+        setTimeout(function () { if (b && b.parentNode) b.parentNode.removeChild(b); }, 700);
+      };
+      // segurança: se algo travar, não deixa o jogador preso na tela
+      setTimeout(function () { if (window.__esconderBoot) window.__esconderBoot(); }, 18000);
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
