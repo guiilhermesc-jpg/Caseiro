@@ -11,6 +11,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat } from './construcoes.js';
+import { texturaRuido } from './mundo.js'; // grão procedural (RV10.9)
 
 export function criaDeserto() {
   const g = new THREE.Group();
@@ -19,6 +20,8 @@ export function criaDeserto() {
   const col = (x, z, w, d) => colisores.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
 
   const areia = new THREE.MeshStandardMaterial({ color: 0xd9c089, roughness: 1 });
+  const texAreia = texturaRuido(0xd9c089, 15);
+  if (texAreia) { texAreia.repeat.set(44, 56); areia.map = texAreia; areia.color.set(0xffffff); }
   const areiaEsc = mat(0xc2a86d, 1);
   const arenito = mat(0xcab083, 1), arenitoEsc = mat(0x9c8050, 1);
   const osso = mat(0xe8e0c8, 1);
@@ -118,6 +121,8 @@ export function criaDeserto() {
 
   // ======== A CATEDRAL DA LUA COADA (610,-360) — marco sombrio imponente ========
   const pedraCat = mat(0x4a4038, 1), pedraCatEsc = mat(0x2a2630, 1);
+  const texCat = texturaRuido(0x4a4038, 20);
+  if (texCat) { texCat.repeat.set(5, 5); pedraCat.map = texCat; pedraCat.color.set(0xffffff); }
   // nave
   const nave = new THREE.Mesh(new THREE.BoxGeometry(26, 26, 44), pedraCat);
   nave.position.set(610, 13, -360); nave.castShadow = true; nave.receiveShadow = true; g.add(nave);
