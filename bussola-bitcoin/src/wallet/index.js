@@ -363,6 +363,31 @@ export function inheritanceClaimStatus({ timelock, utxos, tipHeight }) {
   return { timelock: tl, items, totalSats, remaining, remainingDays: Math.ceil(remaining * 10 / 60 / 24), claimableAll };
 }
 
+/* Lembrete de "prova de vida" como calendário (.ics, RFC 5545): um evento RECORRENTE para mover/
+ * renovar o cofre antes do herdeiro poder resgatar. O intervalo é ~2/3 da janela do timelock, para
+ * você renovar sempre com folga. Zero backend: importa em qualquer agenda. startDate: Date (default agora). */
+export function lifeProofReminderICS({ timelock, startDate, label = 'Bússola: prova de vida do cofre' } = {}) {
+  const tl = Math.max(1, timelock | 0);
+  const windowDays = tl * 10 / 60 / 24;                       // ~10 min por bloco
+  const everyDays = Math.max(1, Math.round(windowDays * 2 / 3));
+  const start = startDate instanceof Date ? startDate : new Date();
+  const first = new Date(start.getTime() + everyDays * 86400000); // 1ª ocorrência: +everyDays
+  const pad = n => String(n).padStart(2, '0');
+  const dt = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+  const ein = s => String(s).replace(/([,;\\])/g, '\\$1').replace(/\r?\n/g, '\\n'); // escape RFC 5545
+  const uid = `bussola-${dt(start)}-${tl}@bussola.bitcoin`;
+  const desc = `Mova/renove o saldo do seu Cofre (Interruptor da Vida) pelo caminho normal 2-de-3 para zerar o relogio do timelock (${tl} blocos). Essa e a sua prova de vida: enquanto voce renova, so voce controla; o herdeiro so resgata apos ~${Math.round(windowDays)} dias sem movimento.`;
+  const lines = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Bussola Bitcoin//Prova de Vida//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${dt(start)}`, `DTSTART:${dt(first)}`,
+    `RRULE:FREQ=DAILY;INTERVAL=${everyDays}`,
+    `SUMMARY:${ein(label)}`, `DESCRIPTION:${ein(desc)}`,
+    'BEGIN:VALARM', 'TRIGGER:-PT12H', 'ACTION:DISPLAY', `DESCRIPTION:${ein(label)}`, 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR',
+  ];
+  return { ics: lines.join('\r\n') + '\r\n', everyDays, windowDays: Math.round(windowDays) };
+}
+
 /* =================== Silent Payments (BIP-352) — endereço reutilizável =================== */
 /* Um endereço estático que pode ser publicado e reusado sem perder privacidade: cada pagamento
  * cai num endereço on-chain diferente. Aqui geramos a IDENTIDADE (endereço + chaves de visão/gasto).

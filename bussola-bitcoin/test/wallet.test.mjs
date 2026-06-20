@@ -6,7 +6,7 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt, inheritanceClaimStatus,
   encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
   silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan,
-  silentPaymentSpend, buildPaymentURI } from '../src/wallet/index.js';
+  silentPaymentSpend, buildPaymentURI, lifeProofReminderICS } from '../src/wallet/index.js';
 import qrcode from 'qrcode-generator';
 import { HDKey } from '@scure/bip32';
 import { sha256 } from '@noble/hashes/sha256';
@@ -229,6 +229,18 @@ eq('URI: inteiro vira sem casas', buildPaymentURI({ address: 'a', amountBtc: 1 }
 eq('URI: label e message encoded', buildPaymentURI({ address: 'a', amountBtc: 0.5, label: 'Loja X', message: 'pão & café' }), 'bitcoin:a?amount=0.5&label=Loja%20X&message=p%C3%A3o%20%26%20caf%C3%A9');
 eq('URI: valor inválido lança', (() => { try { buildPaymentURI({ address: 'a', amountBtc: -1 }); return false; } catch { return true; } })(), true);
 eq('URI: sem endereço lança', (() => { try { buildPaymentURI({ address: '' }); return false; } catch { return true; } })(), true);
+
+/* Lembrete de prova de vida (.ics) — intervalo derivado do timelock */
+const fixed = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
+const ics144 = lifeProofReminderICS({ timelock: 144, startDate: fixed });
+eq('ICS: abre VCALENDAR', ics144.ics.startsWith('BEGIN:VCALENDAR'), true);
+eq('ICS: fecha VCALENDAR', ics144.ics.trim().endsWith('END:VCALENDAR'), true);
+eq('ICS: tem RRULE diária', /RRULE:FREQ=DAILY;INTERVAL=\d+/.test(ics144.ics), true);
+eq('ICS: tem VALARM', ics144.ics.includes('BEGIN:VALARM'), true);
+eq('ICS: usa CRLF', ics144.ics.includes('\r\n'), true);
+eq('ICS: 144 blocos (~1 dia) → renova a cada 1 dia', ics144.everyDays, 1);
+eq('ICS: 4320 blocos (~30 dias) → renova a cada 20 dias', lifeProofReminderICS({ timelock: 4320 }).everyDays, 20);
+eq('ICS: 1ª ocorrência = início + everyDays', /DTSTART:20260102T120000Z/.test(ics144.ics), true);
 
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */
