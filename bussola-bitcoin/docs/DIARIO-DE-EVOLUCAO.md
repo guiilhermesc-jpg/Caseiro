@@ -56,20 +56,24 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 - **Lembrete também no Google Agenda:** núcleo `lifeProofGoogleCalUrl` (testado) + link "➕ Adicionar
   ao Google Agenda" ao lado do `.ics`.
 - **Compartilhar cobrança** (Web Share) além de copiar.
+- **Auto-status no card:** o dashboard já abre lendo o Interruptor sozinho (sem clique).
+- **"Plano para a Vida Toda" unificado:** o export/impressão do Legado agora inclui também a
+  **entrada** (handle de recebimento), virando UM documento das duas pontas. Renomeado.
 
 ---
 
 ## 🔜 Próximas etapas (backlog priorizado)
 1. **Tiers graduados** do Interruptor (ex.: 6 meses → executor; 12 meses → herdeiros). *Mexe no
-   script do covenant — exige core novo em `src/wallet` + testes. Dia dedicado e cuidadoso.*
-2. **Auto-status do card "Vida Toda"** — disparar a leitura da chain sozinho (hoje é por botão),
-   com cache curto para não pesar.
-3. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
+   script do covenant — exige core novo em `src/wallet` + testes + idealmente validação em regtest.
+   Dia dedicado e cuidadoso (não fazer na pressa).*
+2. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
    — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
+3. **Cache curto do auto-status** (evitar refazer a leitura da chain a cada visita).
 
 ## ✅ Entregue do backlog (limpeza recente)
 Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança (BTC/R$ + compartilhar) ·
-Lembrete `.ics` + Google Agenda · Card Vida Toda ao vivo · Handle persistente/compartilhável.
+Lembrete `.ics` + Google Agenda · Card Vida Toda ao vivo (auto) · Handle persistente/compartilhável ·
+Plano para a Vida Toda (doc unificado entrada+saída).
 
 ## 💡 Ideias de disrupção (cruas — lapidar ao longo do tempo)
 - **Identidade Bitcoin soberana única:** um só handle (BIP-353) que é como você recebe a vida
