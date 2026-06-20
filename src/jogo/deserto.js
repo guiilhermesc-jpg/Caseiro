@@ -184,3 +184,81 @@ export function criaDeserto() {
 
   return { grupo: g, colisores, pois };
 }
+
+// =============================================================
+//  A NAVE PROFANADA · interior da Catedral da Lua Coada (zona y=-40, RV10.8)
+//  Onde a Vigília-Decaída embalsamou o santo Vael na Veia pra "costurar" a
+//  Lua Partida — e o ritual virou prisão. Zona carregada (coords locais
+//  próprias, longe de tudo), igual às masmorras. Boss: Vael, o Santo
+//  Embalsamado, dormente no relicário até ser despertado.
+//  Devolve { grupo, colisores, bounds, acessos, saidas, relicario, centro }.
+// =============================================================
+export function criaCatedralInterior() {
+  const g = new THREE.Group();
+  const CX = 800, CZ = -400, Y = -40;       // região local, longe de tudo
+  const W = 24, D = 44, alt = 8, t = 0.8;
+  const pedra = mat(0x322c34, 1), pedraEsc = mat(0x201c24, 1);
+  const colisores = [];
+
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
+  piso.position.set(CX, Y - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
+  const teto = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedraEsc);
+  teto.position.set(CX, Y + alt, CZ); g.add(teto);
+  function parede(cx, cz, w, d) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), pedra);
+    m.position.set(cx, Y + alt / 2, cz); m.receiveShadow = true; g.add(m);
+    colisores.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }
+  parede(CX, CZ - D / 2, W, t); parede(CX, CZ + D / 2, W, t);
+  parede(CX - W / 2, CZ, t, D); parede(CX + W / 2, CZ, t, D);
+
+  // duas fileiras de 6 pilares altos ladeando o corredor central
+  for (let i = 0; i < 6; i++) {
+    const z = CZ - 16 + i * 6.4;
+    for (const lado of [-1, 1]) {
+      const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, alt, 10), pedraEsc);
+      pil.position.set(CX + lado * 7, Y + alt / 2, z); pil.castShadow = true; g.add(pil);
+      colisores.push({ minX: CX + lado * 7 - 0.85, maxX: CX + lado * 7 + 0.85, minZ: z - 0.85, maxZ: z + 0.85 });
+    }
+  }
+  // vitrais internos (painéis emissivos fracos — cor na escuridão)
+  for (let i = 0; i < 5; i++) {
+    const z = CZ - 14 + i * 7;
+    for (const lado of [-1, 1]) {
+      const cor = i % 2 ? 0x6a2fa0 : 0xb8862f;
+      const vit = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3),
+        new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.55, side: THREE.DoubleSide }));
+      vit.position.set(CX + lado * (W / 2 - 0.45), Y + 4, z); vit.rotation.y = lado > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(vit);
+    }
+  }
+  // bancos tombados
+  for (let i = 0; i < 4; i++) {
+    const banco = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 0.8), pedraEsc);
+    banco.position.set(CX + (i % 2 ? 3 : -3), Y + 0.3, CZ - 8 + i * 5); banco.rotation.z = (i % 2 ? 0.3 : -0.2); g.add(banco);
+  }
+  // ALTAR-VEIA no fundo norte: estrado + relicário de Vael + pilar de Veia presa
+  const altarZ = CZ - D / 2 + 5;
+  const estrado = new THREE.Mesh(new THREE.BoxGeometry(11, 0.6, 8), pedraEsc);
+  estrado.position.set(CX, Y + 0.3, altarZ + 2); g.add(estrado);
+  const relicario = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.7), mat(0x4a4640, 1));
+  relicario.position.set(CX, Y + 1.1, altarZ + 2); relicario.castShadow = true; g.add(relicario);
+  const veiaPresa = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 6, 8),
+    new THREE.MeshStandardMaterial({ color: 0x6a2fa0, emissive: 0x6a2fa0, emissiveIntensity: 0.85, roughness: 0.3 }));
+  veiaPresa.position.set(CX, Y + 3.2, altarZ); g.add(veiaPresa);
+  const luzVeia = new THREE.PointLight(0x9a4fd0, 1.5, 24, 2); luzVeia.position.set(CX, Y + 4.2, altarZ); g.add(luzVeia);
+
+  // corda de acesso (sul) + luz de entrada
+  const a = { x: CX, z: CZ + D / 2 - 3 };
+  const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt - 0.2, 6), mat(0x9a7a44, 1));
+  corda.position.set(a.x, Y + (alt - 0.2) / 2, a.z); g.add(corda);
+  const luzEntrada = new THREE.PointLight(0xffcaa0, 0.8, 15, 2); luzEntrada.position.set(a.x, Y + alt - 1, a.z); g.add(luzEntrada);
+
+  return {
+    grupo: g, colisores,
+    bounds: { minX: CX - W / 2 + 1, maxX: CX + W / 2 - 1, minZ: CZ - D / 2 + 1, maxZ: CZ + D / 2 - 1 },
+    acessos: [a],
+    saidas: [{ x: 610, z: -393 }],   // devolve ao adro da catedral (superfície)
+    relicario: { x: CX, z: altarZ + 2 },
+    centro: { x: CX, z: CZ },
+  };
+}

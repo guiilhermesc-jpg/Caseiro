@@ -24,7 +24,7 @@ import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
-import { criaDeserto } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
+import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -78,7 +78,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV10.7 (v65)';
+const VERSAO = 'RV10.8 (v66)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -336,6 +336,9 @@ irmas1.grupo.visible = false;
 // Colisores entram no índice tardio (a grade já foi montada acima).
 const deserto = criaDeserto(); scene.add(deserto.grupo);
 deserto.colisores.forEach(addColisorMundo);
+// A NAVE PROFANADA (RV10.8): interior da Catedral da Lua Coada, zona carregada
+const catedralI = criaCatedralInterior(); scene.add(catedralI.grupo);
+catedralI.grupo.visible = false;
 { // boca da descida (marca escura no chão da câmara do trono)
   const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
   buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
@@ -772,6 +775,35 @@ function naufragoDoSal(x, z) {
   addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14), { especie: 'troll' }));
 [[672, -310], [648, -322], [665, -296]].forEach(([x, z]) =>
   addMonstro(criaCyclops(x, z), 150, 60, 18, 1.3, true, areaMon(660, -310, 18), { especie: 'ciclope' }));
+// A NAVE PROFANADA · culto da Vigília-Decaída (RV10.8, y=-40 na zona da catedral).
+// Drakari e acólitos guardam o altar; VAEL dorme no relicário até despertar.
+let vaelCatedral = null;
+{
+  const rel = catedralI.relicario; // (800, ~-415)
+  const vg = criaEsqueleto(rel.x, rel.z + 2); vg.position.y = -40; vg.scale.setScalar(1.9);
+  vg.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material) || !o.material.clone) return;
+    o.material = o.material.clone();
+    if (o.material.color) o.material.color.lerp(new THREE.Color(0x2a2030), 0.7);
+    if (o.material.emissive) { o.material.emissive.set(0x4a1f7a); o.material.emissiveIntensity = 0.4; }
+  });
+  vaelCatedral = addMonstro(vg, 380, 110, 26, 1.3, true, areaMon(rel.x, rel.z + 2, 12), {
+    boss: true, especie: 'vaelSanto', y0: -40, lootEspecial: { nome: 'Sudário da Lua Coada', icone: '🌒' },
+  });
+  vaelCatedral.vivo = false; vaelCatedral.g.visible = false; // dorme até o relicário
+  [[793, -395], [807, -398], [795, -406]].forEach(([x, z]) => {
+    const d = criaDrakari(x, z); d.position.y = -40;
+    addMonstro(d, 110, 55, 17, 2.35, false, areaMon(x, z, 10), { especie: 'drakari', y0: -40, lootEspecial: { nome: 'Escama Drakari', icone: '🐉' } });
+  });
+  { const de = criaDrakari(806, -410, true); de.position.y = -40; de.scale.setScalar(1.18);
+    addMonstro(de, 190, 90, 24, 2.05, true, areaMon(806, -410, 10), {
+      especie: 'drakariElite', y0: -40, atira: 'magia', alcanceTiro: 15, danoTiro: 15, cadencia: 3.0,
+      lootEspecial: { nome: 'Fragmento de Obsidiana', icone: '💠' } }); }
+  [[794, -388], [806, -390], [797, -407], [803, -386]].forEach(([x, z]) => {
+    const e = criaEsqueleto(x, z); e.position.y = -40;
+    addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 9), { especie: 'esqueleto', y0: -40 });
+  });
+}
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -2053,12 +2085,53 @@ function zarpaIrmas() {
     [{ texto: 'Seguir descendo a espinha 🦴', onClick: () => dialogo.fecha() }]);
   interativos.push(it);
 }
-// AS AREIAS DO VEIO SECO · interativos de POI (RV10.7): cada ponto conta sua
-// história. A Pedra-Veio Seca e a Catedral terão gancho mecânico no próximo lote.
+// AS AREIAS DO VEIO SECO · interativos de POI (RV10.7/10.8): cada ponto conta
+// sua história; a Catedral oferece DESCER à Nave Profanada.
 for (const poiDes of deserto.pois) {
   const it = { x: poiDes.x, z: poiDes.z, raio: poiDes.raio || 3.4, titulo: poiDes.titulo, acao: poiDes.acao };
-  const txt = poiDes.texto;
-  it.onAcao = () => dialogo.abre(poiDes.titulo, txt, [{ texto: 'Seguir 🏜️', onClick: () => dialogo.fecha() }]);
+  const p = poiDes;
+  it.onAcao = () => {
+    const botoes = [{ texto: 'Seguir 🏜️', onClick: () => dialogo.fecha() }];
+    if (p.tipo === 'catedral') botoes.unshift({ texto: 'Descer à Nave Profanada 🕯️', onClick: () => { dialogo.fecha(); desceCatedral(); } });
+    dialogo.abre(p.titulo, p.texto, botoes);
+  };
+  interativos.push(it);
+}
+// A NAVE PROFANADA (RV10.8): descida pela corda atrás do altar + corda de volta
+// + o relicário que DESPERTA Vael (boss por invocação, padrão do Arconte).
+function desceCatedral() {
+  if (montado) { montado = false; mostraMensagem('Você desmontou pra entrar. 🐾'); }
+  acessoAtual = 0;
+  subsoloAtual = catedralI;
+  catedralI.grupo.visible = true;
+  chaoY = -40; areaAtiva = catedralI.bounds; noEsgoto = true;
+  const a = catedralI.acessos[0];
+  avatar.position.set(a.x, -40, a.z - 2); vy = 0; noChao = true;
+  hemi.intensity = 0.18; sun.intensity = 0.08; // nave escura — vitrais e a Veia presa iluminam
+  minimapa.esconde(); petAlvo = null; sons.corda();
+  mostraMensagem('🕯️ Você desce à Nave Profanada... o ar cheira a mirra e morte.');
+}
+{
+  const a = catedralI.acessos[0];
+  const it = { x: a.x, z: a.z, y: -40, raio: 2.8, titulo: '🪢 Corda', acao: 'Subir ao adro 🪢' };
+  it.onAcao = () => { if (subsoloAtual === catedralI) sobe(0); };
+  interativos.push(it);
+}
+{
+  const r = catedralI.relicario;
+  const it = { x: r.x, z: r.z, y: -40, raio: 2.8, titulo: '⚱️ Relicário de Vael', acao: 'Tocar o relicário ⚱️' };
+  it.onAcao = () => {
+    if (subsoloAtual !== catedralI || !vaelCatedral) return;
+    if (vaelCatedral._despertado) {
+      mostraMensagem(vaelCatedral.vivo ? 'Vael já despertou — termine o que começou. ⚔️' : 'A costura foi desfeita. Vael descansa enfim. 🌒');
+      return;
+    }
+    vaelCatedral._despertado = true;
+    vaelCatedral.vivo = true; vaelCatedral.g.visible = true; vaelCatedral.hp = vaelCatedral.hpMax;
+    dialogo.abre('⚱️ A Costura se Rompe',
+      'Você toca o relicário. A Veia presa PULSA — e o que estava embalsamado abre os olhos.\n\nVAEL, o Santo Embalsamado, ergue-se: nem vivo nem morto, a agulha que tentaram usar pra costurar a Lua Partida e que nunca parou de doer. Desfaça a costura.',
+      [{ texto: 'Empunhar a arma ⚔️', onClick: () => dialogo.fecha() }]);
+  };
   interativos.push(it);
 }
 
@@ -2874,7 +2947,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -3051,7 +3124,7 @@ window.addEventListener('keydown', (e) => {
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -3289,7 +3362,8 @@ function atualizaLocal() {
     nome = subsoloAtual === catacumbas ? 'Catacumbas de Venore'
       : subsoloAtual === criptaProfunda ? 'Cripta Profunda'
       : subsoloAtual === cavernasPico ? 'Cavernas do Pico'
-      : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar' : 'Esgoto';
+      : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar'
+      : subsoloAtual === catedralI ? 'Catedral da Lua Coada · Nave Profanada' : 'Esgoto';
   }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
