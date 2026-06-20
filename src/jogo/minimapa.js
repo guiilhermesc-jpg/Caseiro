@@ -9,7 +9,7 @@ const MARCO_COR = {
 };
 const corHex = (c) => '#' + ((c >>> 0) & 0xffffff).toString(16).padStart(6, '0');
 
-export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], lojas = [], rotas = [], regiao = null, alcance = 90, onMarcar = null, onLimpar = null }) {
+export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares = [], lojas = [], rotas = [], veios = [], pedrasVeio = [], regiao = null, alcance = 90, onMarcar = null, onLimpar = null }) {
   const TAM = 150;
   const MAP_W = 980, MAP_H = 640;
   const mundo = regiao || { minX: -430, maxX: 830, minZ: -490, maxZ: 490 };
@@ -176,6 +176,29 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
       mctx.lineWidth = Math.max(3, (r.w || 8) * MAP_W / (mundo.maxX - mundo.minX));
       mctx.beginPath(); mctx.moveTo(sxM(r.x1), syM(r.z1)); mctx.lineTo(sxM(r.x2), syM(r.z2)); mctx.stroke();
     }
+    // VEIOS sentidos (RV9.1): as "linhas reais" da Veia ligando os nós —
+    // desenhadas com brilho na cor do veio, só depois de SENTIDAS
+    for (const v of veios) {
+      if (!v.sentido || (v.segredo && !v.revelado) || !v.pts || v.pts.length < 2) continue;
+      const hx = corHex(v.cor);
+      mctx.strokeStyle = hx; mctx.lineWidth = 2.6; mctx.globalAlpha = 0.92;
+      mctx.shadowColor = hx; mctx.shadowBlur = 9; mctx.lineCap = 'round'; mctx.lineJoin = 'round';
+      mctx.beginPath();
+      v.pts.forEach((p, i) => { const X = sxM(p[0]), Y = syM(p[1]); i ? mctx.lineTo(X, Y) : mctx.moveTo(X, Y); });
+      mctx.stroke();
+      mctx.shadowBlur = 0; mctx.globalAlpha = 1;
+    }
+    // Pedras-Veio (nós): glifo gravado, brilha quando sentido, cinza quando não
+    for (const p of pedrasVeio) {
+      if (p.segredo && !p.revelado && !p.sentido) continue; // a Boca só aparece após revelada
+      const X = sxM(p.x), Y = syM(p.z); const hx = corHex(p.cor);
+      mctx.beginPath(); mctx.arc(X, Y, 5.5, 0, Math.PI * 2);
+      mctx.fillStyle = p.sentido ? hx : 'rgba(140,140,150,.85)';
+      if (p.sentido) { mctx.shadowColor = hx; mctx.shadowBlur = 10; }
+      mctx.fill(); mctx.shadowBlur = 0;
+      mctx.lineWidth = 1.5; mctx.strokeStyle = '#0a0a0a'; mctx.stroke();
+    }
+
     // construções e cidades
     mctx.fillStyle = 'rgba(31,38,48,.56)';
     for (const o of obstaculos) {
