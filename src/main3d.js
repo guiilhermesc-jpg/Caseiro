@@ -23,6 +23,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
+import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -76,7 +77,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV10.0 (v62)';
+const VERSAO = 'RV10.5 (v63)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -323,6 +324,9 @@ criptaProfunda.grupo.visible = false;
 // CAVERNAS DO PICO (RV5.8): a 3ª masmorra, por dentro da Montanha do Dragão
 const cavernasPico = criaCavernasPico(); scene.add(cavernasPico.grupo);
 cavernasPico.grupo.visible = false;
+// AS IRMÃS AFUNDADAS (RV10.5): Ilha 1 — A Quebra-Mar, zona carregada além-mar
+const irmas1 = criaIrmasIlha1(); scene.add(irmas1.grupo);
+irmas1.grupo.visible = false;
 { // boca da descida (marca escura no chão da câmara do trono)
   const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
   buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
@@ -717,6 +721,36 @@ const ESQUELETOS_NOTURNOS = [];
 [[-352, -6], [-340, -16]].forEach(([x, z]) => {
   const anc = criaEsqueleto(x, z); anc.position.y = -80; anc.scale.setScalar(1.3);
   addMonstro(anc, 80, 30, 14, 1.7, true, areaMon(-346, -10, 12), { especie: 'esqueleto', y0: -80 });
+});
+// AS IRMÃS AFUNDADAS · Ilha 1 — A QUEBRA-MAR (RV10.5): fauna do bioma marinho
+// (y = -40, na região da zona carregada). Risco baixo, mas o herói que abre a
+// Boca já é forte — nada de tutorial: caranguejos/escorpiões/ratos das poças +
+// os NÁUFRAGOS DO SAL (a frota que tentou antes, memória cristalizada no sal).
+const IRX = 720, IRZ = -700;
+const _SAL = new THREE.Color(0xbcd0cf);
+function naufragoDoSal(x, z) {
+  const e = criaEsqueleto(x, z); e.position.y = -40;
+  e.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material) || !o.material.clone) return;
+    o.material = o.material.clone(); // não mexer no material compartilhado
+    if (o.material.color) o.material.color.lerp(_SAL, 0.6);
+    if (o.material.emissive) { o.material.emissive.set(0x16323a); o.material.emissiveIntensity = 0.3; }
+  });
+  return e;
+}
+[[IRX - 14, IRZ + 8], [IRX + 16, IRZ - 6], [IRX + 4, IRZ + 16]].forEach(([x, z]) =>
+  addMonstro(naufragoDoSal(x, z), 46, 18, 10, 1.8, false, areaMon(IRX, IRZ, 25), { especie: 'esqueleto', y0: -40 }));
+[[IRX - 8, IRZ - 12], [IRX + 12, IRZ + 10], [IRX - 18, IRZ + 2]].forEach(([x, z]) => {
+  const c = criaCaranguejo(x, z); c.position.y = -40;
+  addMonstro(c, 22, 7, 5, 2.2, false, areaMon(IRX, IRZ, 25), { especie: 'caranguejo', y0: -40 });
+});
+[[IRX + 18, IRZ + 4], [IRX - 4, IRZ - 18]].forEach(([x, z]) => {
+  const s = criaEscorpiao(x, z); s.position.y = -40;
+  addMonstro(s, 28, 9, 7, 2.1, false, areaMon(IRX, IRZ, 25), { veneno: true, especie: 'escorpiao', y0: -40 });
+});
+[[IRX + 8, IRZ - 16], [IRX - 16, IRZ - 6]].forEach(([x, z]) => {
+  const r2 = criaRato(x, z); r2.position.y = -40;
+  addMonstro(r2, 16, 5, 4, 2.4, false, areaMon(IRX, IRZ, 25), { especie: 'rato', y0: -40 });
 });
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
 let armado = false;
@@ -1928,6 +1962,78 @@ function desceCavernas() {
 // a LAVA das cavernas QUEIMA de verdade (entra nos campos de chão)
 cavernasPico.lavas.forEach((L) => CAMPOS.push({ tipo: 'lava', x: L.x, z: L.z, r: L.r, y: L.y }));
 
+// =============================================================
+// AS IRMÃS AFUNDADAS (RV10.5): A BOCA SE ABRE.
+// Tocar a Pedra da Boca (0,-206) com os 5 veios sentidos já entrega a "Gota
+// da Veia" (RV9.0). Com ela na mochila, a corrente reconhece o herói como
+// "nervo próprio" e a Boca deixa zarpar para a Segunda Terra (Ilha 1).
+// =============================================================
+function zarpaIrmas() {
+  if (montado) { montado = false; mostraMensagem('Você desmontou pra embarcar. 🐾'); }
+  acessoAtual = 0;
+  subsoloAtual = irmas1;
+  irmas1.grupo.visible = true;
+  chaoY = -40; areaAtiva = irmas1.bounds; noEsgoto = true;
+  const a = irmas1.acessos[0];
+  avatar.position.set(a.x + 2, -40, a.z - 2); vy = 0; noChao = true;
+  hemi.intensity = 0.34; sun.intensity = 0.16; // mar morno e escuro — sem tocha
+  minimapa.esconde(); petAlvo = null; sons.agua();
+  dialogo.abre('🌊 Você cruza a Boca',
+    'A água fica preta e MORNA, como sangue. O céu mostra a Lua Partida refletida só de um lado. Ao sul descem silhuetas de ilhas que não existem em nenhum mapa de Venor.\n\nVocê acabou de sair do corpo do mundo. À frente, a primeira vértebra da espinha quebrada: A QUEBRA-MAR.',
+    [{ texto: 'Pisar em terra estranha 🏝️', onClick: () => dialogo.fecha() }]);
+}
+// DOCA DA BOCA (superfície): a doca que ninguém terminou, na franja sul ao
+// pé da Pedra da Boca — Mestre Calço, o barqueiro-renegado, a terminou.
+{
+  const docaSup = new THREE.Group(); docaSup.position.set(8, 0, -232); scene.add(docaSup);
+  const madeira = new THREE.MeshStandardMaterial({ color: 0x4b3a26, roughness: 0.9 });
+  for (let i = 0; i < 5; i++) {
+    const tab = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.2, 1.2), madeira);
+    tab.position.set(0, 0.12, -i * 1.25); docaSup.add(tab);
+  }
+  const casco = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.0, 4.2), new THREE.MeshStandardMaterial({ color: 0x32271a, roughness: 0.9 }));
+  casco.position.set(2.6, 0.4, -4); casco.rotation.y = 0.3; docaSup.add(casco);
+  const lampiao = new THREE.PointLight(0xffb060, 1.1, 14, 2); lampiao.position.set(0, 2.4, -1); docaSup.add(lampiao);
+  const it = { x: 8, z: -234, raio: 3.4, titulo: '⛴️ Doca da Boca', acao: 'Zarpar para o Fundo 🌊' };
+  it.onAcao = () => {
+    if (!inventario.temItem('Gota da Veia')) {
+      dialogo.abre('⛴️ Mestre Calço, o barqueiro',
+        '— Pra cruzar a Boca não basta querer, forasteiro. A corrente só deixa passar quem ela reconhece como NERVO PRÓPRIO. Traga a Gota da Veia: sinta os cinco veios pelas Pedras e toque a Pedra da Boca, ali na areia. Aí eu solto as amarras.\n\n(A Vigília observa de longe — eles guardam a Fenda pra impedir que alguém REÚNA o que está partido.)',
+        [{ texto: 'Entendi 🌑', onClick: () => dialogo.fecha() }]);
+      return;
+    }
+    zarpaIrmas();
+  };
+  interativos.push(it);
+}
+// DOCA DE VOLTA (dentro da Ilha 1): retorna à praia, ao pé da Pedra da Boca
+{
+  const a = irmas1.acessos[0];
+  const it = { x: a.x, z: a.z, y: -40, raio: 2.8, titulo: '⛴️ Doca de volta', acao: 'Voltar pela Boca 🌊' };
+  it.onAcao = () => { if (subsoloAtual === irmas1) sobe(0); };
+  interativos.push(it);
+}
+// O SINO da Quebra-Mar: o sino do porto inacabado de Venor, levado pela
+// corrente — prova de que a Boca SEMPRE ligou os dois lados.
+{
+  const it = { x: irmas1.sino.x, z: irmas1.sino.z, y: -40, raio: 2.6, titulo: '🔔 Sino da Maré', acao: 'Badalar o sino 🔔' };
+  it.onAcao = () => {
+    sons.corda();
+    dialogo.abre('🔔 O sino do porto inacabado',
+      'Você reconhece o bronze: é o sino do porto que NINGUÉM terminou de construir, lá na Boca de Venor. A corrente o trouxe até aqui.\n\nEle badala — e o som volta de longe, do fundo do mar, como se OUTRO sino respondesse. Os dois lados sempre se ouviram.',
+      [{ texto: 'Guardar o som 🌊', onClick: () => dialogo.fecha() }]);
+  };
+  interativos.push(it);
+}
+// A PLACA da Quebra-Mar: a primeira lápide das Irmãs (lore)
+{
+  const it = { x: irmas1.placa.x, z: irmas1.placa.z, y: -40, raio: 2.6, titulo: '🪧 Lápide de Sal', acao: 'Ler a lápide 🪧' };
+  it.onAcao = () => dialogo.abre('🪧 A Lápide de Sal',
+    '"Aqui descansa a frota que jurou voltar.\nNão voltaram para Venor — voltaram para CÁ.\nO sal lhes prendeu a memória em vez de deixá-la correr:\npor isso ainda caminham, e não lembram por quê.\n\nViajante: a água lembra. O sal aprisiona.\nNão deixe o Fundo te cristalizar."',
+    [{ texto: 'Seguir descendo a espinha 🦴', onClick: () => dialogo.fecha() }]);
+  interativos.push(it);
+}
+
 // BAÚ ANCESTRAL: o tesouro dos reis (UMA vez por conta — vai no save)
 let bauCriptaAberto = false;
 {
@@ -2740,7 +2846,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -2807,9 +2913,14 @@ function reviveBicho(r) {
 function salvaJogo() {
   if (!jogoIniciado) return;
   try {
+    // dentro de uma zona carregada (esgoto/catacumbas/cavernas/Irmãs), salva a
+    // SAÍDA de superfície — senão o reload renasce o jogador num canto vazio
+    // (as Irmãs ficam longe, em ~720,-700; cairia no meio do nada).
+    const _sp = (noEsgoto && subsoloAtual && subsoloAtual.saidas && subsoloAtual.saidas[0])
+      ? subsoloAtual.saidas[0] : avatar.position;
     localStorage.setItem('venor_conta_' + nomeJogador.trim().toLowerCase(), JSON.stringify({
       v: 1, cores: { ...coresJogador },
-      x: avatar.position.x, z: avatar.position.z,
+      x: _sp.x, z: _sp.z,
       ouro, vida, hud: hud.estado(), mochila: inventario.estado(),
       equip: Object.values(equipados).filter(Boolean),
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
@@ -2912,7 +3023,7 @@ window.addEventListener('keydown', (e) => {
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -3149,7 +3260,8 @@ function atualizaLocal() {
   if (noEsgoto) {
     nome = subsoloAtual === catacumbas ? 'Catacumbas de Venore'
       : subsoloAtual === criptaProfunda ? 'Cripta Profunda'
-      : subsoloAtual === cavernasPico ? 'Cavernas do Pico' : 'Esgoto';
+      : subsoloAtual === cavernasPico ? 'Cavernas do Pico'
+      : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar' : 'Esgoto';
   }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
