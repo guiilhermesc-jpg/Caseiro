@@ -15,7 +15,7 @@ import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 import { criaPatchNotes } from './jogo/patchNotes.js';
 import { criaQuadroJornadas, pontosJornadaParaMapa, rotasParaMapa } from './jogo/jornadas.js';
-import { criaCodice, PEDRAS_VEIO, TESSITURA } from './jogo/codice.js';
+import { criaCodice, PEDRAS_VEIO, TESSITURA, VEIOS_MAPA, RELIQUIAS } from './jogo/codice.js';
 import { precoCompra } from './jogo/calendario.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
@@ -76,7 +76,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV9.0 (v60)';
+const VERSAO = 'RV9.1 (v61)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -812,11 +812,20 @@ const ROTAS_MAPA = rotasParaMapa();
   { x1: 180, z1: -126, x2: 180, z2: 66, w: 5 },    // Rio Fundo / referência de travessia
 ];
 */
+// VEIOS no mapa (RV9.1): arrays VIVOS que o mapa-mundi lê a cada desenho;
+// main3d marca `sentido`/`revelado` ao tocar uma Pedra-Veio ou ao carregar.
+const VEIOS_MAPA_LIVE = VEIOS_MAPA.map((v) => ({ ...v, sentido: false, revelado: false }));
+const PEDRAS_MAPA_LIVE = PEDRAS_VEIO.map((p) => ({ x: p.x, z: p.z, cor: p.cor, id: p.id, segredo: !!p.segredo, sentido: false, revelado: false }));
 const minimapa = criaMinimapa({
-  obstaculos, ruas, marcos, lugares: [...LUGARES_MAPA, ...LUGARES_JORNADA], lojas: LOJAS_MAPA, rotas: ROTAS_MAPA, regiao: REGIAO, alcance: 90,
+  obstaculos, ruas, marcos, lugares: [...LUGARES_MAPA, ...LUGARES_JORNADA], lojas: LOJAS_MAPA, rotas: ROTAS_MAPA,
+  veios: VEIOS_MAPA_LIVE, pedrasVeio: PEDRAS_MAPA_LIVE, regiao: REGIAO, alcance: 90,
   onMarcar: (destino) => defineDestinoMapa(destino),
   onLimpar: (silencioso) => limpaDestinoMapa(silencioso),
 });
+function sincronizaVeiosMapa() {
+  for (const v of VEIOS_MAPA_LIVE) { v.sentido = codice.jaSentiu(v.id) || (v.segredo && codice.segredoJaRevelado()); v.revelado = !v.segredo || codice.segredoJaRevelado(); }
+  for (const p of PEDRAS_MAPA_LIVE) { p.sentido = codice.jaSentiu(p.id) || (p.segredo && codice.segredoJaRevelado()); p.revelado = !p.segredo || codice.segredoJaRevelado(); }
+}
 LOJAS_MAPA.forEach((L) => { // marcador flutuante em cima de cada loja
   const cnvL = document.createElement('canvas'); cnvL.width = 128; cnvL.height = 128;
   const cL = cnvL.getContext('2d'); cL.font = '88px Arial'; cL.textAlign = 'center'; cL.textBaseline = 'middle'; cL.fillText(L.icone, 64, 70);
@@ -1738,6 +1747,10 @@ PEDRAS_VEIO.forEach((pv) => {
     new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, color: pv.cor, emissive: pv.cor, emissiveIntensity: 0.9, roughness: 0.4 }));
   glifo.position.set(0, 2.05, 0.84); gP.add(glifo);
   const luz = new THREE.PointLight(pv.cor, 0.5, 9, 2); luz.position.y = 3.0; gP.add(luz);
+  // anel rúnico gravado no chão ao redor da base (premium, RV9.1)
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.5, 28),
+    new THREE.MeshBasicMaterial({ color: pv.cor, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; gP.add(ring);
   scene.add(gP);
   const it = { x: pv.x, z: pv.z, y: pv.y || 0, raio: 2.8, titulo: `🪨 ${pv.nome}`, acao: `Tocar a ${pv.nome}` };
   it.onAcao = () => {
@@ -1750,6 +1763,7 @@ PEDRAS_VEIO.forEach((pv) => {
         if (!inventario.temItem('Gota da Veia')) inventario.addItem({ nome: 'Gota da Veia', icone: '💧' });
         sons.tesouro();
       }
+      sincronizaVeiosMapa();
       const m = TESSITURA.misterios[0];
       dialogo.abre('🌑 ' + m.nome, `${pv.fragmento}\n\n${m.texto}\n\n${m.profecia}`, [{ texto: 'Guardar no Códice 📖', onClick: () => dialogo.fecha() }]);
       salvaJogo();
@@ -1757,6 +1771,7 @@ PEDRAS_VEIO.forEach((pv) => {
     }
     const veio = TESSITURA.veios.find((v) => v.id === pv.id);
     if (codice.marcaVeio(pv.id)) sons.corda();
+    sincronizaVeiosMapa();
     const completou = codice.todosPrincipaisSentidos() && !codice.segredoJaRevelado();
     dialogo.abre(pv.nome, `${pv.fragmento}\n\n— Veio sentido: ${veio ? veio.nome : pv.id}. Abra o 📖 Códice (canto direito) pra ler a linha inteira da Veia.`
       + (completou ? '\n\n🌊 Você sentiu os cinco veios. Falta uma pedra, ao sul, onde o mar começa...' : ''),
@@ -2827,6 +2842,7 @@ function carregaJogo(nome) {
     restauraEconomia(); // ofertas raras já conquistadas voltam pras lojas
     Object.assign(questEstado, d.quests || {}); // missões continuam de onde pararam
     codice.carrega(d.codice); // Códice da Veia volta com os veios já sentidos
+    sincronizaVeiosMapa(); atualizaReliquias(); // mapa e relíquias refletem o save
     cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
@@ -2841,8 +2857,24 @@ function carregaJogo(nome) {
     return true;
   } catch (e) { return false; }
 }
+// RELÍQUIAS (RV9.1): revela no Códice a lore oculta dos itens lendários que
+// o jogador obteve (mochila ou cofre) — "itens que conectam eras".
+function temItemQualquer(nome) {
+  return (inventario.temItem && inventario.temItem(nome)) || cofre.some((c) => c && c.nome === nome);
+}
+function atualizaReliquias() {
+  for (const rl of RELIQUIAS) {
+    if (codice.jaRevelouReliquia(rl.id)) continue;
+    let tem = rl.alvos ? rl.alvos.some((n) => temItemQualquer(n)) : false;
+    if (rl.gatilhoVeio) tem = tem || codice.jaSentiu(rl.gatilhoVeio);
+    if (tem && codice.marcaReliquia(rl.id)) {
+      mostraMensagem(`📖 Relíquia registrada no Códice: ${rl.nome.replace(/^\S+\s/, '')}`);
+    }
+  }
+}
 setInterval(() => {
   salvaJogo();                                       // auto-save local a cada 10s
+  atualizaReliquias();                               // 📖 itens lendários revelam lore
   if (nuvemPin) enviaSaveNuvem(nuvemPin, false);     // ☁️ vinculou? sobe junto
 }, 10000);
 window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualizar

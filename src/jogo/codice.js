@@ -198,8 +198,37 @@ export const PEDRAS_VEIO = [
     fragmento: 'A pedra prova o mesmo sal do chafariz, a léguas dali. Onde o mar começa, a Veia sai do corpo da terra e mergulha. Há mundo do outro lado.' },
 ];
 
+// VEIOS NO MAPA (RV9.1): as "linhas reais" desenhadas no mapa-mundi ligando
+// os nós geográficos de cada veio — só aparecem depois de SENTIDOS.
+export const VEIOS_MAPA = [
+  { id: 'lava', cor: 0xff6a2a, pts: [[64, 262], [110, 300], [40, 330]] },
+  { id: 'afogado', cor: 0x3fb0c8, pts: [[-320, -30], [0, 0], [45, 60]] },
+  { id: 'obsidiana', cor: 0x9a6aff, pts: [[-620, -30], [-715, -30], [-742, -30]] },
+  { id: 'cicatriz', cor: 0xe8d68a, pts: [[250, 120], [-340, -10]] },
+  { id: 'osso', cor: 0x9ab07a, pts: [[180, 0], [205, 170]] },
+  { id: 'boca', cor: 0x2e6fa8, pts: [[0, 0], [0, -218]], segredo: true },
+];
+
+// RELÍQUIAS (RV9.1): itens lendários que carregam lore OCULTA — revelam um
+// elo com a Veia quando o jogador os obtém ("itens que conectam eras").
+export const RELIQUIAS = [
+  { id: 'coroa', nome: '👑 Coroa Antiga', alvos: ['Coroa Antiga'],
+    texto: 'Não é só ouro: é onde a terra "fechou a mão" sobre a memória do rei que quis acumular o que devia correr. Por isso ela acende quando a Veia pulsa — é o 1º Sinal. A terra não distingue a ganância de Ossivaldo da febre de Vorag: ambas são feridas presas no mesmo corpo, e reabrem juntas.' },
+  { id: 'coracao', nome: '🫀 Coração de Obsidiana / Ancestral', alvos: ['Coração de Obsidiana', 'Coração Ancestral'],
+    texto: 'São o MESMO órgão em dois estados: o sangue-frio que os Drakari endureceram em pedra e o núcleo térmico que fez de Vorag "o clima". Por isso a obsidiana consagra a sela que doma um dragão vivo — pedra-sangue reconhece carne-sangue como o mesmo sangue, só em temperaturas diferentes. É o item que PROVA a tese: Drakari e dragões são duas idades de um só organismo.' },
+  { id: 'seda', nome: '🕸️ Manto de Seda', alvos: ['Manto de Seda'],
+    texto: 'A seda da Tecelã é a terra "suando" fios onde o nervo corre raso e frio sob a floresta do oeste. Quando ela volta a cobrir a mata, a cicatriz daquele ponto reabriu — é o 2º Sinal, no mesmo pulso que acende a coroa e choca o ovo.' },
+  { id: 'cristal', nome: '💠 Cristal do Pico', alvos: ['Cristal do Pico'],
+    texto: 'Obsidiana JOVEM, ainda morna de memória recente, esfriando devagar dentro do forno da montanha. O "dom" mágico de Venor é, no fundo, a capacidade de SENTIR a terra viva e ouvir suas memórias: magos são quem a Veia reconhece como seu próprio nervo.' },
+  { id: 'lamina', nome: '🗡️ Lâmina da Lua Partida', alvos: ['Lâmina da Lua Partida'],
+    texto: 'Aço temperado na corrente quente da Veia. O Selo é contenção — fechar a Fenda. A Lâmina é abertura. Quem a empunha carrega a tentação de reabrir o que está partido, contra o instinto da Vigília de manter o corpo do mundo inteiro e separado.' },
+  { id: 'tempo', nome: '⏳ O Relógio e o Chafariz', gatilhoVeio: 'afogado',
+    texto: 'Os dois últimos ritos vivos da Veia, disfarçados de folclore. O chafariz lembra QUEM: a água registrou as quatro famílias e devolve isso como fonte que não seca. O relógio guarda QUANDO: atrasa exatamente o tempo que a superfície corre à frente da Venore Antiga afogada, que ainda "roda" cinco minutos atrás sob seus pés. Por isso a carne consegue reconstruir três vezes por cima de si mesma sem se perder.' },
+];
+
 export function criaCodice() {
   const sentidos = new Set();   // ids de veios já "sentidos"
+  const reliquias = new Set();  // ids de relíquias já reveladas
   let segredoRevelado = false;
 
   // botão flutuante (estilo dos outros HUDs premium do jogo)
@@ -258,8 +287,21 @@ export function criaCodice() {
       <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(159,118,255,.3);border-radius:8px;background:rgba(159,118,255,.08);color:#c8e6ff;font-size:12.5px;line-height:1.6;white-space:pre-line;">${m.profecia}</div>
     </article>`;
   }
+  function reliquiaHtml(rl) {
+    if (!reliquias.has(rl.id)) {
+      return `<article style="border:1px dashed rgba(232,217,160,.22);background:rgba(0,0,0,.18);border-radius:9px;padding:11px;opacity:.7;">
+        <div style="font:800 13px Georgia,serif;color:#8a8470;">🔒 ${rl.nome}</div>
+        <div style="color:#79756a;font-size:12px;line-height:1.5;margin-top:4px;">Relíquia não revelada — obtenha o item para ouvir o que a Veia lembra dele.</div>
+      </article>`;
+    }
+    return `<article style="border:1px solid rgba(232,217,160,.4);background:linear-gradient(180deg,rgba(40,34,18,.5),rgba(10,9,6,.5));border-radius:9px;padding:12px;">
+      <div style="font:800 14px Georgia,serif;color:#f0e0a0;">${rl.nome}</div>
+      <div style="color:#d6cdb6;font-size:12.5px;line-height:1.6;margin-top:5px;">${rl.texto}</div>
+    </article>`;
+  }
   function render() {
     const total = TESSITURA.veios.length;
+    const relReveladas = RELIQUIAS.filter((r) => reliquias.has(r.id)).length;
     card.innerHTML = `
       <div style="padding:22px 24px 16px;border-bottom:1px solid rgba(255,255,255,.08);">
         <div style="font:700 12px Georgia,serif;letter-spacing:5px;color:#b59bff;">A TESSITURA DE VENOR</div>
@@ -279,6 +321,11 @@ export function criaCodice() {
         <section>
           <h2 style="margin:0 0 12px;font:800 19px Georgia,serif;color:#b59bff;">Mistérios</h2>
           <div style="display:flex;flex-direction:column;gap:10px;">${TESSITURA.misterios.map(misterioHtml).join('')}</div>
+        </section>
+        <section>
+          <h2 style="margin:0 0 4px;font:800 19px Georgia,serif;color:#e8d9a0;">Relíquias — itens que ligam eras</h2>
+          <div style="font-size:12px;color:#8f86a3;margin-bottom:10px;">Reveladas: <b style="color:#f0e0a0;">${relReveladas}/${RELIQUIAS.length}</b> · cada item lendário guarda uma memória da Veia.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;">${RELIQUIAS.map(reliquiaHtml).join('')}</div>
         </section>
       </div>
       <div style="padding:0 24px 22px;display:flex;justify-content:flex-end;">
@@ -303,10 +350,13 @@ export function criaCodice() {
     todosPrincipaisSentidos() { return TESSITURA.veios.every((v) => sentidos.has(v.id)); },
     revelaSegredo() { const novo = !segredoRevelado; segredoRevelado = true; return novo; },
     segredoJaRevelado() { return segredoRevelado; },
-    estado() { return { veios: [...sentidos], segredo: segredoRevelado }; },
+    marcaReliquia(id) { const novo = !reliquias.has(id); reliquias.add(id); return novo; },
+    jaRevelouReliquia(id) { return reliquias.has(id); },
+    estado() { return { veios: [...sentidos], segredo: segredoRevelado, reliquias: [...reliquias] }; },
     carrega(s) {
       if (!s) return;
       (s.veios || []).forEach((v) => sentidos.add(v));
+      (s.reliquias || []).forEach((r) => reliquias.add(r));
       segredoRevelado = !!s.segredo;
     },
   };
