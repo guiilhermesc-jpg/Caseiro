@@ -28,6 +28,8 @@ const RETS = [
   [-552, -48, -414, -12],    // Estrada das Cinzas (Venore -> Noctaria)
   [-690, -82, -548, 24],     // Noctaria, a Cidadela da Vigilia
   [-780, -74, -692, 18],     // Santuario da Lua Partida / Fenda
+  [470, -470, 720, -150],    // AS AREIAS DO VEIO SECO (deserto sudeste, RV10.7)
+  [548, -150, 574, -72],     // Estrada do Mormaço (corredor Thais → deserto)
 ];
 // círculos planos [cx, cz, raio]
 const CIRCS = [

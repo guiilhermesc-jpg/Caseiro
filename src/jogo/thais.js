@@ -59,7 +59,12 @@ export function criaThais(cx, cz, opts = {}) {
     ameias(lx, lz, w > d ? w : d, w > d ? 'x' : 'z');
   }
   muro(0, HZ, HX * 2, ESP);    // norte
-  muro(0, -HZ, HX * 2, ESP);   // sul
+  // SUL: 2 segmentos deixando o PORTÃO DO DESERTO no meio (RV10.7 — saída
+  // para As Areias do Veio Seco). Espelha o portão oeste.
+  const segXsul = (HX * 2 - gw) / 2;
+  muro(-(gw / 2 + segXsul / 2), -HZ, segXsul, ESP);
+  muro((gw / 2 + segXsul / 2), -HZ, segXsul, ESP);
+  addG(new THREE.BoxGeometry(gw, ALT - 5, ESP + 0.5), pedraEsc, 0, ALT - (ALT - 5) / 2, -HZ); // arco (sem colisor)
   muro(HX, 0, ESP, HZ * 2);    // leste
   const segZ = (HZ * 2 - gw) / 2;     // oeste em 2 segmentos (vão = portão)
   muro(-HX, -(gw / 2 + segZ / 2), ESP, segZ);

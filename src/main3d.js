@@ -24,6 +24,7 @@ import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
+import { criaDeserto } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -77,7 +78,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV10.6 (v64)';
+const VERSAO = 'RV10.7 (v65)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -257,7 +258,7 @@ let velAvatarX = 0, velAvatarZ = 0;
 // a lista inteira a cada passo travava — agora cada célula de 24u guarda só os
 // colisores que a tocam, e cada checagem olha ~5-20 caixas em vez de ~700.
 const CELULA = 24, gradeCol = new Map();
-for (const o of obstaculos) {
+function indexaCol(o) {
   const x0 = Math.floor((o.minX - 1.2) / CELULA), x1 = Math.floor((o.maxX + 1.2) / CELULA);
   const z0 = Math.floor((o.minZ - 1.2) / CELULA), z1 = Math.floor((o.maxZ + 1.2) / CELULA);
   for (let cx = x0; cx <= x1; cx++) for (let cz = z0; cz <= z1; cz++) {
@@ -266,6 +267,10 @@ for (const o of obstaculos) {
     arr.push(o);
   }
 }
+for (const o of obstaculos) indexaCol(o);
+// colisor adicionado DEPOIS da grade (ex.: estruturas do deserto) entra na
+// lista E no índice espacial — senão não colide.
+function addColisorMundo(o) { obstaculos.push(o); indexaCol(o); }
 function colide(x, z) {
   if (noEsgoto) { // subsolo (esgoto OU catacumbas): lista pequena, varre direto
     for (const o of subsoloAtual.colisores) {
@@ -327,6 +332,10 @@ cavernasPico.grupo.visible = false;
 // AS IRMÃS AFUNDADAS (RV10.5): Ilha 1 — A Quebra-Mar, zona carregada além-mar
 const irmas1 = criaIrmasIlha1(); scene.add(irmas1.grupo);
 irmas1.grupo.visible = false;
+// AS AREIAS DO VEIO SECO (RV10.7): deserto do sudeste + Catedral da Lua Coada.
+// Colisores entram no índice tardio (a grade já foi montada acima).
+const deserto = criaDeserto(); scene.add(deserto.grupo);
+deserto.colisores.forEach(addColisorMundo);
 { // boca da descida (marca escura no chão da câmara do trono)
   const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
   buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
@@ -752,6 +761,17 @@ function naufragoDoSal(x, z) {
   const r2 = criaRato(x, z); r2.position.y = -40;
   addMonstro(r2, 16, 5, 4, 2.4, false, areaMon(IRX, IRZ, 25), { especie: 'rato', y0: -40 });
 });
+// AS AREIAS DO VEIO SECO · caça do deserto (RV10.7, superfície y=0). Escalada
+// de fora pra dentro: escorpiões na borda → cobras/trolls no meio → ciclopes
+// guardando a Cidade Soterrada. Posições fora dos colisores das estruturas.
+[[550, -100], [572, -125], [558, -148], [500, -330], [470, -290], [645, -360], [590, -420]].forEach(([x, z]) =>
+  addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 16), { veneno: true, especie: 'escorpiao' }));
+[[520, -265], [585, -300], [545, -345], [640, -390]].forEach(([x, z]) =>
+  addMonstro(criaCobra(x, z), 28, 10, 8, 1.5, false, areaMon(x, z, 16), { veneno: true, especie: 'cobra' }));
+[[590, -200], [615, -250], [545, -280]].forEach(([x, z]) =>
+  addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14), { especie: 'troll' }));
+[[672, -310], [648, -322], [665, -296]].forEach(([x, z]) =>
+  addMonstro(criaCyclops(x, z), 150, 60, 18, 1.3, true, areaMon(660, -310, 18), { especie: 'ciclope' }));
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -2031,6 +2051,14 @@ function zarpaIrmas() {
   it.onAcao = () => dialogo.abre('🪧 A Lápide de Sal',
     '"Aqui descansa a frota que jurou voltar.\nNão voltaram para Venor — voltaram para CÁ.\nO sal lhes prendeu a memória em vez de deixá-la correr:\npor isso ainda caminham, e não lembram por quê.\n\nViajante: a água lembra. O sal aprisiona.\nNão deixe o Fundo te cristalizar."',
     [{ texto: 'Seguir descendo a espinha 🦴', onClick: () => dialogo.fecha() }]);
+  interativos.push(it);
+}
+// AS AREIAS DO VEIO SECO · interativos de POI (RV10.7): cada ponto conta sua
+// história. A Pedra-Veio Seca e a Catedral terão gancho mecânico no próximo lote.
+for (const poiDes of deserto.pois) {
+  const it = { x: poiDes.x, z: poiDes.z, raio: poiDes.raio || 3.4, titulo: poiDes.titulo, acao: poiDes.acao };
+  const txt = poiDes.texto;
+  it.onAcao = () => dialogo.abre(poiDes.titulo, txt, [{ texto: 'Seguir 🏜️', onClick: () => dialogo.fecha() }]);
   interativos.push(it);
 }
 
