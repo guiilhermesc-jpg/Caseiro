@@ -1167,9 +1167,10 @@ function viewCarteira() {
     let tl = parseInt(ihEl('ihTL').value, 10);
     if (!(tl > 0)) { try { tl = (JSON.parse(localStorage.getItem(IHG_KEY) || 'null') || {}).t | 0; } catch {} }
     const r = wallet.lifeProofReminderICS({ timelock: tl || 144 });
+    const gcal = wallet.lifeProofGoogleCalUrl({ timelock: tl || 144 });
     const url = URL.createObjectURL(new Blob([r.ics], { type: 'text/calendar;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'bussola-prova-de-vida.ics'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-    ihEl('ihIcsOut').innerHTML = `<div class="banner ok">📅 Lembrete baixado. Renove o cofre a cada <strong>~${r.everyDays} dia(s)</strong> (a janela do timelock é ≈ ${r.windowDays} dias). Importe o arquivo no seu calendário — ele repete sozinho.</div>`;
+    ihEl('ihIcsOut').innerHTML = `<div class="banner ok">📅 Lembrete baixado (.ics). Renove o cofre a cada <strong>~${r.everyDays} dia(s)</strong> (janela do timelock ≈ ${r.windowDays} dias) — ele repete sozinho.<br><a href="${gcal}" target="_blank" rel="noopener">➕ Adicionar ao Google Agenda</a></div>`;
   });
   ihEl('ihGen')?.addEventListener('click', () => {
     if (!wallet) return;
@@ -1611,19 +1612,47 @@ function viewSoberania() {
     const el = document.getElementById('vidaCard'); if (!el) return;
     let recebido = 0, nrec = 0;
     try { const l = JSON.parse(localStorage.getItem('bussola.sp.ledger.v1') || '[]'); nrec = l.length; recebido = l.reduce((s, e) => s + (e.valueSats || 0), 0); } catch {}
+    let handle = ''; try { handle = localStorage.getItem('bussola.sp.addr.v1') || ''; } catch {}
     let cofre = null; try { cofre = JSON.parse(localStorage.getItem('bussola.ihgroup.v1') || 'null'); } catch {}
     const temCofre = cofre && Array.isArray(cofre.c) && !cofre.c.some(x => !x) && cofre.h;
+    const handleShort = handle ? handle.slice(0, 12) + '…' + handle.slice(-6) : '';
+    const nudges = [];
+    if (!handle) nudges.push('gere seu <a href="#soberania">handle de recebimento ↓</a>');
+    if (!temCofre) nudges.push('monte seu <a href="#carteira">cofre de herança →</a>');
     el.innerHTML = `<h2>🧭 Sua Conta para a Vida Toda</h2>
       <p class="muted">As duas pontas de <strong>uma</strong> identidade soberana: você <strong>recebe</strong> privado a vida inteira
       e a conta <strong>passa sozinha</strong> aos seus quando você se vai. Sem empresa, sem KYC.</p>
       <div class="cards">
         <div class="card"><h3>💸 Entrada — Pix Bitcoin</h3>
           <div class="big">${(recebido / 1e8).toFixed(8)} <span class="muted small">tBTC</span></div>
-          <div class="sub muted">${nrec ? `${nrec} recebimento(s) no painel` : 'gere seu handle e receba privado'} · <a href="#soberania">Silent Payments ↓</a></div></div>
+          <div class="sub muted">${nrec ? `${nrec} recebimento(s) no painel` : 'pronto pra receber'}${handle ? ` · <span class="mono small">${esc(handleShort)}</span>` : ''}</div>
+          ${handle ? '<div class="regactions"><button type="button" class="btn-ghost" id="vcCopy">📋 Copiar handle</button><button type="button" class="btn-ghost" id="vcShare">📤 Compartilhar</button></div>' : ''}</div>
         <div class="card"><h3>🏛️ Saída — Interruptor da Vida</h3>
           <div class="big">${temCofre ? '🫀 Cofre ativo' : '—'}</div>
-          <div class="sub muted">${temCofre ? `dead man's switch · timelock ${cofre.t || 144} blocos · <a href="#carteira">ver cofre →</a>` : '<a href="#carteira">monte seu cofre trustless →</a>'}</div></div>
-      </div>`;
+          <div class="sub muted">${temCofre ? `dead man's switch · timelock ${cofre.t || 144} blocos` : '<a href="#carteira">monte seu cofre trustless →</a>'}</div>
+          ${temCofre ? '<div class="regactions"><button type="button" class="btn-ghost" id="vcStatus">🫀 Ver status ao vivo</button></div><div id="vcStatusOut"></div>' : ''}</div>
+      </div>
+      ${nudges.length ? `<p class="muted small">👉 Próximo passo: ${nudges.join(' · ')}</p>` : '<p class="muted small">✅ As duas pontas configuradas. Mantenha a prova de vida em dia (lembrete .ics no cofre).</p>'}`;
+    if (handle) {
+      document.getElementById('vcCopy')?.addEventListener('click', () => { try { navigator.clipboard.writeText(handle); } catch {} document.getElementById('vcCopy').textContent = '✓ copiado'; });
+      document.getElementById('vcShare')?.addEventListener('click', async () => { try { if (navigator.share) await navigator.share({ title: 'Meu Pix Bitcoin (Silent Payment)', text: handle }); else { navigator.clipboard.writeText(handle); document.getElementById('vcShare').textContent = '✓ copiado'; } } catch {} });
+    }
+    if (temCofre) {
+      document.getElementById('vcStatus')?.addEventListener('click', async () => {
+        const out = document.getElementById('vcStatusOut'); out.innerHTML = '<p class="loading">Lendo a chain…</p>';
+        try {
+          const cfg = { cosignerXpubs: cofre.c, heirXpub: cofre.h, timelock: cofre.t || 144 };
+          const targets = [...Wsh.inheritanceAddresses({ ...cfg, count: 10, chain: 0 }), ...Wsh.inheritanceAddresses({ ...cfg, count: 5, chain: 1 })];
+          const utxos = [];
+          await Promise.all(targets.map(async t => { try { const rr = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!rr.ok) return; for (const u of await rr.json()) utxos.push({ valueSats: u.value, height: u.status?.block_height || 0 }); } catch {} }));
+          if (!utxos.length) { out.innerHTML = '<p class="muted small">Cofre sem saldo — envie fundos para ligar o Interruptor.</p>'; return; }
+          const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+          const st = Wsh.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
+          if (st.claimableAll) { out.innerHTML = '<div class="banner warn">⚠️ Interruptor disparado — herança liberada. Se você está vivo, mova o cofre agora.</div>'; }
+          else { const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock); out.innerHTML = `<div class="muted small">🫀 ${BTC.format(st.totalSats / 1e8)} tBTC · faltam <strong>${st.remaining} blocos (~${st.remainingDays}d)</strong></div><div class="lifebar" style="background:var(--line);border-radius:8px;height:8px;overflow:hidden;margin:6px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>`; }
+        } catch (er) { out.innerHTML = `<p class="muted small">Não consegui ler a chain (${esc(er.message)}).</p>`; }
+      });
+    }
   }
   renderVidaCard();
 
@@ -1748,9 +1777,11 @@ function viewSoberania() {
     if (!Wsh) { o.innerHTML = '<p class="muted">Núcleo não carregou.</p>'; return; }
     try {
       const r = Wsh.silentPaymentAddress(document.getElementById('spMn').value, document.getElementById('spNet').value);
+      try { localStorage.setItem('bussola.sp.addr.v1', r.address); } catch {}
       const qr = Wsh.makeQR(r.address);
       o.innerHTML = `<div class="banner ok">Seu endereço Silent Payment (${r.network === 'main' ? 'mainnet' : 'testnet'}):</div>
         <textarea class="mono" rows="3" readonly>${esc(r.address)}</textarea>
+        <div class="regactions"><button type="button" class="btn-ghost" id="spAddrCopy">📋 Copiar handle</button><button type="button" class="btn-ghost" id="spAddrShare">📤 Compartilhar</button></div>
         ${qr ? `<div class="qr">${qr}</div>` : ''}
         <details class="agstep" style="margin-top:12px"><summary><strong>💳 Gerar cobrança</strong> — peça um valor (vira link + QR)</summary>
           <form id="spReq" class="regform" style="margin-top:8px">
@@ -1761,6 +1792,8 @@ function viewSoberania() {
           </form><p class="muted small">Preencha em BTC <strong>ou</strong> em R$ (converto pelo preço ao vivo).</p><div id="spReqOut"></div></details>
         <details class="small"><summary>chaves de visão/gasto (avançado)</summary>
         <div class="muted small mono" style="word-break:break-all">scan: ${esc(r.scanPub)}<br>spend: ${esc(r.spendPub)}</div></details>`;
+      document.getElementById('spAddrCopy').addEventListener('click', () => { try { navigator.clipboard.writeText(r.address); } catch {} document.getElementById('spAddrCopy').textContent = '✓ copiado'; });
+      document.getElementById('spAddrShare').addEventListener('click', async () => { try { if (navigator.share) await navigator.share({ title: 'Meu Pix Bitcoin (Silent Payment)', text: r.address }); else { navigator.clipboard.writeText(r.address); document.getElementById('spAddrShare').textContent = '✓ copiado (sem share)'; } } catch {} });
       document.getElementById('spReq').addEventListener('submit', async ev => {
         ev.preventDefault();
         const ro = document.getElementById('spReqOut');
@@ -1781,8 +1814,9 @@ function viewSoberania() {
           ro.innerHTML = `<div class="banner ok">Cobrança pronta — envie o link ou mostre o QR:</div>${nota}
             <textarea class="mono" rows="3" readonly>${esc(uri)}</textarea>
             ${rq ? `<div class="qr">${rq}</div>` : ''}
-            <button type="button" id="spReqCopy" class="btn-ghost">📋 Copiar link</button>`;
+            <div class="regactions"><button type="button" id="spReqCopy" class="btn-ghost">📋 Copiar link</button><button type="button" id="spReqShare" class="btn-ghost">📤 Compartilhar</button></div>`;
           document.getElementById('spReqCopy').addEventListener('click', () => { try { navigator.clipboard.writeText(uri); } catch {} document.getElementById('spReqCopy').textContent = '✓ copiado'; });
+          document.getElementById('spReqShare').addEventListener('click', async () => { try { if (navigator.share) await navigator.share({ title: 'Cobrança em Bitcoin', text: uri }); else { navigator.clipboard.writeText(uri); document.getElementById('spReqShare').textContent = '✓ copiado'; } } catch {} });
         } catch (e2) { ro.innerHTML = `<p class="muted">${esc(e2.message)}</p>`; }
       });
       document.getElementById('spMn').value = '';
@@ -1798,18 +1832,22 @@ function viewSoberania() {
     for (const it of items) { const k = it.txid + ':' + it.vout; if (have.has(k)) continue; a.push({ ...it, label: label || '', net: net || 'test', addedAt: Date.now() }); have.add(k); added++; }
     spLedgerSave(a); return added;
   }
+  function wireHandleCopy() { const hc = document.getElementById('spHandleCopy'); if (hc) hc.addEventListener('click', () => { try { navigator.clipboard.writeText(hc.dataset.h); } catch {} hc.textContent = '✓'; }); }
   function renderSpLedger() {
     const box = document.getElementById('spPanel'); if (!box) return;
+    let handle = ''; try { handle = localStorage.getItem('bussola.sp.addr.v1') || ''; } catch {}
+    const hdr = handle ? `<div class="banner ok" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">📡 Seu handle: <span class="mono small" style="word-break:break-all;flex:1">${esc(handle)}</span><button type="button" class="btn-ghost" id="spHandleCopy" data-h="${esc(handle)}">📋 copiar</button></div>` : '';
     const a = spLedgerLoad();
-    if (!a.length) { box.innerHTML = `<h3>📥 Painel de recebimentos</h3><p class="muted small">Seus recebimentos SP salvos ficam aqui (só neste aparelho). Verifique um txid acima e clique em <strong>Salvar no painel</strong>.</p>`; return; }
+    if (!a.length) { box.innerHTML = `<h3>📥 Painel de recebimentos</h3>${hdr}<p class="muted small">Seus recebimentos SP salvos ficam aqui (só neste aparelho). Verifique um txid acima e clique em <strong>Salvar no painel</strong>.</p>`; wireHandleCopy(); return; }
     const total = a.reduce((s, e) => s + (e.valueSats || 0), 0);
-    box.innerHTML = `<h3>📥 Painel de recebimentos</h3>
+    box.innerHTML = `<h3>📥 Painel de recebimentos</h3>${hdr}
       <div class="cards"><div class="card"><h3>Recebido (saldo)</h3><div class="big">${(total / 1e8).toFixed(8)} tBTC</div><div class="sub muted">${a.length} recebimento(s) · ${total} sats</div></div></div>
       <div class="tablewrap"><table><thead><tr><th>Quando</th><th>Valor</th><th>Rótulo</th><th>Origem</th><th>IR</th><th></th></tr></thead><tbody>
         ${a.map((e, i) => `<tr><td>${new Date(e.addedAt).toLocaleDateString('pt-BR')}</td><td>${e.valueSats} sats</td><td>${esc(e.label || '—')}</td><td class="mono small">${esc(e.txid.slice(0, 8))}…:${e.vout}</td><td title="${e.regd ? 'registrado no IR' : 'não registrado'}">${e.regd ? '✓' : '—'}</td><td><button class="del" data-i="${i}" title="Remover">✕</button></td></tr>`).join('')}
       </tbody></table></div>
       <div class="regactions"><button id="spLedgerSpend" class="btn">💸 Gastar saldo do painel</button><button id="spLedgerReg" class="btn-ghost">🧮 Registrar pro IR</button><button id="spLedgerExport" class="btn-ghost">⬇️ Exportar CSV</button></div>
       <div id="spLedgerOut"></div>`;
+    wireHandleCopy();
     box.querySelectorAll('.del').forEach(b => b.addEventListener('click', () => { const a2 = spLedgerLoad(); a2.splice(+b.dataset.i, 1); spLedgerSave(a2); renderSpLedger(); }));
     document.getElementById('spLedgerReg').addEventListener('click', async () => {
       const lo = document.getElementById('spLedgerOut');
