@@ -1429,9 +1429,13 @@ function inheritanceLetterMarkdown(cfg) {
     `5. Assine com a **frase do herdeiro** (12/24 palavras guardadas à parte) e transmita.\n\n` +
     `> A **frase do herdeiro** NÃO está neste documento — veja "Onde encontrar".\n\n`;
 }
-function legadoMarkdown(d, cofreCfg) {
+function legadoMarkdown(d, cofreCfg, spHandle) {
   const v = x => (x && String(x).trim()) || '—';
-  return `# Plano de Legado — Bitcoin\n\n**Titular:** ${v(d.titular)}\n\n**Data:** ${v(d.data)}\n\n` +
+  const entrada = spHandle
+    ? `## Entrada — recebimento (Pix Bitcoin)\nEsta conta recebe por Silent Payments (endereço reutilizável e privado):\n\`${spHandle}\`\n\n`
+    : '';
+  return `# Plano para a Vida Toda — Bitcoin\n\n**Titular:** ${v(d.titular)}\n\n**Data:** ${v(d.data)}\n\n` +
+    entrada +
     `## Pessoas de confiança / herdeiros\n${v(d.herdeiros)}\n\n## Custódia\n${v(d.custodia)}\n\n` +
     `## Onde encontrar (NUNCA contém a seed)\n- Seed: ${v(d.localSeed)}\n- Backups: ${v(d.localBackup)}\n\n` +
     inheritanceLetterMarkdown(cofreCfg) +
@@ -1638,8 +1642,8 @@ function viewSoberania() {
       document.getElementById('vcShare')?.addEventListener('click', async () => { try { if (navigator.share) await navigator.share({ title: 'Meu Pix Bitcoin (Silent Payment)', text: handle }); else { navigator.clipboard.writeText(handle); document.getElementById('vcShare').textContent = '✓ copiado'; } } catch {} });
     }
     if (temCofre) {
-      document.getElementById('vcStatus')?.addEventListener('click', async () => {
-        const out = document.getElementById('vcStatusOut'); out.innerHTML = '<p class="loading">Lendo a chain…</p>';
+      const loadStatus = async () => {
+        const out = document.getElementById('vcStatusOut'); if (!out) return; out.innerHTML = '<p class="loading">Lendo a chain…</p>';
         try {
           const cfg = { cosignerXpubs: cofre.c, heirXpub: cofre.h, timelock: cofre.t || 144 };
           const targets = [...Wsh.inheritanceAddresses({ ...cfg, count: 10, chain: 0 }), ...Wsh.inheritanceAddresses({ ...cfg, count: 5, chain: 1 })];
@@ -1651,13 +1655,16 @@ function viewSoberania() {
           if (st.claimableAll) { out.innerHTML = '<div class="banner warn">⚠️ Interruptor disparado — herança liberada. Se você está vivo, mova o cofre agora.</div>'; }
           else { const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock); out.innerHTML = `<div class="muted small">🫀 ${BTC.format(st.totalSats / 1e8)} tBTC · faltam <strong>${st.remaining} blocos (~${st.remainingDays}d)</strong></div><div class="lifebar" style="background:var(--line);border-radius:8px;height:8px;overflow:hidden;margin:6px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>`; }
         } catch (er) { out.innerHTML = `<p class="muted small">Não consegui ler a chain (${esc(er.message)}).</p>`; }
-      });
+      };
+      document.getElementById('vcStatus')?.addEventListener('click', loadStatus);
+      loadStatus(); // auto: o dashboard já abre lendo o Interruptor
     }
   }
   renderVidaCard();
 
   // ---- Legado ----
   const cofreCfg = () => { try { return JSON.parse(localStorage.getItem('bussola.ihgroup.v1') || 'null'); } catch { return null; } };
+  const spHandleSaved = () => { try { return localStorage.getItem('bussola.sp.addr.v1') || ''; } catch { return ''; } };
   function legadoData() { const d = {}; LEGADO_FIELDS.forEach(f => { d[f.k] = (document.getElementById('lg_' + f.k) || {}).value || ''; }); return d; }
   (() => { const c = cofreCfg(); const el = document.getElementById('lgCofreNote');
     if (el && c && Array.isArray(c.c) && !c.c.some(x => !x) && c.h) el.innerHTML = '<div class="banner ok">🏛️ Cofre "Interruptor da Vida" detectado — seus dados e o passo a passo de resgate entram <strong>automaticamente</strong> na Carta ao Herdeiro.</div>'; })();
@@ -1667,16 +1674,16 @@ function viewSoberania() {
     document.getElementById('lgOut').innerHTML = '<div class="banner ok">✅ Plano salvo no aparelho.</div>';
   });
   document.getElementById('lgExport').addEventListener('click', () => {
-    const md = legadoMarkdown(legadoData(), cofreCfg());
+    const md = legadoMarkdown(legadoData(), cofreCfg(), spHandleSaved());
     const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
-    const a = document.createElement('a'); a.href = url; a.download = 'plano-de-legado.md'; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'plano-para-a-vida-toda.md'; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   document.getElementById('lgPrint').addEventListener('click', () => {
-    const md = legadoMarkdown(legadoData(), cofreCfg());
+    const md = legadoMarkdown(legadoData(), cofreCfg(), spHandleSaved());
     const w = window.open('', '_blank');
     if (!w) { document.getElementById('lgOut').innerHTML = '<p class="muted">Permita pop-ups para imprimir, ou use Exportar (.md).</p>'; return; }
-    w.document.write(`<!doctype html><meta charset="utf-8"><title>Plano de Legado</title>
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>Plano para a Vida Toda</title>
       <style>body{font:15px/1.6 system-ui,Arial;max-width:720px;margin:32px auto;padding:0 16px;color:#111}
       h1{font-size:24px}h2{font-size:17px;border-bottom:1px solid #ccc;padding-bottom:4px;margin-top:24px}</style>
       <pre style="white-space:pre-wrap;font:inherit">${md.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</pre>`);
