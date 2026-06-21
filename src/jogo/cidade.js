@@ -64,11 +64,11 @@ export function criaCidade() {
   const sun = new THREE.DirectionalLight(0xffe3b8, 1.42); // sol dourado com leitura mais cinematográfica
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048); // sombras mais nítidas (só pesa no PC; mobile não usa sombra)
+  sun.shadow.mapSize.set(1536, 1536); // RV12.1: 1536 destrava (era 2048) sem perda visível
   const d = 100;
   sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
   sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
-  sun.shadow.camera.near = 1; sun.shadow.camera.far = 420;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 260; // RV12.1: alcance menor = mais leve
   sun.shadow.bias = -0.00018;
   sun.shadow.normalBias = 0.035;
   scene.add(sun);
@@ -217,7 +217,7 @@ export function criaCidade() {
   function matRua(rx, rz) {
     const t = texturaPedra(1); t.repeat.set(rx, rz);
     const m = new THREE.MeshStandardMaterial({ map: t, color: 0x9a9a98, roughness: 1 });
-    aplicaTexturaReal(m, 'pedra', rx, rz); // calçamento REAL quando carregar
+    aplicaTexturaReal(m, 'pedra', rx, rz, false, true); // calçamento REAL + relevo
     return m;
   }
   const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x655f57, roughness: 1, flatShading: true });
@@ -280,7 +280,7 @@ export function criaCidade() {
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
   const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), roughness: 1 }); // calçamento das praças
-  aplicaTexturaReal(pisoMat, 'pedra', 7, 7);
+  aplicaTexturaReal(pisoMat, 'pedra', 7, 7, false, true);
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 

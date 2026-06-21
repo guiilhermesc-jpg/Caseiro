@@ -71,7 +71,7 @@ function normalDoAlbedo(img, arquivo, forca = 2.2) {
     _normCache[arquivo] = nt; return nt;
   } catch (e) { _normCache[arquivo] = null; return null; }
 }
-export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) {
+export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false, comNormal = false) {
   _loaderTex.load('texturas/' + arquivo + '.png', (t) => {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(rx, rz);
@@ -80,13 +80,16 @@ export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) 
     if (_rendererTex) _rendererTex.initTexture(t); // GPU agora, não no 1º uso
     material.map = t;
     if (!manterCor) material.color.set(0xffffff);
-    // relevo: deriva o normal map do albedo e casa o repeat
-    const nrm = normalDoAlbedo(t.image, arquivo);
-    if (nrm) {
-      const nc = nrm.clone(); nc.needsUpdate = true; nc.wrapS = nc.wrapT = THREE.RepeatWrapping;
-      nc.repeat.set(rx, rz); nc.anisotropy = 8;
-      if (_rendererTex) _rendererTex.initTexture(nc);
-      material.normalMap = nc; material.normalScale = new THREE.Vector2(0.42, 0.42);
+    // RELEVO (normal map) SÓ onde paga (chão/calçamento) — RV12.1: o normal em
+    // TODA superfície empilhava 2º sampler e travava no PC. Agora é opt-in.
+    if (comNormal) {
+      const nrm = normalDoAlbedo(t.image, arquivo);
+      if (nrm) {
+        const nc = nrm.clone(); nc.needsUpdate = true; nc.wrapS = nc.wrapT = THREE.RepeatWrapping;
+        nc.repeat.set(rx, rz); nc.anisotropy = 8;
+        if (_rendererTex) _rendererTex.initTexture(nc);
+        material.normalMap = nc; material.normalScale = new THREE.Vector2(0.42, 0.42);
+      }
     }
     material.needsUpdate = true;
   }, undefined, () => {});

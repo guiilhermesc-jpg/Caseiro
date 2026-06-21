@@ -68,7 +68,7 @@ try {
     + '</div></div>';
   throw e; // interrompe o resto da inicialização
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehMobile ? 1.08 : 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehMobile ? 1.08 : 1.5)); // RV12.1: PC cap 2->1.5 destrava
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa muito)
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -80,7 +80,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV12.0 (v79)';
+const VERSAO = 'RV12.1 (v80)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -142,16 +142,17 @@ const tmpLuzRecorte = new THREE.Vector3();
 let fatorDiaVisual = 0.82;
 // liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
 // passam a refletir o entorno — o salto de "protótipo" pra "premium"
+const pcFraco = !ehMobile && ((navigator.hardwareConcurrency || 4) <= 4); // RV12.1: PC de poucos núcleos pula o grading
 if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.32, 0.6, 0.95));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.34, 0.85, 0.95)); // RV12.1: meia-res = ~1/4 do custo
   // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
   // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
   // saturação +12%, split-tone (sombras frias / altas levemente quentes),
   // VINHETA de cinema e dither anti-banding no céu/neblina.
-  composer.addPass(new ShaderPass({
+  if (!pcFraco) composer.addPass(new ShaderPass({
     uniforms: { tDiffuse: { value: null } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: 'varying vec2 vUv; uniform sampler2D tDiffuse;\n'
@@ -2176,8 +2177,8 @@ let bauCriptaAberto = false;
 
 // CICLO DIA/NOITE (discreto): muda sol/ambiente/céu/neblina e acende os lampiões
 const C_TOPO_DIA = new THREE.Color(0x4f86c0), C_BASE_DIA = new THREE.Color(0xdce9f2);
-const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0x16233f);
-const C_FOG_DIA = new THREE.Color(0xc4d6e3), C_FOG_NOITE = new THREE.Color(0x101a2c);
+const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0x1e2e4d);
+const C_FOG_DIA = new THREE.Color(0xc4d6e3), C_FOG_NOITE = new THREE.Color(0x1c2a40); // RV12.1: névoa noturna menos preta
 let tempoDia = 0.3; // começa de manhã
 let ehNoite = false;
 let avisoNoite = false; // lembrete da tocha (1× por noite)
@@ -2189,11 +2190,11 @@ function aplicaDiaNoite(dt) {
   ehNoite = d < 0.35;
   // NOITE ESTILO OT (RV4.2): madrugada ESCURA de verdade — a tocha, os
   // lampiões e o luar viram a diferença entre andar e tropeçar
-  sun.intensity = 0.04 + d * 1.01;
-  hemi.intensity = 0.07 + d * 0.57;
+  sun.intensity = 0.12 + d * 0.93;  // RV12.1: piso de noite +3x (era 0.04) — navegável
+  hemi.intensity = 0.18 + d * 0.46;
   // RV8.3: a EXPOSIÇÃO do tonemap também escurece à noite (antes ficava fixa
   // em 0.80 o tempo todo) — a "madrugada de verdade" agora bate com o grading.
-  renderer.toneMappingExposure = 0.58 + d * 0.22; // noite ~0.58, dia 0.80 (sem estourar branco)
+  renderer.toneMappingExposure = 0.68 + d * 0.12; // RV12.1: noite ~0.68 (era 0.58), dia ~0.80
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
     ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
   } else {
@@ -2202,8 +2203,8 @@ function aplicaDiaNoite(dt) {
   }
   if (scene.fog) {
     scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
-    scene.fog.near = 110 + d * 150; // a escuridão FECHA o horizonte à noite
-    scene.fog.far = 340 + d * 380;  // (dia: 260/720 — igual antes)
+    scene.fog.near = 165 + d * 95;  // RV12.1: névoa não fecha tanto à noite (era 110)
+    scene.fog.far = 500 + d * 220;  // (vê-se MUITO mais longe de madrugada agora)
   }
   const noite = 1 - d;
   // aviso de sobrevivência (1× por noite): acende a tocha!
@@ -2227,7 +2228,7 @@ function aplicaDiaNoite(dt) {
     }
   }
   // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
-  luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
+  luaLuz.intensity = (ehMobile ? 0.5 : 0.78) * Math.max(0, noite - 0.12); // RV12.1: luar mais forte
   if (luaMat) luaMat.emissiveIntensity = 0.4 + noite * 1.65; // RV11.3: Lua Partida BRILHA à noite (bloom), discreta de dia
   if (estrelas) estrelas.material.opacity = Math.min(1, Math.max(0, noite - 0.3) * 1.4);
   if (vagalumes) { // RV3.0: vagalumes acordam à noite e flutuam de leve

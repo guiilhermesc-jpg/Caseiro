@@ -21,7 +21,7 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
     + 'font-family:Arial,sans-serif;color:#fff;overflow:auto;padding:24px 12px;box-sizing:border-box;'
     + "background:radial-gradient(ellipse at 50% 30%, rgba(8,6,12,.25), rgba(6,4,10,.78) 75%),"
     + "linear-gradient(180deg, rgba(8,6,12,.35) 0%, rgba(8,6,12,.2) 35%, rgba(6,4,10,.85) 100%),"
-    + "url('/splash.png') center/cover no-repeat, #0c0a14;";
+    + "url('/splash.jpg') center/cover no-repeat, #0c0a14;";
 
   const painel = document.createElement('div');
   painel.style.cssText =

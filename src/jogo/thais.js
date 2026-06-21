@@ -40,7 +40,7 @@ export function criaThais(cx, cz, opts = {}) {
 
   // piso de pedra calçada (dentro das muralhas) — textura REAL quando carregar
   const pisoMatT = new THREE.MeshStandardMaterial({ map: texturaPedra(11), roughness: 1 });
-  aplicaTexturaReal(pisoMatT, 'pedra', 14, 12);
+  aplicaTexturaReal(pisoMatT, 'pedra', 14, 12, false, true);
   const piso = new THREE.Mesh(new THREE.BoxGeometry(HX * 2 - 2, 0.12, HZ * 2 - 2), pisoMatT);
   piso.position.y = 0.06; piso.receiveShadow = true; g.add(piso);
 
