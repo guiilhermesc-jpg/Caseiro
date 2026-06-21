@@ -82,7 +82,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.5 (v90)';
+const VERSAO = 'RV13.6 (v91)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2490,17 +2490,23 @@ function estiloEquip(item) {
 function matEquipItem(item) { const e = estiloEquip(item); return new THREE.MeshStandardMaterial({ color: e.cor, metalness: e.metal, roughness: e.rough, envMapIntensity: 0.16 }); }
 function poeCorpoEquip() {
   const p = avatar.userData.partes; if (!p) return;
-  avatar.children.filter((c) => c.name === 'equipCorpo').forEach((c) => avatar.remove(c));
-  p.bracoEsq.children.filter((c) => c.name === 'equipCorpo').forEach((c) => p.bracoEsq.remove(c));
+  // limpa as peças anteriores em TODAS as partes que recebem equip (senão acumula)
+  [avatar, p.bracoEsq, p.bracoDir, p.pernaEsq, p.pernaDir].forEach((o) => o.children.filter((c) => c.name === 'equipCorpo').forEach((c) => o.remove(c)));
+  // RV13.6: o TORSO REAL vira a armadura (não um caixote por cima) — Minecraft.
+  // Sem peito equipado, volta exatamente à cor do casaco escolhido.
+  if (p.tronco) p.tronco.material = equipados.tronco ? matEquipItem(equipados.tronco) : (p.troncoMatBase || p.tronco.material);
   if (equipados.cabeca) { // ELMO com a cara do item + crista
     const mt = matEquipItem(equipados.cabeca);
     const m = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.62, 0.92), mt); m.name = 'equipCorpo'; m.position.y = 2.74; m.castShadow = true; avatar.add(m);
     const cr = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.5), mt); cr.name = 'equipCorpo'; cr.position.y = 3.18; avatar.add(cr);
   }
-  if (equipados.tronco) { // PEITORAL + OMBREIRAS com a cara do item
+  if (equipados.tronco) { // OMBREIRAS (volume) — o peito já está re-skinado acima
     const mt = matEquipItem(equipados.tronco);
-    const m = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.02, 0.66), mt); m.name = 'equipCorpo'; m.position.y = 1.5; m.castShadow = true; avatar.add(m);
-    [-0.66, 0.66].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.62), mt); om.name = 'equipCorpo'; om.position.set(ox, 2.04, 0); om.castShadow = true; avatar.add(om); });
+    [-0.66, 0.66].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.32, 0.62), mt); om.name = 'equipCorpo'; om.position.set(ox, 2.04, 0); om.castShadow = true; avatar.add(om); });
+  }
+  if (equipados.pes) { // BOTAS reais nas duas pernas
+    const mt = matEquipItem(equipados.pes);
+    [p.pernaEsq, p.pernaDir].forEach((pn) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.6), mt); b.name = 'equipCorpo'; b.position.set(0, -0.82, 0.08); b.castShadow = true; pn.add(b); });
   }
   if (equipados.maoEsq) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.92, 0.72), matEquipItem(equipados.maoEsq)); m.name = 'equipCorpo'; m.position.set(0, -0.4, 0.3); p.bracoEsq.add(m); }
 }

@@ -113,7 +113,7 @@ export function criaAvatar(cores = {}) {
   const capa = aplicaOutfit(g, tipo, C);
 
   // tronco e capa entram nas partes: respiração no idle + capa que balança
-  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, cabeca, capa };
+  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, troncoMatBase: torso.material, cabeca, capa };
   return g;
 }
 
