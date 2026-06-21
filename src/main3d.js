@@ -82,7 +82,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.4 (v89)';
+const VERSAO = 'RV13.5 (v90)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2477,13 +2477,32 @@ function aoEquipar(item) {
   mostraMensagem(`Equipou ${item.nome} (+${item.defesa} def) 🛡️`);
   return true;
 }
+// RV13.5: a ROUPA/ARMADURA equipada aparece com a CARA DO ITEM real (Minecraft):
+// couro=marrom, ferro=cinza, dragão=obsidiana, ouro/guilda=dourado, manto=pano.
+function estiloEquip(item) {
+  const n = ((item && item.nome) || '').toLowerCase();
+  if (n.includes('drag')) return { cor: 0x2a2730, metal: 0.55, rough: 0.45 };
+  if (n.includes('ouro') || n.includes('dourad') || n.includes('guilda')) return { cor: 0xc99a2e, metal: 0.82, rough: 0.3 };
+  if (n.includes('obsidiana') || n.includes('sombra') || n.includes('lua')) return { cor: 0x1d1a22, metal: 0.42, rough: 0.5 };
+  if (n.includes('couro') || n.includes('manto') || n.includes('túnica') || n.includes('tunica') || n.includes('seda')) return { cor: 0x6e4a2a, metal: 0.0, rough: 0.92 };
+  return { cor: 0xb8bcc4, metal: 0.62, rough: 0.36 }; // ferro/aço/placa (padrão)
+}
+function matEquipItem(item) { const e = estiloEquip(item); return new THREE.MeshStandardMaterial({ color: e.cor, metalness: e.metal, roughness: e.rough, envMapIntensity: 0.16 }); }
 function poeCorpoEquip() {
   const p = avatar.userData.partes; if (!p) return;
   avatar.children.filter((c) => c.name === 'equipCorpo').forEach((c) => avatar.remove(c));
   p.bracoEsq.children.filter((c) => c.name === 'equipCorpo').forEach((c) => p.bracoEsq.remove(c));
-  if (equipados.cabeca) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.6, 0.9), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 2.72; m.castShadow = true; avatar.add(m); } // elmo ASSENTA na cabeça
-  if (equipados.tronco) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.08, 1.0, 0.62), MAT_METAL); m.name = 'equipCorpo'; m.position.y = 1.5; m.castShadow = true; avatar.add(m); }
-  if (equipados.maoEsq) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.7), MAT_METAL); m.name = 'equipCorpo'; m.position.set(0, -0.4, 0.3); p.bracoEsq.add(m); }
+  if (equipados.cabeca) { // ELMO com a cara do item + crista
+    const mt = matEquipItem(equipados.cabeca);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.62, 0.92), mt); m.name = 'equipCorpo'; m.position.y = 2.74; m.castShadow = true; avatar.add(m);
+    const cr = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.5), mt); cr.name = 'equipCorpo'; cr.position.y = 3.18; avatar.add(cr);
+  }
+  if (equipados.tronco) { // PEITORAL + OMBREIRAS com a cara do item
+    const mt = matEquipItem(equipados.tronco);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.02, 0.66), mt); m.name = 'equipCorpo'; m.position.y = 1.5; m.castShadow = true; avatar.add(m);
+    [-0.66, 0.66].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.62), mt); om.name = 'equipCorpo'; om.position.set(ox, 2.04, 0); om.castShadow = true; avatar.add(om); });
+  }
+  if (equipados.maoEsq) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.92, 0.72), matEquipItem(equipados.maoEsq)); m.name = 'equipCorpo'; m.position.set(0, -0.4, 0.3); p.bracoEsq.add(m); }
 }
 // TOCHA (acende o esgoto escuro)
 function poeTochaNaMao(on) {
