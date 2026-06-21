@@ -16,12 +16,16 @@ const OURO = '#c9a75a', OURO_CLARO = '#f4e9c8';
 export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   const ov = document.createElement('div');
   ov.id = 'selecao';
+  // RV13.4: PRÉVIA AO VIVO — scrim transparente (em vez do splash opaco) pra
+  // o BONECO 3D aparecer atrás; painel ao lado (PC: direita / retrato: embaixo).
+  const paisagem = window.innerWidth >= window.innerHeight;
   ov.style.cssText =
-    'position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;'
-    + 'font-family:Arial,sans-serif;color:#fff;overflow:auto;padding:24px 12px;box-sizing:border-box;'
-    + "background:radial-gradient(ellipse at 50% 30%, rgba(8,6,12,.25), rgba(6,4,10,.78) 75%),"
-    + "linear-gradient(180deg, rgba(8,6,12,.35) 0%, rgba(8,6,12,.2) 35%, rgba(6,4,10,.85) 100%),"
-    + "url('/splash.jpg') center/cover no-repeat, #0c0a14;";
+    'position:fixed;inset:0;z-index:50;display:flex;'
+    + (paisagem ? 'align-items:center;justify-content:flex-end;' : 'align-items:flex-end;justify-content:center;')
+    + 'font-family:Arial,sans-serif;color:#fff;overflow:auto;padding:20px 18px;box-sizing:border-box;'
+    + (paisagem
+      ? 'background:linear-gradient(to right, rgba(6,4,10,.05) 0%, rgba(6,4,10,.32) 44%, rgba(6,4,10,.82) 76%);'
+      : 'background:linear-gradient(to bottom, rgba(6,4,10,.04) 0%, rgba(6,4,10,.45) 46%, rgba(6,4,10,.86) 100%);');
 
   const painel = document.createElement('div');
   painel.style.cssText =

@@ -82,7 +82,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.3 (v88)';
+const VERSAO = 'RV13.4 (v89)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -3674,12 +3674,15 @@ function passo() {
   tempo += dt;
 
   if (!jogoIniciado) {
-    // --- modo SELEÇÃO: boneco girando para preview ---
+    // --- modo SELEÇÃO: boneco girando para PRÉVIA AO VIVO (RV13.4) ---
     avatar.rotation.y += dt * 0.6;
     animaAvatar(avatar, false, tempo, false);
     const f = avatar.position;
-    camera.position.lerp(new THREE.Vector3(f.x + 0.01, f.y + 3, f.z + 7), 0.08);
-    camera.lookAt(f.x, f.y + 1.7, f.z);
+    // desloca o boneco pro lado (PC: painel à direita) pra ele não ficar atrás
+    // do painel; no retrato fica centralizado (painel embaixo).
+    const offX = (window.innerWidth >= window.innerHeight) ? 3.0 : 0;
+    camera.position.lerp(new THREE.Vector3(f.x + offX + 0.01, f.y + 3, f.z + 7.5), 0.1);
+    camera.lookAt(f.x + offX, f.y + 1.7, f.z);
   } else {
     // --- modo JOGO ---
     const pf = controles.pegaPinch(); // PINÇA de 2 dedos = zoom (igual scroll no PC)
