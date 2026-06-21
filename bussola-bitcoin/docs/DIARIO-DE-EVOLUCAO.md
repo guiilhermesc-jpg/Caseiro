@@ -67,6 +67,8 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 - **10 testes estruturais** cobrindo os 3 ramos (montar→assinar→finalizar) + BIP67 + t2>t1 + negativo.
 - **UI experimental + ensaio:** seção "Cofre em níveis" (montar, status dos 2 prazos, gastar guiado
   por caminho) e drill com timelock curto (t1=2, t2=4) para **validar on-chain** antes de uso real.
+- **Cache do auto-status:** o card "Vida Toda" guarda o status por ~2 min (sessionStorage); o botão
+  força releitura. Menos peso na chain a cada visita.
 
 ---
 
@@ -75,8 +77,7 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
    de tirar o rótulo "experimental". (Consenso/CSV/witness aninhado não dá pra unit-testar.)
 2. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
    — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
-3. **Cache curto do auto-status** (evitar refazer a leitura da chain a cada visita).
-4. **Status de níveis no card "Vida Toda"** (hoje o card cobre o cofre simples).
+3. **Status de níveis no card "Vida Toda"** (hoje o card cobre o cofre simples).
 
 ## ✅ Entregue do backlog (limpeza recente)
 Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança (BTC/R$ + compartilhar) ·

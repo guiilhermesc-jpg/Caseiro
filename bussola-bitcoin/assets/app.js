@@ -1749,8 +1749,12 @@ function viewSoberania() {
       document.getElementById('vcShare')?.addEventListener('click', async () => { try { if (navigator.share) await navigator.share({ title: 'Meu Pix Bitcoin (Silent Payment)', text: handle }); else { navigator.clipboard.writeText(handle); document.getElementById('vcShare').textContent = '✓ copiado'; } } catch {} });
     }
     if (temCofre) {
-      const loadStatus = async () => {
-        const out = document.getElementById('vcStatusOut'); if (!out) return; out.innerHTML = '<p class="loading">Lendo a chain…</p>';
+      const CKEY = 'bussola.vida.status.cache.v1';
+      const loadStatus = async (force) => {
+        const out = document.getElementById('vcStatusOut'); if (!out) return;
+        const ck = (cofre.c[0] || '') + ':' + (cofre.t || 144);
+        if (!force) { try { const c = JSON.parse(sessionStorage.getItem(CKEY) || 'null'); if (c && c.k === ck && Date.now() - c.at < 120000) { out.innerHTML = c.html + '<div class="muted small" style="opacity:.6">cache · toque em atualizar para reler</div>'; return; } } catch {} }
+        out.innerHTML = '<p class="loading">Lendo a chain…</p>';
         try {
           const cfg = { cosignerXpubs: cofre.c, heirXpub: cofre.h, timelock: cofre.t || 144 };
           const targets = [...Wsh.inheritanceAddresses({ ...cfg, count: 10, chain: 0 }), ...Wsh.inheritanceAddresses({ ...cfg, count: 5, chain: 1 })];
@@ -1759,12 +1763,15 @@ function viewSoberania() {
           if (!utxos.length) { out.innerHTML = '<p class="muted small">Cofre sem saldo — envie fundos para ligar o Interruptor.</p>'; return; }
           const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
           const st = Wsh.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
-          if (st.claimableAll) { out.innerHTML = '<div class="banner warn">⚠️ Interruptor disparado — herança liberada. Se você está vivo, mova o cofre agora.</div>'; }
-          else { const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock); out.innerHTML = `<div class="muted small">🫀 ${BTC.format(st.totalSats / 1e8)} tBTC · faltam <strong>${st.remaining} blocos (~${st.remainingDays}d)</strong></div><div class="lifebar" style="background:var(--line);border-radius:8px;height:8px;overflow:hidden;margin:6px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>`; }
+          let html;
+          if (st.claimableAll) { html = '<div class="banner warn">⚠️ Interruptor disparado — herança liberada. Se você está vivo, mova o cofre agora.</div>'; }
+          else { const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock); html = `<div class="muted small">🫀 ${BTC.format(st.totalSats / 1e8)} tBTC · faltam <strong>${st.remaining} blocos (~${st.remainingDays}d)</strong></div><div class="lifebar" style="background:var(--line);border-radius:8px;height:8px;overflow:hidden;margin:6px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>`; }
+          out.innerHTML = html;
+          try { sessionStorage.setItem(CKEY, JSON.stringify({ k: ck, at: Date.now(), html })); } catch {}
         } catch (er) { out.innerHTML = `<p class="muted small">Não consegui ler a chain (${esc(er.message)}).</p>`; }
       };
-      document.getElementById('vcStatus')?.addEventListener('click', loadStatus);
-      loadStatus(); // auto: o dashboard já abre lendo o Interruptor
+      document.getElementById('vcStatus')?.addEventListener('click', () => loadStatus(true));
+      loadStatus(false); // auto: abre lendo o Interruptor (usa cache de até 2 min)
     }
   }
   renderVidaCard();
