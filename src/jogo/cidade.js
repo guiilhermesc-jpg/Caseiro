@@ -194,11 +194,11 @@ export function criaCidade() {
     if (Math.hypot(px + 742, pz + 30) < 46) return true;         // Santuário da Lua Partida
     return false;
   }
-  const N_MATO = 700, dummyM = new THREE.Object3D(); // 2× mais denso (refs premium) — seguem 2 draw calls
+  const N_MATO = 980, dummyM = new THREE.Object3D(); // RV12.5: chão mais vivo (instanciado = 2 draw calls)
   const mato1 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   const mato2 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   let mi = 0;
-  for (let tent = 0; tent < 16000 && mi < N_MATO; tent++) {
+  for (let tent = 0; tent < 24000 && mi < N_MATO; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz)) continue;
     dummyM.position.set(px, alturaColinas(px, pz), pz); // tufos assentam na colina
