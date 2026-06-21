@@ -42,7 +42,8 @@ export function criaMundo() {
   const sun = new THREE.DirectionalLight(0xfff0d0, 1.25);
   sun.position.set(30, 55, 20);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(3072, 3072); // RV11.6: sombras mais nítidas (PC)
+  sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; // mata o "shadow acne" sem peter-panning
   const d = 95;
   sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
   sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
