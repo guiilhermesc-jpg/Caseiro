@@ -124,6 +124,22 @@ export function criaCidade() {
   // plano-horizonte raso (some na neblina, levemente abaixo pra não brigar)
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), gramaMat);
   grama.rotation.x = -Math.PI / 2; grama.position.y = -0.06; grama.receiveShadow = true; scene.add(grama);
+  // RV13.3: CHÃO PRÓPRIO POR REGIÃO — cada lugar com sua cara (não genérico).
+  // Planos texturizados (IA) sobre a zona plana de cada região, em y=0.02:
+  // acima da grama-base (−0.06), abaixo do calçamento das cidades (~0.06).
+  [
+    ['chao_pantano', -330, -30, 200, 250],   // Venore: brejo escuro
+    ['chao_thais', 567, -2, 165, 158],        // Thais: árido mediterrâneo
+    ['chao_cinzas', -619, -29, 158, 118],     // Noctaria: cinzas
+    ['chao_cinzas', -740, -30, 96, 96],       // Santuário da Lua Partida
+    ['chao_vulcanico', 110, 300, 124, 124],   // Montanha do Dragão: vulcânico
+    ['chao_floresta', -146, -66, 96, 86],     // Floresta/Ninho das Aranhas (oeste)
+  ].forEach(([tex, cx, cz, w, d]) => {
+    const m = new THREE.MeshStandardMaterial({ color: 0x8a8a7a, roughness: 1 });
+    aplicaTexturaReal(m, tex, Math.round(w / 16), Math.round(d / 16), false);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m);
+    p.rotation.x = -Math.PI / 2; p.position.set(cx, 0.02, cz); p.receiveShadow = true; scene.add(p);
+  });
   // === RELEVO: colinas procedurais (estilo pack premium) ===
   // malha segmentada cujos vértices seguem alturaColinas() — a MESMA função
   // que a física usa no main3d: cidades/estrada/praia/água ficam PLANAS.
