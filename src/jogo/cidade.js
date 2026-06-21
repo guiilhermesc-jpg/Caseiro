@@ -9,6 +9,7 @@ import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, 
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 import { alturaColinas, REGIAO } from './terreno.js';
+import { texPBR } from './texturas.js'; // normal map do chão (RV11.5)
 import { criaVegetacaoInstanciada } from './vegetacao.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
@@ -116,6 +117,10 @@ export function criaCidade() {
   // grama (procedural já; troca pela textura REAL gerada por IA quando carregar)
   const gramaMat = new THREE.MeshStandardMaterial({ map: texturaGrama(460), roughness: 1 });
   aplicaTexturaReal(gramaMat, 'grama', 300, 300);
+  // RV11.5: NORMAL MAP no chão — o relevo da grama passa a pegar a luz do sol
+  // (o gramaMatCampo, clonado abaixo, herda este normal map).
+  const _gramaN = texPBR(0x5a7a3a, { tipo: 'grama', repeat: 360, contraste: 30, normalForca: 1.5 }).normalMap;
+  if (_gramaN) { gramaMat.normalMap = _gramaN; gramaMat.normalScale = new THREE.Vector2(0.3, 0.3); }
   // plano-horizonte raso (some na neblina, levemente abaixo pra não brigar)
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), gramaMat);
   grama.rotation.x = -Math.PI / 2; grama.position.y = -0.06; grama.receiveShadow = true; scene.add(grama);
