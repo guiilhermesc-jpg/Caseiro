@@ -60,15 +60,23 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 - **"Plano para a Vida Toda" unificado:** o export/impressão do Legado agora inclui também a
   **entrada** (handle de recebimento), virando UM documento das duas pontas. Renomeado.
 
+### 2026-06-20 (sessão longa) — Tiers graduados (o covenant de 3 níveis)
+- **Núcleo `tiers*` (EXPERIMENTAL):** cofre P2WSH com **IF/ELSE aninhado** e 3 caminhos —
+  **2-de-3** a qualquer hora · **executor** sozinho após t1 · **herdeiros** sozinhos após t2 (t2>t1).
+  Funções `tiersAddresses` / `buildTiersPsbt` / `finalizeTiersPsbt`, reusando `signInheritancePsbt`.
+- **10 testes estruturais** cobrindo os 3 ramos (montar→assinar→finalizar) + BIP67 + t2>t1 + negativo.
+- **UI experimental + ensaio:** seção "Cofre em níveis" (montar, status dos 2 prazos, gastar guiado
+  por caminho) e drill com timelock curto (t1=2, t2=4) para **validar on-chain** antes de uso real.
+
 ---
 
 ## 🔜 Próximas etapas (backlog priorizado)
-1. **Tiers graduados** do Interruptor (ex.: 6 meses → executor; 12 meses → herdeiros). *Mexe no
-   script do covenant — exige core novo em `src/wallet` + testes + idealmente validação em regtest.
-   Dia dedicado e cuidadoso (não fazer na pressa).*
+1. **Validar tiers on-chain (testnet)** pelo ensaio — confirmar os 3 caminhos com tx reais antes
+   de tirar o rótulo "experimental". (Consenso/CSV/witness aninhado não dá pra unit-testar.)
 2. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
    — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
 3. **Cache curto do auto-status** (evitar refazer a leitura da chain a cada visita).
+4. **Status de níveis no card "Vida Toda"** (hoje o card cobre o cofre simples).
 
 ## ✅ Entregue do backlog (limpeza recente)
 Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança (BTC/R$ + compartilhar) ·

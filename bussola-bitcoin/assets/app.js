@@ -889,6 +889,45 @@ function viewCarteira() {
         </details>
       </section>
 
+      <section class="watchonly">
+        <h2>🏛️ Cofre em níveis <span class="soon">3 tiers · experimental</span></h2>
+        <p class="muted">Evolução do Interruptor: <strong>2-de-3</strong> a qualquer hora · um <strong>executor</strong>
+        de confiança sozinho após <em>t1</em> · os <strong>herdeiros</strong> sozinhos após <em>t2</em> (t2 &gt; t1).
+        Espelha a vida real: alguém ajuda antes, a família herda depois.</p>
+        <div class="banner warn">⚠️ <strong>Experimental</strong> (covenant novo, IF/ELSE aninhado). <strong>Valide pelo ensaio</strong>
+        (timelock curto) antes de usar com valor real. Gere uma chave por papel no botão "🎲 Gerar uma chave" acima.</div>
+        <div class="agstep">
+          <h3>1) Montar o cofre em níveis</h3>
+          <form id="tiGroup" class="regform">
+            <label style="grid-column:1/-1">Guardião A (xpub)<input id="tiA" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Guardião B (xpub)<input id="tiB" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Guardião C (xpub)<input id="tiC" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Executor (xpub)<input id="tiExec" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Herdeiro (xpub)<input id="tiHeir" spellcheck="false" autocomplete="off"></label>
+            <label>t1 — executor (blocos)<input type="number" id="tiT1" min="1" max="65535" value="144"></label>
+            <label>t2 — herdeiros (blocos)<input type="number" id="tiT2" min="2" max="65535" value="432"></label>
+            <button type="submit">Ver endereço do cofre</button>
+          </form>
+          <div class="regactions"><button type="button" class="btn-ghost" id="tiDrill">🧪 Preparar ensaio (níveis)</button></div>
+          <div id="tiAddrs"></div>
+        </div>
+        <div class="agstep">
+          <h3>2) Resgatar / gastar</h3>
+          <form id="tiSpend" class="regform">
+            <label style="grid-column:1/-1">Destino (tb1…)<input id="tiTo" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Caminho<select id="tiMode">
+              <option value="normal">Normal — 2 de 3 guardiões</option>
+              <option value="executor">Executor — sozinho após t1</option>
+              <option value="heir">Herdeiros — sozinho após t2</option></select></label>
+            <label>Taxa (sat/vB)<input type="number" id="tiFee" min="1" step="1" value="2"></label>
+            <label style="grid-column:1/-1">Frase 1 (executor/herdeiro, ou guardião 1)<input id="tiSeed1" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Frase 2 (só no normal — guardião 2)<input id="tiSeed2" spellcheck="false" autocomplete="off"></label>
+            <button type="submit">Montar, assinar e transmitir</button>
+          </form>
+          <div id="tiOut"></div>
+        </div>
+      </section>
+
       <h2>Arquitetura completa</h2>
       <article id="doc" class="doc"><p class="loading">Carregando arquitetura…</p></article>
     </div>`;
@@ -1340,6 +1379,74 @@ function viewCarteira() {
       if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
       o.innerHTML = `<div class="banner ok">🕊️ <strong>Herança resgatada!</strong> ${amount} sats enviados para o seu endereço (taxa ${fee}).<br>txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">ver no explorer</a></div>`;
     } catch (err) { o.innerHTML = `<div class="banner warn">Não consegui concluir o resgate: ${esc(err.message)}</div><p class="muted small">Confira se a frase é a do <strong>herdeiro</strong> e se as xpubs/timelock batem com a Carta ao Herdeiro.</p>`; }
+  });
+
+  // ---- Cofre em níveis (tiers, experimental) ----
+  const tiCfg = () => ({ cosignerXpubs: [ihEl('tiA').value.trim(), ihEl('tiB').value.trim(), ihEl('tiC').value.trim()], executorXpub: ihEl('tiExec').value.trim(), heirXpub: ihEl('tiHeir').value.trim(), t1: parseInt(ihEl('tiT1').value, 10) || 144, t2: parseInt(ihEl('tiT2').value, 10) || 432 });
+  async function scanUtxosTi(cfg) {
+    const targets = [...wallet.tiersAddresses({ ...cfg, count: 10, chain: 0 }), ...wallet.tiersAddresses({ ...cfg, count: 5, chain: 1 })];
+    const utxos = [];
+    await Promise.all(targets.map(async t => { try { const r = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!r.ok) return; for (const u of await r.json()) utxos.push({ txid: u.txid, vout: u.vout, valueSats: u.value, chain: t.chain, index: t.index, height: u.status?.block_height || 0 }); } catch {} }));
+    return utxos;
+  }
+  ihEl('tiDrill')?.addEventListener('click', () => {
+    if (!wallet) return;
+    const A = wallet.createMultisigCosigner(), B = wallet.createMultisigCosigner(), C = wallet.createMultisigCosigner(), E = wallet.createMultisigCosigner(), H = wallet.createMultisigCosigner();
+    ihEl('tiA').value = A.accountXpub; ihEl('tiB').value = B.accountXpub; ihEl('tiC').value = C.accountXpub; ihEl('tiExec').value = E.accountXpub; ihEl('tiHeir').value = H.accountXpub;
+    ihEl('tiT1').value = 2; ihEl('tiT2').value = 4; ihEl('tiSeed1').value = H.mnemonic; ihEl('tiMode').value = 'heir';
+    ihEl('tiAddrs').innerHTML = `<div class="banner ok">Ensaio pronto (t1=2, t2=4 blocos). Clique em "Ver endereço do cofre", financie pelo faucet, espere ~4 blocos e teste o caminho <strong>Herdeiros</strong>. Frase do herdeiro do ensaio:<br><span class="mono small" style="word-break:break-all">${esc(H.mnemonic)}</span></div>`;
+  });
+  ihEl('tiGroup')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const o = ihEl('tiAddrs');
+    let cfg; try { cfg = tiCfg(); } catch (er) { o.innerHTML = `<p class="muted">${esc(er.message)}</p>`; return; }
+    if (cfg.cosignerXpubs.some(x => !x) || !cfg.executorXpub || !cfg.heirXpub) { o.innerHTML = '<p class="muted">Preencha as 3 xpubs dos guardiões, o executor e o herdeiro.</p>'; return; }
+    try {
+      const addr = wallet.tiersAddresses({ ...cfg, count: 1 })[0].address;
+      const qr = wallet.makeQR(addr);
+      o.innerHTML = `<div class="banner ok">Cofre em níveis: 2-de-3 · executor após ${cfg.t1} blocos · herdeiros após ${cfg.t2} blocos.</div>
+        <div class="mono small" style="word-break:break-all">${esc(addr)}</div>${qr ? `<div class="qr">${qr}</div>` : ''}
+        <div class="regactions"><button type="button" class="btn-ghost" id="tiBal">Consultar saldo/status</button></div><div id="tiStatus"></div>`;
+      ihEl('tiBal').addEventListener('click', async () => {
+        const box = ihEl('tiStatus'); box.innerHTML = '<p class="loading">Lendo a chain…</p>';
+        try {
+          const u = await scanUtxosTi(cfg);
+          if (!u.length) { box.innerHTML = '<div class="banner warn">Cofre vazio — envie fundos para ativar.</div>'; return; }
+          const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+          const s1 = wallet.inheritanceClaimStatus({ timelock: cfg.t1, utxos: u, tipHeight: tip });
+          const s2 = wallet.inheritanceClaimStatus({ timelock: cfg.t2, utxos: u, tipHeight: tip });
+          box.innerHTML = `<div class="banner ok">Saldo: <strong>${BTC.format(s1.totalSats / 1e8)} tBTC</strong>.<br>Executor: ${s1.claimableAll ? '<strong>liberado ✓</strong>' : `faltam ${s1.remaining} blocos (~${s1.remainingDays}d)`} · Herdeiros: ${s2.claimableAll ? '<strong>liberado ✓</strong>' : `faltam ${s2.remaining} blocos (~${s2.remainingDays}d)`}</div>`;
+        } catch (er) { box.innerHTML = `<p class="muted">${esc(er.message)}</p>`; }
+      });
+    } catch (er) { o.innerHTML = `<p class="muted">${esc(er.message)}</p>`; }
+  });
+  ihEl('tiSpend')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const o = ihEl('tiOut');
+    let cfg; try { cfg = tiCfg(); } catch (er) { o.innerHTML = `<p class="muted">${esc(er.message)}</p>`; return; }
+    const to = ihEl('tiTo').value.trim(), mode = ihEl('tiMode').value, fee = parseInt(ihEl('tiFee').value, 10) || 2;
+    const seed1 = ihEl('tiSeed1').value, seed2 = ihEl('tiSeed2').value;
+    if (cfg.cosignerXpubs.some(x => !x) || !cfg.executorXpub || !cfg.heirXpub) { o.innerHTML = '<p class="muted">Monte o cofre (passo 1).</p>'; return; }
+    if (!to || !seed1) { o.innerHTML = '<p class="muted">Informe o destino e ao menos a frase 1.</p>'; return; }
+    if (mode === 'normal' && !seed2) { o.innerHTML = '<p class="muted">No caminho normal preciso de 2 frases (guardião 1 e 2).</p>'; return; }
+    o.innerHTML = '<p class="loading">Lendo a chain, montando, assinando e transmitindo…</p>';
+    try {
+      const utxos = await scanUtxosTi(cfg);
+      if (!utxos.length) { o.innerHTML = '<div class="banner warn">Cofre vazio — nada a gastar.</div>'; return; }
+      const total = utxos.reduce((s, x) => s + x.valueSats, 0);
+      const perIn = mode === 'normal' ? 120 : 84; const vsize = utxos.length * perIn + 2 * 43 + 11; const feeSats = Math.ceil(vsize * Math.max(1, fee));
+      const amount = total - feeSats;
+      if (amount < 546) { o.innerHTML = '<div class="banner warn">Saldo insuficiente para cobrir a taxa.</div>'; return; }
+      const built = wallet.buildTiersPsbt({ ...cfg, utxos, toAddress: to, amountSats: amount, feeRate: fee, mode });
+      let signed = wallet.signInheritancePsbt(built.psbt, seed1);
+      if (mode === 'normal') signed = wallet.signInheritancePsbt(signed.psbt, seed2);
+      const fin = wallet.finalizeTiersPsbt(signed.psbt, mode);
+      ihEl('tiSeed1').value = ''; ihEl('tiSeed2').value = '';
+      const r = await fetch(`${esploraBase()}/tx`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: fin.hex });
+      const body = (await r.text()).trim();
+      if (!r.ok) throw new Error(body || ('HTTP ' + r.status));
+      o.innerHTML = `<div class="banner ok">✅ Transmitido (${mode})! ${amount} sats → destino. txid: <span class="mono">${esc(body)}</span> · <a href="https://mempool.space/testnet/tx/${esc(body)}" target="_blank" rel="noopener">explorer</a></div>`;
+    } catch (er) { o.innerHTML = `<div class="banner warn">Falhou: ${esc(er.message)}</div><p class="muted small">Caminho com timelock só é aceito após o prazo (executor=t1, herdeiros=t2). Confira as frases/xpubs e o status.</p>`; }
   });
 
   // ---- Pagar Silent Payment ----
