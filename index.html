@@ -30,51 +30,46 @@
         position: fixed; inset: 0; z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         background:
-          radial-gradient(ellipse at 50% 35%, rgba(60,40,90,.55), rgba(12,10,20,0) 60%),
-          linear-gradient(180deg, #15101f 0%, #0c0a14 60%, #07060d 100%);
+          radial-gradient(ellipse at 50% 38%, rgba(8,6,12,.2), rgba(6,4,10,.72) 78%),
+          linear-gradient(180deg, rgba(8,6,12,.4) 0%, rgba(8,6,12,.2) 35%, rgba(6,4,10,.86) 100%),
+          url('/splash.png') center/cover no-repeat,
+          #0c0a14;
         color: #efe6d2; text-align: center; transition: opacity .6s ease;
       }
       #bootscreen .marca {
-        font: 900 clamp(46px, 13vw, 92px)/1 Georgia, "Times New Roman", serif;
-        letter-spacing: clamp(8px, 3vw, 18px);
-        color: #f4e9c8; text-shadow: 0 2px 8px #000, 0 0 36px rgba(180,120,255,.45);
+        font: 900 clamp(52px, 14vw, 104px)/1 Georgia, "Times New Roman", serif;
+        letter-spacing: clamp(10px, 3.4vw, 22px);
+        color: #f4e9c8; text-shadow: 0 3px 12px #000, 0 0 44px rgba(201,167,90,.6);
       }
       #bootscreen .sub {
-        margin-top: 10px; font: 700 clamp(11px, 3.4vw, 15px)/1 Georgia, serif;
-        letter-spacing: clamp(4px, 2vw, 9px); color: #b59bff;
+        margin-top: 12px; font: 700 clamp(11px, 3.4vw, 15px)/1 Georgia, serif;
+        letter-spacing: clamp(5px, 2.2vw, 10px); color: #c9a75a;
+        text-shadow: 0 2px 8px #000;
       }
       #bootscreen .barra {
-        margin-top: 34px; width: min(280px, 64vw); height: 6px; border-radius: 99px;
-        background: rgba(255,255,255,.08); overflow: hidden; position: relative;
+        margin-top: 36px; width: min(300px, 66vw); height: 5px; border-radius: 99px;
+        background: rgba(255,255,255,.1); overflow: hidden; position: relative;
+        box-shadow: 0 1px 6px rgba(0,0,0,.5);
       }
       #bootscreen .barra::before {
-        content: ""; position: absolute; inset: 0; width: 40%;
+        content: ""; position: absolute; inset: 0; width: 42%;
         border-radius: 99px;
-        background: linear-gradient(90deg, transparent, #b59bff, #6ad0ff, transparent);
+        background: linear-gradient(90deg, transparent, #d9b25a, #f4e9c8, transparent);
         animation: bootslide 1.15s ease-in-out infinite;
       }
-      @keyframes bootslide { 0%{left:-40%} 100%{left:100%} }
+      @keyframes bootslide { 0%{left:-42%} 100%{left:100%} }
       #bootscreen .dica {
-        margin-top: 22px; max-width: min(440px, 86vw); min-height: 34px;
-        font: 400 13px/1.5 Arial, sans-serif; color: #9a90b0; transition: opacity .4s;
-        padding: 0 16px;
+        margin-top: 22px; max-width: min(460px, 88vw); min-height: 34px;
+        font: 400 13px/1.5 Arial, sans-serif; color: #cdbf9c; transition: opacity .4s;
+        padding: 0 16px; text-shadow: 0 1px 6px #000;
       }
-      #bootscreen .glifo {
-        position: absolute; font: 300 40px serif; color: rgba(181,155,255,.18);
-        animation: bootfloat 6s ease-in-out infinite;
-      }
-      @keyframes bootfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
       #bootscreen.sumindo { opacity: 0; pointer-events: none; }
     </style>
   </head>
   <body>
     <div id="bootscreen">
-      <span class="glifo" style="top:18%;left:14%">🜂</span>
-      <span class="glifo" style="top:24%;right:16%;animation-delay:1.5s">🜄</span>
-      <span class="glifo" style="bottom:20%;left:20%;animation-delay:3s">🜃</span>
-      <span class="glifo" style="bottom:26%;right:18%;animation-delay:4.5s">🜁</span>
       <div class="marca">VENOR</div>
-      <div class="sub">ERA DOS DRAGÕES</div>
+      <div class="sub">⚔ ERA DOS DRAGÕES ⚔</div>
       <div class="barra"></div>
       <div class="dica" id="bootdica">Preparando o mundo da Veia…</div>
     </div>
