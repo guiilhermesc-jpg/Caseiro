@@ -7,13 +7,14 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat } from './construcoes.js';
+import { matPBR } from './texturas.js'; // pedra com relevo real (RV11.4)
 
 const Y = -40;
 
 export function criaEsgoto() {
   const g = new THREE.Group();
   const E = 52, alt = 5, t = 0.8;          // extensão, pé-direito, espessura de parede
-  const pedra = mat(0x3f443f, 1), pedraEsc = mat(0x2a2e28, 1);
+  const pedra = matPBR(0x3f443f, { tipo: 'pedra', repeat: 6, rough: 0.95, relevo: 0.9 }), pedraEsc = mat(0x2a2e28, 1);
 
   // piso + teto cobrindo todo o subsolo
   const piso = new THREE.Mesh(new THREE.BoxGeometry(E * 2, 0.4, E * 2), pedra);
@@ -99,7 +100,7 @@ export function criaCatacumbas() {
   const g = new THREE.Group();
   const CX = -330, CZ = -10;            // centro do salão (sob Venore)
   const W = 66, D = 38, alt = 5, t = 0.8;
-  const pedra = mat(0x3a3a42, 1), pedraEsc = mat(0x26262e, 1), osso = mat(0xd8d0ba, 0.7);
+  const pedra = matPBR(0x3a3a42, { tipo: 'pedra', repeat: 6, rough: 0.93, relevo: 0.85 }), pedraEsc = mat(0x26262e, 1), osso = mat(0xd8d0ba, 0.7);
 
   // piso + teto
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
@@ -188,7 +189,7 @@ export function criaCriptaProfunda() {
   const g = new THREE.Group();
   const CX = -346, CZ = -10, YP = -80;
   const W = 32, D = 24, alt = 4.6, t = 0.8;
-  const pedra = mat(0x33333b, 1), pedraEsc = mat(0x202027, 1);
+  const pedra = matPBR(0x33333b, { tipo: 'pedra', repeat: 5, rough: 0.92, relevo: 0.9 }), pedraEsc = mat(0x202027, 1);
 
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
   piso.position.set(CX, YP - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
@@ -257,7 +258,7 @@ export function criaCavernasPico() {
   const g = new THREE.Group();
   const CX = 100, CZ = 290, YC = -40;
   const W = 56, D = 42, alt = 5.5, t = 0.8;
-  const rocha = mat(0x3a332e, 1), rochaEsc = mat(0x241f1b, 1);
+  const rocha = matPBR(0x3a332e, { tipo: 'pedra', repeat: 5, rough: 0.96, relevo: 1.0 }), rochaEsc = mat(0x241f1b, 1);
 
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), rocha);
   piso.position.set(CX, YC - 0.2, CZ); piso.receiveShadow = true; g.add(piso);

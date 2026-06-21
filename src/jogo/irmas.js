@@ -12,6 +12,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat } from './construcoes.js';
+import { matPBR } from './texturas.js'; // areia/rocha/madeira com relevo (RV11.4)
 
 const Y = -40;                       // mesmo nível das outras zonas carregadas
 const CX = 720, CZ = -700;           // centro da ilha (região vazia, dentro de ±900)
@@ -30,7 +31,7 @@ export function criaIrmasIlha1() {
   espuma.rotation.x = -Math.PI / 2; espuma.position.set(CX, Y - 0.35, CZ); g.add(espuma);
 
   // ---- AREIA da ilha (a vértebra exposta na maré) ----
-  const areia = new THREE.Mesh(new THREE.CircleGeometry(43, 40), mat(0x9a8460, 1));
+  const areia = new THREE.Mesh(new THREE.CircleGeometry(43, 40), matPBR(0x9a8460, { tipo: 'areia', repeat: 9, rough: 1, relevo: 0.4 }));
   areia.rotation.x = -Math.PI / 2; areia.position.set(CX, Y, CZ); areia.receiveShadow = true; g.add(areia);
   // poças de maré salgadas (escuras, espelhadas)
   [[-16, 10, 4], [12, -14, 3], [20, 12, 2.5], [-22, -8, 2.2]].forEach(([dx, dz, r]) => {
@@ -40,7 +41,7 @@ export function criaIrmasIlha1() {
   });
 
   // ---- ROCHEDOS de sal (escuros, cristal esbranquiçado) ----
-  const rocha = mat(0x3a3036, 1);
+  const rocha = matPBR(0x3a3036, { tipo: 'pedra', repeat: 1.5, rough: 0.95, relevo: 0.9 });
   [[-30, 6, 2.2], [28, -18, 2.6], [-8, 24, 1.8], [33, 14, 2.0], [-26, -22, 2.4]].forEach(([dx, dz, s]) => {
     const x = CX + dx, z = CZ + dz;
     const r = new THREE.Mesh(new THREE.DodecahedronGeometry(s), rocha);
@@ -54,7 +55,7 @@ export function criaIrmasIlha1() {
   });
 
   // ---- NAUFRÁGIOS (a frota que "nunca volta" — barcos dos que tentaram antes) ----
-  const madeira = mat(0x4b3a26, 1), madeiraEsc = mat(0x32271a, 1);
+  const madeira = matPBR(0x4b3a26, { tipo: 'madeira', repeat: 2, rough: 0.9, relevo: 0.7 }), madeiraEsc = mat(0x32271a, 1);
   function naufragio(dx, dz, rot, escala = 1) {
     const x = CX + dx, z = CZ + dz;
     const casco = new THREE.Group(); casco.position.set(x, Y, z); casco.rotation.y = rot; casco.rotation.z = 0.18 * escala;
