@@ -80,7 +80,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV11.7 (v75)';
+const VERSAO = 'RV11.8 (v76)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -124,7 +124,9 @@ if (aguaNormal) for (const ag of aguas) {
   if (ag && ag.material && !Array.isArray(ag.material)) {
     ag.material.normalMap = aguaNormal;
     ag.material.normalScale = new THREE.Vector2(0.5, 0.5);
-    ag.material.roughness = Math.min(ag.material.roughness ?? 0.15, 0.12);
+    ag.material.roughness = Math.min(ag.material.roughness ?? 0.15, 0.1);
+    ag.material.metalness = Math.max(ag.material.metalness ?? 0.3, 0.35);
+    ag.material.envMapIntensity = 1.3; // reflete mais o céu/ambiente (só a água)
     ag.material.needsUpdate = true;
   }
 }
