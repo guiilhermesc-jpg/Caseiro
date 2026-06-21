@@ -363,6 +363,87 @@ export function inheritanceClaimStatus({ timelock, utxos, tipHeight }) {
   return { timelock: tl, items, totalSats, remaining, remainingDays: Math.ceil(remaining * 10 / 60 / 24), claimableAll };
 }
 
+/* =================== Herança em NÍVEIS (tiers graduados) — EXPERIMENTAL =================== */
+/* Cofre P2WSH com 3 caminhos, via IF/ELSE aninhado:
+ *   (1) 2-de-3 a qualquer hora; (2) EXECUTOR sozinho após t1 blocos; (3) HERDEIRO sozinho após t2.
+ * t2 > t1. Espelha o cofre simples; reusa signInheritancePsbt (assina por pubkey no script).
+ * VALIDE on-chain pelo "Teste de Herança" (drill) antes de uso real. Witnesses:
+ *   normal:   [EMPTY, sig, sig, TRUE, ws]        (OP_IF externo = TRUE → 2-de-3)
+ *   executor: [sig, TRUE, EMPTY, ws]             (externo FALSE → interno TRUE)
+ *   herdeiro: [sig, EMPTY, EMPTY, ws]            (externo FALSE → interno FALSE) */
+function tiersWitnessScript(cosignerXpubs, executorXpub, heirXpub, t1, t2, chain, index) {
+  if (!Array.isArray(cosignerXpubs) || cosignerXpubs.length !== 3) throw new Error('Use exatamente 3 co-signatários.');
+  const a = t1 | 0, b = t2 | 0;
+  if (a < 1 || a > 65535 || b < 1 || b > 65535) throw new Error('Timelocks devem ser entre 1 e 65535 blocos.');
+  if (b <= a) throw new Error('O timelock dos herdeiros (t2) deve ser MAIOR que o do executor (t1).');
+  const der = x => { const k = HDKey.fromExtendedKey(normalizeToXpub(x)).deriveChild(chain).deriveChild(index).publicKey; if (!k) throw new Error('xpub inválida.'); return k; };
+  const pks = cosignerXpubs.map(der).sort((m, n) => { for (let i = 0; i < m.length; i++) if (m[i] !== n[i]) return m[i] - n[i]; return 0; });
+  const exec = der(executorXpub), heir = der(heirXpub);
+  return btc.Script.encode([
+    'IF', 2, pks[0], pks[1], pks[2], 3, 'CHECKMULTISIG',
+    'ELSE',
+    'IF', a, 'CHECKSEQUENCEVERIFY', 'DROP', exec, 'CHECKSIG',
+    'ELSE', b, 'CHECKSEQUENCEVERIFY', 'DROP', heir, 'CHECKSIG', 'ENDIF',
+    'ENDIF',
+  ]);
+}
+function tiersPayment(cosignerXpubs, executorXpub, heirXpub, t1, t2, chain, index) {
+  const witnessScript = tiersWitnessScript(cosignerXpubs, executorXpub, heirXpub, t1, t2, chain, index);
+  const pay = btc.p2wsh({ type: 'wsh', script: witnessScript }, NET);
+  return { address: pay.address, script: pay.script, witnessScript };
+}
+export function tiersAddresses({ cosignerXpubs, executorXpub, heirXpub, t1, t2, count = 5, chain = 0 }) {
+  const n = Math.max(1, Math.min(50, count | 0)), out = [];
+  for (let i = 0; i < n; i++) out.push({ path: `${chain}/${i}`, chain, index: i, address: tiersPayment(cosignerXpubs, executorXpub, heirXpub, t1, t2, chain, i).address });
+  return out;
+}
+/* mode: 'normal' (2-de-3) | 'executor' (após t1) | 'heir' (após t2). Define o sequence (CSV). */
+export function buildTiersPsbt({ cosignerXpubs, executorXpub, heirXpub, t1, t2, utxos, toAddress, amountSats, feeRate = 2, changeIndex = 0, mode = 'normal' }) {
+  if (!utxos || !utxos.length) throw new Error('Sem UTXOs no cofre (sem saldo?).');
+  const amount = Math.floor(Number(amountSats));
+  if (!(amount > 0)) throw new Error('Valor inválido.');
+  const tx = new btc.Transaction();
+  let totalIn = 0;
+  for (const u of utxos) {
+    const p = tiersPayment(cosignerXpubs, executorXpub, heirXpub, t1, t2, u.chain, u.index);
+    const inp = { txid: hex.decode(u.txid), index: u.vout, witnessUtxo: { script: p.script, amount: BigInt(u.valueSats) }, witnessScript: p.witnessScript };
+    if (mode === 'executor') inp.sequence = t1 | 0;
+    else if (mode === 'heir') inp.sequence = t2 | 0;
+    tx.addInput(inp);
+    totalIn += u.valueSats;
+  }
+  const perIn = mode === 'normal' ? 120 : 84; // vbytes aprox. (script maior que o cofre simples)
+  const vsize = utxos.length * perIn + 2 * 43 + 11;
+  const fee = Math.ceil(vsize * Math.max(1, feeRate));
+  const change = totalIn - amount - fee;
+  if (change < 0) throw new Error(`Saldo insuficiente: tem ${totalIn} sats, precisa de ${amount + fee} (valor + taxa).`);
+  tx.addOutputAddress(toAddress, BigInt(amount), NET);
+  const hasChange = change >= 330;
+  if (hasChange) tx.addOutputAddress(tiersPayment(cosignerXpubs, executorXpub, heirXpub, t1, t2, 1, changeIndex).address, BigInt(change), NET);
+  return { psbt: base64.encode(tx.toPSBT()), fee, totalIn, change: hasChange ? change : 0, mode };
+}
+export function finalizeTiersPsbt(psbtB64, mode = 'normal') {
+  let tx; try { tx = btc.Transaction.fromPSBT(base64.decode(String(psbtB64).trim())); } catch { throw new Error('PSBT inválido.'); }
+  for (let idx = 0; idx < tx.inputsLength; idx++) {
+    const inp = tx.getInput(idx);
+    const ws = inp.witnessScript; if (!ws) throw new Error('Entrada sem witnessScript.');
+    const ps = inp.partialSig || [];
+    if (mode === 'normal') {
+      if (ps.length < 2) throw new Error('Faltam assinaturas (precisa de 2 de 3).');
+      const order = inhPubkeyOrder(ws);
+      const sigs = ps.slice().sort((a, b) => order.indexOf(hex.encode(a[0])) - order.indexOf(hex.encode(b[0]))).slice(0, 2).map(x => x[1]);
+      tx.updateInput(idx, { finalScriptWitness: [INH_EMPTY, ...sigs, INH_TRUE, ws] });
+    } else if (mode === 'executor') {
+      if (ps.length < 1) throw new Error('Falta a assinatura do executor.');
+      tx.updateInput(idx, { finalScriptWitness: [ps[0][1], INH_TRUE, INH_EMPTY, ws] });
+    } else {
+      if (ps.length < 1) throw new Error('Falta a assinatura do herdeiro.');
+      tx.updateInput(idx, { finalScriptWitness: [ps[0][1], INH_EMPTY, INH_EMPTY, ws] });
+    }
+  }
+  return { hex: tx.hex, txid: tx.id };
+}
+
 /* Lembrete de "prova de vida" como calendário (.ics, RFC 5545): um evento RECORRENTE para mover/
  * renovar o cofre antes do herdeiro poder resgatar. O intervalo é ~2/3 da janela do timelock, para
  * você renovar sempre com folga. Zero backend: importa em qualquer agenda. startDate: Date (default agora). */

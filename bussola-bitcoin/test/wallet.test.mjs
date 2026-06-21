@@ -4,6 +4,7 @@ import { deriveAddresses, isValidExtendedKey, createTestnetWallet, restoreTestne
   createMultisigCosigner, multisigAddresses, buildMultisigPsbt, signMultisigPsbt,
   splitMnemonic, combineMnemonic,
   inheritanceAddresses, buildInheritancePsbt, signInheritancePsbt, finalizeInheritancePsbt, inheritanceClaimStatus,
+  tiersAddresses, buildTiersPsbt, finalizeTiersPsbt,
   encodeSilentPaymentAddress, decodeSilentPaymentAddress, silentPaymentAddress,
   silentPaymentOutputScript, silentPaymentSend, silentPaymentScanTx, silentPaymentScan,
   silentPaymentSpend, buildPaymentURI, lifeProofReminderICS, lifeProofGoogleCalUrl } from '../src/wallet/index.js';
@@ -134,6 +135,37 @@ eq('herança/normal: 2-de-3 finaliza, txid 64 hex', /^[0-9a-f]{64}$/.test(nf.txi
 // Negativo: uma assinatura só não fecha o caminho normal
 let needs2 = false; try { finalizeInheritancePsbt(signInheritancePsbt(nb.psbt, ihA.mnemonic).psbt, 'normal'); } catch { needs2 = true; }
 eq('herança/normal: 1 assinatura não finaliza (precisa de 2)', needs2, true);
+
+/* Herança em NÍVEIS (tiers): 2-de-3 · executor após t1 · herdeiro após t2 (t2>t1) */
+const exX = createMultisigCosigner();
+const T1 = 144, T2 = 432;
+const tCfg = { cosignerXpubs: cox, executorXpub: exX.accountXpub, heirXpub: ihH.accountXpub, t1: T1, t2: T2 };
+const tv = tiersAddresses({ ...tCfg, count: 1 })[0];
+eq('tiers: endereço P2WSH (tb1q…)', /^tb1q[0-9a-z]{50,}$/.test(tv.address), true);
+eq('tiers: endereço independe da ordem dos cosigners (BIP67)',
+  tiersAddresses({ ...tCfg, cosignerXpubs: [cox[2], cox[0], cox[1]], count: 1 })[0].address, tv.address);
+let t2gt = false; try { tiersAddresses({ ...tCfg, t1: 432, t2: 144, count: 1 }); } catch { t2gt = true; }
+eq('tiers: exige t2 > t1', t2gt, true);
+const tutxo = [{ txid: '22'.repeat(32), vout: 0, chain: 0, index: 0, valueSats: 100000 }];
+const tdest = 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx';
+// normal 2-de-3
+const tnb = buildTiersPsbt({ ...tCfg, utxos: tutxo, toAddress: tdest, amountSats: 90000, feeRate: 1, mode: 'normal' });
+const tnf = finalizeTiersPsbt(signInheritancePsbt(signInheritancePsbt(tnb.psbt, ihA.mnemonic).psbt, ihC.mnemonic).psbt, 'normal');
+eq('tiers/normal: 2-de-3 finaliza (txid 64 hex)', /^[0-9a-f]{64}$/.test(tnf.txid), true);
+let tNeeds2 = false; try { finalizeTiersPsbt(signInheritancePsbt(tnb.psbt, ihA.mnemonic).psbt, 'normal'); } catch { tNeeds2 = true; }
+eq('tiers/normal: 1 assinatura não finaliza', tNeeds2, true);
+// executor após t1
+const teb = buildTiersPsbt({ ...tCfg, utxos: tutxo, toAddress: tdest, amountSats: 90000, feeRate: 1, mode: 'executor' });
+const tes = signInheritancePsbt(teb.psbt, exX.mnemonic);
+eq('tiers/executor: executor assina', tes.signedInputs, 1);
+eq('tiers/executor: finaliza (txid 64 hex)', /^[0-9a-f]{64}$/.test(finalizeTiersPsbt(tes.psbt, 'executor').txid), true);
+// herdeiro após t2
+const thb = buildTiersPsbt({ ...tCfg, utxos: tutxo, toAddress: tdest, amountSats: 90000, feeRate: 1, mode: 'heir' });
+const ths = signInheritancePsbt(thb.psbt, ihH.mnemonic);
+eq('tiers/herdeiro: herdeiro assina', ths.signedInputs, 1);
+eq('tiers/herdeiro: finaliza (txid 64 hex)', /^[0-9a-f]{64}$/.test(finalizeTiersPsbt(ths.psbt, 'heir').txid), true);
+// executor não consegue assinar o ramo (chave não está no script como herdeiro) — sanity: herdeiro != executor
+eq('tiers: executor e herdeiro são chaves distintas', exX.accountXpub !== ihH.accountXpub, true);
 
 /* Silent Payments (BIP-352): codificador confere com o vetor oficial + roundtrip */
 eq('SP: endereço == vetor oficial BIP-352 (mainnet)',
