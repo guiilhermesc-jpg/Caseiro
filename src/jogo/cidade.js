@@ -744,13 +744,17 @@ export function criaCidade() {
   // === MONTANHA DO DRAGÃO (escalável!) — rampa cônica até o platô do topo,
   // onde o dragão vive. A subida usa alturaTerreno() no main3d (mesmo perfil).
   const MD = { x: 110, z: 300, r: 46, topo: 12, h: 34 }; // platô largo (dragão GRANDE mora lá)
-  const rochaMat = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1 });
-  aplicaTexturaReal(rochaMat, 'rocha', 7, 3); // rocha REAL na encosta
-  const morro = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo, MD.r, MD.h, 28), rochaMat);
+  const rochaMat = new THREE.MeshStandardMaterial({ color: 0x8d877c, roughness: 1 });
+  aplicaTexturaReal(rochaMat, 'montanha', 9, 5, false); // RV12.2: textura montanha (rocha+neve) real
+  const morro = new THREE.Mesh(desloca(new THREE.CylinderGeometry(MD.topo, MD.r * 1.05, MD.h, 24, 5), MD.r * 0.06), rochaMat);
   morro.position.set(MD.x, MD.h / 2, MD.z); morro.castShadow = morro.receiveShadow = true;
   scene.add(morro); solidos.push(morro);
   const plato = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo + 0.8, MD.topo + 0.8, 0.5, 20), mat(0x55514a, 1));
   plato.position.set(MD.x, MD.h + 0.2, MD.z); scene.add(plato);
+  // RV12.2: NEVE na encosta alta (faixa) — sem cobrir o platô do dragão
+  const neveMD = new THREE.Mesh(desloca(new THREE.CylinderGeometry(MD.topo + 1.5, MD.topo + 11, MD.h * 0.26, 24, 2, true), 1.2),
+    new THREE.MeshStandardMaterial({ color: 0xeef4f8, roughness: 0.82, side: THREE.DoubleSide }));
+  neveMD.position.set(MD.x, MD.h * 0.78, MD.z); neveMD.castShadow = true; scene.add(neveMD);
   // poças de LAVA no platô (pisar QUEIMA — campos tratados no main3d)
   const lavaMat2 = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
   aplicaTexturaReal(lavaMat2, 'lava', 2, 2, true); // lava REAL incandescente

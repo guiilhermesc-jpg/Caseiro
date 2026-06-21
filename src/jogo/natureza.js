@@ -177,21 +177,21 @@ export function criaCogumelo(x, z) {
 
 // --- montanha (emoldura o mundo; bloqueia passagem) ---
 // materiais COM TEXTURA DE ROCHA compartilhados por todas as montanhas
-const MAT_ROCHA = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1, flatShading: true });
-const MAT_ROCHA_ESC = new THREE.MeshStandardMaterial({ color: 0x4a473f, roughness: 1, flatShading: true });
-const MAT_ROCHA_CLARA = new THREE.MeshStandardMaterial({ color: 0x827d72, roughness: 1, flatShading: true });
-aplicaTexturaReal(MAT_ROCHA, 'rocha', 3, 2, true);
-aplicaTexturaReal(MAT_ROCHA_ESC, 'rocha', 2.5, 1.8, true);
-aplicaTexturaReal(MAT_ROCHA_CLARA, 'rocha', 3.5, 2.2, true);
+const MAT_ROCHA = new THREE.MeshStandardMaterial({ color: 0x8d877c, roughness: 1 });
+const MAT_ROCHA_ESC = new THREE.MeshStandardMaterial({ color: 0x6a6359, roughness: 1, flatShading: true });
+const MAT_ROCHA_CLARA = new THREE.MeshStandardMaterial({ color: 0xa39c8e, roughness: 1 });
+aplicaTexturaReal(MAT_ROCHA, 'montanha', 5, 4, false);     // RV12.2: textura montanha (rocha+neve) real
+aplicaTexturaReal(MAT_ROCHA_ESC, 'montanha', 4.5, 3.5, false);
+aplicaTexturaReal(MAT_ROCHA_CLARA, 'montanha', 5.5, 4.2, false);
 export function criaMontanha(x, z, esc = 1) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const rocha = MAT_ROCHA, rochaEsc = MAT_ROCHA_ESC, rochaClara = MAT_ROCHA_CLARA, neve = mat(0xeef2f5, 1);
   const h = 28 * esc, r = 18 * esc;
-  const base = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), rocha);
-  base.position.y = h / 2; base.rotation.y = Math.random(); base.scale.x = 1.12; base.castShadow = true; base.receiveShadow = true; g.add(base);
-  // sub-picos (relevo irregular)
+  const base = new THREE.Mesh(desloca(new THREE.ConeGeometry(r, h, 14, 4), r * 0.10), rocha);
+  base.position.y = h / 2; base.rotation.y = Math.random(); base.scale.set(1.25, 1, 1.18); base.castShadow = true; base.receiveShadow = true; g.add(base);
+  // sub-picos (relevo irregular, deslocado = craggy)
   [[-r * 0.55, -r * 0.25, 0.62, rochaEsc], [r * 0.6, r * 0.15, 0.72, rochaClara], [-r * 0.2, r * 0.5, 0.5, rochaEsc]].forEach(([ox, oz, s, m]) => {
-    const p = new THREE.Mesh(new THREE.ConeGeometry(r * s, h * s * 1.1, 6), m);
+    const p = new THREE.Mesh(desloca(new THREE.ConeGeometry(r * s, h * s * 1.1, 12, 3), r * s * 0.12), m);
     p.position.set(ox, h * s * 1.1 / 2, oz); p.rotation.y = Math.random(); p.castShadow = true; g.add(p);
   });
   // penhasco (face de rocha)
@@ -203,9 +203,9 @@ export function criaMontanha(x, z, esc = 1) {
     const b = new THREE.Mesh(new THREE.IcosahedronGeometry(r * (0.12 + Math.random() * 0.1), 0), rochaClara);
     b.position.set(Math.cos(a) * rr, r * 0.1, Math.sin(a) * rr); b.rotation.set(Math.random(), Math.random(), Math.random()); b.castShadow = true; g.add(b);
   }
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.42, h * 0.24, 6), neve);
-  cap.position.y = h * 0.88; cap.rotation.y = Math.random(); g.add(cap);
-  const c = r * 0.6;
+  const cap = new THREE.Mesh(desloca(new THREE.ConeGeometry(r * 0.46, h * 0.30, 12, 2), r * 0.05), neve);
+  cap.position.y = h * 0.86; cap.rotation.y = Math.random(); cap.castShadow = true; g.add(cap);
+  const c = r * 0.7;
   return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }] };
 }
 
