@@ -72,6 +72,22 @@ function normalDeCanvas(src, forca) {
   return out;
 }
 
+// Mapa de RUGOSIDADE da luminância: pontos altos (claros) ficam um tris menos
+// ásperos (pegam brilho); fundos (escuros/juntas) ficam foscos. Material real.
+function rugosidadeDeCanvas(src) {
+  const w = src.width, h = src.height;
+  const sd = src.getContext('2d').getImageData(0, 0, w, h).data;
+  const out = document.createElement('canvas'); out.width = w; out.height = h;
+  const octx = out.getContext('2d'); const img = octx.createImageData(w, h);
+  for (let i = 0; i < w * h; i++) {
+    const lum = (sd[i * 4] + sd[i * 4 + 1] + sd[i * 4 + 2]) / 765;
+    const r = Math.max(0, Math.min(1, 1.0 - lum * 0.28)) * 255;
+    img.data[i * 4] = r; img.data[i * 4 + 1] = r; img.data[i * 4 + 2] = r; img.data[i * 4 + 3] = 255;
+  }
+  octx.putImageData(img, 0, 0);
+  return out;
+}
+
 function configura(tex, repeat) {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(repeat, repeat);
@@ -81,23 +97,24 @@ function configura(tex, repeat) {
 
 // Devolve { map, normalMap } PBR. Cacheado.
 export function texPBR(corBase, { tipo = 'pedra', contraste = 22, tam = 128, repeat = 4, normalForca = 2.2 } = {}) {
-  if (!temDoc) return { map: null, normalMap: null };
+  if (!temDoc) return { map: null, normalMap: null, roughnessMap: null };
   const chave = `${corBase}|${tipo}|${contraste}|${tam}|${repeat}|${normalForca}`;
   if (_cache.has(chave)) {
     const o = _cache.get(chave);
-    return { map: o.map.clone(), normalMap: o.normalMap.clone() };
+    return { map: o.map.clone(), normalMap: o.normalMap.clone(), roughnessMap: o.roughnessMap.clone() };
   }
   const cv = canvasRuido(corBase, tipo, contraste, tam);
   const map = configura(new THREE.CanvasTexture(cv), repeat);
   map.colorSpace = THREE.SRGBColorSpace;
   const normalMap = configura(new THREE.CanvasTexture(normalDeCanvas(cv, normalForca)), repeat);
-  _cache.set(chave, { map, normalMap });
-  return { map: map.clone(), normalMap: normalMap.clone() };
+  const roughnessMap = configura(new THREE.CanvasTexture(rugosidadeDeCanvas(cv)), repeat);
+  _cache.set(chave, { map, normalMap, roughnessMap });
+  return { map: map.clone(), normalMap: normalMap.clone(), roughnessMap: roughnessMap.clone() };
 }
 
 // Conveniência: material PBR pronto (relevo + rugosidade coerentes).
 export function matPBR(corBase, opts = {}) {
-  const { map, normalMap } = texPBR(corBase, opts);
+  const { map, normalMap, roughnessMap } = texPBR(corBase, opts);
   const m = new THREE.MeshStandardMaterial({
     color: map ? 0xffffff : corBase,
     roughness: opts.rough ?? 0.92,
@@ -105,5 +122,6 @@ export function matPBR(corBase, opts = {}) {
   });
   if (map) m.map = map;
   if (normalMap) { m.normalMap = normalMap; m.normalScale = new THREE.Vector2(opts.relevo ?? 0.7, opts.relevo ?? 0.7); }
+  if (roughnessMap && opts.semRough !== true) m.roughnessMap = roughnessMap;
   return m;
 }
