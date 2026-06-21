@@ -80,7 +80,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV12.2 (v81)';
+const VERSAO = 'RV12.3 (v82)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -181,6 +181,12 @@ if (!ehMobile) {
 // ✨ ATMOSFERA (RV11.0): poeira/pólen flutuando no ar, segue o jogador (só PC)
 const atmosfera = criaAtmosfera(ehMobile);
 scene.add(atmosfera.grupo);
+// 🐉 DRAGÃO MAJESTOSO circulando o céu (RV12.3): a arte premium (dragao.png)
+// como billboard distante — a sensação épica de "Era dos Dragões".
+const dragaoCeuTex = new THREE.TextureLoader().load('assets/dragao.png');
+dragaoCeuTex.colorSpace = THREE.SRGBColorSpace;
+const dragaoCeu = new THREE.Sprite(new THREE.SpriteMaterial({ map: dragaoCeuTex, transparent: true, depthWrite: false, fog: false, opacity: 0.92 }));
+dragaoCeu.scale.set(72, 72, 1); dragaoCeu.renderOrder = 2; scene.add(dragaoCeu);
 function lapidaMaterialPremium(material, forca = 1) {
   if (!material) return;
   const lista = Array.isArray(material) ? material : [material];
@@ -3733,6 +3739,9 @@ function passo() {
   // ✨ poeira/pólen no ar segue o jogador (mais densa de dia/aberto, rala em zona)
   atmosfera.grupo.position.set(avatar.position.x, chaoY, avatar.position.z);
   atmosfera.atualiza(dt, tempo, noEsgoto ? 0.22 : 0.4 + fatorDiaVisual * 0.25);
+  // 🐉 dragão do céu circula alto, seguindo o jogador (some em zona fechada)
+  dragaoCeu.visible = !noEsgoto;
+  if (!noEsgoto) { const ad = tempo * 0.045; dragaoCeu.position.set(avatar.position.x + Math.cos(ad) * 300, 175 + Math.sin(ad * 0.7) * 22, avatar.position.z + Math.sin(ad) * 300); }
   // 💧 água viva: marola suave (RV11.0) + ondas do normal map deslizando (RV11.7)
   if (aguaNormal) { aguaNormal.offset.x = (tempo * 0.018) % 1; aguaNormal.offset.y = (tempo * 0.012) % 1; }
   if (aguas) for (const ag of aguas) {
