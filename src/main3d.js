@@ -16,6 +16,7 @@ import { criaMinimapa } from './jogo/minimapa.js';
 import { criaPatchNotes } from './jogo/patchNotes.js';
 import { criaQuadroJornadas, pontosJornadaParaMapa, rotasParaMapa } from './jogo/jornadas.js';
 import { criaCodice, PEDRAS_VEIO, TESSITURA, VEIOS_MAPA, RELIQUIAS } from './jogo/codice.js';
+import { criaBestiario } from './jogo/bestiario.js';
 import { precoCompra } from './jogo/calendario.js';
 import { criaNPCs, atualizaNPCs } from './jogo/npcs.js';
 import { animaProps } from './jogo/props.js';
@@ -81,7 +82,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.0 (v85)';
+const VERSAO = 'RV13.1 (v86)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1068,6 +1069,7 @@ const quadroJornadas = criaQuadroJornadas({
 });
 // === O CÓDICE DA VEIA (RV9.0): a cosmologia profunda de Venor ===
 const codice = criaCodice();
+const bestiario = criaBestiario();
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
@@ -3537,6 +3539,7 @@ criaSelecao({
     minimapa.mostra();
     quadroJornadas.mostra();
     codice.mostra(); // 📖 Códice da Veia disponível ao entrar
+    bestiario.mostra();
     inventario.mostra();
     hud.mostra();
     const temConta = carregaJogo(nome); // CONTA LOCAL: mesmo nome = mesmo progresso
