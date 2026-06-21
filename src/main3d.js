@@ -26,6 +26,7 @@ import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
 import { criaAtmosfera } from './jogo/atmosfera.js'; // ✨ poeira/pólen no ar (RV11.0)
+import { texPBR } from './jogo/texturas.js'; // 💧 normal map de ondas da água (RV11.7)
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -79,7 +80,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV11.6 (v74)';
+const VERSAO = 'RV11.7 (v75)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -116,6 +117,17 @@ let composer = null;
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, vagalumes, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
 scene.add(sun.target); // o alvo da sombra do sol acompanha o jogador (ver loop)
+// 💧 ÁGUA VIVA (RV11.7): normal map de ondas COMPARTILHADO em todas as águas;
+// o UV desliza no loop → ripples e reflexo (IBL) que se movem de verdade.
+const aguaNormal = texPBR(0x33586e, { tipo: 'areia', repeat: 7, contraste: 26, normalForca: 1.5 }).normalMap;
+if (aguaNormal) for (const ag of aguas) {
+  if (ag && ag.material && !Array.isArray(ag.material)) {
+    ag.material.normalMap = aguaNormal;
+    ag.material.normalScale = new THREE.Vector2(0.5, 0.5);
+    ag.material.roughness = Math.min(ag.material.roughness ?? 0.15, 0.12);
+    ag.material.needsUpdate = true;
+  }
+}
 // RV6.5: luz de recorte "adventure premium". Ela segue a câmera e desenha a
 // silhueta do jogador/monstros sem lavar o cenário inteiro.
 const luzRecorte = new THREE.DirectionalLight(0xbfd8ff, ehMobile ? 0.14 : 0.46);
@@ -3718,7 +3730,8 @@ function passo() {
   // ✨ poeira/pólen no ar segue o jogador (mais densa de dia/aberto, rala em zona)
   atmosfera.grupo.position.set(avatar.position.x, chaoY, avatar.position.z);
   atmosfera.atualiza(dt, tempo, noEsgoto ? 0.22 : 0.4 + fatorDiaVisual * 0.25);
-  // 💧 água viva: marola suave (RV11.0)
+  // 💧 água viva: marola suave (RV11.0) + ondas do normal map deslizando (RV11.7)
+  if (aguaNormal) { aguaNormal.offset.x = (tempo * 0.018) % 1; aguaNormal.offset.y = (tempo * 0.012) % 1; }
   if (aguas) for (const ag of aguas) {
     if (ag.userData._by === undefined) { ag.userData._by = ag.position.y; ag.userData._ph = (ag.position.x + ag.position.z) % 6.28; }
     ag.position.y = ag.userData._by + Math.sin(tempo * 1.2 + ag.userData._ph) * 0.035;
