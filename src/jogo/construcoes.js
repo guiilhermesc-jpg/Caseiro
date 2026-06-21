@@ -45,6 +45,32 @@ export function desloca(geo, amp) {
 let _rendererTex = null;
 export function defineRendererTexturas(r) { _rendererTex = r; }
 const _loaderTex = new THREE.TextureLoader();
+// RV11.5: NORMAL MAP derivado da luminância do albedo (uma vez por arquivo,
+// 256px = barato). Faz a luz "morder" toda superfície texturizada (muralhas,
+// calçamento, telhados, grama) sem baixar mapas extras. Same-origin → sem CORS.
+const _normCache = {};
+function normalDoAlbedo(img, arquivo, forca = 2.2) {
+  if (_normCache[arquivo] !== undefined) return _normCache[arquivo];
+  try {
+    const w = Math.min(256, img.width || 256), h = Math.min(256, img.height || 256);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+    const sd = cx.getImageData(0, 0, w, h).data;
+    const out = document.createElement('canvas'); out.width = w; out.height = h;
+    const octx = out.getContext('2d'); const o = octx.createImageData(w, h);
+    const lum = (x, y) => { x = (x + w) % w; y = (y + h) % h; const i = (y * w + x) * 4; return (sd[i] + sd[i + 1] + sd[i + 2]) / 765; };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const dx = (lum(x - 1, y) - lum(x + 1, y)) * forca;
+      const dy = (lum(x, y - 1) - lum(x, y + 1)) * forca;
+      const len = Math.hypot(dx, dy, 1); const i = (y * w + x) * 4;
+      o.data[i] = (dx / len * 0.5 + 0.5) * 255; o.data[i + 1] = (dy / len * 0.5 + 0.5) * 255;
+      o.data[i + 2] = (1 / len * 0.5 + 0.5) * 255; o.data[i + 3] = 255;
+    }
+    octx.putImageData(o, 0, 0);
+    const nt = new THREE.CanvasTexture(out); nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
+    _normCache[arquivo] = nt; return nt;
+  } catch (e) { _normCache[arquivo] = null; return null; }
+}
 export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) {
   _loaderTex.load('texturas/' + arquivo + '.png', (t) => {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -54,6 +80,14 @@ export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false) 
     if (_rendererTex) _rendererTex.initTexture(t); // GPU agora, não no 1º uso
     material.map = t;
     if (!manterCor) material.color.set(0xffffff);
+    // relevo: deriva o normal map do albedo e casa o repeat
+    const nrm = normalDoAlbedo(t.image, arquivo);
+    if (nrm) {
+      const nc = nrm.clone(); nc.needsUpdate = true; nc.wrapS = nc.wrapT = THREE.RepeatWrapping;
+      nc.repeat.set(rx, rz); nc.anisotropy = 8;
+      if (_rendererTex) _rendererTex.initTexture(nc);
+      material.normalMap = nc; material.normalScale = new THREE.Vector2(0.42, 0.42);
+    }
     material.needsUpdate = true;
   }, undefined, () => {});
 }

@@ -24,6 +24,9 @@ import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
+import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
+import { criaAtmosfera } from './jogo/atmosfera.js'; // ✨ poeira/pólen no ar (RV11.0)
+import { texPBR } from './jogo/texturas.js'; // 💧 normal map de ondas da água (RV11.7)
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -77,7 +80,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV10.5 (v63)';
+const VERSAO = 'RV11.10 (v78)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -114,6 +117,19 @@ let composer = null;
 
 const { scene, ceu, hemi, sun, skyMat, lua, luaLuz, luaMat, estrelas, vagalumes, postes, obstaculos, solidos, aguas, nuvens, fonteGotas, ruas, marcos, animados, interativos, casas, lagos, montanhaDragao } = criaCidade();
 scene.add(sun.target); // o alvo da sombra do sol acompanha o jogador (ver loop)
+// 💧 ÁGUA VIVA (RV11.7): normal map de ondas COMPARTILHADO em todas as águas;
+// o UV desliza no loop → ripples e reflexo (IBL) que se movem de verdade.
+const aguaNormal = texPBR(0x33586e, { tipo: 'areia', repeat: 7, contraste: 26, normalForca: 1.5 }).normalMap;
+if (aguaNormal) for (const ag of aguas) {
+  if (ag && ag.material && !Array.isArray(ag.material)) {
+    ag.material.normalMap = aguaNormal;
+    ag.material.normalScale = new THREE.Vector2(0.5, 0.5);
+    ag.material.roughness = Math.min(ag.material.roughness ?? 0.15, 0.1);
+    ag.material.metalness = Math.max(ag.material.metalness ?? 0.3, 0.35);
+    ag.material.envMapIntensity = 1.3; // reflete mais o céu/ambiente (só a água)
+    ag.material.needsUpdate = true;
+  }
+}
 // RV6.5: luz de recorte "adventure premium". Ela segue a câmera e desenha a
 // silhueta do jogador/monstros sem lavar o cenário inteiro.
 const luzRecorte = new THREE.DirectionalLight(0xbfd8ff, ehMobile ? 0.14 : 0.46);
@@ -130,7 +146,7 @@ if (!ehMobile) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.24, 0.5, 1.06));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.32, 0.6, 0.95));
   // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
   // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
   // saturação +12%, split-tone (sombras frias / altas levemente quentes),
@@ -161,6 +177,9 @@ if (!ehMobile) {
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.14; // reflexo sutil; sem clarear rostos/grama
 }
+// ✨ ATMOSFERA (RV11.0): poeira/pólen flutuando no ar, segue o jogador (só PC)
+const atmosfera = criaAtmosfera(ehMobile);
+scene.add(atmosfera.grupo);
 function lapidaMaterialPremium(material, forca = 1) {
   if (!material) return;
   const lista = Array.isArray(material) ? material : [material];
@@ -257,7 +276,7 @@ let velAvatarX = 0, velAvatarZ = 0;
 // a lista inteira a cada passo travava — agora cada célula de 24u guarda só os
 // colisores que a tocam, e cada checagem olha ~5-20 caixas em vez de ~700.
 const CELULA = 24, gradeCol = new Map();
-for (const o of obstaculos) {
+function indexaCol(o) {
   const x0 = Math.floor((o.minX - 1.2) / CELULA), x1 = Math.floor((o.maxX + 1.2) / CELULA);
   const z0 = Math.floor((o.minZ - 1.2) / CELULA), z1 = Math.floor((o.maxZ + 1.2) / CELULA);
   for (let cx = x0; cx <= x1; cx++) for (let cz = z0; cz <= z1; cz++) {
@@ -266,6 +285,10 @@ for (const o of obstaculos) {
     arr.push(o);
   }
 }
+for (const o of obstaculos) indexaCol(o);
+// colisor adicionado DEPOIS da grade (ex.: estruturas do deserto) entra na
+// lista E no índice espacial — senão não colide.
+function addColisorMundo(o) { obstaculos.push(o); indexaCol(o); }
 function colide(x, z) {
   if (noEsgoto) { // subsolo (esgoto OU catacumbas): lista pequena, varre direto
     for (const o of subsoloAtual.colisores) {
@@ -327,6 +350,17 @@ cavernasPico.grupo.visible = false;
 // AS IRMÃS AFUNDADAS (RV10.5): Ilha 1 — A Quebra-Mar, zona carregada além-mar
 const irmas1 = criaIrmasIlha1(); scene.add(irmas1.grupo);
 irmas1.grupo.visible = false;
+// AS AREIAS DO VEIO SECO (RV10.7): deserto do sudeste + Catedral da Lua Coada.
+// Colisores entram no índice tardio (a grade já foi montada acima).
+const deserto = criaDeserto(); scene.add(deserto.grupo);
+deserto.colisores.forEach(addColisorMundo);
+// A NAVE PROFANADA (RV10.8): interior da Catedral da Lua Coada, zona carregada
+const catedralI = criaCatedralInterior(); scene.add(catedralI.grupo);
+catedralI.grupo.visible = false;
+// emissivos que PULSAM com o bloom (RV11.2): a Veia presa, a rosácea e os vitrais
+// respiram — efeito mágico premium.
+const glowsPulsantes = [...(deserto.glows || []), ...(catedralI.glows || [])];
+glowsPulsantes.forEach((m, i) => { m.userData._base = m.emissiveIntensity; m.userData._ph = i * 1.3; });
 { // boca da descida (marca escura no chão da câmara do trono)
   const buraco = new THREE.Mesh(new THREE.CircleGeometry(1.1, 14), new THREE.MeshBasicMaterial({ color: 0x05050a }));
   buraco.rotation.x = -Math.PI / 2; buraco.position.set(-344, -39.97, -16);
@@ -752,6 +786,46 @@ function naufragoDoSal(x, z) {
   const r2 = criaRato(x, z); r2.position.y = -40;
   addMonstro(r2, 16, 5, 4, 2.4, false, areaMon(IRX, IRZ, 25), { especie: 'rato', y0: -40 });
 });
+// AS AREIAS DO VEIO SECO · caça do deserto (RV10.7, superfície y=0). Escalada
+// de fora pra dentro: escorpiões na borda → cobras/trolls no meio → ciclopes
+// guardando a Cidade Soterrada. Posições fora dos colisores das estruturas.
+[[550, -100], [572, -125], [558, -148], [500, -330], [470, -290], [645, -360], [590, -420]].forEach(([x, z]) =>
+  addMonstro(criaEscorpiao(x, z), 18, 6, 5, 2.0, false, areaMon(x, z, 16), { veneno: true, especie: 'escorpiao' }));
+[[520, -265], [585, -300], [545, -345], [640, -390]].forEach(([x, z]) =>
+  addMonstro(criaCobra(x, z), 28, 10, 8, 1.5, false, areaMon(x, z, 16), { veneno: true, especie: 'cobra' }));
+[[590, -200], [615, -250], [545, -280]].forEach(([x, z]) =>
+  addMonstro(criaTroll(x, z), 25, 8, 6, 2.0, false, areaMon(x, z, 14), { especie: 'troll' }));
+[[672, -310], [648, -322], [665, -296]].forEach(([x, z]) =>
+  addMonstro(criaCyclops(x, z), 150, 60, 18, 1.3, true, areaMon(660, -310, 18), { especie: 'ciclope' }));
+// A NAVE PROFANADA · culto da Vigília-Decaída (RV10.8, y=-40 na zona da catedral).
+// Drakari e acólitos guardam o altar; VAEL dorme no relicário até despertar.
+let vaelCatedral = null;
+{
+  const rel = catedralI.relicario; // (800, ~-415)
+  const vg = criaEsqueleto(rel.x, rel.z + 2); vg.position.y = -40; vg.scale.setScalar(1.9);
+  vg.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material) || !o.material.clone) return;
+    o.material = o.material.clone();
+    if (o.material.color) o.material.color.lerp(new THREE.Color(0x2a2030), 0.7);
+    if (o.material.emissive) { o.material.emissive.set(0x4a1f7a); o.material.emissiveIntensity = 0.4; }
+  });
+  vaelCatedral = addMonstro(vg, 380, 110, 26, 1.3, true, areaMon(rel.x, rel.z + 2, 12), {
+    boss: true, especie: 'vaelSanto', y0: -40, lootEspecial: { nome: 'Sudário da Lua Coada', icone: '🌒' },
+  });
+  vaelCatedral.vivo = false; vaelCatedral.g.visible = false; // dorme até o relicário
+  [[793, -395], [807, -398], [795, -406]].forEach(([x, z]) => {
+    const d = criaDrakari(x, z); d.position.y = -40;
+    addMonstro(d, 110, 55, 17, 2.35, false, areaMon(x, z, 10), { especie: 'drakari', y0: -40, lootEspecial: { nome: 'Escama Drakari', icone: '🐉' } });
+  });
+  { const de = criaDrakari(806, -410, true); de.position.y = -40; de.scale.setScalar(1.18);
+    addMonstro(de, 190, 90, 24, 2.05, true, areaMon(806, -410, 10), {
+      especie: 'drakariElite', y0: -40, atira: 'magia', alcanceTiro: 15, danoTiro: 15, cadencia: 3.0,
+      lootEspecial: { nome: 'Fragmento de Obsidiana', icone: '💠' } }); }
+  [[794, -388], [806, -390], [797, -407], [803, -386]].forEach(([x, z]) => {
+    const e = criaEsqueleto(x, z); e.position.y = -40;
+    addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 9), { especie: 'esqueleto', y0: -40 });
+  });
+}
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
 let armado = false;
 const luzTocha = new THREE.PointLight(0xffa54a, 0, 32, 2); scene.add(luzTocha); // luz principal do esgoto
@@ -2033,6 +2107,55 @@ function zarpaIrmas() {
     [{ texto: 'Seguir descendo a espinha 🦴', onClick: () => dialogo.fecha() }]);
   interativos.push(it);
 }
+// AS AREIAS DO VEIO SECO · interativos de POI (RV10.7/10.8): cada ponto conta
+// sua história; a Catedral oferece DESCER à Nave Profanada.
+for (const poiDes of deserto.pois) {
+  const it = { x: poiDes.x, z: poiDes.z, raio: poiDes.raio || 3.4, titulo: poiDes.titulo, acao: poiDes.acao };
+  const p = poiDes;
+  it.onAcao = () => {
+    const botoes = [{ texto: 'Seguir 🏜️', onClick: () => dialogo.fecha() }];
+    if (p.tipo === 'catedral') botoes.unshift({ texto: 'Descer à Nave Profanada 🕯️', onClick: () => { dialogo.fecha(); desceCatedral(); } });
+    dialogo.abre(p.titulo, p.texto, botoes);
+  };
+  interativos.push(it);
+}
+// A NAVE PROFANADA (RV10.8): descida pela corda atrás do altar + corda de volta
+// + o relicário que DESPERTA Vael (boss por invocação, padrão do Arconte).
+function desceCatedral() {
+  if (montado) { montado = false; mostraMensagem('Você desmontou pra entrar. 🐾'); }
+  acessoAtual = 0;
+  subsoloAtual = catedralI;
+  catedralI.grupo.visible = true;
+  chaoY = -40; areaAtiva = catedralI.bounds; noEsgoto = true;
+  const a = catedralI.acessos[0];
+  avatar.position.set(a.x, -40, a.z - 2); vy = 0; noChao = true;
+  hemi.intensity = 0.18; sun.intensity = 0.08; // nave escura — vitrais e a Veia presa iluminam
+  minimapa.esconde(); petAlvo = null; sons.corda();
+  mostraMensagem('🕯️ Você desce à Nave Profanada... o ar cheira a mirra e morte.');
+}
+{
+  const a = catedralI.acessos[0];
+  const it = { x: a.x, z: a.z, y: -40, raio: 2.8, titulo: '🪢 Corda', acao: 'Subir ao adro 🪢' };
+  it.onAcao = () => { if (subsoloAtual === catedralI) sobe(0); };
+  interativos.push(it);
+}
+{
+  const r = catedralI.relicario;
+  const it = { x: r.x, z: r.z, y: -40, raio: 2.8, titulo: '⚱️ Relicário de Vael', acao: 'Tocar o relicário ⚱️' };
+  it.onAcao = () => {
+    if (subsoloAtual !== catedralI || !vaelCatedral) return;
+    if (vaelCatedral._despertado) {
+      mostraMensagem(vaelCatedral.vivo ? 'Vael já despertou — termine o que começou. ⚔️' : 'A costura foi desfeita. Vael descansa enfim. 🌒');
+      return;
+    }
+    vaelCatedral._despertado = true;
+    vaelCatedral.vivo = true; vaelCatedral.g.visible = true; vaelCatedral.hp = vaelCatedral.hpMax;
+    dialogo.abre('⚱️ A Costura se Rompe',
+      'Você toca o relicário. A Veia presa PULSA — e o que estava embalsamado abre os olhos.\n\nVAEL, o Santo Embalsamado, ergue-se: nem vivo nem morto, a agulha que tentaram usar pra costurar a Lua Partida e que nunca parou de doer. Desfaça a costura.',
+      [{ texto: 'Empunhar a arma ⚔️', onClick: () => dialogo.fecha() }]);
+  };
+  interativos.push(it);
+}
 
 // BAÚ ANCESTRAL: o tesouro dos reis (UMA vez por conta — vai no save)
 let bauCriptaAberto = false;
@@ -2105,7 +2228,7 @@ function aplicaDiaNoite(dt) {
   }
   // LUAR: a lua brilha mais à noite (mas fica visível de dia, pálida) + estrelas surgem
   luaLuz.intensity = (ehMobile ? 0.35 : 0.6) * Math.max(0, noite - 0.12);
-  if (luaMat) luaMat.emissiveIntensity = 0.35 + noite * 0.85;
+  if (luaMat) luaMat.emissiveIntensity = 0.4 + noite * 1.65; // RV11.3: Lua Partida BRILHA à noite (bloom), discreta de dia
   if (estrelas) estrelas.material.opacity = Math.min(1, Math.max(0, noite - 0.3) * 1.4);
   if (vagalumes) { // RV3.0: vagalumes acordam à noite e flutuam de leve
     vagalumes.material.opacity = Math.min(0.95, Math.max(0, noite - 0.45) * 1.8);
@@ -2846,7 +2969,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -3023,7 +3146,7 @@ window.addEventListener('keydown', (e) => {
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -3261,7 +3384,8 @@ function atualizaLocal() {
     nome = subsoloAtual === catacumbas ? 'Catacumbas de Venore'
       : subsoloAtual === criptaProfunda ? 'Cripta Profunda'
       : subsoloAtual === cavernasPico ? 'Cavernas do Pico'
-      : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar' : 'Esgoto';
+      : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar'
+      : subsoloAtual === catedralI ? 'Catedral da Lua Coada · Nave Profanada' : 'Esgoto';
   }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
@@ -3605,6 +3729,17 @@ function passo() {
   // ambiente vivo (sempre): ciclo dia/noite (na superfície), nuvens, fonte, gato
   if (!noEsgoto) aplicaDiaNoite(dt);
   atualizaLuzRecorte();
+  // ✨ poeira/pólen no ar segue o jogador (mais densa de dia/aberto, rala em zona)
+  atmosfera.grupo.position.set(avatar.position.x, chaoY, avatar.position.z);
+  atmosfera.atualiza(dt, tempo, noEsgoto ? 0.22 : 0.4 + fatorDiaVisual * 0.25);
+  // 💧 água viva: marola suave (RV11.0) + ondas do normal map deslizando (RV11.7)
+  if (aguaNormal) { aguaNormal.offset.x = (tempo * 0.018) % 1; aguaNormal.offset.y = (tempo * 0.012) % 1; }
+  if (aguas) for (const ag of aguas) {
+    if (ag.userData._by === undefined) { ag.userData._by = ag.position.y; ag.userData._ph = (ag.position.x + ag.position.z) % 6.28; }
+    ag.position.y = ag.userData._by + Math.sin(tempo * 1.2 + ag.userData._ph) * 0.035;
+  }
+  // 🔮 glow pulsante (Veia/rosácea/vitrais respiram com o bloom) — RV11.2
+  for (const m of glowsPulsantes) m.emissiveIntensity = m.userData._base * (0.82 + Math.sin(tempo * 1.8 + m.userData._ph) * 0.22);
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;

@@ -7,11 +7,15 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat } from './construcoes.js';
+import { matPBR } from './texturas.js'; // RV11.6: props com relevo (materiais COMPARTILHADOS)
+const MAD_PBR = matPBR(0x6b4a2a, { tipo: 'madeira', repeat: 1, rough: 0.85, relevo: 0.5 });
+const MAD2_PBR = matPBR(0xa07c44, { tipo: 'madeira', repeat: 1, rough: 0.85, relevo: 0.5 });
+const PEDRA_PBR = matPBR(0x8a8276, { tipo: 'pedra', repeat: 1.4, rough: 0.95, relevo: 0.55 });
 
 // --- barril de madeira ---
 export function criaBarril(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.4, 1.1, 12), mat(0x6b4a2a));
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.4, 1.1, 12), MAD_PBR);
   corpo.position.y = 0.55; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
   [0.15, 0.55, 0.95].forEach((y) => {
     const aro = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.04, 6, 16), mat(0x30343a));
@@ -23,7 +27,7 @@ export function criaBarril(x, z) {
 // --- engradado (caixa) ---
 export function criaCaixa(x, z, s = 0.9, rot = Math.random() * 0.6) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
-  const cx = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), mat(0xa07c44));
+  const cx = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), MAD2_PBR);
   cx.position.y = s / 2; cx.castShadow = true; cx.receiveShadow = true; g.add(cx);
   const rip = mat(0x6e5128), e = s * 0.5 + 0.01;
   [e, -e].forEach((pz) => {
@@ -37,7 +41,7 @@ export function criaCaixa(x, z, s = 0.9, rot = Math.random() * 0.6) {
 // --- poço de pedra (com telhadinho) ---
 export function criaPoco(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const pedra = mat(0x8a8276);
+  const pedra = PEDRA_PBR;
   const anel = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.3, 1.0, 16), pedra);
   anel.position.y = 0.5; anel.castShadow = true; anel.receiveShadow = true; g.add(anel);
   const agua = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.1, 16), mat(0x2f6f9f, 0.2));

@@ -7,13 +7,14 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat } from './construcoes.js';
+import { matPBR } from './texturas.js'; // pedra com relevo real (RV11.4)
 
 const Y = -40;
 
 export function criaEsgoto() {
   const g = new THREE.Group();
   const E = 52, alt = 5, t = 0.8;          // extensão, pé-direito, espessura de parede
-  const pedra = mat(0x3f443f, 1), pedraEsc = mat(0x2a2e28, 1);
+  const pedra = matPBR(0x3f443f, { tipo: 'pedra', repeat: 6, rough: 0.95, relevo: 0.9 }), pedraEsc = mat(0x2a2e28, 1);
 
   // piso + teto cobrindo todo o subsolo
   const piso = new THREE.Mesh(new THREE.BoxGeometry(E * 2, 0.4, E * 2), pedra);
@@ -99,7 +100,7 @@ export function criaCatacumbas() {
   const g = new THREE.Group();
   const CX = -330, CZ = -10;            // centro do salão (sob Venore)
   const W = 66, D = 38, alt = 5, t = 0.8;
-  const pedra = mat(0x3a3a42, 1), pedraEsc = mat(0x26262e, 1), osso = mat(0xd8d0ba, 0.7);
+  const pedra = matPBR(0x3a3a42, { tipo: 'pedra', repeat: 6, rough: 0.93, relevo: 0.85 }), pedraEsc = mat(0x26262e, 1), osso = mat(0xd8d0ba, 0.7);
 
   // piso + teto
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
@@ -188,7 +189,7 @@ export function criaCriptaProfunda() {
   const g = new THREE.Group();
   const CX = -346, CZ = -10, YP = -80;
   const W = 32, D = 24, alt = 4.6, t = 0.8;
-  const pedra = mat(0x33333b, 1), pedraEsc = mat(0x202027, 1);
+  const pedra = matPBR(0x33333b, { tipo: 'pedra', repeat: 5, rough: 0.92, relevo: 0.9 }), pedraEsc = mat(0x202027, 1);
 
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), pedra);
   piso.position.set(CX, YP - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
@@ -257,7 +258,7 @@ export function criaCavernasPico() {
   const g = new THREE.Group();
   const CX = 100, CZ = 290, YC = -40;
   const W = 56, D = 42, alt = 5.5, t = 0.8;
-  const rocha = mat(0x3a332e, 1), rochaEsc = mat(0x241f1b, 1);
+  const rocha = matPBR(0x3a332e, { tipo: 'pedra', repeat: 5, rough: 0.96, relevo: 1.0 }), rochaEsc = mat(0x241f1b, 1);
 
   const piso = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, D), rocha);
   piso.position.set(CX, YC - 0.2, CZ); piso.receiveShadow = true; g.add(piso);
@@ -274,7 +275,7 @@ export function criaCavernasPico() {
   parede(CX - W / 2, CZ, t, D); parede(CX + W / 2, CZ, t, D);
 
   // RIOS DE LAVA cruzando a caverna (visual emissivo; o dano vem dos CAMPOS)
-  const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 1.0, roughness: 0.55 });
+  const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff6a2a, emissive: 0xff3a00, emissiveIntensity: 2.1, roughness: 0.55 });
   const lavas = [];
   [[CX - 14, CZ + 6, 4.2], [CX + 8, CZ - 9, 3.4], [CX + 18, CZ + 11, 2.8]].forEach(([lx, lz, lr]) => {
     const poca = new THREE.Mesh(new THREE.CircleGeometry(lr, 16), lavaMat);
@@ -286,7 +287,7 @@ export function criaCavernasPico() {
   // CRISTAIS do Pico (azuis/roxos, emissivos — os tesouros da montanha)
   [[CX - 22, CZ - 12, 0x6ab0ff], [CX + 2, CZ + 14, 0x9a6aff], [CX + 21, CZ - 4, 0x6ab0ff], [CX - 6, CZ - 16, 0x9a6aff]].forEach(([cx2, cz2, cor]) => {
     const cr = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.8, 6),
-      new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.5, roughness: 0.25 }));
+      new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 1.5, roughness: 0.25 }));
     cr.position.set(cx2, YC + 0.9, cz2); cr.rotation.z = (Math.random() - 0.5) * 0.4; g.add(cr);
   });
   // estalagmites (colisores — o caminho serpenteia)

@@ -6,6 +6,10 @@
 // =============================================================
 import * as THREE from 'three';
 import { mat, matFlat, desloca, aplicaTexturaReal } from './construcoes.js';
+import { matPBR } from './texturas.js'; // RV11.9: casca de árvore com relevo (compartilhada)
+const CASCA_PBR = matPBR(0x5a4326, { tipo: 'madeira', repeat: 1, rough: 0.95, relevo: 0.7 });
+const CASCA2_PBR = matPBR(0x4f3a22, { tipo: 'madeira', repeat: 1.4, rough: 0.95, relevo: 0.8 });
+const CASCA3_PBR = matPBR(0x6b4a2a, { tipo: 'madeira', repeat: 1, rough: 0.95, relevo: 0.7 });
 
 const AGUA = new THREE.MeshStandardMaterial({ color: 0x3f86c0, roughness: 0.15, metalness: 0.35, transparent: true, opacity: 0.82 });
 
@@ -81,7 +85,7 @@ export function criaJunco(x, z) {
 // --- salgueiro (árvore chorona de beira de lago) ---
 export function criaSalgueiro(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.65, 3.2, 8), mat(0x5a4326));
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.65, 3.2, 8), CASCA_PBR);
   tronco.position.y = 1.6; tronco.castShadow = true; g.add(tronco);
   const corFolha = 0x6f9a4a;
   const copa = new THREE.Mesh(new THREE.SphereGeometry(2.6, 10, 8), mat(corFolha));
@@ -98,7 +102,7 @@ export function criaSalgueiro(x, z) {
 //     copa frondosa em vários blobs — preenche a floresta ao redor das cidades ---
 export function criaArvoreGrande(x, z, s = 1) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const casca = mat(0x4f3a22);
+  const casca = CASCA2_PBR;
   const PALETAS = [[0x3e7032, 0x4f8a3e, 0x32592a], [0x4a8a3a, 0x5d9c4b, 0x3a6e2e], [0x57924a, 0x6aa85a, 0x447238], [0x6a9a3a, 0x7cab4b, 0x54802e]];
   const pal = PALETAS[Math.floor(Math.random() * PALETAS.length)]; // cada árvore com seu tom
   const folha = matFlat(pal[0]), folhaClara = matFlat(pal[1]), folhaEsc = matFlat(pal[2]);
@@ -126,7 +130,7 @@ export function criaArvoreGrande(x, z, s = 1) {
 // --- árvore de copa redonda (variedade além dos pinheiros) ---
 export function criaArvore(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2.6, 7), mat(0x6b4a2a));
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2.6, 7), CASCA3_PBR);
   tronco.position.y = 1.3; tronco.castShadow = true; g.add(tronco);
   const cor = [0x4f8a3e, 0x5d9c4b, 0x447238, 0x6a9a3a][Math.floor(Math.random() * 4)];
   [[1.9, 3.6, 0, 0], [1.4, 4.6, 0.8, 0.5], [1.3, 4.4, -0.7, -0.6]].forEach(([r, y, ox, oz]) => {

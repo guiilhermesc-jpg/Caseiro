@@ -62,6 +62,14 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
     // bicho de SUPERFÍCIE gruda no relevo (colinas); esgoto/platô ficam no andar deles
     if (alturaSolo && r.y0 === 0) g.position.y = alturaSolo(g.position.x, g.position.z);
     if (r.piscar > 0) { r.piscar -= dt; if (r.piscar <= 0 && g.userData.corpoMat) g.userData.corpoMat.emissive.setHex(0x000000); }
+    // === VIDA SEMPRE (RV10.6): respiração + cauda + balanço, mesmo PARADO, pra
+    // os bichos parecerem ANIMADOS de verdade (não estátuas). Preserva a escala
+    // base (bosses crescidos continuam crescidos). ===
+    if (r._bx === undefined) { r._bx = g.scale.x; r._by = g.scale.y; r._bz = g.scale.z; r._fase = Math.random() * 6.28; }
+    const ativo = r.contato || r.pausa <= 0;                 // andando/caçando vs. ocioso
+    const resp = Math.sin(r.tempo * (ativo ? 5.6 : 2.4) + r._fase) * (ativo ? 0.05 : 0.03);
+    g.scale.set(r._bx * (1 - resp * 0.45), r._by * (1 + resp), r._bz * (1 - resp * 0.45));
+    if (g.userData.rabo) g.userData.rabo.rotation.y = Math.sin(r.tempo * (ativo ? 6 : 2.6) + r._fase) * (ativo ? 0.5 : 0.26);
     // asas (dragão) batem de leve mesmo parado
     if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; }
     if (g.userData.garganta) g.userData.garganta.scale.setScalar(1 + Math.sin(r.tempo * 8) * 0.12);
@@ -74,6 +82,7 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
         if (pd < 1.7) {
           r.contato = true; g.rotation.y = Math.atan2(pdx, pdz);
           const p = g.userData.patas; if (p) { const s = Math.sin(r.tempo * 18) * 0.5; for (let i = 0; i < p.length; i++) p[i].rotation.x = (i % 2 ? -s : s); }
+          if (r._bz !== undefined) g.scale.z = r._bz * (1.18 + Math.max(0, Math.sin(r.tempo * 11)) * 0.22); // bote/mordida pra frente
           continue;
         }
         r.alvo = { x: jog.x, z: jog.z };
