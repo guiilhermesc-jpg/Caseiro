@@ -25,6 +25,7 @@ import { criaCustomizar } from './jogo/customizar.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
+import { criaCidadeNuvens } from './jogo/nuvens.js'; // ☁️🐉 Aurélia, a Cidade nas Nuvens
 import { criaAtmosfera } from './jogo/atmosfera.js'; // ✨ poeira/pólen no ar (RV11.0)
 import { texPBR } from './jogo/texturas.js'; // 💧 normal map de ondas da água (RV11.7)
 import { criaAudio } from './jogo/audio.js';
@@ -80,7 +81,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV12.5 (v84)';
+const VERSAO = 'RV13.0 (v85)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -364,6 +365,9 @@ deserto.colisores.forEach(addColisorMundo);
 // A NAVE PROFANADA (RV10.8): interior da Catedral da Lua Coada, zona carregada
 const catedralI = criaCatedralInterior(); scene.add(catedralI.grupo);
 catedralI.grupo.visible = false;
+// AURÉLIA, A CIDADE NAS NUVENS (RV13.0): base dos dragões, zona carregada celeste
+const aurelia = criaCidadeNuvens(); scene.add(aurelia.grupo);
+aurelia.grupo.visible = false;
 // emissivos que PULSAM com o bloom (RV11.2): a Veia presa, a rosácea e os vitrais
 // respiram — efeito mágico premium.
 const glowsPulsantes = [...(deserto.glows || []), ...(catedralI.glows || [])];
@@ -831,6 +835,22 @@ let vaelCatedral = null;
   [[794, -388], [806, -390], [797, -407], [803, -386]].forEach(([x, z]) => {
     const e = criaEsqueleto(x, z); e.position.y = -40;
     addMonstro(e, 34, 14, 8, 1.8, false, areaMon(x, z, 9), { especie: 'esqueleto', y0: -40 });
+  });
+}
+// AURÉLIA · os DRAGÕES da cidade nas nuvens (RV13.0, y=-40 na zona celeste).
+// 2 guardiões patrulham; o GUARDIÃO ANCIÃO dorme no templo até a Prova de Fogo.
+let dragaoNuvens = null;
+{
+  const ar = aurelia.arena, ce = aurelia.centro;
+  const dg = criaDragao(ar.x, ar.z); dg.position.y = -40; dg.scale.setScalar(1.5);
+  dragaoNuvens = addMonstro(dg, 1200, 600, 46, 1.6, true, areaMon(ar.x, ar.z, 14), {
+    boss: true, especie: 'dragao', dragao: true, atira: 'fogo', alcanceTiro: 40, danoTiro: 30, cadencia: 2.4, y0: -40,
+    lootEspecial: { nome: 'Coração de Dragão Ancião', icone: '🐉' },
+  });
+  dragaoNuvens.vivo = false; dragaoNuvens.g.visible = false; // dorme até a prova
+  [[ce.x - 24, ce.z + 6], [ce.x + 24, ce.z - 4]].forEach(([x, z]) => {
+    const d = criaDragao(x, z); d.position.y = -40; d.scale.setScalar(1.15);
+    addMonstro(d, 320, 150, 26, 1.8, true, areaMon(x, z, 16), { especie: 'dragao', dragao: true, atira: 'fogo', alcanceTiro: 34, danoTiro: 20, cadencia: 3.0, y0: -40, lootEspecial: { nome: 'Escama de Ouro', icone: '✨' } });
   });
 }
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
@@ -2164,6 +2184,55 @@ function desceCatedral() {
   interativos.push(it);
 }
 
+// ☁️🐉 AURÉLIA, A CIDADE NAS NUVENS (RV13.0): ascende do platô da Montanha do
+// Dragão. Quest "A PROVA DE FOGO": o Ancião manda despertar e vencer o Guardião.
+let provaFogoFeita = false;
+function ascendeNuvens() {
+  if (montado) { montado = false; }
+  acessoAtual = 0;
+  subsoloAtual = aurelia;
+  aurelia.grupo.visible = true;
+  chaoY = -40; areaAtiva = aurelia.bounds; noEsgoto = true;
+  const a = aurelia.acessos[0];
+  avatar.position.set(a.x, -40, a.z - 3); vy = 0; noChao = true;
+  hemi.intensity = 0.9; sun.intensity = 0.72; // LUZ CELESTE (clara, dourada)
+  minimapa.esconde(); petAlvo = null; sons.corda();
+  dialogo.abre('☁️ Aurélia, a Cidade nas Nuvens',
+    'O chão some sob você — só um mar de nuvens até o horizonte. Erguida em mármore e ouro acima da tempestade, AURÉLIA flutua: o berço da linhagem de fogo, onde os Dragões-Anciões guardam os ovos que ainda não nasceram.\n\nNo templo ao norte, algo imenso e antigo abre os olhos ao te ver chegar.',
+    [{ texto: 'Caminhar entre os dragões 🐉', onClick: () => dialogo.fecha() }]);
+}
+{ // PORTAL no platô da Montanha do Dragão (110,300): o redemoinho que sobe
+  const it = { x: 110, z: 308, y: 34, raio: 3.4, titulo: '🌪️ Ascensão às Nuvens', acao: 'Ascender a Aurélia ☁️' };
+  it.onAcao = () => ascendeNuvens();
+  interativos.push(it);
+}
+{ // descer de volta ao platô do Pico
+  const a = aurelia.acessos[0];
+  const it = { x: a.x, z: a.z, y: -40, raio: 3.0, titulo: '🌪️ Descer da cidade', acao: 'Descer ao Pico 🏔️' };
+  it.onAcao = () => { if (subsoloAtual === aurelia) sobe(0); };
+  interativos.push(it);
+}
+{ // O DRAGÃO-ANCIÃO (lord): dá a Prova de Fogo e desperta o Guardião
+  const lo = aurelia.lord;
+  const it = { x: lo.x, z: lo.z, y: -40, raio: 4.5, titulo: '🐉 Vaelthryx, o Dragão-Ancião', acao: 'Falar com o Ancião 🐉' };
+  it.onAcao = () => {
+    if (subsoloAtual !== nuvens || !dragaoNuvens) return;
+    if (provaFogoFeita) {
+      dialogo.abre('🐉 Vaelthryx, o Dragão-Ancião', 'Você passou na Prova de Fogo, mortal. Aurélia te reconhece como AMIGO DA CHAMA — os céus de Venor são seus.', [{ texto: 'Inclinar a cabeça', onClick: () => dialogo.fecha() }]);
+      return;
+    }
+    if (dragaoNuvens._desperto && dragaoNuvens.vivo) { mostraMensagem('O Guardião ruge — termine a Prova! 🔥'); return; }
+    dialogo.abre('🐉 Vaelthryx, o Dragão-Ancião',
+      'Uma voz como trovão enche o templo:\n— "Pequeno andante da terra. Subiste à casa dos dragões. Mas só o FOGO reconhece o fogo. Desperta o GUARDIÃO no centro do templo e prova teu valor. Vence, e Aurélia se abre a ti. Falha, e voltarás a ser pó."',
+      [{ texto: 'Aceitar a Prova de Fogo 🔥', onClick: () => {
+        dialogo.fecha();
+        dragaoNuvens._desperto = true; dragaoNuvens.vivo = true; dragaoNuvens.g.visible = true; dragaoNuvens.hp = dragaoNuvens.hpMax;
+        mostraMensagem('🔥 O GUARDIÃO desperta! A Prova de Fogo começou!');
+      } }, { texto: 'Ainda não...', onClick: () => dialogo.fecha() }]);
+  };
+  interativos.push(it);
+}
+
 // BAÚ ANCESTRAL: o tesouro dos reis (UMA vez por conta — vai no save)
 let bauCriptaAberto = false;
 {
@@ -2976,7 +3045,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; aurelia.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -3153,7 +3222,7 @@ window.addEventListener('keydown', (e) => {
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; aurelia.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -3392,7 +3461,8 @@ function atualizaLocal() {
       : subsoloAtual === criptaProfunda ? 'Cripta Profunda'
       : subsoloAtual === cavernasPico ? 'Cavernas do Pico'
       : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar'
-      : subsoloAtual === catedralI ? 'Catedral da Lua Coada · Nave Profanada' : 'Esgoto';
+      : subsoloAtual === catedralI ? 'Catedral da Lua Coada · Nave Profanada'
+      : subsoloAtual === aurelia ? '☁️ Aurélia · A Cidade nas Nuvens' : 'Esgoto';
   }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
@@ -3750,6 +3820,12 @@ function passo() {
   }
   // 🔮 glow pulsante (Veia/rosácea/vitrais respiram com o bloom) — RV11.2
   for (const m of glowsPulsantes) m.emissiveIntensity = m.userData._base * (0.82 + Math.sin(tempo * 1.8 + m.userData._ph) * 0.22);
+  // 🐉 vitória da Prova de Fogo (RV13.0): o Guardião-Ancião caiu
+  if (dragaoNuvens && dragaoNuvens._desperto && !provaFogoFeita && !dragaoNuvens.vivo) {
+    provaFogoFeita = true;
+    dialogo.abre('🔥 A Prova de Fogo — VENCIDA', 'O Guardião tomba e o templo treme com o rugido de mil dragões. Vaelthryx baixa a cabeça colossal:\n— "Ergue-te, AMIGO DA CHAMA. Carregas agora o Coração de um Ancião. Os céus de Venor te pertencem."', [{ texto: 'Erguer-se 🐉', onClick: () => dialogo.fecha() }]);
+    salvaJogo();
+  }
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;
