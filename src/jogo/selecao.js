@@ -47,6 +47,25 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   inp.onblur = () => { inp.style.borderColor = 'rgba(201,167,90,.35)'; };
   painel.appendChild(inp);
 
+  // 🔐 SENHA (vincula ao personagem) + LEMBRAR CONTA (RV13.2)
+  const inpSenha = document.createElement('input');
+  inpSenha.type = 'password'; inpSenha.placeholder = 'Senha (vincula ao seu personagem)'; inpSenha.maxLength = 24;
+  inpSenha.style.cssText = inp.style.cssText;
+  inpSenha.onfocus = () => { inpSenha.style.borderColor = OURO; };
+  inpSenha.onblur = () => { inpSenha.style.borderColor = 'rgba(201,167,90,.35)'; };
+  painel.appendChild(inpSenha);
+  const lembrarWrap = document.createElement('label');
+  lembrarWrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin:-6px 0 14px;color:#cdb98c;font-size:13px;cursor:pointer;';
+  const lembrarChk = document.createElement('input'); lembrarChk.type = 'checkbox'; lembrarChk.checked = true;
+  lembrarChk.style.cssText = 'width:16px;height:16px;accent-color:' + OURO + ';';
+  lembrarWrap.appendChild(lembrarChk);
+  lembrarWrap.appendChild(document.createTextNode('Lembrar minha conta neste aparelho'));
+  painel.appendChild(lembrarWrap);
+  try { // pré-preenche se já houver conta lembrada (volta direto ao seu herói)
+    const sl = JSON.parse(localStorage.getItem('venor_login') || 'null');
+    if (sl && sl.nome) { inp.value = sl.nome; inpSenha.value = sl.senha || ''; }
+  } catch (e) {}
+
   function escolha(label, opcoes, chave) {
     const wrap = document.createElement('div'); wrap.style.cssText = 'margin-bottom:14px;';
     const t = document.createElement('div'); t.textContent = label;
@@ -114,7 +133,7 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
     btn.disabled = true;
     btn.style.opacity = '0.75';
     ov.remove();
-    aoEntrar((inp.value || 'Sobrevivente').trim().slice(0, 16));
+    aoEntrar((inp.value || 'Sobrevivente').trim().slice(0, 16), (inpSenha.value || '').trim(), lembrarChk.checked);
   };
   btn.addEventListener('pointerup', (e) => { e.preventDefault(); e.stopPropagation(); entrar(); });
   btn.addEventListener('click', (e) => { e.preventDefault(); entrar(); });

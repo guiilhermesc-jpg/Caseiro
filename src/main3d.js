@@ -82,7 +82,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.1 (v86)';
+const VERSAO = 'RV13.2 (v87)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -3111,6 +3111,11 @@ function reviveBicho(r) {
 //  botão 💾 salva na hora. (Conta online de verdade = próximo passo,
 //  precisa de banco no servidor.)
 // =============================================================
+// LOGIN (RV13.2): a senha entra na CHAVE da conta = vincula a senha ao
+// personagem (nome+senha = personagem único). Sem senha = conta legada (só nome).
+let contaSenha = '';
+function hashSenha(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
+function chaveConta(nome) { return 'venor_conta_' + nome.trim().toLowerCase() + (contaSenha ? '#' + hashSenha(contaSenha) : ''); }
 function salvaJogo() {
   if (!jogoIniciado) return;
   try {
@@ -3119,7 +3124,7 @@ function salvaJogo() {
     // (as Irmãs ficam longe, em ~720,-700; cairia no meio do nada).
     const _sp = (noEsgoto && subsoloAtual && subsoloAtual.saidas && subsoloAtual.saidas[0])
       ? subsoloAtual.saidas[0] : avatar.position;
-    localStorage.setItem('venor_conta_' + nomeJogador.trim().toLowerCase(), JSON.stringify({
+    localStorage.setItem(chaveConta(nomeJogador), JSON.stringify({
       v: 1, cores: { ...coresJogador },
       x: _sp.x, z: _sp.z,
       ouro, vida, hud: hud.estado(), mochila: inventario.estado(),
@@ -3138,7 +3143,7 @@ function salvaJogo() {
 }
 function carregaJogo(nome) {
   try {
-    const raw = localStorage.getItem('venor_conta_' + nome.trim().toLowerCase());
+    const raw = localStorage.getItem(chaveConta(nome));
     if (!raw) return false;
     const d = JSON.parse(raw);
     ouro = d.ouro || 0; vida = d.vida || VIDA_MAX;
@@ -3533,8 +3538,9 @@ function resolvePesca() {
 criaSelecao({
   cores: coresJogador,
   aoMudarCor: () => montaAvatar(),
-  aoEntrar: (nome) => {
-    nomeJogador = nome; jogoIniciado = true; avatar.rotation.y = Math.PI;
+  aoEntrar: (nome, senha, lembrar) => {
+    nomeJogador = nome; contaSenha = senha || ''; jogoIniciado = true; avatar.rotation.y = Math.PI;
+    try { if (lembrar) localStorage.setItem('venor_login', JSON.stringify({ nome, senha: senha || '' })); else localStorage.removeItem('venor_login'); } catch (e) {} // 🔐 lembrar conta
     { const tEl = document.getElementById('tituloVenor'); if (tEl) tEl.remove(); } // título sai de cena
     minimapa.mostra();
     quadroJornadas.mostra();
@@ -3592,7 +3598,7 @@ criaSelecao({
           if (!msg.ok) mostraMensagem('☁️ A nuvem recusou: ' + (msg.erro || 'erro desconhecido'));
         } else if (msg.acao === 'carregar') {
           if (!msg.ok) { mostraMensagem('☁️ ' + (msg.erro || 'Nada salvo na nuvem ainda.')); return; }
-          localStorage.setItem('venor_conta_' + nomeJogador.trim().toLowerCase(), msg.dados);
+          localStorage.setItem(chaveConta(nomeJogador), msg.dados);
           mostraMensagem('☁️ Save da nuvem aplicado — recarregando o jogo...');
           setTimeout(() => location.reload(), 1400);
         }
@@ -3619,7 +3625,7 @@ function pegaPinNuvem() {
 }
 function enviaSaveNuvem(pin, avisa) {
   salvaJogo();
-  const dados = localStorage.getItem('venor_conta_' + nomeJogador.trim().toLowerCase());
+  const dados = localStorage.getItem(chaveConta(nomeJogador));
   if (!dados || !rede || !rede.conectado) return;
   rede.enviaConta({ tipo: 'contaSalvar', nome: nomeJogador.trim().toLowerCase(), pin, dados });
   if (avisa) mostraMensagem('☁️ Save enviado pra nuvem! (agora sobe sozinho a cada 10s)');
