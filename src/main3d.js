@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV14.6 (v100)';
+const VERSAO = 'RV14.7 (v101)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2326,6 +2326,34 @@ let bauCriptaAberto = false;
 const C_TOPO_DIA = new THREE.Color(0x4f86c0), C_BASE_DIA = new THREE.Color(0xdce9f2);
 const C_TOPO_NOITE = new THREE.Color(0x0a1530), C_BASE_NOITE = new THREE.Color(0x1e2e4d);
 const C_FOG_DIA = new THREE.Color(0xc4d6e3), C_FOG_NOITE = new THREE.Color(0x1c2a40); // RV12.1: névoa noturna menos preta
+// RV14.7: CÉU PRÓPRIO POR REGIÃO — cada lugar com seu céu (gerado por IA).
+// Troca o panorama conforme a região; o ciclo dia/noite tinge por cima.
+const CEUS_REGIAO = [
+  { tex: 'ceu_pantano', cx: -330, cz: -30, r: 155 },  // Venore: brejo
+  { tex: 'ceu_noctaria', cx: -660, cz: -30, r: 210 }, // Noctaria/Santuário: Lua Partida
+  { tex: 'ceu_pico', cx: 110, cz: 300, r: 130 },      // Montanha do Dragão: vulcânico
+];
+const _ceuCache = {};
+const _texLoaderCeu = new THREE.TextureLoader();
+function carregaCeuTex(nome) {
+  if (_ceuCache[nome]) return _ceuCache[nome];
+  const t = _texLoaderCeu.load('texturas/' + nome + '.png', (tt) => { tt.colorSpace = THREE.SRGBColorSpace; });
+  _ceuCache[nome] = t; return t;
+}
+let _ceuRegiaoAtual = null, _ceuPadrao = null;
+function atualizaCeuRegiao() {
+  if (noEsgoto || !ceu.material || !ceu.material.map) return; // subsolo tem luz própria
+  if (!_ceuPadrao) _ceuPadrao = ceu.material.map; // guarda o céu azul base
+  let alvo = null;
+  for (const c of CEUS_REGIAO) {
+    if (Math.hypot(avatar.position.x - c.cx, avatar.position.z - c.cz) < c.r) { alvo = c.tex; break; }
+  }
+  if (alvo !== _ceuRegiaoAtual) {
+    _ceuRegiaoAtual = alvo;
+    const novo = alvo ? carregaCeuTex(alvo) : _ceuPadrao;
+    if (novo) { ceu.material.map = novo; ceu.material.needsUpdate = true; }
+  }
+}
 let tempoDia = 0.3; // começa de manhã
 let ehNoite = false;
 let avisoNoite = false; // lembrete da tocha (1× por noite)
@@ -2343,6 +2371,7 @@ function aplicaDiaNoite(dt) {
   // em 0.80 o tempo todo) — a "madrugada de verdade" agora bate com o grading.
   renderer.toneMappingExposure = 0.68 + d * 0.12; // RV12.1: noite ~0.68 (era 0.58), dia ~0.80
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
+    atualizaCeuRegiao(); // RV14.7: troca o panorama pela região (pântano/cinzas/vulcânico)
     ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
   } else {
     skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
