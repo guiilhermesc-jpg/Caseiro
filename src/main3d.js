@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV15.0 (v104)';
+const VERSAO = 'RV15.1 (v105)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2904,6 +2904,7 @@ function atacar() {
   sons.golpe();
   petAlvo = melhor; // o pet entra na briga junto
   melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+  melhor._flinch = { t0: tempo, dur: 0.18, dirX: melhor.g.position.x - avatar.position.x, dirZ: melhor.g.position.z - avatar.position.z }; // RV15.1: recua ao apanhar
   atualizaBarraHP(melhor);
   if (melhor.hp <= 0) mataBicho(melhor);
   else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
@@ -4027,6 +4028,7 @@ function passo() {
             if (sd.afinidade === (ehNoite ? 'noite' : 'dia')) dnP = Math.round(dnP * 1.5);
           }
           petAlvo.hp -= dnP; petAlvo.piscar = 0.15;
+          petAlvo._flinch = { t0: tempo, dur: 0.16, dirX: petAlvo.g.position.x - gato.position.x, dirZ: petAlvo.g.position.z - gato.position.z };
           atualizaBarraHP(petAlvo);
           if (pg.userData.corpoMat) pg.userData.corpoMat.emissive.setHex(0x882020);
           if (petAlvo.hp <= 0) { mataBicho(petAlvo); petAlvo = null; }
@@ -4062,6 +4064,17 @@ function passo() {
   atualizaNPCs(npcs, dt, colide, ehNoite);
   atualizaInvasaoDraptor();
   atualizaRatos(ratos, dt, jogoIniciado ? { x: avatar.position.x, y: avatar.position.y, z: avatar.position.z } : null, podeAndarBicho, alturaTerreno);
+  // RV15.1: FLINCH — todo bicho RECUA e encolhe ao apanhar (leitura de impacto)
+  for (const r of ratos) {
+    const fl = r._flinch; if (!fl) continue;
+    const f = (tempo - fl.t0) / fl.dur;
+    if (f >= 1) { r._flinch = null; if (r.g) r.g.scale.y = r._by || 1; continue; }
+    if (r._by === undefined) r._by = r.g.scale.y;
+    const k = Math.sin(f * Math.PI) * 0.18, d = Math.hypot(fl.dirX, fl.dirZ) || 1;
+    r.g.position.x += (fl.dirX / d) * k * dt * 8;
+    r.g.position.z += (fl.dirZ / d) * k * dt * 8;
+    r.g.scale.y = (r._by || 1) * (1 - Math.sin(f * Math.PI) * 0.08);
+  }
   atualizaPresencaMonstros(dt); // RV7.0: aggro, telegraph e investida dos monstros principais
 
   if (jogoIniciado && !morto) {

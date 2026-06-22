@@ -193,7 +193,16 @@ export function animaProps(animados, dt, tempo) {
     if (a.giraZ) a.mesh.rotation.z += dt * a.giraZ; // pás de moinho
     if (a.flutua) a.mesh.position.y = a.baseY + Math.sin(tempo * 2 + a.fase) * 0.12;
     if (a.pulsa) a.pulsa.emissiveIntensity = 0.55 + Math.sin(tempo * 3 + a.fase) * 0.35;
-    if (a.balanca) a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.25;
+    if (a.balanca) { // RV15.1: pano tremula ao vento (não só gira)
+      a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.22;
+      a.mesh.rotation.z = Math.sin(tempo * 3.1 + a.fase) * 0.08;
+      a.mesh.scale.x = 1 + Math.sin(tempo * 4 + a.fase) * 0.05;
+    }
+    if (a.chama) { // chama de poste/tocha tremeluzindo
+      const f = 0.85 + Math.sin(tempo * 12 + a.fase) * 0.15;
+      a.chama.scale.set(1 + Math.sin(tempo * 9 + a.fase) * 0.12, f, 1 + Math.cos(tempo * 10 + a.fase) * 0.12);
+      if (a.chamaMat) a.chamaMat.emissiveIntensity = 0.9 + Math.sin(tempo * 14 + a.fase) * 0.35;
+    }
     if (a.porta) a.mesh.rotation.y += (a.alvo - a.mesh.rotation.y) * Math.min(1, dt * 8); // abre/fecha suave
     if (a.fumaca) { // RV4.6: novelos de fumaça subindo da chaminé (loop infinito)
       for (let i = 0; i < a.fumaca.length; i++) {
