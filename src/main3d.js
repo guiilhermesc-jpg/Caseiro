@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV14.8 (v102)';
+const VERSAO = 'RV14.9 (v103)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -187,7 +187,7 @@ const atmosfera = criaAtmosfera(ehMobile);
 scene.add(atmosfera.grupo);
 // 🐉 DRAGÃO MAJESTOSO circulando o céu (RV12.3): a arte premium (dragao.png)
 // como billboard distante — a sensação épica de "Era dos Dragões".
-const dragaoCeuTex = new THREE.TextureLoader().load('assets/dragao.png');
+const dragaoCeuTex = new THREE.TextureLoader().load('assets/dragoes/colosso.png'); // RV14.9: o Colosso (obsidiana+lava) sobrevoa Venore
 dragaoCeuTex.colorSpace = THREE.SRGBColorSpace;
 const dragaoCeu = new THREE.Sprite(new THREE.SpriteMaterial({ map: dragaoCeuTex, transparent: true, depthWrite: false, fog: false, opacity: 0.92 }));
 dragaoCeu.scale.set(72, 72, 1); dragaoCeu.renderOrder = 2; scene.add(dragaoCeu);
@@ -3407,6 +3407,16 @@ function ativaGM() {
   B('❤️ Curar tudo', () => { vida = VIDA_MAX; hud.vida(vida, VIDA_MAX); mostraMensagem('❤️ GM: vida cheia'); });
   B('🪙 +100 de ouro', () => { ouro += 100; hud.ouro(ouro); });
   B('⭐ +100 de XP', () => hud.ganhaXP(100));
+  B('🐲 Ganhar dragão-filhote', () => {
+    if (!petsDomados.includes('dragaozinho')) petsDomados.push('dragaozinho');
+    trocaPet('dragaozinho');
+    mostraMensagem('🐲 GM: dragão-filhote concedido! Abra a ficha (tecla C) e monte (M).');
+  });
+  B('🐉 Evoluir dragão (máx)', () => {
+    if (!dragaoCompanheiro) { mostraMensagem('🐲 Ganhe um dragão primeiro.'); return; }
+    ganhaXpDragao(dragaoCompanheiro, 9000); aplicaEstagioNoModelo();
+    mostraMensagem('🐉 GM: dragão evoluído a ADULTO!');
+  });
   B('💀 Exterminar próximos', () => {
     let n = 0;
     for (const r of ratos) {
