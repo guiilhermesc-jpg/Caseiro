@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { CONFIG3D } from './config3d.js';
 import { criaCidade } from './jogo/cidade.js';
 import { alturaColinas, REGIAO } from './jogo/terreno.js';
-import { criaAvatar, animaAvatar, giraSuave } from './jogo/avatar.js';
+import { criaAvatar, animaAvatar, giraSuave, MODELO_NOME } from './jogo/avatar.js';
 import { criaControles } from './jogo/controles.js';
 import { criaGato, atualizaGato, PETS, criaDraptor } from './jogo/pet.js';
 import { criaSelecao } from './jogo/selecao.js';
@@ -23,6 +23,8 @@ import { animaProps } from './jogo/props.js';
 import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
+import { criaPainelPersonagem } from './jogo/painel.js';
+import { criaDragaoData, statsDragao, ganhaXpDragao, ESPECIES_DRAGAO, ESTAGIO_INFO } from './jogo/dragoes-companheiro.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
@@ -82,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.8 (v93)';
+const VERSAO = 'RV14.0 (v94)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1206,6 +1208,30 @@ function atualizaBossHud() {
 // --- diálogo (NPC), customização (você) e troca de pet ---
 const dialogo = criaDialogo();
 let petTipo = null;
+// === DRAGÃO-COMPANHEIRO (RV14): o pet-dragão tem ficha própria que CRESCE ===
+let dragaoCompanheiro = null; // ficha serializável (dragoes-companheiro.js)
+const DRAGOES_PET = new Set(['dragaozinho', 'draptor', 'draptorLendario']);
+const FICHA_DE_PET = { dragaozinho: 'dragaozinho', draptor: 'furiaDoDia', draptorLendario: 'dragaoTresCabecas' };
+function ehDragaoPet(t) { return DRAGOES_PET.has(t) || !!ESPECIES_DRAGAO[t]; }
+// garante que, quando um pet-dragão está ativo, exista a ficha do companheiro
+function sincronizaDragaoCompanheiro() {
+  if (!ehDragaoPet(petTipo)) return;
+  if (!dragaoCompanheiro || dragaoCompanheiro.petTipo !== petTipo) {
+    const fichaTipo = FICHA_DE_PET[petTipo] || petTipo;
+    dragaoCompanheiro = criaDragaoData(fichaTipo, null, tempo);
+    dragaoCompanheiro.petTipo = petTipo;
+  }
+  aplicaEstagioNoModelo();
+}
+// escala o modelo 3D do dragão pelo estágio (filhote/jovem/adulto) — só o
+// dragaozinho procedural escala limpo; draptor mantém escala base.
+function aplicaEstagioNoModelo() {
+  if (!gato || !dragaoCompanheiro || dragaoCompanheiro.petTipo !== 'dragaozinho') return;
+  const base = 0.16; // escala original do filhote em pet.js
+  const est = ESTAGIO_INFO[dragaoCompanheiro.estagio] || ESTAGIO_INFO.filhote;
+  const s = base * (est.escala / ESTAGIO_INFO.filhote.escala);
+  gato.scale.setScalar(s);
+}
 function trocaPet(tipo) {
   if (!PETS[tipo] || tipo === petTipo) return;
   if (!petsDomados.includes(tipo)) { mostraMensagem('🐾 Você ainda não domou esse bicho — encontre-o no mundo!'); return; }
@@ -1218,6 +1244,18 @@ function trocaPet(tipo) {
   if (!sombraPet) sombraPet = criaSombraContato(gato, 0.7, 0.48, 0.14);
   else sombraPet.alvo = gato;
   petTipo = tipo;
+  sincronizaDragaoCompanheiro();
+}
+// chamado quando o herói ganha XP: o dragão ATIVO cresce junto (metade do XP)
+function evoluiDragaoComHeroi(xpHeroi) {
+  if (!dragaoCompanheiro || !ehDragaoPet(petTipo)) return;
+  const r = ganhaXpDragao(dragaoCompanheiro, Math.round(xpHeroi * 0.5));
+  if (r && r.evoluiu) {
+    aplicaEstagioNoModelo();
+    const nome = ESTAGIO_INFO[dragaoCompanheiro.estagio].nome;
+    mostraMensagem(`🐉 Seu dragão evoluiu para ${nome.toUpperCase()}! Mais forte, maior — e novos poderes.`);
+    try { sons.tesouro(); } catch (e) {}
+  }
 }
 
 // === PETS SELVAGENS DOMÁVEIS (estilo Tibia: cada um tem seu ITEM de domar;
@@ -1403,6 +1441,21 @@ const customizar = criaCustomizar({
   aoMudarCor: () => montaAvatar(),
   aoMudarPet: (t) => trocaPet(t),
   getPet: () => petTipo,
+});
+// PAINEL DO PERSONAGEM (RV14, estilo Tibia): nível, vocação, vida/mana, XP,
+// equipamento e o DRAGÃO companheiro. Botão 📜 / tecla C.
+const fichaPersonagem = criaPainelPersonagem({
+  getDados: () => {
+    const e = hud.estado ? hud.estado() : { nivel: 1, xp: 0, prox: 20 };
+    return {
+      nome: nomeJogador || 'Herói',
+      vocacao: MODELO_NOME[coresJogador.tipo] || 'Aventureiro',
+      nivel: e.nivel, xp: e.xp, prox: e.prox,
+      vida, vidaMax: VIDA_MAX, mana, manaMax: MANA_MAX,
+      defesa, ouro, equipados,
+      dragao: dragaoCompanheiro ? statsDragao(dragaoCompanheiro) : { tem: false },
+    };
+  },
 });
 // TABELA DE COMPRA dos mercadores (estilo Tibia: caçar → saquear → vender)
 const PRECOS = {
@@ -2973,6 +3026,7 @@ function mataBicho(r) {
   tentaCapturarDraptor(r);
   const xp = r.xp || 5;
   hud.ganhaXP(xp);
+  evoluiDragaoComHeroi(xp); // o dragão-companheiro cresce junto (metade do XP)
   mostraMensagem(`${r.boss || r.forte ? 'Criatura poderosa derrotada!' : 'Derrotado!'} +${xp} XP — AÇÃO no corpo p/ saquear`);
   if (r.especie === 'dragao') dragoesMortos++; // currículo pra Guilda de Venore
   // progresso de QUEST de caça (conta também as mordidas do pet)
@@ -3156,6 +3210,7 @@ function salvaJogo() {
       equip: Object.values(equipados).filter(Boolean),
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
       pet: petTipo, pets: petsDomados, // companheiros domados
+      dragaoComp: dragaoCompanheiro, // ficha do dragão-companheiro (cresce)
       quests: questEstado, // missões aceitas/cumpridas
       codice: codice.estado(), // Códice da Veia: veios sentidos + Quarto Veio
       cofre, // Depósito de Venore (itens guardados em segurança)
@@ -3194,6 +3249,7 @@ function carregaJogo(nome) {
     for (let i = domaveisVivos.length - 1; i >= 0; i--) { // domado não fica mais selvagem
       if (petsDomados.includes(domaveisVivos[i].tipo)) { scene.remove(domaveisVivos[i].g); domaveisVivos.splice(i, 1); }
     }
+    if (d.dragaoComp) dragaoCompanheiro = d.dragaoComp; // restaura a ficha ANTES de trocaPet
     if (d.pet && PETS[d.pet]) trocaPet(d.pet);
     hud.ouro(ouro); hud.vida(vida, VIDA_MAX);
     return true;
@@ -3244,6 +3300,9 @@ window.addEventListener('beforeunload', salvaJogo);  // salva ao fechar/atualiza
 }
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' && jogoIniciado && !morto && !customizar.aberto) abreEditorPersonagem();
+  if (e.code === 'KeyC' && jogoIniciado && !morto && !dialogo.aberto && !customizar.aberto) {
+    if (fichaPersonagem.aberto) fichaPersonagem.fecha(); else fichaPersonagem.abre();
+  }
 });
 
 // =============================================================
@@ -3573,6 +3632,7 @@ criaSelecao({
     bestiario.mostra();
     inventario.mostra();
     hud.mostra();
+    fichaPersonagem.mostraBotao(); // 📜 Ficha do personagem (tecla C)
     const temConta = carregaJogo(nome); // CONTA LOCAL: mesmo nome = mesmo progresso
     if (!temConta) {
       // personagem NOVO: nasce na praça com o kit inicial

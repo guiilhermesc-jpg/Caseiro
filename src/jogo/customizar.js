@@ -14,9 +14,9 @@ const PETS_LISTA = [
   { id: 'burro', nome: 'Burro' },
   { id: 'coruja', nome: 'Coruja Gigante' },
   { id: 'morcego', nome: 'Morcego Grande' },
-  { id: 'dragaozinho', nome: 'Filhote de Dragao' },
+  { id: 'dragaozinho', nome: 'Filhote de Dragão' },
   { id: 'draptor', nome: 'Draptor' },
-  { id: 'draptorLendario', nome: 'Draptor Lendario' },
+  { id: 'draptorLendario', nome: 'Draptor Lendário' },
 ];
 
 export function criaCustomizar({ cores, aoMudarCor, aoMudarPet, getPet }) {
