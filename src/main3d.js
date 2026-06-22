@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV15.3 (v107)';
+const VERSAO = 'RV15.4 (v108)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2827,8 +2827,15 @@ function atualizaPresencaMonstros(dt) {
     const inv = r._rv70Investida;
     if (inv) {
       r.pausa = Math.max(r.pausa || 0, 0.12);
-      if (tempo < inv.dispara) continue;
+      const u = r.g.userData;
+      if (tempo < inv.dispara) { // RV15.4: WIND-UP — agacha e recolhe as patas (arma o bote)
+        const w = Math.min(1, (tempo - inv.inicio) / Math.max(0.01, p.aviso));
+        r.g.scale.y *= (1 - w * 0.18); // atualizaRatos repõe a escala base no próximo frame (sem restore)
+        if (u && u.patas) u.patas.forEach((pp) => { pp.rotation.x = -w * 0.5; });
+        continue;
+      }
       const f = Math.min(1, (tempo - inv.dispara) / p.dur);
+      r.g.scale.z *= (1 + Math.sin(f * Math.PI) * 0.2); // LUNGE — estica o corpo no golpe
       const s = f * f * (3 - 2 * f);
       const nx = inv.x0 + (inv.x1 - inv.x0) * s;
       const nz = inv.z0 + (inv.z1 - inv.z0) * s;

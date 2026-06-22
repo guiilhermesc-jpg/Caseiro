@@ -73,6 +73,8 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
     // asas (dragão) batem de leve mesmo parado
     if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; }
     if (g.userData.garganta) g.userData.garganta.scale.setScalar(1 + Math.sin(r.tempo * 8) * 0.12);
+    // RV15.4: tentáculos (beholder) flutuam SEMPRE — organico, não congelado
+    if (g.userData.tentaculos) g.userData.tentaculos.forEach((t, i) => { t.rotation.x = Math.sin(r.tempo * 2.2 + i * 0.7) * 0.28; t.rotation.z = Math.cos(r.tempo * 1.8 + i * 0.9) * 0.22; });
     // PERSEGUIÇÃO: se o jogador está perto e no mesmo "andar", caça-o
     r.contato = false;
     if (jog && Math.abs(r.y0 - jog.y) < 6) {
@@ -489,7 +491,7 @@ export function criaBeholder(x, z) {
     olhinho.position.set(Math.cos(a) * 0.95, 1.72, Math.sin(a) * 0.9); stalk.add(olhinho);
     stalk.castShadow = true; g.add(stalk); patas.push(stalk);
   }
-  g.userData = { patas, corpoMat, tipo: 'monstro' };
+  g.userData = { patas, tentaculos: patas, corpoMat, tipo: 'monstro' }; // RV15.4: stalks flutuam SEMPRE
   return g;
 }
 
