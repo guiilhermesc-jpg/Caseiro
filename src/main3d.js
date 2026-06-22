@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV15.2 (v106)';
+const VERSAO = 'RV15.3 (v107)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1346,7 +1346,11 @@ function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
       asa.rotation.y = (i ? -1 : 1) * (0.08 + Math.abs(a) * 0.18);
     });
   }
-  if (u.garganta) u.garganta.scale.setScalar(1 + Math.sin(tempo * 3) * 0.06); // respira
+  if (u.garganta) { // respira — mas FLAMEJA (incha) ao cuspir fogo (_flare)
+    const fl = u.garganta.userData._flare;
+    if (fl !== undefined && tempo - fl < 0.3) u.garganta.scale.setScalar(1 + (1 - (tempo - fl) / 0.3) * 1.8);
+    else u.garganta.scale.setScalar(1 + Math.sin(tempo * 3) * 0.06);
+  }
   if (Array.isArray(u.cauda)) { // RV15.2: ONDA propagada na cauda do dragão (segmentos defasados)
     for (let i = 0; i < u.cauda.length; i++) {
       u.cauda[i].rotation.y = Math.sin(tempo * 2.4 * ritmo - i * 0.5) * 0.16;
@@ -2857,6 +2861,7 @@ function disparaBicho(r) {
   const ate = avatar.position.clone(); ate.y += 1.4;          // mira onde você ESTÁ (corre pra esquivar!)
   m.position.copy(de); m.lookAt(ate); scene.add(m);
   if (fogo) avisoFogoNoChao(ate.x, ate.z, avatar.position.y, r.boss ? 2.65 : 2.2);
+  if (fogo && r.g.userData && r.g.userData.garganta) r.g.userData.garganta.userData._flare = tempo; // RV15.3: garganta FLAMEJA ao cuspir
   if (r.boss) mostraBossHud(r, 5.5);
   projeteis.push({ m, de, ate, t: 0, dur: Math.max(0.3, de.distanceTo(ate) / 22), dano: r.danoTiro || 10, fogo });
 }
