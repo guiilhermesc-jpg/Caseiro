@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv8-pacto-da-semana';
+const PATCH_ID = 'rv14-era-dos-dragoes';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV8';
+  badge.textContent = '🐉 PATCH RV14';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -37,30 +37,32 @@ export function criaPatchNotes() {
     + 'box-shadow:0 18px 70px rgba(0,0,0,.68);');
   card.innerHTML = `
     <div style="height:300px;background:
-      linear-gradient(90deg,rgba(5,8,10,.88),rgba(5,8,10,.28),rgba(5,8,10,.08)),
-      url('/patches/rv8-pacto-da-semana.png') center/cover no-repeat;
+      linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.34),rgba(5,8,10,.06)),
+      url('/splash.jpg') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
-      <div style="position:absolute;left:28px;bottom:24px;max-width:520px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV8</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Pacto da Semana</div>
+      <div style="position:absolute;left:28px;bottom:24px;max-width:560px;">
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV14</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">A Era dos Dragões</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Offline instalavel, mascate semanal, economia mais calculada e uma nova disciplina de qualidade.
+          Dragões no centro do mundo: companheiros que crescem com você, ficha de personagem completa,
+          cidades viram castelos murados e um passe de qualidade gráfica.
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:18px;padding:22px;">
       <section>
-        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
+        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direção do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Venor deixa de ser apenas um mapa bonito e passa a ganhar regras de mundo: calendario,
-          escassez, rotina de vendedor e instalacao offline. O objetivo e construir dificuldade justa,
-          onde preparacao e coordenacao importam.
+          Venor passa a girar em torno dos <b>dragões</b>. Você cria o seu desde filhote e o faz crescer
+          — devagar, ganhando experiência junto da sua jornada — até virar uma fera de guerra. E o mundo
+          ficou mais bonito: casas refeitas, cidades muradas e arte nova feita à mão.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Offline-first:</b> depois do primeiro carregamento, o jogo abre mesmo sem internet.</li>
-          <li><b>Mascate raro:</b> Ze das Rotas aparece so em dias especificos.</li>
-          <li><b>Economia previsivel:</b> pequenos modificadores semanais criam janela de compra e venda.</li>
-          <li><b>Processo premium:</b> cada patch tem selo, arte, escopo, build e checklist.</li>
+          <li><b>Dragão-companheiro:</b> cresce de filhote a adulto e segue a sua história. Escolha a afinidade ☀️ Dia / 🌙 Noite — ela influencia as caças.</li>
+          <li><b>Ficha do personagem (tecla C):</b> nível, vida, mana, XP, suas armaduras e o dragão ativo num painel estilo Tibia.</li>
+          <li><b>Casas refeitas:</b> enxaimel, pedra e reboco premium, com telhados de telha, ardósia e palha.</li>
+          <li><b>Cidades muradas:</b> o vilarejo virou castelo, com muralha, torres e portões.</li>
+          <li><b>Bestiário ampliado:</b> Fúria da Noite, Fúria do Dia, o Trífauce, o Colosso e o Guardião do Coração.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -69,8 +71,8 @@ export function criaPatchNotes() {
           ${estadoMascate.texto}
         </p>
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
-          Mascate: Terca, Quinta e Sabado.<br>
-          Online multiplayer continua opcional: o mundo local deve funcionar sozinho primeiro.<br>
+          Mascate: Terça, Quinta e Sábado.<br>
+          Abra a ficha do herói com a tecla <b>C</b> (ou o botão 📜) e o Bestiário no 🐲.<br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>
       </aside>
