@@ -451,12 +451,17 @@ export function criaMarco(tipo, opts) {
     sino.position.set(-5, 22.1, -8); res.grupo.add(sino);
     const badalo = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), bellMat);
     badalo.position.set(-5, 21.1, -8); res.grupo.add(badalo);
-    // topo + cruz
-    const topo = new THREE.Mesh(new THREE.ConeGeometry(3.4, 5, 4), mat(0x6a4a8a));
-    topo.position.set(-5, 26.5, -8); topo.rotation.y = Math.PI / 4; topo.castShadow = true; res.grupo.add(topo);
-    const cv = new THREE.Mesh(new THREE.BoxGeometry(0.35, 2.6, 0.35), mat(0xf0e8c0)); cv.position.set(-5, 31, -8);
-    const ch = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.35), mat(0xf0e8c0)); ch.position.set(-5, 31.4, -8);
-    res.grupo.add(cv, ch);
+    // topo + ORBE DA VEIA (RV14.2: Templo Sagrado de Venor — sem cruz; o
+    // símbolo é a Veia viva pulsando ouro e violeta no alto do campanário)
+    const topo = new THREE.Mesh(new THREE.ConeGeometry(3.4, 5, 8), mat(0x6a4a8a));
+    topo.position.set(-5, 26.5, -8); topo.rotation.y = Math.PI / 8; topo.castShadow = true; res.grupo.add(topo);
+    const orbe = new THREE.Mesh(new THREE.SphereGeometry(1.15, 16, 12),
+      new THREE.MeshStandardMaterial({ color: 0xc9a75a, emissive: 0x7a4fd0, emissiveIntensity: 0.85, roughness: 0.3, metalness: 0.45 }));
+    orbe.position.set(-5, 30.6, -8); res.grupo.add(orbe);
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.16, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0xd9b25a, metalness: 0.8, roughness: 0.3, emissive: 0x3a2a08, emissiveIntensity: 0.3 }));
+    aro.position.set(-5, 30.6, -8); aro.rotation.x = Math.PI / 2.4; res.grupo.add(aro);
+    const luzOrbe = new THREE.PointLight(0xa66fff, 0.7, 22, 2); luzOrbe.position.set(-5, 30.6, -8); res.grupo.add(luzOrbe);
   } else if (tipo === 'hospital') {
     res = criaPredio({ ...base, larg: 16, prof: 13, alt: 10, cor: 0xeef0f2, corTelhado: 0xb0b6bc });
     const cv = new THREE.Mesh(new THREE.BoxGeometry(0.9, 3.2, 0.2), mat(0xd83a3a)); cv.position.set(0, 6.2, 13 / 2 + 0.03);

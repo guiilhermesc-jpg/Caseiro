@@ -20,6 +20,16 @@ const DRAGOES = [
     hist: 'Nem homem, nem dragão: as duas idades de um corpo só. Guerreiros de escama e obsidiana que servem à Fenda da Lua Partida. Vê um Drakari e verás o que um dragão vira quando aprende a empunhar uma lâmina.' },
   { id: 'filhote', nome: 'O Filhote da Profecia', cor: '#6fd06f',
     hist: 'O ovo que a profecia guardou. Pequeno, redondo, de olhos grandes — mas é cria de Ancião. Quem o cria desde a casca ganha as asas mais velozes de Venor. O futuro dos dragões cabe na palma da mão.' },
+  { id: 'furia_noite', nome: 'A Fúria da Noite', cor: '#7aa2ff',
+    hist: 'Escamas negras como o céu entre as estrelas, olhos verdes que enxergam no escuro. Caça quando a Lua Partida desperta e dorme ao primeiro sol. Dizem que a Veia, ao correr fria sob a noite, sonhou este dragão para ser o guardião do silêncio. Dócil com quem o cria desde filhote — implacável com quem ameaça seu cavaleiro.' },
+  { id: 'furia_dia', nome: 'A Fúria do Dia', cor: '#ffcf5a',
+    hist: 'Espelho da Fúria da Noite: escamas de pérola e ouro que bebem a luz e a devolvem em sopro flamejante. Voa mais forte sob o sol a pino. Onde a Noturna é a sombra que protege, a Diurna é o farol que avança. As duas linhagens nasceram do mesmo ovo partido — e se reconhecem como irmãs.' },
+  { id: 'tres_cabecas', nome: 'O Trífauce', cor: '#e0584e',
+    hist: 'Três cabeças, três fomes, uma só vontade. Quando a Veia se feriu fundo, a dor coagulou em três pescoços de um corpo só — e cada cabeça lembra de uma era do mundo. Domá-lo é raro e perigoso: é preciso convencer TRÊS mentes ao mesmo tempo. Quem consegue monta a lenda viva de Venor.' },
+  { id: 'colosso', nome: 'O Colosso', cor: '#c89a5a',
+    hist: 'Tão grande que o confundem com uma montanha que respira. Suas escamas são placas de rocha; entre elas, a Veia corre como lava à flor da pele. Quando estende as asas, o dia escurece; quando pousa, vilarejos inteiros tremem. Não se doma um Colosso — no máximo, conquista-se o seu respeito.' },
+  { id: 'coracao', nome: 'O Guardião do Coração', cor: '#b98cff',
+    hist: 'No peito carrega um cristal pulsando ouro e violeta: um fragmento vivo da própria Veia-Mãe. É o último guardião do Coração de Dragão — o item que consagra a sela capaz de domar um adulto. Derrotá-lo não é matar uma fera: é arrancar da terra a permissão de cavalgar os céus.' },
 ];
 
 export function criaBestiario() {

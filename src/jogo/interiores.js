@@ -519,9 +519,9 @@ export function criaTemploSagrado(x, z) {
   const ch = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.22), ouroM); ch.position.set(0, alt + 9.5, -hz + 2.4); roof.add(ch);
   g.add(roof);
 
-  // marcador ⛪ flutuante
+  // marcador 🏛️ flutuante
   const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
-  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('⛪', 64, 70);
+  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('🏛️', 64, 70);
   const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
   marc.scale.set(2.6, 2.6, 1); marc.position.y = alt + 11; marc.renderOrder = 997; g.add(marc);
 
@@ -530,6 +530,6 @@ export function criaTemploSagrado(x, z) {
     grupo: g, colisores,
     animados: [{ mesh: cristal, pulsa: cristalMat, gira: 0.8, fase: 0 }],
     casa: { roof, box, px: x, pz: z + hz, aberta: true }, // sem porta: o templo é sempre aberto
-    interativo: { x, z: z - hz + 4, raio: 4.2, titulo: '⛪ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
+    interativo: { x, z: z - hz + 4, raio: 4.2, titulo: '🏛️ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
   };
 }
