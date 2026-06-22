@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV14.9 (v103)';
+const VERSAO = 'RV15.0 (v104)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -187,10 +187,12 @@ const atmosfera = criaAtmosfera(ehMobile);
 scene.add(atmosfera.grupo);
 // 🐉 DRAGÃO MAJESTOSO circulando o céu (RV12.3): a arte premium (dragao.png)
 // como billboard distante — a sensação épica de "Era dos Dragões".
-const dragaoCeuTex = new THREE.TextureLoader().load('assets/dragoes/colosso.png'); // RV14.9: o Colosso (obsidiana+lava) sobrevoa Venore
-dragaoCeuTex.colorSpace = THREE.SRGBColorSpace;
-const dragaoCeu = new THREE.Sprite(new THREE.SpriteMaterial({ map: dragaoCeuTex, transparent: true, depthWrite: false, fog: false, opacity: 0.92 }));
-dragaoCeu.scale.set(72, 72, 1); dragaoCeu.renderOrder = 2; scene.add(dragaoCeu);
+// RV15.0: o dragão que sobrevoa Venor é um MODELO 3D ANIMADO (asas batendo),
+// não mais uma imagem estática. criaDragao(lord) = pele escura + brasa na boca.
+const dragaoCeu = criaDragao(0, 0, true);
+dragaoCeu.scale.setScalar(7);
+dragaoCeu.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; if (o.material) o.material.fog = false; } });
+scene.add(dragaoCeu);
 function lapidaMaterialPremium(material, forca = 1) {
   if (!material) return;
   const lista = Array.isArray(material) ? material : [material];
@@ -3964,7 +3966,13 @@ function passo() {
   atmosfera.atualiza(dt, tempo, noEsgoto ? 0.22 : 0.4 + fatorDiaVisual * 0.25);
   // 🐉 dragão do céu circula alto, seguindo o jogador (some em zona fechada)
   dragaoCeu.visible = !noEsgoto;
-  if (!noEsgoto) { const ad = tempo * 0.045; dragaoCeu.position.set(avatar.position.x + Math.cos(ad) * 300, 175 + Math.sin(ad * 0.7) * 22, avatar.position.z + Math.sin(ad) * 300); }
+  if (!noEsgoto) {
+    const ad = tempo * 0.045;
+    dragaoCeu.position.set(avatar.position.x + Math.cos(ad) * 300, 175 + Math.sin(ad * 0.7) * 22, avatar.position.z + Math.sin(ad) * 300);
+    dragaoCeu.rotation.y = -ad; // aponta na direção do voo (tangente do círculo)
+    dragaoCeu.rotation.z = Math.sin(ad * 2.0) * 0.14; // banca as asas nas curvas
+    animaCompanheiro(dragaoCeu, true, 1.1, true); // RV15.0: ASAS BATENDO de verdade
+  }
   // 💧 água viva: marola suave (RV11.0) + ondas do normal map deslizando (RV11.7)
   if (aguaNormal) { aguaNormal.offset.x = (tempo * 0.018) % 1; aguaNormal.offset.y = (tempo * 0.012) % 1; }
   if (aguas) for (const ag of aguas) {
