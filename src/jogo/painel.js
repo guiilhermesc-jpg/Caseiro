@@ -14,7 +14,7 @@ const SLOTS = [
   { id: 'anel', nome: 'Anel', emoji: '💍' },
 ];
 
-export function criaPainelPersonagem({ getDados }) {
+export function criaPainelPersonagem({ getDados, aoTrocaAfinidade }) {
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:none;align-items:center;justify-content:center;'
     + 'background:rgba(6,4,10,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);font-family:Arial,sans-serif;';
@@ -66,7 +66,12 @@ export function criaPainelPersonagem({ getDados }) {
         + `<div style="font-size:10.5px;color:#9b8f74;margin:6px 0 2px;">Crescimento (XP)</div>`
         + bar('linear-gradient(90deg,#6a4ad0,#b98cff)', dr.prox ? (dr.xp / dr.prox) * 100 : 0)
         + `<div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;">${(dr.poderes || []).map((p) => `<span style="font-size:10.5px;background:rgba(201,167,90,.14);border:1px solid rgba(201,167,90,.3);border-radius:6px;padding:2px 7px;color:#e8d9af;">${p}</span>`).join('')}</div>`
-        + `</div>`;
+        + `<div style="margin-top:9px;display:flex;gap:6px;align-items:center;">`
+        + `<span style="font-size:10px;color:#8c8268;">Afinidade:</span>`
+        + `<button id="afDia" style="cursor:pointer;font-size:11px;border-radius:7px;padding:3px 9px;border:1px solid ${dr.afinidade === 'dia' ? '#ffcf5a' : 'rgba(120,110,90,.4)'};background:${dr.afinidade === 'dia' ? 'rgba(255,207,90,.18)' : 'transparent'};color:${dr.afinidade === 'dia' ? '#ffd87a' : '#9b8f74'};">☀️ Dia</button>`
+        + `<button id="afNoite" style="cursor:pointer;font-size:11px;border-radius:7px;padding:3px 9px;border:1px solid ${dr.afinidade === 'noite' ? '#7aa2ff' : 'rgba(120,110,90,.4)'};background:${dr.afinidade === 'noite' ? 'rgba(122,162,255,.18)' : 'transparent'};color:${dr.afinidade === 'noite' ? '#9fc0ff' : '#9b8f74'};">🌙 Noite</button>`
+        + `<span style="font-size:9.5px;color:#6f6753;margin-left:4px;">+50% de dano no seu período</span>`
+        + `</div></div>`;
     } else {
       dragaoHTML = `<div style="text-align:center;color:#8c8268;font-size:12.5px;padding:14px 6px;line-height:1.6;">`
         + `🥚 Você ainda não tem um dragão companheiro.<br>Choque um ovo ou dome um filhote para começar a criar o seu — e faça-o crescer junto da sua jornada.</div>`;
@@ -90,6 +95,9 @@ export function criaPainelPersonagem({ getDados }) {
       + `<div style="background:rgba(8,8,14,.5);border:1px solid rgba(201,167,90,.2);border-radius:12px;padding:12px;">${dragaoHTML}</div>`;
 
     cx.querySelector('#painelX').onclick = fechar;
+    const bDia = cx.querySelector('#afDia'), bNoite = cx.querySelector('#afNoite');
+    if (bDia) bDia.onclick = () => { aoTrocaAfinidade && aoTrocaAfinidade('dia'); render(); };
+    if (bNoite) bNoite.onclick = () => { aoTrocaAfinidade && aoTrocaAfinidade('noite'); render(); };
   }
 
   let timer = null;

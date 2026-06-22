@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV14.3 (v97)';
+const VERSAO = 'RV14.4 (v98)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1466,6 +1466,12 @@ const fichaPersonagem = criaPainelPersonagem({
       defesa, ouro, equipados,
       dragao: dragaoCompanheiro ? statsDragao(dragaoCompanheiro) : { tem: false },
     };
+  },
+  aoTrocaAfinidade: (af) => {
+    if (!dragaoCompanheiro) return;
+    dragaoCompanheiro.afinidade = af;
+    mostraMensagem(af === 'noite' ? '🌙 Seu dragão agora é da NOITE — +50% de dano à noite.' : '☀️ Seu dragão agora é do DIA — +50% de dano de dia.');
+    salvaJogo();
   },
 });
 // TABELA DE COMPRA dos mercadores (estilo Tibia: caçar → saquear → vender)
@@ -3966,7 +3972,13 @@ function passo() {
           animaCompanheiro(gato, true, 1.15);
         } else if (tempo > petProxMordida) {
           petProxMordida = tempo + 1.2;
-          const dnP = PET_DANO[petTipo] || 2;
+          let dnP = PET_DANO[petTipo] || 2;
+          // RV14.4: dragão usa o dano da FICHA (cresce com o estágio) + BÔNUS de
+          // AFINIDADE quando o período (dia/noite) casa com o dele.
+          if (dragaoCompanheiro && ehDragaoPet(petTipo)) {
+            const sd = statsDragao(dragaoCompanheiro); dnP = sd.dano;
+            if (sd.afinidade === (ehNoite ? 'noite' : 'dia')) dnP = Math.round(dnP * 1.5);
+          }
           petAlvo.hp -= dnP; petAlvo.piscar = 0.15;
           atualizaBarraHP(petAlvo);
           if (pg.userData.corpoMat) pg.userData.corpoMat.emissive.setHex(0x882020);
