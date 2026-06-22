@@ -82,7 +82,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV13.6 (v91)';
+const VERSAO = 'RV13.7 (v92)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1140,7 +1140,7 @@ const NOMES_CHEFES = {
 };
 Object.assign(NOMES_CHEFES, {
   draptor: 'Draptor Invasor',
-  draptorLendario: 'Draptor Lendario',
+  draptorLendario: 'Draptor Lendário',
 });
 function nomeChefe(r) {
   if (!r) return 'Chefe';
@@ -1286,7 +1286,7 @@ const PET_NOMES = { gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', lobo: 
 Object.assign(MONTARIA_VEL, { coruja: 2.05, morcego: 2.1, draptor: 2.45, draptorLendario: 2.85 });
 Object.assign(MONTARIA_SELA, { coruja: 1.55, morcego: 1.25, draptor: 1.35, draptorLendario: 1.55 });
 Object.assign(PET_DANO, { coruja: 6, morcego: 7, draptor: 12, draptorLendario: 18 });
-Object.assign(PET_NOMES, { coruja: 'Coruja Gigante', morcego: 'Morcego Grande', draptor: 'Draptor', draptorLendario: 'Draptor Lendario' });
+Object.assign(PET_NOMES, { coruja: 'Coruja Gigante', morcego: 'Morcego Grande', draptor: 'Draptor', draptorLendario: 'Draptor Lendário' });
 let montado = false;
 let petAlvo = null, petProxMordida = 0;
 function animaCompanheiro(g, movendo, ritmo = 1) {
@@ -1383,9 +1383,9 @@ QUESTS.push({
   item: 'Coração de Obsidiana',
   meta: 1,
   titulo: 'A Sela do Draptor',
-  pede: 'A historia dos dragoes nao terminou no Arconte. Traga 1 Coracao de Obsidiana: com ele consagro uma Sela Draconica. So ela permite tentar domar um Draptor durante invasoes.',
-  fala: 'Trouxe o coracao da fenda?',
-  recompensa: { ouro: 0, xp: 420, item: { nome: 'Sela Draconica', icone: 'S' } },
+  pede: 'A história dos dragões não terminou no Arconte. Traga 1 Coração de Obsidiana: com ele consagro uma Sela Dracônica. Só ela permite tentar domar um Draptor durante as invasões.',
+  fala: 'Trouxe o coração da fenda?',
+  recompensa: { ouro: 0, xp: 420, item: { nome: 'Sela Dracônica', icone: 'S' } },
 });
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 // GUILDA DE VENORE (RV4.2): 2 dragões abatidos = entrada + Manto da Guilda
@@ -1725,7 +1725,7 @@ function viajaBarca(dx, dz, custo, nomeDestino) {
 // Economiza tempo, mas custa mais que caminhar; a estrada ainda vale por loot,
 // risco e descoberta.
 function viajaCarroca(dx, dz, custo, nomeDestino) {
-  if (ouro < custo) { mostraMensagem(`A carroca custa ${custo} moedas. Venda loot ou pesque antes de viajar.`); return; }
+  if (ouro < custo) { mostraMensagem(`A carroça custa ${custo} moedas. Venda loot ou pesque antes de viajar.`); return; }
   ouro -= custo; hud.ouro(ouro);
   montado = false; petAlvo = null;
   avatar.position.set(dx, alturaTerreno(dx, dz), dz); vy = 0; noChao = true;
@@ -1733,29 +1733,29 @@ function viajaCarroca(dx, dz, custo, nomeDestino) {
   mostraMensagem(`Carroca pronta. A estrada passa depressa... destino: ${nomeDestino}.`);
 }
 [
-  { x: 118, z: 12, titulo: 'Carrocas da Estrada da Vigia', rotas: [
+  { x: 118, z: 12, titulo: 'Carroças da Estrada da Vigia', rotas: [
     { nome: 'Thais', x: 552, z: 8, custo: 12 },
     { nome: 'Venore', x: -294, z: -82, custo: 10 },
   ] },
-  { x: 374, z: 14, titulo: 'Carroca para o Vilarejo', rotas: [
+  { x: 374, z: 14, titulo: 'Carroça para o Vilarejo', rotas: [
     { nome: 'Vilarejo de Venor', x: 118, z: 12, custo: 12 },
   ] },
-  { x: -294, z: -90, titulo: 'Carrocas de Venore', rotas: [
+  { x: -294, z: -90, titulo: 'Carroças de Venore', rotas: [
     { nome: 'Vilarejo de Venor', x: 118, z: 12, custo: 10 },
     { nome: 'Noctaria', x: -604, z: -40, custo: 24 },
   ] },
-  { x: -604, z: -40, titulo: 'Carroca Sombria de Noctaria', rotas: [
+  { x: -604, z: -40, titulo: 'Carroça Sombria de Noctaria', rotas: [
     { nome: 'Venore', x: -294, z: -90, custo: 24 },
   ] },
 ].forEach((posto) => {
-  const it = { x: posto.x, z: posto.z, raio: 4.0, titulo: posto.titulo, acao: 'Ver viagens de carroca' };
+  const it = { x: posto.x, z: posto.z, raio: 4.0, titulo: posto.titulo, acao: 'Ver viagens de carroça' };
   it.onAcao = () => {
     const ops = posto.rotas.map((r) => ({
       texto: `${r.nome} - ${r.custo} moedas`,
       onClick: () => { dialogo.fecha(); viajaCarroca(r.x, r.z, r.custo, r.nome); },
     }));
     ops.push({ texto: 'Ficar aqui', onClick: () => dialogo.fecha() });
-    dialogo.abre(posto.titulo, 'Viagem terrestre rapida. Caminhar rende loot; carroca compra tempo.', ops);
+    dialogo.abre(posto.titulo, 'Viagem terrestre rápida. Caminhar rende loot; a carroça compra tempo.', ops);
   };
   interativos.push(it);
 });
@@ -2218,7 +2218,7 @@ function ascendeNuvens() {
   const lo = aurelia.lord;
   const it = { x: lo.x, z: lo.z, y: -40, raio: 4.5, titulo: '🐉 Vaelthryx, o Dragão-Ancião', acao: 'Falar com o Ancião 🐉' };
   it.onAcao = () => {
-    if (subsoloAtual !== nuvens || !dragaoNuvens) return;
+    if (subsoloAtual !== aurelia || !dragaoNuvens) return;
     if (provaFogoFeita) {
       dialogo.abre('🐉 Vaelthryx, o Dragão-Ancião', 'Você passou na Prova de Fogo, mortal. Aurélia te reconhece como AMIGO DA CHAMA — os céus de Venor são seus.', [{ texto: 'Inclinar a cabeça', onClick: () => dialogo.fecha() }]);
       return;
@@ -2591,23 +2591,23 @@ const camposTemp = [];
 const avisosFogo = [];
 const avisosMonstro = [];
 const PERFIS_MONSTRO_RV70 = {
-  lobo: { aggro: 18, dist: 7.5, cd: 5.0, aviso: 0.48, dur: 0.26, alcance: 2.0, mult: 1.15, raio: 1.35, cor: 0xffd166, msg: 'O lobo abaixa o corpo e avanca!' },
+  lobo: { aggro: 18, dist: 7.5, cd: 5.0, aviso: 0.48, dur: 0.26, alcance: 2.0, mult: 1.15, raio: 1.35, cor: 0xffd166, msg: 'O lobo abaixa o corpo e avança!' },
   orc: { aggro: 17, dist: 6.6, cd: 5.8, aviso: 0.55, dur: 0.3, alcance: 2.15, mult: 1.22, raio: 1.55, cor: 0xf08a32, msg: 'O orc puxa o golpe pesado!' },
   orcWarlord: { aggro: 24, dist: 8.4, cd: 6.3, aviso: 0.7, dur: 0.34, alcance: 2.65, mult: 1.35, raio: 2.25, cor: 0xff5b38, msg: 'O Senhor da Guerra investe com o machado!' },
-  drakari: { aggro: 20, dist: 7.2, cd: 5.3, aviso: 0.52, dur: 0.28, alcance: 2.2, mult: 1.2, raio: 1.55, cor: 0xff6f3c, msg: 'O Drakari finca a lanca e dispara!' },
+  drakari: { aggro: 20, dist: 7.2, cd: 5.3, aviso: 0.52, dur: 0.28, alcance: 2.2, mult: 1.2, raio: 1.55, cor: 0xff6f3c, msg: 'O Drakari finca a lança e dispara!' },
   drakariElite: { aggro: 22, dist: 7.8, cd: 6.0, aviso: 0.64, dur: 0.32, alcance: 2.45, mult: 1.3, raio: 1.95, cor: 0xff3434, msg: 'O guarda Drakari prepara uma estocada ritual!' },
-  troll: { aggro: 16, dist: 6.0, cd: 6.2, aviso: 0.62, dur: 0.32, alcance: 2.25, mult: 1.28, raio: 1.7, cor: 0xb4d36a, msg: 'O troll junta forca para esmagar!' },
-  trollAnciao: { aggro: 22, dist: 7.4, cd: 6.5, aviso: 0.72, dur: 0.36, alcance: 2.7, mult: 1.38, raio: 2.25, cor: 0xff9b3a, msg: 'O Troll Anciao bate no chao e avanca!' },
+  troll: { aggro: 16, dist: 6.0, cd: 6.2, aviso: 0.62, dur: 0.32, alcance: 2.25, mult: 1.28, raio: 1.7, cor: 0xb4d36a, msg: 'O troll junta força para esmagar!' },
+  trollAnciao: { aggro: 22, dist: 7.4, cd: 6.5, aviso: 0.72, dur: 0.36, alcance: 2.7, mult: 1.38, raio: 2.25, cor: 0xff9b3a, msg: 'O Troll Ancião bate no chão e avança!' },
   ciclope: { aggro: 20, dist: 7.0, cd: 6.8, aviso: 0.78, dur: 0.38, alcance: 2.8, mult: 1.42, raio: 2.35, cor: 0xf4c46a, msg: 'O ciclope ergue a clava!' },
-  urso: { aggro: 18, dist: 6.6, cd: 6.0, aviso: 0.58, dur: 0.32, alcance: 2.35, mult: 1.25, raio: 1.85, cor: 0xd09a62, msg: 'O urso baixa a cabeca e atropela!' },
+  urso: { aggro: 18, dist: 6.6, cd: 6.0, aviso: 0.58, dur: 0.32, alcance: 2.35, mult: 1.25, raio: 1.85, cor: 0xd09a62, msg: 'O urso baixa a cabeça e atropela!' },
   aranha: { aggro: 20, dist: 7.4, cd: 5.5, aviso: 0.5, dur: 0.3, alcance: 2.25, mult: 1.18, raio: 1.8, cor: 0xba55ff, msg: 'A aranha se encolhe para saltar!' },
   esqueleto: { aggro: 15, dist: 5.6, cd: 6.0, aviso: 0.54, dur: 0.3, alcance: 2.0, mult: 1.18, raio: 1.35, cor: 0xd8d0b0, msg: 'O esqueleto range e corta de lado!' },
   reiEsqueleto: { aggro: 22, dist: 7.5, cd: 6.4, aviso: 0.68, dur: 0.34, alcance: 2.55, mult: 1.34, raio: 2.15, cor: 0xe8d68a, msg: 'O Rei Esqueleto chama um golpe antigo!' },
   arconteDrakari: { aggro: 28, dist: 8.8, cd: 6.8, aviso: 0.78, dur: 0.38, alcance: 2.9, mult: 1.45, raio: 2.55, cor: 0xff2e1f, msg: 'O Arconte dobra a luz da fenda e investe!' },
 };
 Object.assign(PERFIS_MONSTRO_RV70, {
-  draptor: { aggro: 28, dist: 9.2, cd: 5.7, aviso: 0.58, dur: 0.36, alcance: 2.75, mult: 1.42, raio: 2.35, cor: 0x7fe06a, msg: 'O Draptor raspa as garras no chao e dispara!' },
-  draptorLendario: { aggro: 34, dist: 10.4, cd: 5.2, aviso: 0.54, dur: 0.34, alcance: 3.05, mult: 1.6, raio: 2.8, cor: 0x68d8ff, msg: 'O Draptor Lendario dobra a luz e investe!' },
+  draptor: { aggro: 28, dist: 9.2, cd: 5.7, aviso: 0.58, dur: 0.36, alcance: 2.75, mult: 1.42, raio: 2.35, cor: 0x7fe06a, msg: 'O Draptor raspa as garras no chão e dispara!' },
+  draptorLendario: { aggro: 34, dist: 10.4, cd: 5.2, aviso: 0.54, dur: 0.34, alcance: 3.05, mult: 1.6, raio: 2.8, cor: 0x68d8ff, msg: 'O Draptor Lendário dobra a luz e investe!' },
 });
 const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 1 });
 const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
@@ -2699,7 +2699,7 @@ function agendaInvestidaMonstro(r, p, dx, dz, dist) {
 function danoInvestidaMonstro(r, p) {
   if (r.veneno && Math.random() < 0.45 && tempo > envenenadoAte) {
     envenenadoAte = tempo + 6;
-    mostraMensagem('Mordida venenosa: voce foi envenenado por 6s.');
+    mostraMensagem('Mordida venenosa: você foi envenenado por 6s.');
   }
   const dano = Math.max(1, Math.round((r.dano || 5) * p.mult) - defesa);
   mostraMensagem(`Investida! (-${dano})`);
@@ -2825,29 +2825,29 @@ const RAROS = {
 // chama já foi acesa). Dragão osso-pálido, 2.2×, cospe fogo de longe.
 Object.assign(RAROS, {
   draptor: { chance: 0.08, item: { nome: 'Garra de Draptor', icone: 'G', slot: 'colar', defesa: 5 } },
-  draptorLendario: { chance: 0.18, item: { nome: 'Crista Lendaria do Draptor', icone: 'C', slot: 'cabeca', defesa: 9 } },
+  draptorLendario: { chance: 0.18, item: { nome: 'Crista Lendária do Draptor', icone: 'C', slot: 'cabeca', defesa: 9 } },
 });
 function tentaCapturarDraptor(r) {
   if (!r || (r.especie !== 'draptor' && r.especie !== 'draptorLendario')) return;
   const questFeita = (questEstado.selaDraptor || {}).feita;
-  if (!questFeita || !inventario.temItem('Sela Draconica')) {
-    mostraMensagem('O Draptor cai, mas ninguem consegue conter a fera sem a Sela Draconica da Hela.');
+  if (!questFeita || !inventario.temItem('Sela Dracônica')) {
+    mostraMensagem('O Draptor cai, mas ninguém consegue conter a fera sem a Sela Dracônica da Hela.');
     return;
   }
   const alvoPet = r.especie === 'draptorLendario' ? 'draptorLendario' : 'draptor';
   if (petsDomados.includes(alvoPet)) return;
   const chance = r.especie === 'draptorLendario' ? 0.04 : 0.10;
   if (Math.random() < chance) {
-    inventario.consomeItem('Sela Draconica');
+    inventario.consomeItem('Sela Dracônica');
     petsDomados.push(alvoPet);
     trocaPet(alvoPet);
     sons.tesouro();
     mostraMensagem(r.especie === 'draptorLendario'
-      ? 'CAPTURA LENDARIA! O Draptor Lendario aceitou sua sela. Esta e a montaria mais rara de Venor.'
-      : 'Voce capturou um Draptor! Use M para montar e o painel de personagem para trocar montaria.');
+      ? 'CAPTURA LENDÁRIA! O Draptor Lendário aceitou sua sela. Esta é a montaria mais rara de Venor.'
+      : 'Você capturou um Draptor! Use M para montar e o painel de personagem para trocar montaria.');
     salvaJogo();
   } else {
-    mostraMensagem('A Sela Draconica brilhou, mas o Draptor resistiu. A captura continua rara.');
+    mostraMensagem('A Sela Dracônica brilhou, mas o Draptor resistiu. A captura continua rara.');
   }
 }
 let voragInvocado = false;
@@ -2900,7 +2900,7 @@ function invocaArconteDrakari() {
 let proxInvasaoDraptor = 220 + Math.random() * 260;
 let invasaoDraptorAtiva = null;
 const PONTOS_INVASAO_DRAPTOR = [
-  { nome: 'Ruinas da Estrada', x: 154, z: 246, r: 30 },
+  { nome: 'Ruínas da Estrada', x: 154, z: 246, r: 30 },
   { nome: 'Passo do Ciclope', x: 205, z: 170, r: 34 },
   { nome: 'Estrada das Cinzas', x: -690, z: -50, r: 36 },
   { nome: 'Trilha do Pico', x: 110, z: 300, r: 32 },
@@ -2916,14 +2916,14 @@ function iniciaInvasaoDraptor(forcar = false) {
     boss: true,
     especie: lendario ? 'draptorLendario' : 'draptor',
     invasao: true,
-    lootEspecial: { nome: lendario ? 'Nucleo Prismatico' : 'Escama de Draptor', icone: lendario ? 'N' : 'E' },
+    lootEspecial: { nome: lendario ? 'Núcleo Prismático' : 'Escama de Draptor', icone: lendario ? 'N' : 'E' },
   });
   scene.add(r.g);
   invasaoDraptorAtiva = r;
   proxInvasaoDraptor = tempo + 420 + Math.random() * 420;
   mostraMensagem(lendario
-    ? `INVASAO RARA: o Draptor Lendario apareceu em ${p.nome}!`
-    : `Invasao: um Draptor foi avistado em ${p.nome}.`);
+    ? `INVASÃO RARA: o Draptor Lendário apareceu em ${p.nome}!`
+    : `Invasão: um Draptor foi avistado em ${p.nome}.`);
   mostraBossHud(r, 8);
 }
 function atualizaInvasaoDraptor() {

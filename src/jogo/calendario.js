@@ -3,7 +3,7 @@
 //  Regras simples, mas com valor de jogo: nem todo vendedor existe sempre.
 // =============================================================
 
-export const DIAS_VENOR = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];
+export const DIAS_VENOR = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 // Dias reais por enquanto: deixa o teste simples e cria rotina semanal.
 // Quando o mundo tiver tempo persistente por conta, esta funcao vira "dia do save".
@@ -18,7 +18,7 @@ export function diaVenor(date = new Date()) {
 
 export const MASCATE_DIAS = new Set([2, 4, 6]); // terca, quinta, sabado
 export const MASCATE_POSTOS = [
-  { x: 122, z: 17, nome: 'Acampamento do Portao Leste' },
+  { x: 122, z: 17, nome: 'Acampamento do Portão Leste' },
   { x: 210, z: -17, nome: 'Fogueira da Ponte Velha' },
   { x: 382, z: 19, nome: 'Curva da Estrada de Thais' },
 ];
@@ -32,8 +32,8 @@ export function mascateHoje(date = new Date()) {
     dia,
     posto,
     texto: aberto
-      ? `Hoje e ${dia.nome}: Ze das Rotas esta em ${posto.nome}.`
-      : `Hoje e ${dia.nome}: o mascate nao montou acampamento. Volte na terca, quinta ou sabado.`,
+      ? `Hoje é ${dia.nome}: Zé das Rotas está em ${posto.nome}.`
+      : `Hoje é ${dia.nome}: o mascate não montou acampamento. Volte na terça, quinta ou sábado.`,
   };
 }
 
