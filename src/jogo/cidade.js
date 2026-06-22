@@ -3,7 +3,7 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaMuralha, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira, criaCranioDragao } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
@@ -367,6 +367,9 @@ export function criaCidade() {
     estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
     estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],
   })));
+  // RV14.5: o Vilarejo de Venor vira CASTELO MURADO — muralha de pedra com
+  // ameias, torres nas quinas e PORTÕES (leste p/ Thais, oeste e sul).
+  add(criaMuralha(0, 0, { HX: 90, HZ: 90, ALT: 9, gw: 15, portoes: ['leste', 'oeste', 'sul'], corTorre: 0x6a4a8a }));
   // RV5.4: dois lotes que eram decorativos viraram casas ENTRÁVEIS de verdade
   add(criaCasaInterior(64, 0, { frente: 'oeste', cor: 0xe0d0a0, corTelhado: 0x7a3a2a }));
   add(criaCasaInterior(0, 64, { frente: 'sul', cor: 0x9ab0a4, corTelhado: 0x4a5666 }));

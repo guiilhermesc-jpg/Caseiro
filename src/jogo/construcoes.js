@@ -477,6 +477,50 @@ export function criaMarco(tipo, opts) {
   return res;
 }
 
+// RV14.5: MURALHA DE CASTELO reutilizável — cidades viram castelos murados,
+// com PORTÕES (vãos) nos lados pedidos. Geometria mesclada (2 meshes + torres).
+// Devolve { grupo, colisores } pra cidade somar aos sólidos.
+export function criaMuralha(cx, cz, opts = {}) {
+  const { HX = 88, HZ = 88, ALT = 9, ESP = 2.4, gw = 13, portoes = ['leste'], estilo = 'muralha_castelo', corTorre = 0x3a4a6a } = opts;
+  const g = new THREE.Group(); g.position.set(cx, 0, cz);
+  const colisores = [];
+  const col = (lx, lz, w, d) => colisores.push({ minX: cx + lx - w / 2, maxX: cx + lx + w / 2, minZ: cz + lz - d / 2, maxZ: cz + lz + d / 2 });
+  const corpo = [], merlao = [];
+  const push = (lista, w, h, d, lx, ly, lz) => { const ge = new THREE.BoxGeometry(w, h, d); ge.translate(lx, ly, lz); lista.push(ge); };
+  function ameias(lx, lz, comp, eixo) {
+    const n = Math.max(1, Math.floor(comp / 4.4));
+    for (let i = 0; i < n; i++) {
+      const t = -comp / 2 + comp / n / 2 + i * (comp / n);
+      push(merlao, eixo === 'x' ? 1.3 : ESP + 0.3, 1.3, eixo === 'x' ? ESP + 0.3 : 1.3, lx + (eixo === 'x' ? t : 0), ALT + 0.65, lz + (eixo === 'x' ? 0 : t));
+    }
+  }
+  function muro(lx, lz, w, d) { push(corpo, w, ALT, d, lx, ALT / 2, lz); col(lx, lz, w, d); ameias(lx, lz, w > d ? w : d, w > d ? 'x' : 'z'); }
+  function fazLado(lado) {
+    const portao = portoes.includes(lado);
+    if (lado === 'norte' || lado === 'sul') {
+      const lz = lado === 'norte' ? HZ : -HZ;
+      if (!portao) muro(0, lz, HX * 2, ESP);
+      else { const seg = (HX * 2 - gw) / 2; muro(-(gw / 2 + seg / 2), lz, seg, ESP); muro(gw / 2 + seg / 2, lz, seg, ESP); }
+    } else {
+      const lx = lado === 'leste' ? HX : -HX;
+      if (!portao) muro(lx, 0, ESP, HZ * 2);
+      else { const seg = (HZ * 2 - gw) / 2; muro(lx, -(gw / 2 + seg / 2), ESP, seg); muro(lx, gw / 2 + seg / 2, ESP, seg); }
+    }
+  }
+  ['norte', 'sul', 'leste', 'oeste'].forEach(fazLado);
+  const matPedra = new THREE.MeshStandardMaterial({ color: 0xb9b2a4, roughness: 1 });
+  aplicaTexturaReal(matPedra, estilo, 8, 1.6, true, true);
+  const mc = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(corpo), matPedra); mc.castShadow = true; mc.receiveShadow = true; g.add(mc);
+  const mm = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(merlao), mat(0xd9d2c2, 1)); mm.castShadow = true; g.add(mm);
+  [[-HX, -HZ], [HX, -HZ], [-HX, HZ], [HX, HZ]].forEach(([tx, tz]) => {
+    const h = ALT + 5;
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(3, 3.4, h, 12), matPedra); t.position.set(tx, h / 2, tz); t.castShadow = true; g.add(t);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(3.8, h * 0.42, 12), mat(corTorre, 0.9)); cone.position.set(tx, h + h * 0.21, tz); g.add(cone);
+    col(tx, tz, 5, 5);
+  });
+  return { grupo: g, colisores };
+}
+
 // ---- plantas ----
 export function criaPinheiro(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
