@@ -405,7 +405,7 @@ export function criaPredio(opts) {
   // RV4.6: FUMAÇA na chaminé (nem toda casa acende o fogão) — 3 novelos
   // que sobem em loop, crescem e derivam no vento (animaProps cuida)
   const animados = [];
-  if (Math.random() < 0.45) {
+  if (Math.random() < 0.8) { // RV15.6: mais casas FUMEGAM (vila viva) — era 0.45
     const fumaca = [];
     for (let i = 0; i < 3; i++) {
       const puff = new THREE.Mesh(new THREE.SphereGeometry(0.26 + i * 0.05, 6, 5), MAT_FUMACA);

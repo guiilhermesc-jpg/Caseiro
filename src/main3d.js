@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV15.5 (v109)';
+const VERSAO = 'RV15.6 (v110)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -2836,6 +2836,7 @@ function atualizaPresencaMonstros(dt) {
       }
       const f = Math.min(1, (tempo - inv.dispara) / p.dur);
       r.g.scale.z *= (1 + Math.sin(f * Math.PI) * 0.2); // LUNGE — estica o corpo no golpe
+      r.g.rotation.x = Math.sin(f * Math.PI) * 0.22;     // INCLINA pra frente no golpe (auto-reseta em f=1)
       const s = f * f * (3 - 2 * f);
       const nx = inv.x0 + (inv.x1 - inv.x0) * s;
       const nz = inv.z0 + (inv.z1 - inv.z0) * s;
