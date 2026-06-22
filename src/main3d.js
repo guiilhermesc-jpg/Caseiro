@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV14.2 (v96)';
+const VERSAO = 'RV14.3 (v97)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1327,20 +1327,24 @@ Object.assign(PET_DANO, { coruja: 6, morcego: 7, draptor: 12, draptorLendario: 1
 Object.assign(PET_NOMES, { coruja: 'Coruja Gigante', morcego: 'Morcego Grande', draptor: 'Draptor', draptorLendario: 'Draptor Lendário' });
 let montado = false;
 let petAlvo = null, petProxMordida = 0;
-function animaCompanheiro(g, movendo, ritmo = 1) {
+function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
   const u = g && g.userData;
   if (!u) return;
   if (u.patas) {
-    const sp = movendo ? Math.sin(tempo * 12 * ritmo) * 0.65 : 0;
+    // ao VOAR o dragão recolhe as patas; no chão, anda
+    const sp = voando ? 0.5 : (movendo ? Math.sin(tempo * 12 * ritmo) * 0.65 : 0);
     u.patas.forEach((p, i) => { p.rotation.x = i % 2 ? -sp : sp; });
   }
   if (u.asas) {
-    const a = Math.sin(tempo * 5.8 * ritmo) * 0.42;
+    // RV14.3: batida de asa AMPLA e rápida ao voar; leve no chão
+    const amp = voando ? 0.9 : 0.42, vel = voando ? 7.6 : 5.8;
+    const a = Math.sin(tempo * vel * ritmo) * amp;
     u.asas.forEach((asa, i) => {
       asa.rotation.z = (i ? -1 : 1) * (0.12 + a);
       asa.rotation.y = (i ? -1 : 1) * (0.08 + Math.abs(a) * 0.18);
     });
   }
+  if (u.garganta) u.garganta.scale.setScalar(1 + Math.sin(tempo * 3) * 0.06); // respira
   if (u.cauda) u.cauda.rotation.y = Math.sin(tempo * 2.8 * ritmo) * 0.2;
   else if (u.rabo) u.rabo.rotation.y = Math.sin(tempo * 3 * ritmo) * 0.38;
 }
@@ -1354,6 +1358,13 @@ function montaOuDesmonta() {
     mostraMensagem(`🏇 Montou no ${PET_NOMES[petTipo] || petTipo}! Velocidade ×${fator} — clique nele (ou tecla M) pra descer.`);
   } else {
     mostraMensagem('Você desmontou. 🐾');
+    // RV14.3: o dragão ABAIXA pra você descer (agacha por um instante)
+    if (gato && ehDragaoPet(petTipo)) {
+      const s0 = gato.scale.y;
+      gato.scale.y = s0 * 0.72;
+      setTimeout(() => { if (gato) gato.scale.y = s0; }, 430);
+      try { sons.corda(); } catch (e) {}
+    }
   }
 }
 window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && jogoIniciado && !morto && !dialogo.aberto) montaOuDesmonta(); });
@@ -3939,7 +3950,7 @@ function passo() {
       const dxm = gato.position.x - (uG._px ?? gato.position.x), dzm = gato.position.z - (uG._pz ?? gato.position.z);
       const trotando = Math.hypot(dxm, dzm) > 0.01;
       uG._px = gato.position.x; uG._pz = gato.position.z;
-      animaCompanheiro(gato, trotando, montado ? 1.25 : 1);
+      animaCompanheiro(gato, trotando, montado ? 1.25 : 1, montado && ehDragaoPet(petTipo));
     } else if (petAlvo && petAlvo.vivo && !petAlvo.corpse) {
       // PET DE COMBATE: corre pro bicho que você atacou e morde junto
       const pg = petAlvo.g;
