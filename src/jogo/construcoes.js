@@ -206,29 +206,49 @@ function texturaReboco() {
   _texReboco.wrapS = _texReboco.wrapT = THREE.RepeatWrapping; _texReboco.repeat.set(2, 2);
   return _texReboco;
 }
+// RV14.1: ESTILOS de parede premium (gerados por IA). 'reboco' = estuque
+// claro tingido pela cor da casa; 'pedra_castelo'/'madeira_viga' = textura
+// PRÓPRIA (cor real do material, com relevo). [arquivo, rx, rz, manterCor, normal]
+const PAREDE_ESTILO = {
+  reboco:        ['reboco', 2, 2, true, false],
+  pedra_castelo: ['pedra_castelo', 3, 2.6, false, true],
+  madeira_viga:  ['madeira_viga', 2, 2, false, true],
+};
 const matParedeCache = {};
-export function matParede(cor) {
-  if (!matParedeCache[cor]) {
-    // RV13.8: reboco PREMIUM (pintado à mão, gerado por IA) tingido pela cor de
-    // cada casa. O ruído procedural fica como fallback instantâneo até carregar.
+export function matParedeEstilo(cor, estilo = 'reboco') {
+  const key = cor + '_' + estilo;
+  if (!matParedeCache[key]) {
+    const [arq, rx, rz, manter, normal] = PAREDE_ESTILO[estilo] || PAREDE_ESTILO.reboco;
     const m = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.92, map: texturaReboco() });
-    aplicaTexturaReal(m, 'reboco', 2, 2, true);
-    matParedeCache[cor] = m;
+    aplicaTexturaReal(m, arq, rx, rz, manter, normal);
+    matParedeCache[key] = m;
   }
-  return matParedeCache[cor];
+  return matParedeCache[key];
 }
+export function matParede(cor) { return matParedeEstilo(cor, 'reboco'); }
 
+// ESTILOS de telhado: 'telha' (terracota tingida), 'ardosia' (ardósia escura),
+// 'palha' (colmo dourado) — texturas próprias.
+const TELHA_ESTILO = {
+  telha:   ['telha', 2, 2, true],
+  ardosia: ['telhado_ardosia', 3, 3, false],
+  palha:   ['palha', 2.4, 2.4, false],
+};
 const matTelhaCache = {};
-export function matTelha(cor) {
-  if (!matTelhaCache[cor]) {
-    matTelhaCache[cor] = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.9, map: texturaTelha() });
-    aplicaTexturaReal(matTelhaCache[cor], 'telha', 2, 2, true); // telha REAL tingida pela cor
+export function matTelhaEstilo(cor, estilo = 'telha') {
+  const key = cor + '_' + estilo;
+  if (!matTelhaCache[key]) {
+    const [arq, rx, rz, manter] = TELHA_ESTILO[estilo] || TELHA_ESTILO.telha;
+    const m = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.9, map: texturaTelha() });
+    aplicaTexturaReal(m, arq, rx, rz, manter);
+    matTelhaCache[key] = m;
   }
-  return matTelhaCache[cor];
+  return matTelhaCache[key];
 }
+export function matTelha(cor) { return matTelhaEstilo(cor, 'telha'); }
 
 // telhado de DUAS ÁGUAS com beiral (cobre o retângulo certinho -> bordas coerentes)
-function telhadoDuasAguas(larg, prof, hTelh, cor, baseY) {
+function telhadoDuasAguas(larg, prof, hTelh, cor, baseY, estiloTelhado = 'telha') {
   const ov = 0.5; // beiral (overhang)
   const shape = new THREE.Shape();
   shape.moveTo(-larg / 2 - ov, 0);
@@ -237,7 +257,7 @@ function telhadoDuasAguas(larg, prof, hTelh, cor, baseY) {
   shape.closePath();
   const geo = new THREE.ExtrudeGeometry(shape, { depth: prof + ov * 2, bevelEnabled: false });
   geo.translate(0, 0, -(prof + ov * 2) / 2);
-  const m = new THREE.Mesh(geo, matTelha(cor)); // telhas texturizadas em TODOS os telhados
+  const m = new THREE.Mesh(geo, matTelhaEstilo(cor, estiloTelhado)); // telhas texturizadas em TODOS os telhados
   m.position.y = baseY; m.castShadow = true;
   return m;
 }
@@ -247,6 +267,7 @@ export function criaPredio(opts) {
   const {
     x = 0, z = 0, larg = 9, prof = 9, alt = 7,
     cor = 0xcab79a, corTelhado = 0x884b2a, rot = 0, janelas = true,
+    estiloParede = 'reboco', estiloTelhado = 'telha',
   } = opts;
   const g = new THREE.Group();
   g.position.set(x, 0, z);
@@ -263,7 +284,7 @@ export function criaPredio(opts) {
   // alicerce de pedra (assenta a casa no chão; quebra o "caixote")
   gbox(geosPed, larg + 0.4, FB, prof + 0.4, 0, FB / 2, 0);
   // corpo (sobre o alicerce) — parede com REBOCO procedural (RV4.5)
-  const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), matParede(cor));
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, prof), matParedeEstilo(cor, estiloParede));
   corpo.position.y = FB + alt / 2; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
   const topo = FB + alt; // topo das paredes
   // enxaimel: viga horizontal (divisória de andar) + montantes de canto (look medieval)
@@ -276,7 +297,7 @@ export function criaPredio(opts) {
     gbox(geosMad, 0.3, alt, 0.3, sx * larg / 2, FB + alt / 2, sz * prof / 2);
   });
   // telhado de duas águas + cumeeira
-  g.add(telhadoDuasAguas(larg, prof, Math.max(2.6, alt * 0.45), corTelhado, topo));
+  g.add(telhadoDuasAguas(larg, prof, Math.max(2.6, alt * 0.45), corTelhado, topo, estiloTelhado));
   // chaminé com fumeiro
   gbox(geosPed, 0.8, 2.0, 0.8, larg * 0.28, topo + 1.5, -prof * 0.18);
   gbox(geosMad, 1.0, 0.3, 1.0, larg * 0.28, topo + 2.6, -prof * 0.18);

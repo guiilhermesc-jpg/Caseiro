@@ -357,9 +357,15 @@ export function criaCidade() {
     [32, 64], [-32, 64], [32, -64], [-32, -64],
     [64, 64], [-64, 64], [64, -64], [-64, -64],
   ];
-  lotes.forEach(([x, z]) => add(criaPredio({
+  // RV14.1: estilos premium variados — enxaimel (Tudor), reboco e pedra, com
+  // telhados de telha/ardósia/palha, pra a vila parecer um vilarejo de verdade.
+  const ESTILO_PAREDE = ['madeira_viga', 'reboco', 'madeira_viga', 'reboco', 'pedra_castelo'];
+  const ESTILO_TELHA = ['telha', 'ardosia', 'telha', 'palha', 'telha'];
+  lotes.forEach(([x, z], i) => add(criaPredio({
     x, z, larg: rnd(8, 13), prof: rnd(8, 12), alt: rnd(6, 11),
     cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
+    estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
+    estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],
   })));
   // RV5.4: dois lotes que eram decorativos viraram casas ENTRÁVEIS de verdade
   add(criaCasaInterior(64, 0, { frente: 'oeste', cor: 0xe0d0a0, corTelhado: 0x7a3a2a }));
@@ -1016,9 +1022,11 @@ export function criaCidade() {
       add(criaPlaca(-394, 30, 'Catacumbas — desça se ousar', Math.PI / 2));
     }
     [[-340, 24], [-340, 52], [-300, 46], [-264, 56], [-376, 40], [-376, 64], [-396, 46]]
-      .forEach(([x, z]) => add(criaPredio({
+      .forEach(([x, z], i) => add(criaPredio({
         x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(8, 12),
         cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - 18))),
+        // Venore é capital de PEDRA (cidade-castelo): pedra + ardósia, com alguns enxaiméis
+        estiloParede: i % 3 === 0 ? 'madeira_viga' : 'pedra_castelo', estiloTelhado: 'ardosia',
       })));
     add(criaCasaInterior(-296, 64, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x4a5666 }));
     add(criaCasaInterior(-272, 28, { frente: 'oeste', cor: 0xcaa890, corTelhado: 0x6a4a6a })); // RV5.4
