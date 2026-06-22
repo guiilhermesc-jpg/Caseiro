@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV15.1 (v105)';
+const VERSAO = 'RV15.2 (v106)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1347,7 +1347,12 @@ function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
     });
   }
   if (u.garganta) u.garganta.scale.setScalar(1 + Math.sin(tempo * 3) * 0.06); // respira
-  if (u.cauda) u.cauda.rotation.y = Math.sin(tempo * 2.8 * ritmo) * 0.2;
+  if (Array.isArray(u.cauda)) { // RV15.2: ONDA propagada na cauda do dragão (segmentos defasados)
+    for (let i = 0; i < u.cauda.length; i++) {
+      u.cauda[i].rotation.y = Math.sin(tempo * 2.4 * ritmo - i * 0.5) * 0.16;
+      u.cauda[i].rotation.x = 0.06 + Math.sin(tempo * 1.8 - i * 0.4) * 0.05;
+    }
+  } else if (u.cauda) u.cauda.rotation.y = Math.sin(tempo * 2.8 * ritmo) * 0.2;
   else if (u.rabo) u.rabo.rotation.y = Math.sin(tempo * 3 * ritmo) * 0.38;
 }
 function montaOuDesmonta() {
@@ -4096,6 +4101,8 @@ function passo() {
   if (dragao.vivo && !dragao.corpse) {
     if (!vooDragao.ativo) {
       vooDragao.proximo -= dt;
+      animaCompanheiro(dragao.g, false, 0.8, false); // RV15.2: respira + balança a cauda parado (não é estátua)
+      if (dragao.g.rotation.z) dragao.g.rotation.z *= 0.9; // desbanca ao pousar
       if (vooDragao.proximo <= 0) { vooDragao.ativo = true; vooDragao.t = 0; vooDragao.avisou = false; dragao.voando = true; mostraMensagem('🐉 O dragão levantou voo da montanha...'); }
     } else {
       vooDragao.t += dt / 28; // ~28s de voo (ida até a praça e volta)
@@ -4119,8 +4126,8 @@ function passo() {
           if (!vooDragao.avisou) { vooDragao.avisou = true; mostraMensagem('🔥 O dragão mergulha CUSPINDO FOGO sobre Venore — saia do caminho!'); }
           if (Math.random() < 0.008) criaLavaTemp(px + (Math.random() - 0.5) * 12, pz + (Math.random() - 0.5) * 12, alturaTerreno(px, pz));
         }
-        const asas = dragao.g.userData.asas;
-        if (asas) { const w = 0.45 + Math.sin(tempo * 9) * 0.5; asas[0].rotation.z = w; asas[1].rotation.z = -w; }
+        animaCompanheiro(dragao.g, true, 1.15, true); // RV15.2: asas amplas + cauda ondulando + patas recolhidas
+        dragao.g.rotation.z = Math.sin(t * Math.PI * 2) * 0.26; // BANCA nas serpenteadas do voo
       }
     }
   }

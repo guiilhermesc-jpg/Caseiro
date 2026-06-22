@@ -646,11 +646,12 @@ export function criaDragao(x, z, lord = false) {
   });
 
   // Cauda sinuosa longa, com segmentos facetados e lâmina no fim.
+  const cauda = []; // RV15.2: coletada p/ ANIMAR (onda propagada na cauda)
   for (let i = 0; i < 11; i++) {
     const zz = (-2.45 - i * 0.48) * s;
     const xx = Math.sin(i * 0.72) * 0.22 * s;
     const yy = (1.45 - i * 0.035) * s;
-    facet((0.45 - i * 0.025) * s, corpoMat, xx, yy, zz, 0.92, 0.74, 1.08);
+    cauda.push(facet((0.45 - i * 0.025) * s, corpoMat, xx, yy, zz, 0.92, 0.74, 1.08));
   }
   cone(0.28 * s, 1.05 * s, osso, Math.sin(11 * 0.72) * 0.22 * s, 1.02 * s, -7.85 * s, -Math.PI / 2);
 
@@ -661,7 +662,7 @@ export function criaDragao(x, z, lord = false) {
     cone((0.18 - i * 0.006) * s, (0.55 - i * 0.018) * s, escuro, 0, yc, zc, 0.08);
   }
 
-  g.userData = { patas, asas, corpoMat, garganta, tipo: 'boss' };
+  g.userData = { patas, asas, corpoMat, garganta, cauda, tipo: 'boss' };
   return g;
 }
 
