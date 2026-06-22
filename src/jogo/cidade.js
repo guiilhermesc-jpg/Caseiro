@@ -296,7 +296,7 @@ export function criaCidade() {
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
   const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), roughness: 1 }); // calçamento das praças
-  aplicaTexturaReal(pisoMat, 'pedra', 7, 7, false, true);
+  aplicaTexturaReal(pisoMat, 'piso_castelo', 5, 5, false, true); // RV14.8: lajões de castelo na praça (spawn premium)
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
