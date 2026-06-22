@@ -180,6 +180,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   // estado/animação da porta (lerp suave no loop via animaProps)
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
   const animPorta = { mesh: dobr, porta: true, alvo: angAberto }; // porta começa ABERTA (entrada livre)
+  const flickers = []; // RV15.5: lamparina/lareira piscam (interior vivo)
 
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
   if (opts.forja) {
@@ -276,6 +277,7 @@ export function criaCasaInterior(x, z, opts = {}) {
     const luzL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8),
       new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffaa3a, emissiveIntensity: 0.95 }));
     luzL.position.y = 0.3; lamparina.add(luzL);
+    flickers.push({ atualiza: (dt, t) => { luzL.material.emissiveIntensity = 0.95 * (0.78 + Math.sin(t * 9) * 0.18 + Math.sin(t * 23) * 0.07); } });
     g.add(lamparina);
     [[-0.9], [0.9]].forEach(([oz]) => {
       const cad = new THREE.Group();
@@ -287,7 +289,8 @@ export function criaCasaInterior(x, z, opts = {}) {
     const lar = new THREE.Group();
     lar.add(meshBox(1.6, 1.6, 0.6, mat(0x8a8276), 0, 0.8, 0));
     lar.add(meshBox(1.0, 0.9, 0.3, mat(0x201510), 0, 0.55, 0.2));
-    lar.add(meshBox(0.6, 0.4, 0.2, mat(0xff7a2a), 0, 0.4, 0.3)); // fogo
+    const fogoLar = meshBox(0.6, 0.4, 0.2, mat(0xff7a2a), 0, 0.4, 0.3); lar.add(fogoLar); // fogo
+    flickers.push({ atualiza: (dt, t) => { fogoLar.scale.set(0.9 + Math.cos(t * 11) * 0.12, 0.8 + Math.sin(t * 13) * 0.22, 1); } });
     lar.position.set(hx - 1.0, 0, hz - 0.6); g.add(lar);
     // tapete
     const tapete = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 1.8), mat(0x7a3a3a));
@@ -318,7 +321,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
   return {
     grupo: g, colisores,
-    animados: [animPorta],
+    animados: [animPorta, ...flickers],
     casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz, portaCol, aberta: true }, // nasce ABERTA
   };
 }

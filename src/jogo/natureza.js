@@ -24,7 +24,8 @@ export function criaLago(x, z, r = 15) {
     new THREE.MeshStandardMaterial({ color: 0xeaf6fa, transparent: true, opacity: 0.45, roughness: 0.5, depthWrite: false }));
   espuma.rotation.x = -Math.PI / 2; espuma.position.y = 0.115; g.add(espuma); // espuma da margem
   const c = r * 0.72;
-  return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }], lago: { x, z, r } };
+  // RV15.5: a água do lago entra na marola (aguas[]) — superfície ondula
+  return { grupo: g, colisores: [{ minX: x - c, maxX: x + c, minZ: z - c, maxZ: z + c }], lago: { x, z, r }, aguas: [agua] };
 }
 
 // --- riacho (faixa de água ao longo de X), com vão para a ponte ---
