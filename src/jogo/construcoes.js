@@ -208,7 +208,13 @@ function texturaReboco() {
 }
 const matParedeCache = {};
 export function matParede(cor) {
-  if (!matParedeCache[cor]) matParedeCache[cor] = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.92, map: texturaReboco() });
+  if (!matParedeCache[cor]) {
+    // RV13.8: reboco PREMIUM (pintado à mão, gerado por IA) tingido pela cor de
+    // cada casa. O ruído procedural fica como fallback instantâneo até carregar.
+    const m = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.92, map: texturaReboco() });
+    aplicaTexturaReal(m, 'reboco', 2, 2, true);
+    matParedeCache[cor] = m;
+  }
   return matParedeCache[cor];
 }
 
