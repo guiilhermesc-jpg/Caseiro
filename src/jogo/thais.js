@@ -13,12 +13,13 @@
 // =============================================================
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { mat, matParede, texturaPedra, VIDRO, aplicaTexturaReal } from './construcoes.js';
+import { mat, matParede, texturaPedra, VIDRO, aplicaTexturaReal, criaPortaoCidade } from './construcoes.js';
 
 export function criaThais(cx, cz, opts = {}) {
   const { HX = 60, HZ = 54, ALT = 9, ESP = 2, gw = 10 } = opts; // Thais maior e com portão/ruas folgados
   const g = new THREE.Group(); g.position.set(cx, 0, cz);
   const colisores = [];
+  const animados = [];
   // colisor em coords do MUNDO (o grupo está transladado p/ cx,cz)
   const col = (lx, lz, w, d) => colisores.push({ minX: cx + lx - w / 2, maxX: cx + lx + w / 2, minZ: cz + lz - d / 2, maxZ: cz + lz + d / 2 });
 
@@ -159,5 +160,37 @@ export function criaThais(cx, cz, opts = {}) {
     g.add(m);
   });
 
-  return { grupo: g, colisores };
+  [
+    criaPortaoCidade(-HX, 0, {
+      rot: Math.PI / 2,
+      nome: 'THAIS',
+      largura: 16,
+      altura: 12.5,
+      corPedra: 0xd2c39d,
+      corTelhado: 0xc0653a,
+      corBandeira: 0x2f8d80,
+      estiloPedra: 'muralha',
+      estiloTelhado: 'telha',
+    }),
+    criaPortaoCidade(0, -HZ, {
+      rot: 0,
+      nome: 'ROTA DO DESERTO',
+      largura: 13.5,
+      altura: 10.8,
+      corPedra: 0xd2c39d,
+      corTelhado: 0xb8742a,
+      corBandeira: 0xd9a522,
+      estiloPedra: 'muralha',
+      estiloTelhado: 'telha',
+    }),
+  ].forEach((p) => {
+    g.add(p.grupo);
+    p.colisores.forEach((c) => colisores.push({
+      minX: c.minX + cx, maxX: c.maxX + cx,
+      minZ: c.minZ + cz, maxZ: c.maxZ + cz,
+    }));
+    if (p.animados) p.animados.forEach((a) => animados.push(a));
+  });
+
+  return { grupo: g, colisores, animados };
 }

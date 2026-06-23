@@ -521,6 +521,157 @@ export function criaMuralha(cx, cz, opts = {}) {
   return { grupo: g, colisores };
 }
 
+// PORTAO DE CIDADE premium: torres, arco, grades, brasao e luzes.
+// O vao central fica livre; colisao so nas torres e pilares laterais.
+export function criaPortaoCidade(x = 0, z = 0, opts = {}) {
+  const {
+    rot = 0,
+    nome = 'VENOR',
+    largura = 15,
+    altura = 12,
+    corPedra = 0xb9b2a4,
+    corTelhado = 0x5c476f,
+    corBandeira = 0x8f2f2a,
+    estiloPedra = 'muralha_castelo',
+    estiloTelhado = 'ardosia',
+  } = opts;
+
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rot;
+  const colisores = [];
+  const animados = [];
+
+  const pedra = new THREE.MeshStandardMaterial({ color: corPedra, roughness: 1 });
+  aplicaTexturaReal(pedra, estiloPedra, 3.2, 2.2, true, true);
+  const pedraClara = mat(0xd8d0bd, 0.95);
+  const madeira = new THREE.MeshStandardMaterial({ color: 0x684524, roughness: 0.88 });
+  aplicaTexturaReal(madeira, 'madeira', 1.6, 1.2, true, true);
+  const ferro = new THREE.MeshStandardMaterial({ color: 0x24272d, metalness: 0.75, roughness: 0.32 });
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.72, roughness: 0.34, emissive: 0x241500, emissiveIntensity: 0.18 });
+  const chamaMat = new THREE.MeshStandardMaterial({ color: 0xffd078, emissive: 0xff8a22, emissiveIntensity: 1.1, roughness: 0.35 });
+  const hx = largura / 2;
+  const torreX = hx + 1.55;
+
+  const addBox = (w, h, d, material, px, py, pz) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    m.position.set(px, py, pz);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
+
+  addBox(largura + 7.5, 0.7, 4.6, pedra, 0, 0.35, 0);
+  addBox(largura - 2.6, 2.1, 3.4, pedra, 0, altura - 1.05, 0);
+  addBox(1.15, altura - 1.4, 3.3, pedra, -hx + 1.0, (altura - 1.4) / 2, 0);
+  addBox(1.15, altura - 1.4, 3.3, pedra, hx - 1.0, (altura - 1.4) / 2, 0);
+
+  [-1, 1].forEach((s) => {
+    const torre = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.65, altura + 2.0, 16), pedra);
+    torre.position.set(s * torreX, (altura + 2.0) / 2, 0);
+    torre.castShadow = torre.receiveShadow = true;
+    g.add(torre);
+
+    const cintaBaixa = new THREE.Mesh(new THREE.CylinderGeometry(2.72, 2.72, 0.35, 16), pedraClara);
+    cintaBaixa.position.set(s * torreX, 2.4, 0);
+    cintaBaixa.castShadow = true;
+    g.add(cintaBaixa);
+    const cintaAlta = cintaBaixa.clone();
+    cintaAlta.position.y = altura - 1.2;
+    g.add(cintaAlta);
+
+    const teto = new THREE.Mesh(new THREE.ConeGeometry(3.0, 4.3, 16), matTelhaEstilo(corTelhado, estiloTelhado));
+    teto.position.set(s * torreX, altura + 3.15, 0);
+    teto.castShadow = true;
+    g.add(teto);
+
+    const ponta = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), ouro);
+    ponta.position.set(s * torreX, altura + 5.65, 0);
+    ponta.castShadow = true;
+    g.add(ponta);
+
+    const bannerMat = new THREE.MeshStandardMaterial({ color: corBandeira, roughness: 0.82, side: THREE.DoubleSide });
+    const pano = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 2.0, 3, 4), bannerMat);
+    pano.position.set(s * (hx - 2.05), altura - 4.0, 1.78);
+    pano.castShadow = true;
+    g.add(pano);
+    animados.push({ mesh: pano, balanca: true, fase: Math.random() * 6 });
+
+    const lamp = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.92, 8), chamaMat);
+    lamp.position.set(s * (hx - 2.35), 4.7, 1.92);
+    lamp.castShadow = true;
+    g.add(lamp);
+    animados.push({ chama: lamp, chamaMat, fase: Math.random() * 6 });
+  });
+
+  // Portas abertas: leitura de entrada, sem fechar a passagem do jogador.
+  [-1, 1].forEach((s) => {
+    const folha = new THREE.Group();
+    folha.position.set(s * 1.0, 0, 1.55);
+    folha.rotation.y = s * -0.58;
+    const painel = addBox(2.7, 5.45, 0.34, madeira, s * 1.45, 2.9, 0);
+    folha.add(painel);
+    [1.45, 2.85, 4.25].forEach((yy) => folha.add(addBox(2.8, 0.16, 0.42, ferro, s * 1.45, yy, 0.03)));
+    const cravoGeo = new THREE.SphereGeometry(0.08, 6, 6);
+    for (let i = 0; i < 8; i++) {
+      const cravo = new THREE.Mesh(cravoGeo, ferro);
+      cravo.position.set(s * (0.45 + (i % 2) * 2.0), 1.35 + Math.floor(i / 2) * 0.85, 0.24);
+      folha.add(cravo);
+    }
+    g.add(folha);
+  });
+
+  // Grade elevada no arco, dando cara de fortificacao sem bloquear.
+  const grade = new THREE.Group();
+  grade.position.set(0, 5.9, 1.66);
+  for (let i = -3; i <= 3; i++) {
+    const barra = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.4, 0.16), ferro);
+    barra.position.x = i * 0.72;
+    grade.add(barra);
+  }
+  [-1.25, 0, 1.25].forEach((yy) => grade.add(addBox(5.0, 0.1, 0.18, ferro, 0, yy, 0)));
+  g.add(grade);
+
+  // Tabuleta de chegada com brasao desenhado no canvas.
+  const cnv = document.createElement('canvas');
+  cnv.width = 512; cnv.height = 160;
+  const c = cnv.getContext('2d');
+  c.fillStyle = '#4a311d'; c.fillRect(0, 0, 512, 160);
+  c.fillStyle = '#70502e'; c.fillRect(14, 14, 484, 132);
+  c.strokeStyle = '#d9b25a'; c.lineWidth = 8; c.strokeRect(22, 22, 468, 116);
+  c.fillStyle = '#f4e4ba'; c.font = 'bold 42px Georgia'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(nome.toUpperCase(), 256, 92);
+  c.fillStyle = '#d9b25a';
+  c.beginPath(); c.moveTo(256, 24); c.lineTo(287, 55); c.lineTo(256, 47); c.lineTo(225, 55); c.closePath(); c.fill();
+  const tabMat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnv), roughness: 0.82 });
+  const tab = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 2.1), tabMat);
+  tab.position.set(0, altura - 2.85, 1.82);
+  tab.castShadow = true;
+  g.add(tab);
+
+  const brasao = new THREE.Mesh(new THREE.OctahedronGeometry(0.62, 0), ouro);
+  brasao.position.set(0, altura + 0.45, 1.95);
+  brasao.rotation.y = Math.PI / 4;
+  g.add(brasao);
+  animados.push({ mesh: brasao, gira: 0.28, flutua: true, baseY: altura + 0.45, fase: Math.random() * 6 });
+
+  const cos = Math.cos(rot), sin = Math.sin(rot);
+  const world = (lx, lz) => ({ x: x + lx * cos + lz * sin, z: z - lx * sin + lz * cos });
+  const col = (lx, lz, w, d) => {
+    const p = world(lx, lz);
+    const girado = Math.abs(sin) > 0.5;
+    const ww = girado ? d : w;
+    const dd = girado ? w : d;
+    colisores.push({ minX: p.x - ww / 2, maxX: p.x + ww / 2, minZ: p.z - dd / 2, maxZ: p.z + dd / 2 });
+  };
+  col(-torreX, 0, 4.6, 4.6);
+  col(torreX, 0, 4.6, 4.6);
+  col(-hx + 1.0, 0, 1.35, 3.7);
+  col(hx - 1.0, 0, 1.35, 3.7);
+
+  return { grupo: g, colisores, animados };
+}
+
 // ---- plantas ----
 export function criaPinheiro(x = 0, z = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z);

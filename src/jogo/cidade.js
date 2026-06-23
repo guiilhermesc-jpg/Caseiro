@@ -3,7 +3,7 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaMuralha, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, criaMansao, criaGuildHouse, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaMuralha, criaPortaoCidade, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, criaMansao, criaGuildHouse, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira, criaCranioDragao } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
@@ -392,27 +392,15 @@ export function criaCidade() {
   // === PORTÕES DO VILAREJO (RV5.4): paliçada de madeira com tabuleta nas
   // 3 entradas — a vila ganha rosto (e quem chega sabe onde chegou)
   function portaoVila(px, pz, rotY, nome) {
-    const gP = new THREE.Group(); gP.position.set(px, 0, pz); gP.rotation.y = rotY;
-    const madP = mat(0x6e4a2a, 1);
-    [-5, 5].forEach((ox) => {
-      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 7.5, 8), madP);
-      poste.position.set(ox, 3.75, 0); poste.castShadow = true; gP.add(poste);
-      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.8, 8), madP);
-      ponta.position.set(ox, 7.9, 0); gP.add(ponta);
-    });
-    const travessa = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.7, 0.7), madP);
-    travessa.position.y = 6.6; travessa.castShadow = true; gP.add(travessa);
-    const cnvP = document.createElement('canvas'); cnvP.width = 256; cnvP.height = 64;
-    const cp = cnvP.getContext('2d');
-    cp.fillStyle = '#7a5a32'; cp.fillRect(0, 0, 256, 64);
-    cp.fillStyle = '#f0e8d0'; cp.font = 'bold 26px Arial'; cp.textAlign = 'center'; cp.textBaseline = 'middle';
-    cp.fillText(nome, 128, 34);
-    const tab = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.1, 0.18),
-      new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnvP), roughness: 0.9 }));
-    tab.position.y = 5.6; gP.add(tab);
-    scene.add(gP); solidos.push(gP);
-    const lados = Math.abs(Math.sin(rotY)) > 0.5 ? [[0, -5], [0, 5]] : [[-5, 0], [5, 0]];
-    lados.forEach(([ox, oz]) => obstaculos.push({ minX: px + ox - 0.7, maxX: px + ox + 0.7, minZ: pz + oz - 0.7, maxZ: pz + oz + 0.7 }));
+    add(criaPortaoCidade(px, pz, {
+      rot: rotY,
+      nome,
+      largura: 15.5,
+      altura: 11.5,
+      corPedra: 0xbdb5a6,
+      corTelhado: 0x6a4a8a,
+      corBandeira: 0x7a2f4c,
+    }));
   }
   portaoVila(72, 0, Math.PI / 2, 'VILAREJO DE VENOR');      // leste (estrada de Thais)
   portaoVila(-86, -30, Math.PI / 2, 'VILAREJO DE VENOR');   // oeste (estrada de Venore)
@@ -1005,19 +993,17 @@ export function criaCidade() {
 
     // ====== RV4.1 — VENORE IMPONENTE (a capital cresce de verdade) ======
     // PORTÃO MONUMENTAL na entrada da estrada (2 torres + arco passável)
-    {
-      const pedraPort = mat(0xb9a486, 1);
-      [[-240, -39.5], [-240, -20.5]].forEach(([tx, tz]) => {
-        const torre = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 13, 10), pedraPort);
-        torre.position.set(tx, 6.5, tz); torre.castShadow = torre.receiveShadow = true; scene.add(torre);
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(2.8, 4.2, 10), mat(0x2f8d80, 1));
-        cone.position.set(tx, 15.1, tz); cone.castShadow = true; scene.add(cone);
-        obstaculos.push({ minX: tx - 2.2, maxX: tx + 2.2, minZ: tz - 2.2, maxZ: tz + 2.2 });
-      });
-      const arcoP = new THREE.Mesh(new THREE.BoxGeometry(3, 3.4, 17), pedraPort);
-      arcoP.position.set(-240, 9.2, -30); arcoP.castShadow = true; scene.add(arcoP); // passa POR BAIXO
-      add(criaBandeira(-244, -42, 0xd9a522)); add(criaBandeira(-244, -18, 0x9c2a2a));
-    }
+    add(criaPortaoCidade(-240, -30, {
+      rot: Math.PI / 2,
+      nome: 'VENORE',
+      largura: 18,
+      altura: 13.5,
+      corPedra: 0xb9a486,
+      corTelhado: 0x2f8d80,
+      corBandeira: 0xd9a522,
+      estiloPedra: 'pedra_castelo',
+      estiloTelhado: 'ardosia',
+    }));
 
     // === DISTRITO NORTE: Largo das Guildas + Catedral + casario ===
     const largoG = new THREE.Mesh(new THREE.BoxGeometry(22, 0.12, 16), pisoMat);

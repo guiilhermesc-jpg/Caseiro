@@ -9,6 +9,9 @@ para o jogo.
 - `public/patches/rv8-pacto-da-semana.png`
   - origem: gerado via skill `imagegen` em 15/06/2026.
   - uso: arte oficial do Patch RV8, tela de patch e pagina de instalacao.
+- `public/patches/rv16-1-portoes-continente.png`
+  - origem: gerado via skill `imagegen` em 22/06/2026.
+  - uso: arte oficial do Patch RV16.1, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
 
 ## Assets existentes
 

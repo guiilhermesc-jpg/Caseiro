@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV16.0 (v111)';
+const VERSAO = 'RV16.1 (v112)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1344,6 +1344,21 @@ let petAlvo = null, petProxMordida = 0;
 function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
   const u = g && g.userData;
   if (!u) return;
+  const dtAtaque = u._ataquePulso !== undefined ? tempo - u._ataquePulso : Infinity;
+  if (dtAtaque < 0.34) {
+    const golpe = Math.sin((dtAtaque / 0.34) * Math.PI);
+    g.rotation.x = (u._ataqueBaseRotX || 0) - golpe * 0.22;
+    g.scale.z = (u._ataqueBaseScaleZ || g.scale.z) * (1 + golpe * 0.12);
+    if (u.pescoco) u.pescoco.rotation.x = -golpe * 0.22;
+  } else if (dtAtaque < 0.58) {
+    const volta = (dtAtaque - 0.34) / 0.24;
+    g.rotation.x = (g.rotation.x || 0) + ((u._ataqueBaseRotX || 0) - (g.rotation.x || 0)) * volta;
+    if (u._ataqueBaseScaleZ) g.scale.z += (u._ataqueBaseScaleZ - g.scale.z) * volta;
+  } else if (u._ataquePulso !== undefined) {
+    g.rotation.x = u._ataqueBaseRotX || 0;
+    if (u._ataqueBaseScaleZ) g.scale.z = u._ataqueBaseScaleZ;
+    delete u._ataquePulso; delete u._ataqueBaseRotX; delete u._ataqueBaseScaleZ;
+  }
   if (u.patas) {
     // ao VOAR o dragão recolhe as patas; no chão, anda
     const sp = voando ? 0.5 : (movendo ? Math.sin(tempo * 12 * ritmo) * 0.65 : 0);
@@ -1370,6 +1385,14 @@ function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
     }
   } else if (u.cauda) u.cauda.rotation.y = Math.sin(tempo * 2.8 * ritmo) * 0.2;
   else if (u.rabo) u.rabo.rotation.y = Math.sin(tempo * 3 * ritmo) * 0.38;
+}
+function marcaAtaqueCompanheiro(g) {
+  const u = g && g.userData;
+  if (!u) return;
+  u._ataquePulso = tempo;
+  u._ataqueBaseRotX = g.rotation.x || 0;
+  u._ataqueBaseScaleZ = g.scale.z || 1;
+  if (u.garganta) u.garganta.userData._flare = tempo;
 }
 function montaOuDesmonta() {
   if (!gato) { mostraMensagem('🐾 Você precisa DOMAR um bicho primeiro (procure os crachás 🐾 pelo mundo).'); return; }
@@ -4185,8 +4208,17 @@ function passo() {
             if (sd.ml) dnP = Math.round(dnP * (1 + Math.min(30, sd.ml) * 0.025)); // ML treinado dormindo em imóveis
             if (sd.afinidade === (ehNoite ? 'noite' : 'dia')) dnP = Math.round(dnP * 1.5);
           }
+          const golpeDragao = ehDragaoPet(petTipo);
+          marcaAtaqueCompanheiro(gato);
           petAlvo.hp -= dnP; petAlvo.piscar = 0.15;
-          petAlvo._flinch = { t0: tempo, dur: 0.16, dirX: petAlvo.g.position.x - gato.position.x, dirZ: petAlvo.g.position.z - gato.position.z };
+          petAlvo._flinch = {
+            t0: tempo,
+            dur: golpeDragao ? 0.24 : 0.16,
+            forca: golpeDragao ? 0.34 : 0.18,
+            abaixa: golpeDragao ? 0.15 : 0.08,
+            dirX: petAlvo.g.position.x - gato.position.x,
+            dirZ: petAlvo.g.position.z - gato.position.z,
+          };
           atualizaBarraHP(petAlvo);
           if (pg.userData.corpoMat) pg.userData.corpoMat.emissive.setHex(0x882020);
           if (petAlvo.hp <= 0) { mataBicho(petAlvo); petAlvo = null; }
@@ -4226,12 +4258,22 @@ function passo() {
   for (const r of ratos) {
     const fl = r._flinch; if (!fl) continue;
     const f = (tempo - fl.t0) / fl.dur;
-    if (f >= 1) { r._flinch = null; if (r.g) r.g.scale.y = r._by || 1; continue; }
+    if (f >= 1) {
+      r._flinch = null;
+      if (r.g) {
+        r.g.scale.y = r._by || 1;
+        if (r._rx !== undefined) r.g.rotation.x = r._rx;
+      }
+      continue;
+    }
     if (r._by === undefined) r._by = r.g.scale.y;
-    const k = Math.sin(f * Math.PI) * 0.18, d = Math.hypot(fl.dirX, fl.dirZ) || 1;
+    if (r._rx === undefined) r._rx = r.g.rotation.x || 0;
+    const pulso = Math.sin(f * Math.PI);
+    const k = pulso * (fl.forca || 0.18), d = Math.hypot(fl.dirX, fl.dirZ) || 1;
     r.g.position.x += (fl.dirX / d) * k * dt * 8;
     r.g.position.z += (fl.dirZ / d) * k * dt * 8;
-    r.g.scale.y = (r._by || 1) * (1 - Math.sin(f * Math.PI) * 0.08);
+    r.g.scale.y = (r._by || 1) * (1 - pulso * (fl.abaixa || 0.08));
+    r.g.rotation.x = (r._rx || 0) + pulso * 0.12;
   }
   atualizaPresencaMonstros(dt); // RV7.0: aggro, telegraph e investida dos monstros principais
 

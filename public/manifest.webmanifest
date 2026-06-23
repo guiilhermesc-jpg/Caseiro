@@ -14,11 +14,11 @@
   ],
   "screenshots": [
     {
-      "src": "/patches/rv16-moradias-dragoes.png",
+      "src": "/patches/rv16-1-portoes-continente.png",
       "sizes": "1536x1024",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Venor - Moradias e Dragoes"
+      "label": "Venor - Portoes e Continente"
     }
   ]
 }

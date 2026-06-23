@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.0 (v111)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.1 (v112)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.0 (v111)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.1 (v112)'`. **Suba a cada entrega.**
 
 ---
 
@@ -128,6 +128,16 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `pet.js` adicionou variantes 3D tintadas: `furiaDoDia`, `furiaDaNoite`, `dragaoPantano`, `dragaoGelo`, `dragaoVeia`.
 - `cidade.js` adicionou vapor nos bueiros e mansões/guildhouse; `props.js` ganhou `sway`.
 - Documento da rodada: `docs/RV16_0_MORADIAS_DRAGOES.md`.
+
+## 7.1 Estado novo do RV16.1 (Codex)
+
+- `public/patches/rv16-1-portoes-continente.png` é a arte oficial do patch; conectada em `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js`.
+- `src/jogo/construcoes.js` ganhou `criaPortaoCidade`: torres, arco, grade elevada, portas abertas, tabuleta, brasão, estandartes e chamas animadas, com vão central livre.
+- `src/jogo/cidade.js` aplica o novo portão em Venor e Venore.
+- `src/jogo/thais.js` aplica o novo portão em Thais e no acesso sul da Rota do Deserto; agora retorna `animados`.
+- `src/main3d.js` subiu para **RV16.1 (v112)** e a mordida do dragão-companheiro ganhou pulso corporal, garganta flamejante e flinch mais forte no alvo.
+- `docs/BIBLIA_CONTINENTE_VENOR.md` organiza continente, macro-regiões, hunts, quest chains, economia e cronograma.
+- Documento da rodada: `docs/RV16_1_PORTOES_CONTINENTE.md`.
 
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 

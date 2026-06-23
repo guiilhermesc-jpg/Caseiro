@@ -1,0 +1,240 @@
+# Biblia do Continente de Venor
+
+Data: 2026-06-22
+Base visual: `public/patches/rv16-1-portoes-continente.png`
+
+Este documento organiza a expansao grande de Venor como MMO autoral. A regra e:
+viagem longa precisa valer a pena. Cada caminho deve ter perigo, historia,
+economia, atalhos futuros e uma razao para o jogador lembrar dele.
+
+## Pilares
+
+1. **O caminho e conteudo**
+   - Rotas entre cidades nao sao vazias.
+   - Toda estrada longa tem marco, descanso, risco, caça e historia.
+   - Distancia grande so entra quando houver variedade suficiente no trajeto.
+
+2. **Hunts com identidade**
+   - Cada hunt tem criatura principal, risco, loot, requisito e saida de emergencia.
+   - Boss raro nao e enfeite: muda economia, quest, montaria ou acesso.
+   - Eventos exigem coordenacao quando forem melhores em grupo.
+
+3. **Casas e guildhouses com valor**
+   - Casa simples: cama, bau/depot e retorno social.
+   - Mansao: descanso melhor, bonus de ML do dragao e jardim/estabulo.
+   - Guildhouse: banco, depot, sala de trofeus, lixeira, quadro de contratos e preparacao para hunts.
+   - Aluguel deve ter ciclo semanal, vencimento e beneficio suficiente para importar.
+
+4. **Dragoes sao a joia do jogo**
+   - Todo dragao precisa de territorio, comportamento, animacao e cadeia de progressao.
+   - Doma adulta exige quest longa, item raro e chance baixa.
+   - Draptor e a montaria rara central do primeiro arco: invasao, boss, captura rara e versao lendaria.
+
+5. **Tecnologia e magia se cruzam**
+   - A origem e a Veia Viva: pedra, agua, lava, memoria.
+   - A expansao das maquinas nao nega a magia; ela tenta industrializar a Veia.
+   - Aliens entram depois como misterio externo, nao como quebra brusca de tom.
+
+## Macro-regioes
+
+### 1. Coracao de Venor
+
+Funcao: inicio, aprendizado, moradia inicial, primeiras profissoes, primeiras casas.
+
+Conteudos:
+- Vilarejo de Venor murado;
+- praca, templo, hospital, escola, delegacia;
+- casas alugaveis pequenas;
+- mansoes dos fundadores;
+- portoes como primeira leitura de cidade viva.
+
+Hunts:
+- ratos/esgoto;
+- lobos da ponte;
+- esqueletos do cemiterio;
+- filhote de dragao como primeiro arco heroico.
+
+### 2. Venore dos Canais
+
+Funcao: capital mercantil, guildas, pântano, armaduras, contratos e economia.
+
+Conteudos:
+- canal, porto, armazens, passarela elevada;
+- guildhouse principal;
+- catedral/catacumbas;
+- pantano com salgueiros, cobras, trolls e dragoes do pantano.
+
+Hunts:
+- Brejo Profundo;
+- Canal dos Contrabandistas;
+- Dragao do Pantano;
+- eventos de mascate nas rotas.
+
+### 3. Thais Solar
+
+Funcao: cidade de rota longa, comercio de deserto, treinamento de resistencia.
+
+Conteudos:
+- muralha de arenito;
+- portao oeste para Venor;
+- portao sul para Rota do Deserto;
+- templo, mercado, casas mediterraneas.
+
+Hunts:
+- escorpioes;
+- ciclopes em ruinas secas;
+- Catedral da Lua Coada;
+- dragao de areia/furia solar em fase futura.
+
+### 4. Pico e Montanhas Geladas
+
+Funcao: desafio vertical, gelo, cristais, dragoes raros e viagem perigosa.
+
+Conteudos:
+- Covil do Dragao;
+- Pico do Dragao;
+- ossadas, lava fria, cristais do pico;
+- pontes, cavernas e rotas de montanha.
+
+Hunts:
+- Dragao de Gelo;
+- Dragao do Pico;
+- Colosso em boss raro;
+- mineracao de cristais para domar ou evoluir dragao.
+
+### 5. Noctaria e a Lua Partida
+
+Funcao: noite, magia, obsidiana, Drakari e efeitos de afinidade.
+
+Conteudos:
+- cidade noturna;
+- fenda;
+- pedras-veio;
+- Arconte e Coracao de Obsidiana.
+
+Hunts:
+- Furia da Noite;
+- Drakari;
+- Beholder/magia;
+- cadeia da Sela Draconica.
+
+### 6. Fronteira Ferrum
+
+Funcao: futuro arco das maquinas.
+
+Conteudos previstos:
+- clan industrial rival;
+- forjas de Veia presa;
+- roboides, humanoides mecanicos e armaduras vivas;
+- minas com trilhos e portoes de ferro.
+
+Regra de design:
+- Maquinas devem parecer consequencia da lore, nao genero aleatorio.
+- Loot delas alimenta equipamentos, montarias mecanicas e craft avancado.
+
+### 7. Costa da Estrela
+
+Funcao: misterio externo e entrada futura dos aliens.
+
+Conteudos previstos:
+- litoral de meteoros;
+- cristais roxos;
+- ruinas que nao obedecem a arquitetura humana;
+- criaturas que interagem com a Veia de forma errada.
+
+Regra de design:
+- Aliens devem chegar como "anomalia de mundo", primeiro por sinais, depois por contato.
+
+## Hunts de dragoes
+
+| Hunt | Local | Nivel alvo | Requisito | Recompensa central | Observacao |
+| --- | --- | ---: | --- | --- | --- |
+| Filhote do Pico | Pico do Dragao | 8-12 | Escama de Dragao | pet dragaozinho | primeira ligacao afetiva |
+| Pantano Vivo | Venore/Brejo | 12-18 | Gota da Veia | Dragao do Pantano | noite e veneno importam |
+| Furia do Dia | Rota solar/Thais | 16-24 | prova em horario de dia | Furia do Dia | afinidade solar |
+| Furia da Noite | Noctaria/Fenda | 18-26 | Coracao de Obsidiana | Furia da Noite | afinidade noturna |
+| Gelo do Pico | Montanhas | 20-30 | Cristal do Pico | Dragao de Gelo | rota vertical e longa |
+| Draptor | Invasoes raras | 22+ | Sela Draconica | Draptor | captura rara |
+| Draptor Lendario | Invasao rara | 28+ | Sela + cadeia completa | montaria lendaria | chance baixissima |
+| Dragao da Veia | Nodos da Veia | 35+ | Reliquia de Vorag | Dragao da Veia | arco lendario |
+| Colosso | Montanha profunda | 45+ | acesso de guilda | trofeu/loot mitico | exige grupo |
+| Tres Cabecas | Noctaria profunda | 45+ | cadeia lunar | montaria/boss raro | boss 3D futuro |
+
+## Cadeias de quest que precisam se cruzar
+
+1. **Ovo do Pico -> Filhote -> ML**
+   - Hela envia ao Pico.
+   - Jogador consegue dragaozinho.
+   - Dormir em casa treina ML do dragao.
+   - Isso conecta moradia, economia e combate.
+
+2. **Guilda de Venore -> Draptor**
+   - Derrotar dragoes prova valor.
+   - Entrar na guilda libera guildhouse/contratos.
+   - Hela consagra Sela Draconica.
+   - Invasao aleatoria abre chance de Draptor.
+
+3. **Noctaria -> Obsidiana -> Maquinas**
+   - Coracao de Obsidiana mostra a Veia presa.
+   - O clan Ferrum aprende a repetir isso com metal.
+   - Futuras criaturas roboides usam energia roubada da Veia.
+
+4. **Pico -> Gelo -> Colosso**
+   - Cristais do pico primeiro servem para dragao de gelo.
+   - Depois viram chave para cavernas altas.
+   - Colosso exige grupo, suprimentos e rota preparada.
+
+5. **Costa da Estrela -> Aliens**
+   - Primeiro entram sinais no mapa.
+   - Depois materiais estranhos.
+   - Depois criatura rara.
+   - So entao a cidade/faccao alien aparece.
+
+## Economia e dificuldade
+
+Regras de balanceamento:
+- item raro deve ter uso antes de ter venda alta;
+- rota dificil precisa de retorno calculavel;
+- dungeon boa deve gastar recurso e tempo;
+- morte deve doer, mas nao destruir a conta;
+- quanto maior a recompensa, maior a preparacao necessaria.
+
+Exemplo de ciclo:
+1. jogador aluga casa;
+2. dorme para recuperar e fortalecer dragao;
+3. compra suprimentos;
+4. viaja de carroca ate cidade avancada;
+5. caminha por rota perigosa;
+6. farma hunt especifica;
+7. volta para vender, depositar e renovar contrato.
+
+## Cronograma recomendado
+
+### RV16.2 - Bichos com presenca
+- Animar cabeca/olhos seguindo alvo.
+- Armas de orc/ciclope/drakari sobem no golpe.
+- Aranha/escorpiao/caranguejo ganham membros vivos.
+- Dragoes boss recebem reacao de dano mais forte.
+
+### RV16.3 - Interiores de imoveis
+- Interior de mansao.
+- Interior de guildhouse.
+- Sala de trofeus.
+- Estabulo/berco do dragao.
+
+### RV16.4 - Aluguel semanal e economia
+- vencimento;
+- renovacao;
+- avisos;
+- perda de beneficios sem apagar itens.
+
+### RV16.5 - Hunt do Pantano Vivo
+- territorio do Dragao do Pantano;
+- veneno, agua, lama, pontes;
+- item-chave para doma rara.
+
+### RV17.0 - Continente faseado
+- ampliar rotas reais;
+- mapa/telemetria de distancia;
+- carrocas com custo;
+- primeira rota longa remodelada do zero.

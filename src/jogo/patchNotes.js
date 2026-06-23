@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv16-moradias-dragoes';
+const PATCH_ID = 'rv16-1-portoes-continente';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = '🐉 PATCH RV16';
+  badge.textContent = 'PATCH RV16.1';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -37,32 +37,32 @@ export function criaPatchNotes() {
     + 'box-shadow:0 18px 70px rgba(0,0,0,.68);');
   card.innerHTML = `
     <div style="height:300px;background:
-      linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.34),rgba(5,8,10,.06)),
-      url('/patches/rv16-moradias-dragoes.png') center/cover no-repeat;
+      linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.38),rgba(5,8,10,.08)),
+      url('/patches/rv16-1-portoes-continente.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
-      <div style="position:absolute;left:28px;bottom:24px;max-width:560px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Moradias & Dragões</div>
+      <div style="position:absolute;left:28px;bottom:24px;max-width:590px;">
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.1</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Portoes & Continente</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Casas agora têm valor real: aluguel, depósito, banco, lixeira e descanso que fortalece o ML do dragão.
-          Venor também recebe mansões, guildhouse, vapor nos bueiros, vento nas plantas e novas linhagens raras.
+          Venor ganha uma linguagem visual de cidade-fortaleza e uma planta de continente para as proximas hunts:
+          rotas longas, biomas com identidade, dragoes raros, fronteira das maquinas e misterio alem-mar.
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:18px;padding:22px;">
       <section>
-        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direção do patch</h2>
+        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Venor ganha uma camada de valor persistente: imóveis deixam de ser decoração e passam a ser
-          objetivo econômico. Alugar uma casa, mansão ou guildhouse desbloqueia serviços e descanso; dormir
-          treina o <b>ML do dragão</b>, criando uma rotina de progressão mais próxima de RPG clássico.
+          Este update troca entradas simples por portoes com torres, brasao, grades, estandartes e luzes animadas.
+          A ideia e que cada chegada a uma cidade pareca uma fronteira importante, como nos RPGs em que a viagem
+          ate uma nova regiao ja faz parte da recompensa.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Imóveis alugáveis:</b> casas, mansões e guildhouse com contrato salvo por personagem.</li>
-          <li><b>Benefícios reais:</b> depósito, banco, lixeira e cama para recuperar vida/mana e treinar ML do dragão.</li>
-          <li><b>Casario repaginado:</b> mansões maiores, pórticos, sacadas, alas, torres, jardins e guildhouse com estandartes.</li>
-          <li><b>Mundo vivo:</b> bueiros soltam vapor e arbustos/pinheiros de grupo balançam ao vento.</li>
-          <li><b>Novas linhagens:</b> Fúria do Dia, Fúria da Noite, Dragão do Pântano, Dragão de Gelo e Dragão da Veia.</li>
+          <li><b>Portoes redesenhados:</b> Venor, Venore e Thais recebem entradas maiores, passaveis e animadas.</li>
+          <li><b>Continente draconico:</b> mapa-guia oficial para organizar cidades, rotas, montanhas, pantanos e desertos.</li>
+          <li><b>Hunts conectadas:</b> cada linhagem de dragao passa a ter territorio, pre-requisito e papel na lore.</li>
+          <li><b>Offline-first:</b> o patch novo entra no cache do app instalavel para jogar solo mesmo sem internet.</li>
+          <li><b>Proxima frente:</b> reacoes proporcionais dos bichos, domar dragoes adultos e variantes de bosses raros.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -71,8 +71,8 @@ export function criaPatchNotes() {
           ${estadoMascate.texto}
         </p>
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
-          Mascate: Terça, Quinta e Sábado.<br>
-          Abra a ficha do herói com a tecla <b>C</b> (ou o botão 📜) e o Bestiário no 🐲.<br>
+          Mascate: Terca, Quinta e Sabado.<br>
+          Abra a ficha do heroi com a tecla <b>C</b> e o Bestiario pelo painel do jogo.<br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>
       </aside>
