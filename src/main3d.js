@@ -31,6 +31,7 @@ import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜�
 import { criaCidadeNuvens } from './jogo/nuvens.js'; // ☁️🐉 Aurélia, a Cidade nas Nuvens
 import { criaAtmosfera } from './jogo/atmosfera.js'; // ✨ poeira/pólen no ar (RV11.0)
 import { texPBR } from './jogo/texturas.js'; // 💧 normal map de ondas da água (RV11.7)
+import { criaMansaoInterior, criaGuildHouseInterior } from './jogo/interiores.js';
 import { criaAudio } from './jogo/audio.js';
 import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
@@ -84,7 +85,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV16.2 (v113)';
+const VERSAO = 'RV16.3 (v114)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1079,6 +1080,7 @@ const bestiario = criaBestiario();
 function achaInterativo() {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
+    if (it.zona && (!noEsgoto || !subsoloAtual || subsoloAtual.id !== it.zona)) continue;
     if (it._off) continue; // coletável colhido (esperando renascer)
     if (Math.abs((it.y || 0) - avatar.position.y) > 6) continue; // mesmo "andar" (superfície × esgoto)
     const d = Math.hypot(it.x - avatar.position.x, it.z - avatar.position.z);
@@ -1089,6 +1091,7 @@ function achaInterativo() {
 function achaInterativoNoPonto(x, z) {
   let melhor = null, melhorD = Infinity;
   for (const it of interativos) {
+    if (it.zona && (!noEsgoto || !subsoloAtual || subsoloAtual.id !== it.zona)) continue;
     if (it._off) continue;
     if (Math.abs((it.y || 0) - avatar.position.y) > 6) continue;
     const dPonto = Math.hypot(it.x - x, it.z - z);
@@ -2084,6 +2087,39 @@ const IMOVEIS = [
   { id: 'guildhouse_venore', nome: 'Salão das Guildas', tipo: 'Guildhouse', x: -312, z: 27, custo: 920, aluguel: 75, ml: 8, xpDragao: 620, requerGuilda: true,
     beneficios: { depot: true, banco: true, lixo: true, dormir: true, guilda: true } },
 ];
+const interioresImoveis = {};
+function acaoInteriorImovel(def, kind) {
+  if (kind === 'sair') { saiInteriorImovel(def); return; }
+  if (kind === 'depot') { abreCofre(); return; }
+  if (kind === 'banco') { abreBancoImovel(def); return; }
+  if (kind === 'lixo') { limpaLixoImovel(def); return; }
+  if (kind === 'dormir') { dormirNoImovel(def); return; }
+  if (kind === 'guilda') {
+    dialogo.abre('Mesa de Conselho', 'Rotas, hunts e tarefas da guilda ficam marcadas aqui. Este salao ja serve como base social; nas proximas rodadas ele vira centro de missoes de grupo.', [
+      { texto: 'Entendi', onClick: () => dialogo.fecha() },
+    ]);
+  }
+}
+function preparaInteriorImovel(def, idx) {
+  if (def.tipo !== 'Mansão' && def.tipo !== 'Guildhouse') return;
+  const y = def.tipo === 'Guildhouse' ? -170 : -120 - idx * 34;
+  const interior = def.tipo === 'Guildhouse'
+    ? criaGuildHouseInterior({ id: def.id, nome: def.nome, y })
+    : criaMansaoInterior({ id: def.id, nome: def.nome, y });
+  interior.saidas = [{ x: def.x, z: def.z }];
+  interior.grupo.visible = false;
+  scene.add(interior.grupo);
+  (interior.animados || []).forEach((a) => animados.push(a));
+  (interior.interativos || []).forEach((p) => {
+    interativos.push({ ...p, zona: interior.id, onAcao: () => acaoInteriorImovel(def, p.kind) });
+  });
+  interioresImoveis[def.id] = interior;
+}
+IMOVEIS.forEach(preparaInteriorImovel);
+function escondeZonasCarregadas() {
+  [esgoto, catacumbas, criptaProfunda, cavernasPico, irmas1, catedralI, aurelia, ...Object.values(interioresImoveis)]
+    .forEach((z) => { if (z && z.grupo) z.grupo.visible = false; });
+}
 function estadoImovel(id) {
   if (!imoveisEstado[id]) imoveisEstado[id] = { alugado: false, corIdx: 0, ultimoSono: -9999 };
   return imoveisEstado[id];
@@ -2168,6 +2204,38 @@ function alugaImovel(def) {
   mostraMensagem(`🏠 Você alugou ${def.nome}. Agora esse lugar tem valor real.`);
   abreImovel(def);
 }
+function entraInteriorImovel(def) {
+  const interior = interioresImoveis[def.id];
+  if (!interior) { mostraMensagem('Este imovel ainda usa interior direto na superficie.'); return; }
+  if (montado) { montado = false; mostraMensagem('Voce desmontou para entrar no imovel.'); }
+  Object.values(interioresImoveis).forEach((z) => { if (z && z.grupo) z.grupo.visible = false; });
+  interior.grupo.visible = true;
+  subsoloAtual = interior;
+  chaoY = interior.y;
+  areaAtiva = interior.bounds;
+  noEsgoto = true;
+  const sp = interior.spawn || { x: 0, z: 0 };
+  avatar.position.set(sp.x, interior.y, sp.z);
+  velAvatarX = 0; velAvatarZ = 0; vy = 0; noChao = true;
+  hemi.intensity = 0.2; sun.intensity = 0.05;
+  minimapa.esconde();
+  sons.porta();
+  mostraMensagem(`Voce entrou em ${def.nome}.`);
+}
+function saiInteriorImovel(def) {
+  const interior = interioresImoveis[def.id];
+  if (interior && interior.grupo) interior.grupo.visible = false;
+  chaoY = 0;
+  areaAtiva = areaSuperficie();
+  noEsgoto = false;
+  subsoloAtual = esgoto;
+  const sx = def.x, sz = def.z;
+  avatar.position.set(sx, alturaTerreno(sx, sz), sz);
+  velAvatarX = 0; velAvatarZ = 0; vy = 0; noChao = true;
+  minimapa.mostra();
+  sons.porta();
+  mostraMensagem(`Voce saiu de ${def.nome}.`);
+}
 function abreImovel(def) {
   const st = estadoImovel(def.id);
   if (!st.alugado) {
@@ -2178,6 +2246,7 @@ function abreImovel(def) {
     return;
   }
   const ops = [];
+  if (interioresImoveis[def.id]) ops.push({ texto: 'Entrar no interior', onClick: () => { dialogo.fecha(); entraInteriorImovel(def); } });
   if (def.beneficios.dormir) ops.push({ texto: `Dormir e treinar dragão (+${def.ml} ML) 🛏️`, onClick: () => { dialogo.fecha(); dormirNoImovel(def); } });
   if (def.beneficios.depot) ops.push({ texto: 'Abrir depósito 🧰', onClick: () => { dialogo.fecha(); abreCofre(); } });
   if (def.beneficios.banco) ops.push({ texto: 'Abrir banco 🏦', onClick: () => abreBancoImovel(def) });
@@ -3381,7 +3450,7 @@ function renasce() {
   if (telaMorte) telaMorte.style.display = 'none';
   envenenadoAte = 0; escudoAte = 0; escudoHP = 0; // nenhum efeito atravessa a morte
   vida = VIDA_MAX; mana = Math.max(mana, 15);
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; aurelia.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; escondeZonasCarregadas(); subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(0, 0, -30); vy = 0; noChao = true; // dentro do Templo Sagrado
   hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
   mostraMensagem('🙏 Os deuses te devolvem ao Templo Sagrado.');
@@ -3572,7 +3641,7 @@ window.addEventListener('keydown', (e) => {
 // =============================================================
 let gmMode = false, gmImortal = false, gmVel = false, gmPainel = null;
 function tpGM(x, z) {
-  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; esgoto.grupo.visible = false; catacumbas.grupo.visible = false; criptaProfunda.grupo.visible = false; cavernasPico.grupo.visible = false; irmas1.grupo.visible = false; catedralI.grupo.visible = false; aurelia.grupo.visible = false; subsoloAtual = esgoto; minimapa.mostra(); }
+  if (noEsgoto) { chaoY = 0; areaAtiva = areaSuperficie(); noEsgoto = false; escondeZonasCarregadas(); subsoloAtual = esgoto; minimapa.mostra(); }
   avatar.position.set(x, alturaTerreno(x, z), z); vy = 0; noChao = true;
   mostraMensagem('🌀 Teleportado!');
 }
@@ -3824,7 +3893,8 @@ function atualizaLocal() {
       : subsoloAtual === cavernasPico ? 'Cavernas do Pico'
       : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar'
       : subsoloAtual === catedralI ? 'Catedral da Lua Coada · Nave Profanada'
-      : subsoloAtual === aurelia ? '☁️ Aurélia · A Cidade nas Nuvens' : 'Esgoto';
+      : subsoloAtual === aurelia ? '☁️ Aurélia · A Cidade nas Nuvens'
+      : subsoloAtual && subsoloAtual.tipo === 'imovel' ? `Interior · ${subsoloAtual.nome}` : 'Esgoto';
   }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
   if (nome === localNome) return;
@@ -4144,7 +4214,7 @@ function passo() {
     // sem alocar array novo a cada frame (o .filter criava lixo pro GC 60×/s
     // → picos de pausa = "imagem trava mas o boneco continua andando")
     occTmp.length = 0;
-    if (noEsgoto) occTmp.push(esgoto.grupo);
+    if (noEsgoto) occTmp.push((subsoloAtual && subsoloAtual.grupo) || esgoto.grupo);
     else for (const s of solidos) { if (s.position.distanceToSquared(avatar.position) < 500) occTmp.push(s); }
     const occ = occTmp;
     const hits = raycaster.intersectObjects(occ, true);

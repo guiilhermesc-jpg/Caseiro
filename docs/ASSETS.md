@@ -15,6 +15,9 @@ para o jogo.
 - `public/patches/rv16-2-bichos-presenca.png`
   - origem: gerado via skill `imagegen` em 23/06/2026.
   - uso: arte oficial do Patch RV16.2, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-3-interiores-prestigio.png`
+  - origem: gerado via skill `imagegen` em 23/06/2026.
+  - uso: arte oficial do Patch RV16.3, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
 
 ## Assets existentes
 

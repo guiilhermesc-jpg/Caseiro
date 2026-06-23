@@ -218,6 +218,7 @@ Exemplo de ciclo:
 - Dragoes boss recebem reacao de dano mais forte.
 
 ### RV16.3 - Interiores de imoveis
+- Status: entregue no `docs/RV16_3_INTERIORES_PRESTIGIO.md`.
 - Interior de mansao.
 - Interior de guildhouse.
 - Sala de trofeus.

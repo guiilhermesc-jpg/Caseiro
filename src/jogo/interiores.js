@@ -331,6 +331,238 @@ function meshBox(w, h, d, material, x, y, z) {
   m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m;
 }
 
+function placaCanvas(texto, cor = '#f2dfb5', fundo = '#4a2f1c') {
+  const cnv = document.createElement('canvas');
+  cnv.width = 512; cnv.height = 128;
+  const ctx = cnv.getContext('2d');
+  ctx.fillStyle = fundo; ctx.fillRect(0, 0, cnv.width, cnv.height);
+  ctx.strokeStyle = '#d9b36a'; ctx.lineWidth = 8; ctx.strokeRect(10, 10, 492, 108);
+  ctx.fillStyle = cor; ctx.font = 'bold 34px Georgia,serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(texto, 256, 66);
+  return new THREE.CanvasTexture(cnv);
+}
+
+function criaTapete(w, d, x, y, z, cor = 0x7a2630) {
+  const tapete = new THREE.Mesh(new THREE.BoxGeometry(w, 0.055, d), mat(cor, 0.9));
+  tapete.position.set(x, y + 0.13, z);
+  tapete.receiveShadow = true;
+  return tapete;
+}
+
+function criaBauGrande(x, y, z, cor = 0x6e4a2a) {
+  const g = new THREE.Group();
+  const madeira = mat(cor, 0.85);
+  const metal = new THREE.MeshStandardMaterial({ color: 0xb8a15f, metalness: 0.75, roughness: 0.32 });
+  g.add(meshBox(2.0, 0.9, 1.1, madeira, 0, 0.45, 0));
+  g.add(meshBox(2.1, 0.14, 1.18, metal, 0, 0.98, 0));
+  g.add(meshBox(0.16, 0.95, 1.18, metal, -0.72, 0.5, 0));
+  g.add(meshBox(0.16, 0.95, 1.18, metal, 0.72, 0.5, 0));
+  const fech = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.12), metal);
+  fech.position.set(0, 0.55, 0.62); g.add(fech);
+  g.position.set(x, y, z);
+  return g;
+}
+
+function criaBiblioteca(larg, y, z, lado = -1) {
+  const g = new THREE.Group();
+  const mad = mat(0x5f4027, 0.92);
+  const papel = [0xb99052, 0x9c3a36, 0x2f5f75, 0x4f7a44, 0x6f4a8a];
+  const x = lado * (larg / 2 - 1.0);
+  for (let k = 0; k < 3; k++) {
+    const pr = new THREE.Group();
+    pr.add(meshBox(0.55, 3.0, 3.5, mad, 0, 1.5, 0));
+    for (let i = 0; i < 12; i++) {
+      const livro = meshBox(0.16, 0.58 + (i % 3) * 0.08, 0.12, mat(papel[i % papel.length], 0.8), 0, 0.7 + Math.floor(i / 4) * 0.78, -1.35 + (i % 4) * 0.82);
+      pr.add(livro);
+    }
+    pr.position.set(x, y, z - 4.2 + k * 4.2);
+    pr.rotation.y = lado < 0 ? Math.PI / 2 : -Math.PI / 2;
+    g.add(pr);
+  }
+  return g;
+}
+
+function criaMesaConselho(y, guilda = false) {
+  const g = new THREE.Group();
+  const mad = mat(0x654326, 0.88);
+  g.add(meshBox(guilda ? 10.5 : 5.5, 0.34, guilda ? 2.5 : 2.0, mad, 0, 1.08, 0));
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+    g.add(meshBox(0.22, 1.05, 0.22, mad, sx * (guilda ? 4.7 : 2.35), 0.55, sz * (guilda ? 0.95 : 0.72)));
+  });
+  const mapa = new THREE.Mesh(new THREE.PlaneGeometry(guilda ? 7.2 : 3.6, guilda ? 1.45 : 1.0), new THREE.MeshBasicMaterial({ map: placaCanvas(guilda ? 'ROTAS E HUNTS' : 'CONTRATOS DA CASA'), transparent: false }));
+  mapa.position.set(0, 1.28, 0.02);
+  mapa.rotation.x = -Math.PI / 2;
+  g.add(mapa);
+  const cera = new THREE.MeshStandardMaterial({ color: 0xf0ead8, roughness: 0.8 });
+  const chama = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff8a22, emissiveIntensity: 0.95, roughness: 0.35 });
+  [-1, 1].forEach((sx) => {
+    const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.45, 8), cera);
+    vela.position.set(sx * (guilda ? 4.5 : 2.1), 1.52, 0.72); g.add(vela);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), chama);
+    fl.position.set(sx * (guilda ? 4.5 : 2.1), 1.82, 0.72); g.add(fl);
+  });
+  g.position.y = y;
+  return g;
+}
+
+function criaInteriorImovelBase(opts = {}) {
+  const { id = 'imovel', nome = 'Imovel', y = -120, guilda = false, larg = guilda ? 44 : 34, prof = guilda ? 32 : 28 } = opts;
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2, alt = guilda ? 8.8 : 7.2, t = 0.5, porta = guilda ? 7.0 : 5.5;
+  const colisores = [], animados = [], interativos = [];
+  const parede = guilda ? mat(0xb9b2a4, 1) : mat(0xd7c7a5, 1);
+  const madeira = mat(0x604027, 0.9);
+  const pedra = mat(0x8d8576, 1);
+  const metal = new THREE.MeshStandardMaterial({ color: 0x333840, metalness: 0.65, roughness: 0.38 });
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.72, roughness: 0.32, emissive: 0x241500, emissiveIntensity: 0.22 });
+
+  const chaoMat = guilda ? new THREE.MeshStandardMaterial({ color: 0x7d776c, roughness: 1 }) : new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 });
+  aplicaTexturaReal(chaoMat, guilda ? 'pedra' : 'madeira', guilda ? 5 : 3, guilda ? 2.4 : 2, true, true);
+  const chao = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.12, prof), chaoMat);
+  chao.position.set(0, y + 0.06, 0); chao.receiveShadow = true; g.add(chao);
+
+  function col(cx, cz, w, d) {
+    colisores.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }
+  function muro(cx, cz, w, d, material = parede) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), material);
+    m.position.set(cx, y + alt / 2, cz); m.castShadow = m.receiveShadow = true; g.add(m);
+    col(cx, cz, w, d);
+  }
+  muro(0, -hz, larg, t);
+  muro(-hx, 0, t, prof);
+  muro(hx, 0, t, prof);
+  const seg = (larg - porta) / 2;
+  muro(-(porta / 2 + seg / 2), hz, seg, t);
+  muro(porta / 2 + seg / 2, hz, seg, t);
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(porta, alt - 3.4, t), parede);
+  verga.position.set(0, y + alt - (alt - 3.4) / 2, hz); g.add(verga);
+
+  [-hx + 2.2, hx - 2.2].forEach((x) => {
+    [-hz + 2.2, hz - 2.2].forEach((z) => {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.48, alt - 0.6, 12), guilda ? pedra : madeira);
+      c.position.set(x, y + (alt - 0.6) / 2, z); c.castShadow = true; g.add(c);
+    });
+  });
+  g.add(criaTapete(guilda ? 5.0 : 3.6, prof - 5.6, 0, y, 0, guilda ? 0x263f6f : 0x7a2630));
+  const titulo = new THREE.Mesh(new THREE.PlaneGeometry(guilda ? 7.0 : 5.0, 1.2), new THREE.MeshBasicMaterial({ map: placaCanvas(nome.toUpperCase()), transparent: false }));
+  titulo.position.set(0, y + alt - 1.25, hz - 0.08);
+  titulo.rotation.y = Math.PI;
+  g.add(titulo);
+
+  if (!guilda) {
+    muro(-hx + 10.5, -2.0, t, prof - 9.0, madeira);
+    muro(hx - 10.5, -2.0, t, prof - 9.0, madeira);
+    muro(0, -hz + 8.8, larg - 13.0, t, madeira);
+  } else {
+    muro(-hx + 12.5, -5.0, t, prof - 11.0, pedra);
+    muro(hx - 12.5, -5.0, t, prof - 11.0, pedra);
+    muro(0, -hz + 10.5, larg - 15.0, t, pedra);
+  }
+
+  const mesa = criaMesaConselho(y, guilda);
+  mesa.position.z = guilda ? 1.8 : 1.2;
+  g.add(mesa);
+  col(0, mesa.position.z, guilda ? 11.0 : 6.0, guilda ? 3.0 : 2.4);
+  const colunasCadeiras = guilda ? [-5, -3, -1, 1, 3, 5] : [-2.4, 0, 2.4];
+  colunasCadeiras.forEach((x) => [-1, 1].forEach((s) => {
+    const cad = new THREE.Group();
+    cad.add(meshBox(0.72, 0.16, 0.72, madeira, 0, y + 0.6, 0));
+    cad.add(meshBox(0.72, 0.82, 0.12, madeira, 0, y + 1.0, s * 0.3));
+    cad.position.set(x, 0, mesa.position.z + s * (guilda ? 2.0 : 1.55));
+    cad.rotation.y = s > 0 ? Math.PI : 0;
+    g.add(cad);
+  }));
+
+  g.add(criaBiblioteca(larg, y, !guilda ? -2.0 : -4.0, -1));
+  if (guilda) {
+    for (let i = 0; i < 6; i++) {
+      const rack = new THREE.Group();
+      rack.position.set(hx - 5.2, y, -9 + i * 2.4);
+      rack.add(meshBox(0.24, 2.6, 0.16, madeira, 0, 1.3, 0));
+      const lam = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.48, 5), metal);
+      lam.position.set(0, 2.95, 0); rack.add(lam);
+      const esc = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.46, 0.12, 6), ouro);
+      esc.position.set(-0.35, 1.45, 0.12); esc.rotation.z = Math.PI / 2; rack.add(esc);
+      g.add(rack);
+    }
+  } else {
+    const cama = new THREE.Group(); cama.position.set(hx - 5.4, y, -7.3);
+    cama.add(meshBox(5.2, 0.65, 3.2, madeira, 0, 0.35, 0));
+    cama.add(meshBox(5.0, 0.22, 3.0, mat(0x8f2f3a), 0, 0.78, 0));
+    cama.add(meshBox(1.5, 0.25, 2.6, mat(0xf0ead8, 0.8), 1.6, 0.94, 0));
+    g.add(cama); col(hx - 5.4, -7.3, 5.6, 3.6);
+  }
+
+  const bau = criaBauGrande(-hx + 5.0, y, hz - 5.8, guilda ? 0x4a3424 : 0x6e4a2a);
+  g.add(bau); col(-hx + 5.0, hz - 5.8, 2.2, 1.4);
+  const banco = new THREE.Group(); banco.position.set(-hx + 9.0, y, hz - 5.6);
+  banco.add(meshBox(2.4, 1.1, 1.1, pedra, 0, 0.55, 0));
+  banco.add(meshBox(1.3, 1.0, 0.2, ouro, 0, 1.42, 0.0));
+  g.add(banco); col(-hx + 9.0, hz - 5.6, 2.6, 1.4);
+  const lixeira = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.46, 0.85, 8), metal);
+  lixeira.position.set(hx - 4.3, y + 0.43, hz - 5.8); g.add(lixeira); col(hx - 4.3, hz - 5.8, 1.0, 1.0);
+
+  const ninho = new THREE.Group(); ninho.position.set(guilda ? 0 : hx - 5.0, y, guilda ? -hz + 5.2 : -hz + 5.8);
+  const ninhoMat = mat(guilda ? 0x4a3a2a : 0x6a4a2a, 1);
+  for (let i = 0; i < 10; i++) {
+    const galho = meshBox(guilda ? 4.2 : 3.0, 0.18, 0.2, ninhoMat, 0, 0.22 + i * 0.015, 0);
+    galho.rotation.y = i * 0.62;
+    ninho.add(galho);
+  }
+  const cristal = new THREE.Mesh(new THREE.OctahedronGeometry(guilda ? 0.58 : 0.42, 0), new THREE.MeshStandardMaterial({ color: 0xffd16a, emissive: 0xff8a22, emissiveIntensity: 0.75, roughness: 0.25 }));
+  cristal.position.y = guilda ? 0.92 : 0.72; ninho.add(cristal);
+  animados.push({ mesh: cristal, gira: 0.65, pulsa: cristal.material, fase: Math.random() * 6 });
+  g.add(ninho); col(ninho.position.x, ninho.position.z, guilda ? 5.0 : 3.8, guilda ? 4.2 : 3.2);
+
+  const trofeusZ = -hz + 0.35;
+  [-6, -3, 0, 3, 6].forEach((x, i) => {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.22), madeira);
+    base.position.set(x, y + 2.6, trofeusZ); g.add(base);
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.7, 6), i % 2 ? ouro : metal);
+    horn.position.set(x, y + 3.25, trofeusZ + 0.1); horn.rotation.x = Math.PI; g.add(horn);
+  });
+
+  const luzMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff9a2a, emissiveIntensity: 0.9, roughness: 0.35 });
+  [[-hx + 2.4, hz - 2.4], [hx - 2.4, hz - 2.4], [-hx + 2.4, -hz + 2.4], [hx - 2.4, -hz + 2.4]].forEach(([lx, lz], i) => {
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), luzMat);
+    lamp.position.set(lx, y + 3.2, lz); g.add(lamp);
+    animados.push({ chama: lamp, chamaMat: luzMat, fase: Math.random() * 6 + i });
+  });
+
+  const spawn = { x: 0, z: hz - 4.0 };
+  const exit = { x: 0, z: hz - 2.0 };
+  interativos.push({ kind: 'sair', x: exit.x, z: exit.z, y, raio: 3.4, titulo: `Porta de ${nome}`, acao: 'Sair para a superficie' });
+  interativos.push({ kind: 'depot', x: -hx + 5.0, z: hz - 5.8, y, raio: 2.6, titulo: 'Deposito do imovel', acao: 'Abrir deposito' });
+  interativos.push({ kind: 'banco', x: -hx + 9.0, z: hz - 5.6, y, raio: 2.6, titulo: 'Banco do imovel', acao: 'Abrir banco' });
+  interativos.push({ kind: 'lixo', x: hx - 4.3, z: hz - 5.8, y, raio: 2.4, titulo: 'Lixeira do imovel', acao: 'Descartar itens baratos' });
+  interativos.push({ kind: 'dormir', x: guilda ? 0 : hx - 5.0, z: guilda ? -hz + 5.2 : -7.3, y, raio: guilda ? 4.0 : 3.0, titulo: guilda ? 'Berco draconico' : 'Cama da mansao', acao: 'Descansar e treinar dragao' });
+  if (guilda) interativos.push({ kind: 'guilda', x: 0, z: 2.0, y, raio: 4.0, titulo: 'Mesa de Conselho', acao: 'Rever plano da guilda' });
+
+  return {
+    id,
+    nome,
+    tipo: 'imovel',
+    grupo: g,
+    colisores,
+    bounds: { minX: -hx + 1.0, maxX: hx - 1.0, minZ: -hz + 1.0, maxZ: hz - 1.0 },
+    acessos: [],
+    saidas: [],
+    y,
+    spawn,
+    interativos,
+    animados,
+  };
+}
+
+export function criaMansaoInterior(opts = {}) {
+  return criaInteriorImovelBase({ ...opts, guilda: false });
+}
+
+export function criaGuildHouseInterior(opts = {}) {
+  return criaInteriorImovelBase({ ...opts, guilda: true });
+}
+
 // =============================================================
 //  HOSPITAL de Venore · ENTRÁVEL (a porta que se vê AGORA FUNCIONA).
 //  Macas com lençol, mesa de poções e armário; a curandeira atende

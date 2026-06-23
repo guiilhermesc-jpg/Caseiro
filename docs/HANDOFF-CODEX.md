@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.2 (v113)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.3 (v114)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.2 (v113)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.3 (v114)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.2 — Bichos com Presenca").
+    `patchNotes.js` (painel "PATCH RV16.3 — Interiores de Prestigio").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -149,17 +149,25 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Dragão/boss de fogo recebe flinch mais forte em golpe, flecha, runa e magia, com garganta acesa no impacto.
 - Documento da rodada: `docs/RV16_2_BICHOS_COM_PRESENCA.md`.
 
+## 7.3 Estado novo do RV16.3 (Codex)
+
+- `public/patches/rv16-3-interiores-prestigio.png` é a arte oficial do patch; conectada em `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js`.
+- `src/main3d.js` subiu para **RV16.3 (v114)**.
+- `src/jogo/interiores.js` ganhou `criaMansaoInterior` e `criaGuildHouseInterior`: zonas internas grandes, com colisao, mesa, biblioteca, cofre, banco, lixeira, ninho/berco draconico, trofeus e luzes.
+- `src/main3d.js` conecta `Entrar no interior` no menu de imovel alugado e filtra interativos por `zona`, para um interior nao enxergar objetos de outro.
+- Morte/teleporte GM agora chama `escondeZonasCarregadas()`, incluindo interiores de imoveis.
+- Documento da rodada: `docs/RV16_3_INTERIORES_PRESTIGIO.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
-1. **Interiores de mansão/guildhouse** — o RV16 criou os modelos externos e benefícios; falta interior próprio grande.
-2. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
-3. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
+1. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
+2. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
    já em `PRECOS`), falta: drop do Coração em invasão/boss + consagrar "Sela Dracônica" + fluxo de domação adulta.
-4. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
-5. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
-6. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
+3. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
+4. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
+5. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
    orfana coordenadas — fazer com cuidado/validação. **Deferido**.
 
 Saídas completas da auditoria/design ficam nos arquivos de output das tasks de workflow (em
