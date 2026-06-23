@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.4 (v115)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.5 (v116)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.4 (v115)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.5 (v116)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.4 — Luz & Detalhe").
+    `patchNotes.js` (painel "PATCH RV16.5 — Cidade Profissional").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -165,6 +165,16 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `src/jogo/interiores.js` recebeu camada grafica premium: candelabro, galeria superior, escadaria, tapecarias, mapas, plantas, cofre com moedas, feixe de luz na porta e luz propria no berco/ninho draconico.
 - A direcao do site/portal estilo Tibia fica explicitamente planejada para o **Patch 17**, com noticias, contas, personagens e rankings. Nao implementar no RV16.
 - Documento da rodada: `docs/RV16_4_LUZ_DETALHE.md`.
+
+## 7.5 Estado novo do RV16.5 (Codex)
+
+- `public/patches/rv16-5-cidade-profissional.png` eh a arte oficial do patch; conectada em `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js`.
+- `src/main3d.js` subiu para **RV16.5 (v116)**.
+- `src/jogo/construcoes.js` refez `criaFonte`: pedra PBR, bordas, espuma, musgo e 32 gotas animadas.
+- `src/jogo/cidade.js` ganhou acabamento urbano instanciado: manchas de terra, musgo, fissuras e seixos em ruas/pracas. Tambem reduziu o mato em billboard e aumentou capim 3D, seixos, terra exposta e capim rasteiro.
+- `src/jogo/texturas.js` melhorou o tipo `grama` com sulcos, laminas e variacao para reduzir leitura de papel de parede.
+- `src/jogo/avatar.js` removeu o cone do mago legado e adicionou capuz, robe com bordas, broche, cajado e orbe; feiticeiro/druida tambem ganharam bordas e cajado.
+- Documento da rodada: `docs/RV16_5_CIDADE_PROFISSIONAL.md`.
 
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 

@@ -231,13 +231,21 @@ Exemplo de ciclo:
 - Tapecarias, mapas, plantas, cofre com moedas e objetos de valor.
 - Arte oficial do patch refletindo elementos reais do jogo.
 
-### RV16.5 - Aluguel semanal e economia
+### RV16.5 - Cidade Profissional
+- Status: entregue no `docs/RV16_5_CIDADE_PROFISSIONAL.md`.
+- Fonte de pedra refeita com espuma, musgo e agua mais viva.
+- Ruas e pracas com terra, musgo, fissuras e seixos.
+- Grama menos "papel de parede": menos billboard, mais capim 3D e microterreno.
+- Magos/conjuradores com capuz, robe detalhado, cajado e orbe.
+- Arte oficial do patch refletindo a nova praca jogavel.
+
+### RV16.6 - Aluguel semanal e economia
 - vencimento;
 - renovacao;
 - avisos;
 - perda de beneficios sem apagar itens.
 
-### RV16.6 - Hunt do Pantano Vivo
+### RV16.7 - Hunt do Pantano Vivo
 - territorio do Dragao do Pantano;
 - veneno, agua, lama, pontes;
 - item-chave para doma rara.

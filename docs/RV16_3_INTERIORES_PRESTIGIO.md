@@ -57,7 +57,8 @@ rotina fisica: entrar, andar, usar objetos, dormir, guardar ouro e sentir que aq
 ## Proximas frentes recomendadas
 
 1. RV16.4: luz, detalhe e arte oficial mais proxima do jogo real.
-2. RV16.5: aluguel semanal com vencimento, renovacao e avisos.
-3. RV16.6: hunt regional nova de dragao com territorio proprio.
-4. RV16.7: doma de dragao adulto com Coracao/Sela Draconica.
-5. RV16.8: examinar objetos/NPCs no estilo MMO classico.
+2. RV16.5: cidade profissional, fonte refeita, grama com volume e outfits melhores.
+3. RV16.6: aluguel semanal com vencimento, renovacao e avisos.
+4. RV16.7: hunt regional nova de dragao com territorio proprio.
+5. RV16.8: doma de dragao adulto com Coracao/Sela Draconica.
+6. RV16.9: examinar objetos/NPCs no estilo MMO classico.

@@ -26,6 +26,11 @@ function canvasRuido(corBase, tipo, contraste, tam) {
     // detalhe por TIPO
     if (tipo === 'madeira') n += Math.sin(x * 0.9) * contraste * 0.5 + Math.sin(x * 3.1) * contraste * 0.18; // veios verticais
     else if (tipo === 'areia') n += Math.sin((x + y) * 0.5) * contraste * 0.4; // marcas de vento diagonais
+    else if (tipo === 'grama') {
+      n += Math.sin(x * 1.9 + Math.sin(y * 0.12) * 3.0) * contraste * 0.22;
+      n += Math.sin((x + y) * 0.38) * contraste * 0.16;
+      if (((x + y * 3) % 29) < 2) n -= contraste * 0.9; // sulcos finos entre laminas
+    }
     else if (tipo === 'metal') n = grao * 0.4 + Math.sin(y * 1.3) * contraste * 0.25; // escovado horizontal
     else if (tipo === 'tecido') n += (Math.sin(x * 1.6) + Math.sin(y * 1.6)) * contraste * 0.3; // trama
     const k = i * 4;

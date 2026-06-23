@@ -50,7 +50,8 @@ do portal estilo Tibia, com noticias, contas, personagens e progresso, fica plan
 
 ## Proximas frentes recomendadas
 
-1. RV16.5: aluguel semanal com vencimento, renovacao e avisos.
-2. RV16.6: hunt regional nova de dragao com territorio proprio.
-3. RV16.7: doma de dragao adulto com Coracao/Sela Draconica.
-4. Patch 17: site/portal publico com noticias de updates, contas, personagens e rankings.
+1. RV16.5: cidade profissional, fonte refeita, grama com volume e outfits melhores.
+2. RV16.6: aluguel semanal com vencimento, renovacao e avisos.
+3. RV16.7: hunt regional nova de dragao com territorio proprio.
+4. RV16.8: doma de dragao adulto com Coracao/Sela Draconica.
+5. Patch 17: site/portal publico com noticias de updates, contas, personagens e rankings.

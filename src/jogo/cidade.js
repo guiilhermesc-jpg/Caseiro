@@ -9,7 +9,7 @@ import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, 
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 import { alturaColinas, REGIAO } from './terreno.js';
-import { texPBR } from './texturas.js'; // normal map do chão (RV11.5)
+import { texPBR, matPBR } from './texturas.js'; // normal map do chão (RV11.5)
 import { criaVegetacaoInstanciada } from './vegetacao.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
@@ -210,7 +210,7 @@ export function criaCidade() {
     if (Math.hypot(px + 742, pz + 30) < 46) return true;         // Santuário da Lua Partida
     return false;
   }
-  const N_MATO = 980, dummyM = new THREE.Object3D(); // RV12.5: chão mais vivo (instanciado = 2 draw calls)
+  const N_MATO = 520, dummyM = new THREE.Object3D(); // RV16.5: menos cartaz, mais capim 3D instanciado abaixo
   const mato1 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   const mato2 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   let mi = 0;
@@ -307,6 +307,7 @@ export function criaCidade() {
   aplicaTexturaReal(pisoMat, 'piso_castelo', 5, 5, false, true); // RV14.8: lajões de castelo na praça (spawn premium)
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
+  adicionaAcabamentoUrbano();
 
   const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [], lagos = [];
   vaporRuaAnimados.forEach((a) => animados.push(a));
@@ -326,6 +327,72 @@ export function criaCidade() {
   };
   // === VEGETAÇÃO INSTANCIADA: coleta as posições e desenha tudo em ~9 draw
   // calls (vegetacao.js) — antes eram ~900 meshes de árvore/pinheiro/pedra
+  function adicionaAcabamentoUrbano() {
+    const dummy = new THREE.Object3D();
+    const matTerra = matPBR(0x5f4a32, { tipo: 'terra', repeat: 1, rough: 1, relevo: 0.35 });
+    const matMusgo = new THREE.MeshStandardMaterial({ color: 0x3e5d37, roughness: 1, flatShading: true });
+    const matFissura = new THREE.MeshStandardMaterial({ color: 0x2f2a26, roughness: 1 });
+    const matSeixo = new THREE.MeshStandardMaterial({ color: 0x7f786d, roughness: 1, flatShading: true });
+    const manchas = [], musgos = [], fissuras = [], seixos = [];
+    const addFaixa = (cx, cz, w, d, n, y = 0.092) => {
+      for (let i = 0; i < n; i++) {
+        const px = cx + (Math.random() - 0.5) * w;
+        const pz = cz + (Math.random() - 0.5) * d;
+        manchas.push([px, pz, y, 0.38 + Math.random() * 0.8, 0.18 + Math.random() * 0.45, Math.random() * Math.PI]);
+        if (i % 2 === 0) musgos.push([px + (Math.random() - 0.5) * 1.4, pz + (Math.random() - 0.5) * 1.4, y + 0.006, 0.24 + Math.random() * 0.45]);
+        if (i % 3 === 0) fissuras.push([px, pz, y + 0.012, 0.8 + Math.random() * 2.4, Math.random() * Math.PI]);
+        if (i % 4 === 0) seixos.push([px + (Math.random() - 0.5) * 0.8, pz + (Math.random() - 0.5) * 0.8, y + 0.04, 0.16 + Math.random() * 0.18]);
+      }
+    };
+    [-48, -16, 16, 48].forEach((c) => { addFaixa(0, c, 172, 8, 20); addFaixa(c, 0, 8, 172, 20); });
+    [[0, 0, 30, 30, 34], [-320, -30, 54, 40, 44], [560, 0, 44, 36, 28], [-620, -34, 48, 38, 28], [0, -95, 34, 26, 24]]
+      .forEach(([cx, cz, w, d, n]) => addFaixa(cx, cz, w, d, n, 0.102));
+
+    const geoMancha = new THREE.CircleGeometry(1, 12);
+    const imMancha = new THREE.InstancedMesh(geoMancha, matTerra, manchas.length);
+    manchas.forEach(([px, pz, y, sx, sz, r], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(-Math.PI / 2, 0, r);
+      dummy.scale.set(sx, sz, 1);
+      dummy.updateMatrix();
+      imMancha.setMatrixAt(i, dummy.matrix);
+    });
+    imMancha.receiveShadow = true; scene.add(imMancha);
+
+    const geoMusgo = new THREE.IcosahedronGeometry(1, 0);
+    const imMusgo = new THREE.InstancedMesh(geoMusgo, matMusgo, musgos.length);
+    musgos.forEach(([px, pz, y, s], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(0, Math.random() * Math.PI, 0);
+      dummy.scale.set(s, 0.045, s * 0.55);
+      dummy.updateMatrix();
+      imMusgo.setMatrixAt(i, dummy.matrix);
+    });
+    imMusgo.receiveShadow = true; scene.add(imMusgo);
+
+    const geoFissura = new THREE.BoxGeometry(1, 0.012, 0.045);
+    const imFissura = new THREE.InstancedMesh(geoFissura, matFissura, fissuras.length);
+    fissuras.forEach(([px, pz, y, len, r], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(0, r, 0);
+      dummy.scale.set(len, 1, 1);
+      dummy.updateMatrix();
+      imFissura.setMatrixAt(i, dummy.matrix);
+    });
+    scene.add(imFissura);
+
+    const geoSeixo = desloca(new THREE.IcosahedronGeometry(0.22, 0), 0.06);
+    const imSeixo = new THREE.InstancedMesh(geoSeixo, matSeixo, seixos.length);
+    seixos.forEach(([px, pz, y, s], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(Math.random() * 0.2, Math.random() * Math.PI, Math.random() * 0.2);
+      dummy.scale.set(s * 1.35, s * 0.42, s);
+      dummy.updateMatrix();
+      imSeixo.setMatrixAt(i, dummy.matrix);
+    });
+    imSeixo.castShadow = true; imSeixo.receiveShadow = true; scene.add(imSeixo);
+  }
+
   const VEG = { arvores: [], pinheiros: [], pedras: [] };
   const arvG = (x, z, s = 1) => VEG.arvores.push([x, z, s]);
   const pinh = (x, z) => VEG.pinheiros.push([x, z]);
@@ -1243,7 +1310,7 @@ export function criaCidade() {
   // CAPIM 3D (RV4.0): tufos SÓLIDOS misturados aos cartazes de mato —
   // profundidade real no chão do mundo inteiro (3 draw calls)
   VEG.capim = [];
-  for (let tent = 0; tent < 20000 && VEG.capim.length < 260; tent++) {
+  for (let tent = 0; tent < 28000 && VEG.capim.length < 540; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.capim.push([px, pz, 0.8 + Math.random() * 1.0]);
@@ -1256,7 +1323,7 @@ export function criaCidade() {
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.flores.push([px, pz, 0.85 + Math.random() * 0.7]);
   }
-  for (let tent = 0; tent < 18000 && VEG.seixos.length < 170; tent++) {
+  for (let tent = 0; tent < 22000 && VEG.seixos.length < 260; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.seixos.push([px, pz, 0.2 + Math.random() * 0.18]);
@@ -1288,14 +1355,14 @@ export function criaCidade() {
     [380, 16, 34, 22], [470, -14, 28, 20], [-520, -28, 58, 24], [-720, -38, 54, 28],
     [120, 42, 46, 34], [315, 48, 58, 34], [-110, 92, 44, 32],
   ];
-  for (let tent = 0; tent < 14000 && VEG.terraChao.length < 280; tent++) {
+  for (let tent = 0; tent < 18000 && VEG.terraChao.length < 420; tent++) {
     const zt = zonasTerra[Math.floor(Math.random() * zonasTerra.length)];
     const px = zt[0] + (Math.random() - 0.5) * zt[2] * 2;
     const pz = zt[1] + (Math.random() - 0.5) * zt[3] * 2;
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.terraChao.push([px, pz, 0.55 + Math.random() * 0.8]);
   }
-  for (let tent = 0; tent < 26000 && VEG.capimRasteiro.length < 760; tent++) {
+  for (let tent = 0; tent < 34000 && VEG.capimRasteiro.length < 1280; tent++) {
     const px = randX(), pz = randZ();
     if (!emCampoAberto(px, pz)) continue;
     VEG.capimRasteiro.push([px, pz, 0.7 + Math.random() * 0.9]);
@@ -1314,7 +1381,7 @@ export function criaCidade() {
     const bx = ax + Math.cos(a) * rr, bz = az + Math.sin(a) * rr;
     if (!bloqueiaVegetacao(bx, bz)) VEG.arbustosAltos.push([bx, bz, 0.75 + Math.random() * 0.75]);
   });
-  for (let tent = 0; tent < 30000 && VEG.capimAlto.length < 340; tent++) {
+  for (let tent = 0; tent < 36000 && VEG.capimAlto.length < 520; tent++) {
     const px = randX(), pz = randZ();
     if (!emCampoAberto(px, pz) || emFloresta(px, pz) || emPantano(px, pz)) continue;
     if (Math.random() < 0.35 && Math.abs(pz) < 24 && px > 60 && px < 520) continue;

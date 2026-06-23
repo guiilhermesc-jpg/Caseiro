@@ -21,6 +21,9 @@ para o jogo.
 - `public/patches/rv16-4-luz-detalhe.png`
   - origem: gerado via skill `imagegen` em 23/06/2026.
   - uso: arte oficial do Patch RV16.4, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-5-cidade-profissional.png`
+  - origem: gerado via skill `imagegen` em 23/06/2026.
+  - uso: arte oficial do Patch RV16.5, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
 
 ## Assets existentes
 
