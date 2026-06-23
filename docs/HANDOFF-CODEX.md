@@ -223,6 +223,8 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Regra de autoria: nao copiar IP. Absorver principios e transformar em Venor.
 - Regra de arte reforcada: patch art oficial mostra sistema real. Futuro pode aparecer como pressagio,
   nunca como entrega falsa.
+- Previas visuais salvas em `docs/PREVIAS_VISUAIS_RV16_9.md` e `public/patches/concepts/`.
+  Em rodada grafica nova, sempre gerar/usar previa e transformar a imagem em lista de implementacao.
 
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 

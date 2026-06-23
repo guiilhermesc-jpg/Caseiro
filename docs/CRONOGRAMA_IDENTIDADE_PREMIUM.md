@@ -27,6 +27,14 @@ Regra: nao expandir para um novo pacto enquanto Venor nao tiver cidade, rotas, c
 dragao, economia, NPCs, UI, bestiario, mapa, interiores, monstros e base online/offline com
 leitura profissional.
 
+## Previas visuais obrigatorias
+
+Fonte: `docs/PREVIAS_VISUAIS_RV16_9.md`.
+
+Toda rodada de reajuste grafico precisa trazer pelo menos uma imagem de previa ou usar uma previa
+existente como contrato de direcao. A previa deve vir acompanhada de traducao jogavel: quais objetos,
+funcionalidades, proporcoes, efeitos, monstros, interiores ou sistemas ela obriga a melhorar.
+
 ## Fase RV16.7 - Microdetalhes urbanos
 
 - Status: iniciado/entregue em `docs/RV16_7_IDENTIDADE_PREMIUM.md`.
