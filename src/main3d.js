@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV16.1 (v112)';
+const VERSAO = 'RV16.2 (v113)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1349,15 +1349,17 @@ function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
     const golpe = Math.sin((dtAtaque / 0.34) * Math.PI);
     g.rotation.x = (u._ataqueBaseRotX || 0) - golpe * 0.22;
     g.scale.z = (u._ataqueBaseScaleZ || g.scale.z) * (1 + golpe * 0.12);
-    if (u.pescoco) u.pescoco.rotation.x = -golpe * 0.22;
+    if (u.pescoco) u.pescoco.rotation.x = (u._ataqueBasePescocoX || 0) - golpe * 0.22;
   } else if (dtAtaque < 0.58) {
     const volta = (dtAtaque - 0.34) / 0.24;
     g.rotation.x = (g.rotation.x || 0) + ((u._ataqueBaseRotX || 0) - (g.rotation.x || 0)) * volta;
     if (u._ataqueBaseScaleZ) g.scale.z += (u._ataqueBaseScaleZ - g.scale.z) * volta;
+    if (u.pescoco && u._ataqueBasePescocoX != null) u.pescoco.rotation.x += (u._ataqueBasePescocoX - u.pescoco.rotation.x) * volta;
   } else if (u._ataquePulso !== undefined) {
     g.rotation.x = u._ataqueBaseRotX || 0;
     if (u._ataqueBaseScaleZ) g.scale.z = u._ataqueBaseScaleZ;
-    delete u._ataquePulso; delete u._ataqueBaseRotX; delete u._ataqueBaseScaleZ;
+    if (u.pescoco && u._ataqueBasePescocoX != null) u.pescoco.rotation.x = u._ataqueBasePescocoX;
+    delete u._ataquePulso; delete u._ataqueBaseRotX; delete u._ataqueBaseScaleZ; delete u._ataqueBasePescocoX;
   }
   if (u.patas) {
     // ao VOAR o dragão recolhe as patas; no chão, anda
@@ -1392,6 +1394,7 @@ function marcaAtaqueCompanheiro(g) {
   u._ataquePulso = tempo;
   u._ataqueBaseRotX = g.rotation.x || 0;
   u._ataqueBaseScaleZ = g.scale.z || 1;
+  if (u.pescoco) u._ataqueBasePescocoX = u.pescoco.rotation.x || 0;
   if (u.garganta) u.garganta.userData._flare = tempo;
 }
 function montaOuDesmonta() {
@@ -2711,6 +2714,7 @@ function aoEquipar(item) {
       if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
       if (Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z) > 6) continue;
       r.hp -= 50; r.piscar = 0.2; if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0xa03010);
+      registraFlinchBicho(r, avatar.position, 0.26, 0.22);
       if (r.hp <= 0) mataBicho(r);
       acertou++;
     }
@@ -2725,6 +2729,7 @@ function aoEquipar(item) {
       const d = Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z);
       if (d > 5) continue;
       r.hp -= 30; r.piscar = 0.2; if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0xa03010);
+      registraFlinchBicho(r, avatar.position, 0.22, 0.2);
       if (r.hp <= 0) mataBicho(r);
       acertou++;
     }
@@ -2988,11 +2993,13 @@ function atualizaPresencaMonstros(dt) {
       const u = r.g.userData;
       if (tempo < inv.dispara) { // RV15.4: WIND-UP — agacha e recolhe as patas (arma o bote)
         const w = Math.min(1, (tempo - inv.inicio) / Math.max(0.01, p.aviso));
+        if (u) { u._golpePreparo = Math.max(u._golpePreparo || 0, w); u._golpeImpacto = 0; }
         r.g.scale.y *= (1 - w * 0.18); // atualizaRatos repõe a escala base no próximo frame (sem restore)
         if (u && u.patas) u.patas.forEach((pp) => { pp.rotation.x = -w * 0.5; });
         continue;
       }
       const f = Math.min(1, (tempo - inv.dispara) / p.dur);
+      if (u) { u._golpePreparo = Math.max(0, 1 - f); u._golpeImpacto = Math.max(u._golpeImpacto || 0, Math.sin(f * Math.PI)); }
       r.g.scale.z *= (1 + Math.sin(f * Math.PI) * 0.2); // LUNGE — estica o corpo no golpe
       r.g.rotation.x = Math.sin(f * Math.PI) * 0.22;     // INCLINA pra frente no golpe (auto-reseta em f=1)
       const s = f * f * (3 - 2 * f);
@@ -3007,7 +3014,7 @@ function atualizaPresencaMonstros(dt) {
         inv.bateu = true;
         if (danoInvestidaMonstro(r, p)) return;
       }
-      if (f >= 1) r._rv70Investida = null;
+      if (f >= 1) { if (u) { u._golpePreparo = 0; u._golpeImpacto = 0; } r._rv70Investida = null; }
       continue;
     }
     if (dist > p.aggro) continue;
@@ -3027,7 +3034,11 @@ function disparaBicho(r) {
   const ate = avatar.position.clone(); ate.y += 1.4;          // mira onde você ESTÁ (corre pra esquivar!)
   m.position.copy(de); m.lookAt(ate); scene.add(m);
   if (fogo) avisoFogoNoChao(ate.x, ate.z, avatar.position.y, r.boss ? 2.65 : 2.2);
-  if (fogo && r.g.userData && r.g.userData.garganta) r.g.userData.garganta.userData._flare = tempo; // RV15.3: garganta FLAMEJA ao cuspir
+  if (fogo && r.g.userData && r.g.userData.garganta) {
+    r.g.userData.garganta.userData._flare = tempo; // RV15.3: garganta FLAMEJA ao cuspir
+    r.g.userData._golpePreparo = 0.35;
+    r.g.userData._golpeImpacto = 1;
+  }
   if (r.boss) mostraBossHud(r, 5.5);
   projeteis.push({ m, de, ate, t: 0, dur: Math.max(0.3, de.distanceTo(ate) / 22), dano: r.danoTiro || 10, fogo });
 }
@@ -3057,6 +3068,24 @@ function explosaoFogoEm(pos, escala = 1, yOff = 1.2) {
   explosoes.push({ m, t: 0, base: escala });
 }
 function explosaoFogo() { explosaoFogoEm(avatar.position, 1); }
+function registraFlinchBicho(r, origem, forca = 0.18, dur = 0.18) {
+  if (!r || !r.g || !origem) return;
+  const dragaoFogo = r.dragao || r.especie === 'dragao' || (r.boss && r.atira === 'fogo');
+  const u = r.g.userData || {};
+  r._flinch = {
+    t0: tempo,
+    dur: dragaoFogo ? Math.max(dur, 0.3) : dur,
+    forca: dragaoFogo ? Math.max(forca, 0.42) : forca,
+    abaixa: dragaoFogo ? 0.12 : 0.08,
+    inclina: dragaoFogo ? 0.22 : 0.12,
+    dirX: r.g.position.x - origem.x,
+    dirZ: r.g.position.z - origem.z,
+  };
+  if (dragaoFogo) {
+    u._golpeImpacto = Math.max(u._golpeImpacto || 0, 0.85);
+    if (u.garganta) u.garganta.userData._flare = tempo;
+  }
+}
 function atacar() {
   const dano = danoArma;
   if (equipados.maoDir && equipados.maoDir.arco) { // ARCO: tiro à distância (gasta 1 flecha)
@@ -3070,6 +3099,7 @@ function atacar() {
     sons.golpe();
     disparaFlecha(melhor);
     melhor.hp -= danoTiro; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
+    registraFlinchBicho(melhor, avatar.position, 0.16, 0.16);
     atualizaBarraHP(melhor);
     if (melhor.hp <= 0) mataBicho(melhor);
     else mostraMensagem(`${usouVirote ? '🏹 VIROTAÇO!' : '🏹 Flechada!'} (-${danoTiro}, vida ${Math.max(0, melhor.hp)})`);
@@ -3080,7 +3110,7 @@ function atacar() {
   sons.golpe();
   petAlvo = melhor; // o pet entra na briga junto
   melhor.hp -= dano; melhor.piscar = 0.15; if (melhor.g.userData.corpoMat) melhor.g.userData.corpoMat.emissive.setHex(0x882020);
-  melhor._flinch = { t0: tempo, dur: 0.18, dirX: melhor.g.position.x - avatar.position.x, dirZ: melhor.g.position.z - avatar.position.z }; // RV15.1: recua ao apanhar
+  registraFlinchBicho(melhor, avatar.position, 0.2, 0.18); // RV16.2: boss/dragao reage com peso maior
   atualizaBarraHP(melhor);
   if (melhor.hp <= 0) mataBicho(melhor);
   else mostraMensagem(`Acertou ${melhor.boss ? 'o BOSS' : 'o bicho'}! (-${dano}, vida ${Math.max(0, melhor.hp)})`);
@@ -3682,6 +3712,7 @@ function lancaMagia(m) {
       if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
       if (Math.hypot(r.g.position.x - avatar.position.x, r.g.position.z - avatar.position.z) > 4.5) continue;
       r.hp -= 25; r.piscar = 0.2; if (r.g.userData.corpoMat) r.g.userData.corpoMat.emissive.setHex(0x882020);
+      registraFlinchBicho(r, avatar.position, 0.2, 0.18);
       if (r.hp <= 0) mataBicho(r);
       acertou++;
     }
@@ -3700,6 +3731,7 @@ function lancaMagia(m) {
     mFogo.position.copy(de); scene.add(mFogo);
     flechasVoando.push({ m: mFogo, de, ate, t: 0 }); // visual voa; dano aplicado já
     alvo.hp -= 35; alvo.piscar = 0.2; if (alvo.g.userData.corpoMat) alvo.g.userData.corpoMat.emissive.setHex(0xa03010);
+    registraFlinchBicho(alvo, avatar.position, 0.24, 0.2);
     if (alvo.hp <= 0) mataBicho(alvo);
     else mostraMensagem(`🔥 Exori Flam! (-35, vida ${Math.max(0, alvo.hp)})`);
   }
@@ -4273,7 +4305,7 @@ function passo() {
     r.g.position.x += (fl.dirX / d) * k * dt * 8;
     r.g.position.z += (fl.dirZ / d) * k * dt * 8;
     r.g.scale.y = (r._by || 1) * (1 - pulso * (fl.abaixa || 0.08));
-    r.g.rotation.x = (r._rx || 0) + pulso * 0.12;
+    r.g.rotation.x = (r._rx || 0) + pulso * (fl.inclina || 0.12);
   }
   atualizaPresencaMonstros(dt); // RV7.0: aggro, telegraph e investida dos monstros principais
 

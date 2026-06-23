@@ -211,6 +211,7 @@ Exemplo de ciclo:
 ## Cronograma recomendado
 
 ### RV16.2 - Bichos com presenca
+- Status: entregue no `docs/RV16_2_BICHOS_COM_PRESENCA.md`.
 - Animar cabeca/olhos seguindo alvo.
 - Armas de orc/ciclope/drakari sobem no golpe.
 - Aranha/escorpiao/caranguejo ganham membros vivos.

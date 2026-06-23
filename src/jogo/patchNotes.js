@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv16-1-portoes-continente';
+const PATCH_ID = 'rv16-2-bichos-presenca';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV16.1';
+  badge.textContent = 'PATCH RV16.2';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -38,14 +38,14 @@ export function criaPatchNotes() {
   card.innerHTML = `
     <div style="height:300px;background:
       linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.38),rgba(5,8,10,.08)),
-      url('/patches/rv16-1-portoes-continente.png') center/cover no-repeat;
+      url('/patches/rv16-2-bichos-presenca.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:590px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.1</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Portoes & Continente</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.2</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Bichos com Presenca</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Venor ganha uma linguagem visual de cidade-fortaleza e uma planta de continente para as proximas hunts:
-          rotas longas, biomas com identidade, dragoes raros, fronteira das maquinas e misterio alem-mar.
+          A rodada coloca peso nos encontros: olhos procuram o jogador, armas sobem no golpe, patas ganham vida
+          e dragoes reagem com garganta acesa quando recebem impacto.
         </div>
       </div>
     </div>
@@ -53,16 +53,16 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Este update troca entradas simples por portoes com torres, brasao, grades, estandartes e luzes animadas.
-          A ideia e que cada chegada a uma cidade pareca uma fronteira importante, como nos RPGs em que a viagem
-          ate uma nova regiao ja faz parte da recompensa.
+          Este update fecha a primeira passada de presenca dos monstros. A meta e simples: cada bicho precisa
+          parecer que esta vendo, preparando ataque e sentindo o impacto, mesmo antes de entrar a proxima leva
+          de modelos 3D premium.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Portoes redesenhados:</b> Venor, Venore e Thais recebem entradas maiores, passaveis e animadas.</li>
-          <li><b>Continente draconico:</b> mapa-guia oficial para organizar cidades, rotas, montanhas, pantanos e desertos.</li>
-          <li><b>Hunts conectadas:</b> cada linhagem de dragao passa a ter territorio, pre-requisito e papel na lore.</li>
-          <li><b>Offline-first:</b> o patch novo entra no cache do app instalavel para jogar solo mesmo sem internet.</li>
-          <li><b>Proxima frente:</b> reacoes proporcionais dos bichos, domar dragoes adultos e variantes de bosses raros.</li>
+          <li><b>Olhos e cabeca:</b> criaturas com cabeca passam a mirar o jogador quando estao em alerta.</li>
+          <li><b>Armas no ataque:</b> orc, ciclope e drakari agora movimentam machado, clava e lanca durante a investida.</li>
+          <li><b>Membros vivos:</b> aranhas, escorpioes e caranguejos animam patas, garras e ferrao em idle e combate.</li>
+          <li><b>Dragoes com impacto:</b> golpes, flechas, runas e magias fazem boss/dragao recuar com mais peso e brilho de garganta.</li>
+          <li><b>Offline-first:</b> a arte e o patch novo entram no cache do app instalavel para jogar solo sem internet.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">

@@ -14,11 +14,11 @@
   ],
   "screenshots": [
     {
-      "src": "/patches/rv16-1-portoes-continente.png",
+      "src": "/patches/rv16-2-bichos-presenca.png",
       "sizes": "1536x1024",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Venor - Portoes e Continente"
+      "label": "Venor - Bichos com Presenca"
     }
   ]
 }

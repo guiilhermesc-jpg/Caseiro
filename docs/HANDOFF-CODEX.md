@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.1 (v112)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.2 (v113)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.1 (v112)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.2 (v113)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16 — Moradias & Dragoes").
+    `patchNotes.js` (painel "PATCH RV16.2 — Bichos com Presenca").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -95,7 +95,8 @@ imagens geradas por IA (que dá pra ver como imagem).
   `sincronizaDragaoCompanheiro()`; modelo 3D re-escala por estágio (`aplicaEstagioNoModelo`).
 - **Afinidade ☀️Dia/🌙Noite**: escolhível no painel (toggle), dá **+50% de dano** quando o período bate
   (na mordida do pet). Salvo em `save.dragaoComp`.
-- Modelo 3D = `criaDragao()` procedural (ratos.js); `g.userData = {patas, asas, corpoMat, garganta, cauda[], tipo}`.
+- Modelo 3D = `criaDragao()` procedural (ratos.js); `g.userData` inclui patas, asas, corpoMat,
+  garganta, cauda[], cabeca, olhos, mandibula, pescoco e tipo.
 
 ---
 
@@ -139,21 +140,26 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `docs/BIBLIA_CONTINENTE_VENOR.md` organiza continente, macro-regiões, hunts, quest chains, economia e cronograma.
 - Documento da rodada: `docs/RV16_1_PORTOES_CONTINENTE.md`.
 
+## 7.2 Estado novo do RV16.2 (Codex)
+
+- `public/patches/rv16-2-bichos-presenca.png` é a arte oficial do patch; conectada em `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js`.
+- `src/main3d.js` subiu para **RV16.2 (v113)**.
+- `src/jogo/ratos.js` ganhou camada de presença visual: cabeça/olhos seguem alvo, aracnídeos animam membros e ameaças animam arma/garras/ferrão/mandíbula.
+- Orc, ciclope e Drakari agora guardam arma/lança em `userData` para a investida mover o objeto certo.
+- Dragão/boss de fogo recebe flinch mais forte em golpe, flecha, runa e magia, com garganta acesa no impacto.
+- Documento da rodada: `docs/RV16_2_BICHOS_COM_PRESENCA.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 1. **Interiores de mansão/guildhouse** — o RV16 criou os modelos externos e benefícios; falta interior próprio grande.
 2. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
-3. **Armas dos monstros no golpe** — orc(machado)/ciclope(clava, msg "ergue a clava" mas não ergue)/drakari(lança):
-   armas são filhos soltos de `g` (não em `userData`). Coletar `arma` no `userData` em ratos.js e GIRAR na investida.
-4. **Olhos seguindo o jogador** — olhos são malhas fixas; leve giro da cabeça/olho na direção do alvo em aggro.
-5. **Membros de aranha/escorpião/caranguejo** — pernas/ferrão/garras parados no idle (coletar e animar).
-6. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
+3. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
    já em `PRECOS`), falta: drop do Coração em invasão/boss + consagrar "Sela Dracônica" + fluxo de domação adulta.
-7. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
-8. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
-9. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
+4. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
+5. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
+6. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
    orfana coordenadas — fazer com cuidado/validação. **Deferido**.
 
 Saídas completas da auditoria/design ficam nos arquivos de output das tasks de workflow (em
