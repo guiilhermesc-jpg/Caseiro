@@ -202,6 +202,67 @@ export function criaCalaboucoVentos() {
     c.position.set(x, Y2 + 1.4 + s * 0.2, z); c.castShadow = true; g.add(c);
     const l = new THREE.PointLight(0x8e63ff, 0.55, 12, 2); l.position.set(x, Y2 + 2.8, z); g.add(l);
   }
+  function tapeteVento(x, z, w, d, rot = 0) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.045, d), new THREE.MeshStandardMaterial({
+      color: 0x101826, roughness: 0.7, metalness: 0.05, emissive: 0x14102f, emissiveIntensity: 0.12,
+    }));
+    m.position.set(x, Y2 + 0.22, z); m.rotation.y = rot; m.receiveShadow = true; g.add(m);
+    const linha = new THREE.Mesh(new THREE.BoxGeometry(w * 0.92, 0.05, 0.08), ouroVelho);
+    linha.position.set(0, 0.04, -d * 0.32); m.add(linha);
+    const linha2 = linha.clone(); linha2.position.z = d * 0.32; m.add(linha2);
+  }
+  function braseiro(x, z) {
+    const b = new THREE.Group(); b.position.set(x, Y2 + 0.15, z); g.add(b);
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 1.0, 10), ouroVelho); pe.position.y = 0.5; b.add(pe);
+    const cuba = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.5, 0.35, 14), ouroVelho); cuba.position.y = 1.1; b.add(cuba);
+    const fogo = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.85, 8), new THREE.MeshBasicMaterial({ color: 0xffa34a, transparent: true, opacity: 0.85 }));
+    fogo.position.y = 1.55; b.add(fogo);
+    const luzF = new THREE.PointLight(0xff9a3a, 0.75, 14, 2); luzF.position.set(x, Y2 + 2.4, z); g.add(luzF);
+    col(x, z, 1.4, 1.4);
+  }
+  function estandarte(x, z, rot = 0) {
+    const e = new THREE.Group(); e.position.set(x, Y2 + 0.3, z); e.rotation.y = rot; g.add(e);
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 4.2, 7), ouroVelho); haste.position.y = 2.1; e.add(haste);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.1, 0.06), new THREE.MeshStandardMaterial({ color: 0x111a31, roughness: 0.86, metalness: 0.02 }));
+    pano.position.set(0.55, 2.75, 0); e.add(pano);
+    const ouro = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.06, 0.07), ouroVelho); ouro.position.set(0.55, 2.95, 0.04); e.add(ouro);
+  }
+  function armaAltar(tipo, x, z, rot = 0) {
+    const a = new THREE.Group(); a.position.set(x, Y2 + 1.18, z); a.rotation.y = rot; g.add(a);
+    if (tipo === 'arco') {
+      const arco = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.04, 6, 18, Math.PI), ouroVelho);
+      arco.rotation.z = Math.PI / 2; a.add(arco);
+      const corda = new THREE.Mesh(new THREE.BoxGeometry(0.025, 1.08, 0.025), cristalMat); a.add(corda);
+    } else if (tipo === 'cajado' || tipo === 'cetro') {
+      const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 1.55, 7), tipo === 'cetro' ? paredeMat : ouroVelho);
+      haste.rotation.z = Math.PI / 2; a.add(haste);
+      const orbe = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 8), cristalMat); orbe.position.x = 0.82; a.add(orbe);
+      if (tipo === 'cetro') {
+        [-1, 1].forEach((ld) => {
+          const folha = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.28, 5), new THREE.MeshStandardMaterial({ color: 0x5f9b55, emissive: 0x214b20, emissiveIntensity: 0.35 }));
+          folha.position.set(0.55, ld * 0.16, 0); folha.rotation.z = ld * 0.75; a.add(folha);
+        });
+      }
+    } else {
+      const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.28, 0.05), new THREE.MeshStandardMaterial({ color: 0xd0d7df, roughness: 0.28, metalness: 0.72 }));
+      lamina.rotation.z = Math.PI / 2; a.add(lamina);
+      const guarda = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 0.09), ouroVelho); guarda.position.x = -0.48; a.add(guarda);
+      const gema = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), cristalMat); gema.position.x = -0.72; a.add(gema);
+    }
+  }
+  function bauAntigo(x, z) {
+    const bau = new THREE.Group(); bau.position.set(x, Y2 + 0.2, z); g.add(bau);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.95, 1.25), paredeMat); base.position.y = 0.58; bau.add(base);
+    const tampa = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.28, 1.32), ouroVelho); tampa.position.set(0, 1.18, -0.28); tampa.rotation.x = -0.55; bau.add(tampa);
+    const fecho = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.28, 0.12), ouroVelho); fecho.position.set(0, 0.72, 0.68); bau.add(fecho);
+    for (let i = 0; i < 9; i++) {
+      const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 10), ouroVelho);
+      moeda.rotation.x = Math.PI / 2; moeda.position.set(-0.8 + (i % 5) * 0.34, 1.1 + (i % 2) * 0.04, 0.1 + Math.floor(i / 5) * 0.22); bau.add(moeda);
+    }
+    const luzB = new THREE.PointLight(0xffc45a, 0.45, 8, 2); luzB.position.set(x, Y2 + 2.2, z); g.add(luzB);
+    col(x, z, 2.4, 1.5);
+    return { x, z };
+  }
 
   sala(DX, DZ, 34, 28, 'Vestibulo dos Ventos');
   sala(DX + 54, DZ - 8, 40, 34, 'Galeria das Armas Antigas');
@@ -210,22 +271,30 @@ export function criaCalaboucoVentos() {
   corredor(DX + 27, DZ - 4, 22, 8);
   corredor(DX + 82, DZ + 4, 26, 8);
   corredor(DX + 137, DZ, 26, 8);
+  tapeteVento(DX, DZ, 22, 3.2);
+  tapeteVento(DX + 54, DZ - 8, 24, 3.4);
+  tapeteVento(DX + 108, DZ + 18, 28, 3.4);
+  tapeteVento(DX + 166, DZ - 18, 30, 3.6);
 
   [[DX - 12, DZ - 8], [DX + 12, DZ + 8], [DX + 42, DZ - 22], [DX + 68, DZ + 8], [DX + 96, DZ + 3], [DX + 120, DZ + 34], [DX + 148, DZ - 34], [DX + 184, DZ + 8]].forEach(([x, z], i) => pilar(x, z, 6 + (i % 3) * 1.2));
   [[DX - 6, DZ + 10, 0.9], [DX + 54, DZ - 8, 1.1], [DX + 105, DZ + 32, 1.4], [DX + 132, DZ + 4, 1.0], [DX + 166, DZ - 18, 1.8]].forEach(([x, z, s]) => cristal(x, z, s));
+  [[DX - 15, DZ + 10], [DX + 18, DZ - 12], [DX + 42, DZ + 8], [DX + 68, DZ - 22], [DX + 92, DZ + 36], [DX + 126, DZ + 2], [DX + 148, DZ + 16], [DX + 186, DZ - 34]].forEach(([x, z]) => braseiro(x, z));
+  estandarte(DX + 39, DZ - 24, Math.PI / 2);
+  estandarte(DX + 70, DZ + 12, -Math.PI / 2);
+  estandarte(DX + 146, DZ - 38, Math.PI / 2);
+  estandarte(DX + 188, DZ + 14, -Math.PI / 2);
 
   const mesa = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 5.8, 0.7, 18), ouroVelho);
   mesa.position.set(DX + 54, Y2 + 0.62, DZ - 8); g.add(mesa);
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    const arma = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.18, 4.2), i % 2 ? ouroVelho : cristalMat);
-    arma.position.set(DX + 54 + Math.cos(a) * 3.2, Y2 + 1.08, DZ - 8 + Math.sin(a) * 3.2);
-    arma.rotation.y = a; g.add(arma);
-  }
+  armaAltar('espada', DX + 50.8, DZ - 9.2, 0.1);
+  armaAltar('arco', DX + 53.2, DZ - 11.0, 0.55);
+  armaAltar('cajado', DX + 56.2, DZ - 8.1, -0.35);
+  armaAltar('cetro', DX + 54.3, DZ - 5.2, 0.9);
 
   const portal = new THREE.Mesh(new THREE.CircleGeometry(5.2, 36), new THREE.MeshBasicMaterial({ color: 0xbfa6ff, transparent: true, opacity: 0.34, depthWrite: false }));
   portal.position.set(DX + 166, Y2 + 5.2, DZ - 38); portal.scale.y = 1.5; g.add(portal);
   const luz = new THREE.PointLight(0xbfa6ff, 1.4, 50, 2); luz.position.set(DX + 166, Y2 + 5.5, DZ - 18); g.add(luz);
+  const bauPrimeiroVento = bauAntigo(DX + 180, DZ + 18);
 
   return {
     grupo: g,
@@ -234,6 +303,8 @@ export function criaCalaboucoVentos() {
     acessos: [{ x: DX - 12, z: DZ }],
     saidas: [{ x: 110, z: 300 }],
     retornoAurelia: { x: CX + 104, z: CZ - 20 },
+    bauPrimeiroVento,
+    altarArmas: { x: DX + 54, z: DZ - 8 },
     pois,
     spawns: {
       sentinelas: [{ x: DX + 34, z: DZ - 8 }, { x: DX + 74, z: DZ + 8 }, { x: DX + 136, z: DZ - 4 }],

@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv17-grande-onda';
+const PATCH_ID = 'rv17-1-calabouco-vivo';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV17';
+  badge.textContent = 'PATCH RV17.1';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -37,32 +37,31 @@ export function criaPatchNotes() {
     + 'box-shadow:0 18px 70px rgba(0,0,0,.68);');
   card.innerHTML = `
     <div style="height:330px;background:
-      linear-gradient(90deg,rgba(5,8,10,.92),rgba(5,8,10,.38),rgba(5,8,10,.04)),
-      url('/patches/rv17-grande-onda.png') center/cover no-repeat;
+      linear-gradient(90deg,rgba(5,8,10,.94),rgba(5,8,10,.38),rgba(5,8,10,.04)),
+      url('/patches/rv17-1-calabouco-vivo.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
-      <div style="position:absolute;left:28px;bottom:24px;max-width:650px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17</div>
-        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">A Grande Onda</div>
+      <div style="position:absolute;left:28px;bottom:24px;max-width:660px;">
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17.1</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Calabouco Vivo</div>
         <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
-          Aurelia deixa de ser promessa e vira fronteira: ilhas suspensas, primeiro calabouco grande,
-          armas de cla e criaturas celestes preparando o caminho para o voo com dragoes.
+          A Grande Onda recebeu acabamento de masmorra: altar de armas, braseiros, estandartes,
+          bau unico, bestiario das criaturas celestes e mais leitura de recompensa.
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1.12fr .88fr;gap:18px;padding:22px;">
       <section>
-        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Conteudo jogavel</h2>
+        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que mudou</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          O RV17 transforma a nova identidade visual em mapa, combate e progressao. A inspiracao vem da
-          viagem valiosa de Tibia, da leitura de escala de World of Warcraft e do valor social das rotas de Albion.
+          Esta rodada e polimento com funcao: a arte oficial agora aparece melhor no espaco jogavel,
+          e o calabouco passa a ter recompensa unica, leitura de sala e registro de criaturas.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Arquipelago de Aurelia:</b> jardins suspensos, mirante do voo, obelisco de linhagem e portal dos ventos.</li>
-          <li><b>Calabouco dos Primeiros Ventos:</b> primeira masmorra grande, com salas, pontes internas, boss e retorno por Aurelia.</li>
-          <li><b>Novos monstros:</b> Sentinela Celeste, Golem de Cristal, Wyvern Celeste e Guardiao do Primeiro Vento.</li>
-          <li><b>Quests novas:</b> A Grande Onda e O Primeiro Vento conectam guilda, Helyra, dragao e futuro voo.</li>
-          <li><b>Armas de cla:</b> cavaleiro, paladino, feiticeiro e druida recebem armas de identidade pelo Ulrion.</li>
-          <li><b>Planeio inicial:</b> dragao adulto montado ganha salto mais alto e queda suavizada nas zonas abertas.</li>
+          <li><b>Calabouco mais vivo:</b> braseiros, faixas no piso, estandartes e cristais reforcam profundidade.</li>
+          <li><b>Altar de armas:</b> espada, arco, cajado e cetro aparecem como objetos reais na Galeria.</li>
+          <li><b>Bau dos Primeiros Ventos:</b> recompensa unica por conta com ouro, Pena Celeste e Fragmento de Asa Antiga.</li>
+          <li><b>Bestiario ampliado:</b> Sentinela, Golem, Wyvern e Guardiao ganharam funcao, lore e loot.</li>
+          <li><b>Economia:</b> Fragmento de Asa Antiga entra como material valioso de progressao futura.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -72,7 +71,7 @@ export function criaPatchNotes() {
         </p>
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
           Mascate: Terca, Quinta e Sabado.<br>
-          Ficha do heroi: tecla <b>C</b>. Montaria: tecla <b>M</b>.<br>
+          Bestiario: botao do dragao. Montaria: tecla <b>M</b>.<br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>
       </aside>

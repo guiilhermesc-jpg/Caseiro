@@ -32,6 +32,25 @@ const DRAGOES = [
     hist: 'No peito carrega um cristal pulsando ouro e violeta: um fragmento vivo da própria Veia-Mãe. É o último guardião do Coração de Dragão — o item que consagra a sela capaz de domar um adulto. Derrotá-lo não é matar uma fera: é arrancar da terra a permissão de cavalgar os céus.' },
 ];
 
+const CRIATURAS_GRANDE_ONDA = [
+  { nome: 'Sentinela Celeste', glifo: 'S', cor: '#bfa6ff',
+    hist: 'Guarda armada dos corredores altos de Aurelia. Luta em linha reta, prepara a lanca e pune quem entra no calabouco sem ler o chao.',
+    funcao: 'Porta de entrada da hunt: ensina telegraph, alcance e valor de posicionamento.',
+    loot: 'Pena Celeste, Elmo da Sentinela Celeste.' },
+  { nome: 'Golem de Cristal', glifo: 'G', cor: '#9b72ff',
+    hist: 'Pedra viva com cristais de vento presos no peito. E lento, pesado e feito para segurar sala, nao para perseguir corredor vazio.',
+    funcao: 'Tanque de masmorra: golpe anunciado, vida alta e recompensa economica forte.',
+    loot: 'Nucleo de Cristal Vivo, Anel de Cristal Vivo.' },
+  { nome: 'Wyvern Celeste', glifo: 'W', cor: '#78a8ff',
+    hist: 'Parente menor dos dragoes, adaptada aos rasgos de vento entre ilhas. Nao e montaria ainda: e predadora de altura.',
+    funcao: 'Ameaca de mobilidade e pressagio das hunts aereas futuras.',
+    loot: 'Escama de Wyvern Celeste, Capa de Asa Celeste.' },
+  { nome: 'Guardiao do Primeiro Vento', glifo: 'V', cor: '#d6bcff',
+    hist: 'O boss que mantem o primeiro selo do voo. Guarda a memoria de quando os homens aprenderam a subir montados em dragao.',
+    funcao: 'Final do primeiro calabouco grande: escala, preparo, boss gate e sigilo de progressao.',
+    loot: 'Selo do Primeiro Vento, Lanca do Primeiro Vento.' },
+];
+
 export function criaBestiario() {
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;'
@@ -49,6 +68,23 @@ export function criaBestiario() {
       `<img src="/assets/dragoes/${d.id}.png" alt="${d.nome}" loading="lazy" style="width:96px;height:96px;flex:0 0 96px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">`
       + `<div><div style="font:800 16px Georgia,serif;color:${d.cor};margin-bottom:4px;">${d.nome}</div>`
       + `<div style="color:#cdbf9c;font-size:12.5px;line-height:1.5;">${d.hist}</div></div>`;
+    cx.appendChild(card);
+  }
+  const subtitulo = document.createElement('h3');
+  subtitulo.textContent = 'Criaturas da Grande Onda';
+  subtitulo.style.cssText = 'margin:18px 0 10px;text-align:center;font:800 18px Georgia,serif;color:#e8d9a0;letter-spacing:2px;';
+  cx.appendChild(subtitulo);
+  for (const c of CRIATURAS_GRANDE_ONDA) {
+    const card = document.createElement('div');
+    card.style.cssText = 'display:flex;gap:14px;align-items:flex-start;margin-bottom:12px;padding:12px;border-radius:12px;'
+      + 'background:rgba(8,10,16,.66);border:1px solid rgba(154,112,255,.2);';
+    card.innerHTML =
+      `<div style="width:64px;height:64px;flex:0 0 64px;border-radius:14px;display:flex;align-items:center;justify-content:center;`
+      + `background:radial-gradient(circle at 45% 35%,${c.cor},#111827 68%);color:#fff;font:900 28px Georgia,serif;`
+      + `box-shadow:0 0 24px rgba(154,112,255,.32), inset 0 0 16px rgba(255,255,255,.16);">${c.glifo}</div>`
+      + `<div><div style="font:800 15px Georgia,serif;color:${c.cor};margin-bottom:4px;">${c.nome}</div>`
+      + `<div style="color:#cdbf9c;font-size:12.5px;line-height:1.5;">${c.hist}</div>`
+      + `<div style="margin-top:6px;color:#91a9c7;font-size:12px;line-height:1.45;"><b>Funcao:</b> ${c.funcao}<br><b>Loot:</b> ${c.loot}</div></div>`;
     cx.appendChild(card);
   }
   const fechar = document.createElement('button');

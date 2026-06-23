@@ -111,8 +111,8 @@
           navigator.serviceWorker.register('/sw.js')
             .then(async () => {
               if (!('caches' in window)) return;
-              const cache = await caches.open('venor-rv17-offline-v1');
-              const urls = new Set(['/', '/index.html', '/baixar.html', '/manifest.webmanifest', '/icon.svg', '/patches/rv17-grande-onda.png']);
+              const cache = await caches.open('venor-rv17-1-offline-v1');
+              const urls = new Set(['/', '/index.html', '/baixar.html', '/manifest.webmanifest', '/icon.svg', '/patches/rv17-1-calabouco-vivo.png']);
               performance.getEntriesByType('resource')
                 .map((entry) => entry.name)
                 .filter((url) => url.startsWith(location.origin))

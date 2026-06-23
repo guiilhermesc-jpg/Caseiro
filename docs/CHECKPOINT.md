@@ -3,9 +3,10 @@
 > Atualizado: 12/06/2026 (Patch 2 RV7.0 v55 + verificação Railway/Codex). Leia este arquivo primeiro ao reabrir o projeto.
 
 > Atualizacao rapida 23/06/2026: o estado operacional mais recente esta em `docs/HANDOFF-CODEX.md`.
-> RV17.0 (v121) - **A Grande Onda** adiciona Aurelia expandida, arquipelago celeste, primeiro
-> calabouco grande, monstros de altura, armas de cla e quests novas. Documento da rodada:
-> `docs/RV17_GRANDE_ONDA.md`. **Nao publicado sem "pode publicar".**
+> RV17.1 (v122) - **Calabouco Vivo** aprofunda a Grande Onda com nova arte oficial,
+> braseiros/estandartes/altar de armas, Bau dos Primeiros Ventos, bestiario das criaturas celestes
+> e material `Fragmento de Asa Antiga`. Documento da rodada: `docs/RV17_1_CALABOUCO_VIVO.md`.
+> **Nao publicado sem "pode publicar".**
 
 ---
 

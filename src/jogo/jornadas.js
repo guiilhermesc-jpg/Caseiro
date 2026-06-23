@@ -384,7 +384,7 @@ export function criaQuadroJornadas({ onMarcarDestino = null, onAbrirMapa = null 
     card.innerHTML = `
       <div style="padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
         <div>
-          <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17</div>
+          <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17.1</div>
           <div style="font:900 34px Georgia,serif;line-height:1;color:#fff;text-shadow:0 3px 16px #000;">A Grande Onda</div>
           <p style="margin:10px 0 0;color:#b7c3cf;line-height:1.55;max-width:720px;">
             A distancia agora tambem sobe: cada rota tem risco, funcao, encontros, economia e criterio de qualidade.

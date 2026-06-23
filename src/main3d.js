@@ -85,7 +85,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV17.0 (v121)';
+const VERSAO = 'RV17.1 (v122)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1617,7 +1617,7 @@ const PRECOS = {
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
   'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500, 'Cristal do Pico': 150,
   'Escama Drakari': 70, 'Fragmento de Obsidiana': 140, 'Coração de Obsidiana': 650,
-  'Pena Celeste': 120, 'Nucleo de Cristal Vivo': 260, 'Escama de Wyvern Celeste': 320, 'Selo do Primeiro Vento': 900,
+  'Pena Celeste': 120, 'Nucleo de Cristal Vivo': 260, 'Escama de Wyvern Celeste': 320, 'Selo do Primeiro Vento': 900, 'Fragmento de Asa Antiga': 520,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -2705,6 +2705,26 @@ for (const p of calaboucoVentos.pois) {
     dialogo.abre(p.nome,
       'As marcas no chao mostram rotas de expedicao, armas de cla e calculos de vento. Nada aqui e decoracao: cada sala ensina uma parte do futuro voo draconico.',
       [{ texto: 'Continuar explorando', onClick: () => dialogo.fecha() }]);
+  };
+  interativos.push(it);
+}
+let bauPrimeiroVentoAberto = false;
+if (calaboucoVentos.bauPrimeiroVento) {
+  const b = calaboucoVentos.bauPrimeiroVento;
+  const it = { x: b.x, z: b.z, y: -80, raio: 3.0, titulo: 'Bau dos Primeiros Ventos', acao: 'Abrir o bau antigo' };
+  it.onAcao = () => {
+    if (subsoloAtual !== calaboucoVentos) return;
+    if (bauPrimeiroVentoAberto) { mostraMensagem('O Bau dos Primeiros Ventos ja foi esvaziado nesta conta.'); return; }
+    bauPrimeiroVentoAberto = true;
+    sons.tesouro();
+    ouro += 240; hud.ouro(ouro);
+    inventario.addItem({ nome: 'Fragmento de Asa Antiga', icone: 'A' });
+    inventario.addItem({ nome: 'Pena Celeste', icone: 'P' });
+    inventario.addItem({ nome: 'Pocao Grande', icone: 'P', slot: 'pocao', usavel: 'pocaoGrande' });
+    salvaJogo();
+    dialogo.abre('Bau dos Primeiros Ventos',
+      'Entre moedas antigas e plumas endurecidas pelo tempo, voce encontra um fragmento de asa. Nao e suficiente para voar ainda, mas e uma prova material de que alguem ja cruzou estas salas montado em dragao.',
+      [{ texto: 'Guardar o achado', onClick: () => dialogo.fecha() }]);
   };
   interativos.push(it);
 }
@@ -3832,6 +3852,7 @@ function salvaJogo() {
       imoveis: imoveisEstado, // casas/mansões/guildhouses alugadas
       dragoes: dragoesMortos, guilda: guildaMembro, armamentoClan: armamentoClanConcedido, // currículo + Guilda de Venore
       provaFogo: provaFogoFeita, // prova das alturas de Aurelia
+      bauVentos: bauPrimeiroVentoAberto, // tesouro unico do Calabouco dos Primeiros Ventos
       bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
       vorag: voragInvocado, // a Ossada erguida não volta a dormir
       arconte: arconteInvocado, // o Arconte despertado também continua no mundo
@@ -3863,6 +3884,7 @@ function carregaJogo(nome) {
     sincronizaPlacasImoveis();
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; armamentoClanConcedido = !!d.armamentoClan; // Guilda de Venore
     provaFogoFeita = !!d.provaFogo; // prova das alturas de Aurelia
+    bauPrimeiroVentoAberto = !!d.bauVentos; // tesouro unico do calabouco celeste
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
     if (d.vorag) invocaVorag(); // a Ossada erguida continua erguida
     if (d.arconte || ((questEstado.arconteLuaPartida || {}).aceita && !(questEstado.arconteLuaPartida || {}).feita)) invocaArconteDrakari();
