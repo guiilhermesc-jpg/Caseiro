@@ -405,6 +405,110 @@ function criaMesaConselho(y, guilda = false) {
   return g;
 }
 
+function criaCandelabro(y, guilda = false) {
+  const g = new THREE.Group();
+  const metal = new THREE.MeshStandardMaterial({ color: 0x3a2b1c, metalness: 0.65, roughness: 0.35 });
+  const chama = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff8a22, emissiveIntensity: 1.15, roughness: 0.3 });
+  const animados = [];
+  const altura = guilda ? 7.2 : 6.0;
+  const raio = guilda ? 2.9 : 2.1;
+  const corrente = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 1.6, 6), metal);
+  corrente.position.set(0, y + altura + 0.8, 0); g.add(corrente);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.055, 8, 34), metal);
+  aro.position.set(0, y + altura, 0); aro.rotation.x = Math.PI / 2; g.add(aro);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const x = Math.cos(a) * raio, z = Math.sin(a) * raio;
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, raio, 6), metal);
+    braco.position.set(x / 2, y + altura, z / 2);
+    braco.rotation.z = Math.PI / 2;
+    braco.rotation.y = -a;
+    g.add(braco);
+    const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.48, 8), mat(0xf0ead8, 0.8));
+    vela.position.set(x, y + altura + 0.28, z); g.add(vela);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 6), chama.clone());
+    fl.position.set(x, y + altura + 0.62, z); g.add(fl);
+    animados.push({ chama: fl, chamaMat: fl.material, fase: Math.random() * 6 });
+  }
+  const luz = new THREE.PointLight(0xffbf6a, guilda ? 1.35 : 1.0, guilda ? 38 : 28, 2);
+  luz.position.set(0, y + altura, 0);
+  g.add(luz);
+  return { grupo: g, animados };
+}
+
+function criaGaleriaSuperior(larg, prof, y, guilda = false) {
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2;
+  const madeira = mat(0x5d3b23, 0.9), pedra = mat(0x8d8576, 1), ouro = mat(0xd9a522, 0.55);
+  const matBase = guilda ? pedra : madeira;
+  const yy = y + (guilda ? 5.45 : 4.85);
+  const pisoFundo = meshBox(larg - 5.0, 0.26, 2.0, matBase, 0, yy, -hz + 2.2);
+  const pisoE = meshBox(2.0, 0.26, prof - 8.0, matBase, -hx + 2.2, yy, 0.7);
+  const pisoD = meshBox(2.0, 0.26, prof - 8.0, matBase, hx - 2.2, yy, 0.7);
+  g.add(pisoFundo, pisoE, pisoD);
+  const addRailing = (x0, z0, w, eixo = 'x') => {
+    const corr = meshBox(eixo === 'x' ? w : 0.12, 0.12, eixo === 'x' ? 0.12 : w, ouro, x0, yy + 0.8, z0);
+    g.add(corr);
+    const n = Math.max(3, Math.floor(w / 1.3));
+    for (let i = 0; i < n; i++) {
+      const t = -w / 2 + (i + 0.5) * (w / n);
+      g.add(meshBox(0.08, 0.78, 0.08, ouro, x0 + (eixo === 'x' ? t : 0), yy + 0.42, z0 + (eixo === 'x' ? 0 : t)));
+    }
+  };
+  addRailing(0, -hz + 3.25, larg - 6.5, 'x');
+  addRailing(-hx + 3.25, 0.7, prof - 8.8, 'z');
+  addRailing(hx - 3.25, 0.7, prof - 8.8, 'z');
+  for (let i = 0; i < 9; i++) {
+    const deg = meshBox(3.2, 0.22, 1.0, madeira, -hx + 5.0 + i * 0.72, y + 0.26 + i * 0.42, hz - 7.0 - i * 0.9);
+    deg.rotation.y = 0.08;
+    g.add(deg);
+  }
+  return g;
+}
+
+function criaDecoracaoParede(larg, prof, y, guilda = false) {
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2;
+  const cores = guilda ? [0x203e78, 0x7a2630, 0x202a44] : [0x7a2630, 0x295f50, 0x67407c];
+  [-8, 0, 8].forEach((x, i) => {
+    const pano = new THREE.Mesh(new THREE.PlaneGeometry(2.2, guilda ? 4.2 : 3.2, 2, 4), new THREE.MeshStandardMaterial({ color: cores[i % cores.length], roughness: 0.92, side: THREE.DoubleSide }));
+    pano.position.set(x, y + (guilda ? 5.1 : 4.55), -hz + 0.04);
+    g.add(pano);
+    const sig = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), mat(0xd9a522, 0.55));
+    sig.position.set(x, y + (guilda ? 5.4 : 4.75), -hz + 0.18); g.add(sig);
+  });
+  [-1, 1].forEach((s) => {
+    const quadro = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.0), new THREE.MeshBasicMaterial({ map: placaCanvas(s < 0 ? 'MAPA DE VENOR' : 'LINHAGENS'), transparent: false }));
+    quadro.position.set(s * (hx - 0.06), y + 3.9, -2.0);
+    quadro.rotation.y = s < 0 ? Math.PI / 2 : -Math.PI / 2;
+    g.add(quadro);
+  });
+  const feixeMat = new THREE.MeshBasicMaterial({ color: 0xffd89a, transparent: true, opacity: guilda ? 0.13 : 0.16, depthWrite: false, side: THREE.DoubleSide });
+  const feixe = new THREE.Mesh(new THREE.PlaneGeometry(5.8, guilda ? 7.6 : 6.2), feixeMat);
+  feixe.position.set(0, y + (guilda ? 3.8 : 3.2), hz - 0.35);
+  feixe.rotation.x = -0.18;
+  g.add(feixe);
+  return g;
+}
+
+function criaPlantasInteriores(larg, prof, y, guilda = false) {
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2;
+  const vasoMat = mat(0x6b4129, 0.9), folhaMat = mat(guilda ? 0x2e6845 : 0x3f7a4a, 1);
+  [[-hx + 4, hz - 3.5], [hx - 4, hz - 3.5], [-hx + 4, -hz + 4.2], [hx - 4, -hz + 4.2]].forEach(([x, z], i) => {
+    const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.52, 0.8, 8), vasoMat);
+    vaso.position.set(x, y + 0.4, z); g.add(vaso);
+    for (let k = 0; k < 5; k++) {
+      const folha = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.0 + (k % 2) * 0.28, 5), folhaMat);
+      folha.position.set(x + Math.cos(k * 1.25) * 0.18, y + 1.05, z + Math.sin(k * 1.25) * 0.18);
+      folha.rotation.z = Math.cos(k + i) * 0.28;
+      folha.rotation.x = Math.sin(k) * 0.18;
+      g.add(folha);
+    }
+  });
+  return g;
+}
+
 function criaInteriorImovelBase(opts = {}) {
   const { id = 'imovel', nome = 'Imovel', y = -120, guilda = false, larg = guilda ? 44 : 34, prof = guilda ? 32 : 28 } = opts;
   const g = new THREE.Group();
@@ -449,6 +553,12 @@ function criaInteriorImovelBase(opts = {}) {
   titulo.position.set(0, y + alt - 1.25, hz - 0.08);
   titulo.rotation.y = Math.PI;
   g.add(titulo);
+  const cand = criaCandelabro(y, guilda);
+  g.add(cand.grupo);
+  cand.animados.forEach((a) => animados.push(a));
+  g.add(criaGaleriaSuperior(larg, prof, y, guilda));
+  g.add(criaDecoracaoParede(larg, prof, y, guilda));
+  g.add(criaPlantasInteriores(larg, prof, y, guilda));
 
   if (!guilda) {
     muro(-hx + 10.5, -2.0, t, prof - 9.0, madeira);
@@ -496,6 +606,13 @@ function criaInteriorImovelBase(opts = {}) {
 
   const bau = criaBauGrande(-hx + 5.0, y, hz - 5.8, guilda ? 0x4a3424 : 0x6e4a2a);
   g.add(bau); col(-hx + 5.0, hz - 5.8, 2.2, 1.4);
+  for (let i = 0; i < 9; i++) {
+    const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 10), ouro);
+    moeda.position.set(-hx + 4.35 + (i % 3) * 0.33, y + 1.05 + Math.floor(i / 3) * 0.035, hz - 5.95 + Math.floor(i / 3) * 0.22);
+    moeda.rotation.x = Math.PI / 2;
+    moeda.rotation.z = i * 0.4;
+    g.add(moeda);
+  }
   const banco = new THREE.Group(); banco.position.set(-hx + 9.0, y, hz - 5.6);
   banco.add(meshBox(2.4, 1.1, 1.1, pedra, 0, 0.55, 0));
   banco.add(meshBox(1.3, 1.0, 0.2, ouro, 0, 1.42, 0.0));
@@ -512,6 +629,9 @@ function criaInteriorImovelBase(opts = {}) {
   }
   const cristal = new THREE.Mesh(new THREE.OctahedronGeometry(guilda ? 0.58 : 0.42, 0), new THREE.MeshStandardMaterial({ color: 0xffd16a, emissive: 0xff8a22, emissiveIntensity: 0.75, roughness: 0.25 }));
   cristal.position.y = guilda ? 0.92 : 0.72; ninho.add(cristal);
+  const luzNinho = new THREE.PointLight(0xffa34a, guilda ? 1.15 : 0.72, guilda ? 18 : 12, 2);
+  luzNinho.position.set(0, guilda ? 1.15 : 0.9, 0);
+  ninho.add(luzNinho);
   animados.push({ mesh: cristal, gira: 0.65, pulsa: cristal.material, fase: Math.random() * 6 });
   g.add(ninho); col(ninho.position.x, ninho.position.z, guilda ? 5.0 : 3.8, guilda ? 4.2 : 3.2);
 

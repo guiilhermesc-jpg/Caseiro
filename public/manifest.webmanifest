@@ -14,11 +14,11 @@
   ],
   "screenshots": [
     {
-      "src": "/patches/rv16-3-interiores-prestigio.png",
+      "src": "/patches/rv16-4-luz-detalhe.png",
       "sizes": "1536x1024",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Venor - Interiores de Prestigio"
+      "label": "Venor - Luz e Detalhe"
     }
   ]
 }

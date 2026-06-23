@@ -224,13 +224,20 @@ Exemplo de ciclo:
 - Sala de trofeus.
 - Estabulo/berco do dragao.
 
-### RV16.4 - Aluguel semanal e economia
+### RV16.4 - Luz & Detalhe
+- Status: entregue no `docs/RV16_4_LUZ_DETALHE.md`.
+- Galeria superior e escadaria visual em mansoes/guildhouse.
+- Candelabro, luz de entrada e luz propria no ninho do dragao.
+- Tapecarias, mapas, plantas, cofre com moedas e objetos de valor.
+- Arte oficial do patch refletindo elementos reais do jogo.
+
+### RV16.5 - Aluguel semanal e economia
 - vencimento;
 - renovacao;
 - avisos;
 - perda de beneficios sem apagar itens.
 
-### RV16.5 - Hunt do Pantano Vivo
+### RV16.6 - Hunt do Pantano Vivo
 - territorio do Dragao do Pantano;
 - veneno, agua, lama, pontes;
 - item-chave para doma rara.
@@ -239,4 +246,5 @@ Exemplo de ciclo:
 - ampliar rotas reais;
 - mapa/telemetria de distancia;
 - carrocas com custo;
-- primeira rota longa remodelada do zero.
+- primeira rota longa remodelada do zero;
+- portal publico estilo Tibia: noticias de updates, contas, personagens, rankings e pagina de patch.

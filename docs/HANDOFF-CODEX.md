@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.3 (v114)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.4 (v115)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.3 (v114)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.4 (v115)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.3 — Interiores de Prestigio").
+    `patchNotes.js` (painel "PATCH RV16.4 — Luz & Detalhe").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -158,6 +158,14 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Morte/teleporte GM agora chama `escondeZonasCarregadas()`, incluindo interiores de imoveis.
 - Documento da rodada: `docs/RV16_3_INTERIORES_PRESTIGIO.md`.
 
+## 7.4 Estado novo do RV16.4 (Codex)
+
+- `public/patches/rv16-4-luz-detalhe.png` eh a arte oficial do patch; conectada em `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js`.
+- `src/main3d.js` subiu para **RV16.4 (v115)**.
+- `src/jogo/interiores.js` recebeu camada grafica premium: candelabro, galeria superior, escadaria, tapecarias, mapas, plantas, cofre com moedas, feixe de luz na porta e luz propria no berco/ninho draconico.
+- A direcao do site/portal estilo Tibia fica explicitamente planejada para o **Patch 17**, com noticias, contas, personagens e rankings. Nao implementar no RV16.
+- Documento da rodada: `docs/RV16_4_LUZ_DETALHE.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
@@ -167,7 +175,8 @@ Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo
    já em `PRECOS`), falta: drop do Coração em invasão/boss + consagrar "Sela Dracônica" + fluxo de domação adulta.
 3. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
 4. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
-5. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
+5. **Portal Patch 17**: site publico estilo Tibia, com noticias de updates, contas, personagens, rankings e pagina de patch.
+6. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
    orfana coordenadas — fazer com cuidado/validação. **Deferido**.
 
 Saídas completas da auditoria/design ficam nos arquivos de output das tasks de workflow (em

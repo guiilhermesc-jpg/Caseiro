@@ -58,5 +58,6 @@ rotas, dragoes, casas e expansoes futuras.
 
 1. RV16.2: rodada completa dos bichos.
 2. RV16.3: interiores grandes de mansao/guildhouse.
-3. RV16.4: aluguel semanal com vencimento.
-4. RV16.5: primeira hunt nova de dragao regional.
+3. RV16.4: luz, detalhe e arte oficial mais proxima do jogo real.
+4. RV16.5: aluguel semanal com vencimento.
+5. RV16.6: primeira hunt nova de dragao regional.

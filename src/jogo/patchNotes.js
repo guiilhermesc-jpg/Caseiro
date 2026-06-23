@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv16-3-interiores-prestigio';
+const PATCH_ID = 'rv16-4-luz-detalhe';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV16.3';
+  badge.textContent = 'PATCH RV16.4';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -38,14 +38,14 @@ export function criaPatchNotes() {
   card.innerHTML = `
     <div style="height:300px;background:
       linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.38),rgba(5,8,10,.08)),
-      url('/patches/rv16-3-interiores-prestigio.png') center/cover no-repeat;
+      url('/patches/rv16-4-luz-detalhe.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:590px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.3</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Interiores de Prestigio</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.4</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Luz & Detalhe</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Mansoes e guildhouse deixam de ser apenas fachada: agora existem interiores grandes, com sala de conselho,
-          biblioteca, deposito, banco, lixeira e espaco draconico para descanso.
+          Os interiores premium ganharam mais presenca visual: galeria superior, escadaria, candelabro,
+          tapecarias, mapas, plantas, cofre com moedas, luz de entrada e berco draconico iluminado.
         </div>
       </div>
     </div>
@@ -53,14 +53,14 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Este update aproxima o sistema de casas da sensacao MMO: propriedade precisa ter lugar, rotina e beneficio.
-          O jogador entra, se organiza, descansa, guarda ouro, limpa mochila e sente que aquele espaco tem valor.
+          Este update e uma passada direta de qualidade grafica. A arte do patch precisa refletir o que o jogador
+          encontra no mundo, entao os elementos centrais agora existem tambem dentro do jogo.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Mansoes entraveis:</b> propriedades premium ganham zona interna propria com hall, biblioteca, cama e ninho draconico.</li>
-          <li><b>Guildhouse entravel:</b> o Salao das Guildas recebe mesa de conselho, armaria, trofeus, cofre e berco de dragao.</li>
-          <li><b>Beneficios no lugar certo:</b> dormir, banco, deposito e lixeira tambem funcionam por objetos dentro do interior.</li>
-          <li><b>Camera e saida:</b> interiores usam colisao, nome de local, retorno para a porta e camera contra a propria zona.</li>
+          <li><b>Luz premium:</b> candelabro central, chamas, brilho do berco draconico e feixe de luz na porta.</li>
+          <li><b>Arquitetura rica:</b> galeria superior, escadaria, balaustradas e tapecarias dao profundidade ao salao.</li>
+          <li><b>Objetos com valor:</b> cofre com moedas, mapas, quadros, plantas e armaria reforcam a leitura de propriedade.</li>
+          <li><b>Direcao de arte:</b> a arte oficial passa a guiar elementos reais do jogo, nao so promessa visual.</li>
           <li><b>Offline-first:</b> a arte e o patch novo entram no cache do app instalavel para jogar solo sem internet.</li>
         </ul>
       </section>

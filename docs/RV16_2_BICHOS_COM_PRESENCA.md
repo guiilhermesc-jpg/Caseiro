@@ -58,6 +58,7 @@ os bichos atuais parecerem menos estaticos: olhando, preparando ataque, usando a
 ## Proximas frentes recomendadas
 
 1. RV16.3: interiores grandes de mansao/guildhouse.
-2. RV16.4: aluguel semanal com vencimento, renovacao e perda temporaria de beneficios.
-3. RV16.5: primeira hunt regional nova de dragao com territorio proprio.
-4. RV16.6: doma de dragao adulto com Coracao/Sela Draconica e boss de invasao.
+2. RV16.4: luz, detalhe e arte oficial mais proxima do jogo real.
+3. RV16.5: aluguel semanal com vencimento, renovacao e perda temporaria de beneficios.
+4. RV16.6: primeira hunt regional nova de dragao com territorio proprio.
+5. RV16.7: doma de dragao adulto com Coracao/Sela Draconica e boss de invasao.
