@@ -7,6 +7,16 @@ Este documento organiza a expansao grande de Venor como MMO autoral. A regra e:
 viagem longa precisa valer a pena. Cada caminho deve ter perigo, historia,
 economia, atalhos futuros e uma razao para o jogador lembrar dele.
 
+Decisao macro em 2026-06-23: este continente e o **Pacto Continental 01/30**. A arte de mapa
+continental aprovada representa apenas uma parte do mundo final, nao o mundo inteiro. O foco
+ate a **RV30** e fechar Venor e Arredores com qualidade, densidade, sistemas e leitura profissional
+antes de abrir o Pacto Continental 02/30.
+
+Documentos canonicos conectados:
+- `docs/PLANO_30_CONTINENTES.md`
+- `docs/BIBLIA_SISTEMAS_MMO_PROFISSIONAL.md`
+- `docs/BIBLIA_MONSTROS_DRAGOES.md`
+
 ## Pilares
 
 1. **O caminho e conteudo**
@@ -230,6 +240,9 @@ Exemplo de ciclo:
 7. volta para vender, depositar e renovar contrato.
 
 ## Cronograma recomendado
+
+Nota: o cronograma canonico macro agora esta em `docs/PLANO_30_CONTINENTES.md`. A lista abaixo
+mantem historico e detalhamento local de fases ja executadas ou planejadas dentro do Pacto 01/30.
 
 ### RV16.2 - Bichos com presenca
 - Status: entregue no `docs/RV16_2_BICHOS_COM_PRESENCA.md`.

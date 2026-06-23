@@ -208,9 +208,42 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js` apontam para RV16.8 e cache `venor-rv16-8-offline-v1`.
 - Documento da rodada: `docs/RV16_8_LORE_OPERACIONAL.md`.
 
+## 7.9 Direcao macro nova - 30 pactos e sistemas MMO profissionais
+
+- O mapa continental aprovado pelo maestro agora e oficialmente **1/30** do mundo planejado.
+- Venor e Arredores sao o **Pacto Continental 01/30**, com fechamento previsto na **RV30**.
+- Nao abrir Pacto 02 antes de Venor fechar com densidade: cidade, casas, hunts, dragao, NPCs, UI,
+  economia, rotas, interiores, bestiario, mapa, offline/instalavel e multiplayer base.
+- Novos documentos canonicos:
+  - `docs/PLANO_30_CONTINENTES.md`
+  - `docs/BIBLIA_SISTEMAS_MMO_PROFISSIONAL.md`
+  - `docs/BIBLIA_MONSTROS_DRAGOES.md`
+- Referencias de sistema: WoW para escala, legibilidade, QoL e colecoes; Tibia para mundo aberto,
+  perigo, viagem e casas; Albion para economia, transporte, montarias e risco por rota.
+- Regra de autoria: nao copiar IP. Absorver principios e transformar em Venor.
+- Regra de arte reforcada: patch art oficial mostra sistema real. Futuro pode aparecer como pressagio,
+  nunca como entrega falsa.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
+
+### Fila canonica apos 2026-06-23
+
+1. **RV16.9 - Interiores como realidade** - mansoes/guildhouses com hall nobre, candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
+2. **RV16.10 - Bichos e hunts como realidade** - criaturas/hunts com silhueta, ataque, impacto, terreno, loot visual e escala.
+3. **RV16.11 - Continente e viagens** - mapa jogavel por regioes, rotas longas, pontos de descanso, carrocas e montarias.
+4. **RV16.12 - Moradias, aluguel e economia** - aluguel semanal, renovacao, avisos, banco, depot, lixeira e ML do dragao.
+5. **RV16.13 - Hunt do Pantano Vivo** - territorio do Dragao do Pantano, lama, veneno, pontes e item-chave de doma rara.
+6. **RV17 - Portal publico** - noticias, contas, personagens, rankings, bestiario, mapa e patch notes.
+7. **RV18 - Instalavel premium** - app instalado quando GLBs/texturas/animacoes passarem do peso saudavel da web.
+8. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
+9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
+10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.
+11. **Racas/faccoes/era antiga** - orcs, anoes, paladinos, bruxos, druidas, dragoes antigos, maquinas e anomalias.
+12. **Escala tipo Tibia** - cidades mais longe, mas so depois de parametrizar coordenadas e validar rotas.
+
+### Fila historica anterior
 
 1. **RV16.9 - Interiores como realidade** — alinhar mansoes/guildhouses ao hall nobre: candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
 2. **RV16.10 - Bichos e hunts como realidade** — alinhar criaturas/hunts a arte de bestiario: silhueta, ataque, impacto, terreno e loot visual.

@@ -22,6 +22,11 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 
 ## Pilar 3 - Mundo 30x com densidade
 
+O "30x" agora tem regra formal: o mundo completo sera composto por **30 Pactos Continentais**.
+Venor e Arredores sao o **Pacto Continental 01/30**, com fechamento previsto na RV30. O objetivo
+nao e abrir 30 mapas cedo; e construir o primeiro pacto com densidade suficiente para servir de
+padrao para os proximos 29.
+
 1. Regioes conectadas por rotas reais: cidades, vilarejos, fazendas, ruinas, cavernas, pantanos e montanhas.
 2. Cada regiao precisa ter funcao: lojas, quest, risco, coleta, inimigos, passagem ou historia.
 3. Subsolos em camadas: esgoto, catacumbas, cavernas, fenda e masmorras de alto nivel.
@@ -60,7 +65,23 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 11. RV8.5: interiores premium e padrao de entrada/saida em casas, lojas e templos.
 12. RV8.6: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.
 13. RV16.8 entregue: Lore Operacional - NPCs renomeados, biblia de NPCs, compatibilidade de economia e gate premium.
-14. RV17: portal publico com noticias, contas, personagens, highscores, bestiario, mapa e patch notes quando as imagens ja baterem com o jogo real.
-15. RV18: base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
-16. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
-17. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
+14. RV16.9-RV16.13: interiores, bichos/hunts, continente/viagens, moradias/economia e Pantano Vivo.
+15. RV17: portal publico com noticias, contas, personagens, highscores, bestiario, mapa e patch notes quando as imagens ja baterem com o jogo real.
+16. RV18: base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
+17. RV19: escala local e rotas de jornada do Pacto 01/30.
+18. RV20: hunts por bioma e monstros profissionais.
+19. RV21: crescimento profundo dos dragoes.
+20. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
+21. RV23: profissoes, economia e contratos.
+22. RV24: guildas, grupos e expedicoes.
+23. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
+24. RV26: transporte, montarias e viagens raras.
+25. RV27: familia, conta e multiplayer social.
+26. RV28: QoL profissional e colecoes.
+27. RV29: polimento, performance e instalacao.
+28. RV30: fechamento do Pacto Continental 01/30.
+
+Documentos canonicos novos:
+- `docs/PLANO_30_CONTINENTES.md`
+- `docs/BIBLIA_SISTEMAS_MMO_PROFISSIONAL.md`
+- `docs/BIBLIA_MONSTROS_DRAGOES.md`

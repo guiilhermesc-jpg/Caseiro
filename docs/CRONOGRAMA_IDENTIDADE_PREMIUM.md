@@ -14,6 +14,18 @@ o jogador precisa encontrar uma versao coerente disso no mundo jogavel.
 6. **Criacao nova precisa nascer completa**: monstro, roupa, montaria, item, NPC, GIF/animacao ou imagem nova so entra com funcao operacional, movimento/idle quando aplicavel, colisao/interacao e teste.
 7. **Imagem oficial e contrato**: se a arte mostra fonte, casa, bau, escada, mesa, monstro, roupa ou planta, a versao jogavel precisa entregar leitura equivalente.
 8. **Peso define plataforma**: se RV17/RV18 ultrapassarem o peso aceitavel para navegador/mobile web, a prioridade muda para app instalado; web fica como preview/dev.
+9. **Escala 30 pactos**: a imagem continental aprovada e apenas 1/30 do mundo planejado. Venor e Arredores formam o Pacto Continental 01/30, que deve fechar na RV30 com densidade real antes de abrir o Pacto 02.
+
+## Escala macro - Pacto Continental 01/30
+
+Fonte canonica: `docs/PLANO_30_CONTINENTES.md`.
+
+O projeto completo tera 30 blocos continentais. O bloco atual e **Venor e Arredores**, com
+Venor, Venore, Thais, Noctaria, Pico, Pantano Vivo, Costa da Estrela e Fronteira Ferrum.
+
+Regra: nao expandir para um novo pacto enquanto Venor nao tiver cidade, rotas, casas, hunts,
+dragao, economia, NPCs, UI, bestiario, mapa, interiores, monstros e base online/offline com
+leitura profissional.
 
 ## Fase RV16.7 - Microdetalhes urbanos
 
@@ -84,12 +96,66 @@ Referencia: imagem do mapa continental.
 - Assets grandes, GLBs, texturas e animacoes entram por manifest de asset, nao improvisados no codigo.
 - Aceite: jogador abre como jogo instalado, carrega rapido depois do primeiro pacote e nao depende de internet para solo.
 
+## Fase RV19 - Escala local e rotas de jornada
+
+- Aumentar a leitura continental sem criar vazio.
+- Rotas longas com placas, descanso, perigo, mapa, carrocas, montarias e atalhos pagos.
+- Aceite: viajar precisa parecer aventura planejada, nao caminhada vazia.
+
+## Fase RV20 - Hunts por bioma e monstros profissionais
+
+- Usar `docs/BIBLIA_MONSTROS_DRAGOES.md`.
+- Cada bioma ganha criaturas, escala, mecanica, loot e risco.
+- Aceite: a hunt precisa ser reconhecivel pelo ambiente antes de qualquer texto.
+
+## Fase RV21 - Crescimento profundo dos dragoes
+
+- Ovo, filhote, jovem, adulto, anciao e lendario.
+- Afinidade, ML, vinculo, casa, itens de Veia e quests draconicas.
+- Aceite: o dragao precisa mudar o jeito de jogar no longo prazo.
+
 ## Fase RV22 - Racas mortais e faccoes
 
 - Orcs, anoes, humanos de linhagem antiga, paladinos, bruxos/feiticeiros e druidas entram como sistemas, nao skins.
 - Cada raca precisa de arquitetura, NPCs, reputacao, loot, fraquezas e rota propria.
 
+## Fase RV23 - Profissoes, economia e contratos
+
+- Craft, coleta, transporte, banco/depot, contratos de guilda e mercado.
+- Aceite: item raro precisa ter utilidade antes de ter preco alto.
+
+## Fase RV24 - Guildas, grupos e expedicoes
+
+- Quadro de expedicoes, contratos de hunt, boss local e preparacao de grupo.
+- Aceite: conteudo coordenado precisa recompensar planejamento.
+
 ## Fase RV25 - Era antiga dos dragoes e guerra da Veia
 
 - Dragoes antigos, guerras da Veia, maquinas, roboides/humanoides e sinais externos entram em blocos grandes.
 - Tecnologia precisa nascer da lore: a maquina industrializa a Veia; alienigena entra como anomalia, nao troca de genero.
+
+## Fase RV26 - Transporte, montarias e viagens raras
+
+- Carrocas, barcas, animais de carga, corujas raras, morcegos, draptors e montarias por bioma.
+- Aceite: montaria precisa ter papel real, nao ser apenas cosmetico.
+
+## Fase RV27 - Familia, conta e multiplayer social
+
+- Permissoes de casa/guildhouse, familia, grupo, presenca online e legado de conta.
+- Aceite: solo continua valido; multiplayer adiciona vida e colaboracao.
+
+## Fase RV28 - QoL profissional e colecoes
+
+- Diario, bestiario, automap, marcadores, outfits, montarias, mascotes, dragao, comparacao de item e acoes contextuais.
+- Aceite: praticidade de MMO moderno sem matar viagem e perigo.
+
+## Fase RV29 - Polimento, performance e instalacao
+
+- Rodada pesada de bugfix, mobile, controles, camera, cache e fechamento de prototipos antigos.
+- Aceite: nenhum elemento central pode parecer placeholder.
+
+## Fase RV30 - Fechamento do Pacto Continental 01/30
+
+- Venor e Arredores fecham como primeiro bloco completo.
+- Toda imagem oficial do Pacto 01 precisa representar conteudo real.
+- Aceite: cidade, casas, hunts, dragao, NPCs, UI, economia, rotas, interiores, bestiario, mapa e multiplayer base precisam estar coerentes.
