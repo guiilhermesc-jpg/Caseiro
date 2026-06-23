@@ -24,7 +24,7 @@ import { criaInventario } from './jogo/inventario.js';
 import { criaDialogo } from './jogo/dialogo.js';
 import { criaCustomizar } from './jogo/customizar.js';
 import { criaPainelPersonagem } from './jogo/painel.js';
-import { criaDragaoData, statsDragao, ganhaXpDragao, ESPECIES_DRAGAO, ESTAGIO_INFO } from './jogo/dragoes-companheiro.js';
+import { criaDragaoData, statsDragao, ganhaXpDragao, hpMaxDe, ESPECIES_DRAGAO, ESTAGIO_INFO } from './jogo/dragoes-companheiro.js';
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
@@ -84,7 +84,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV15.6 (v110)';
+const VERSAO = 'RV16.0 (v111)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -866,6 +866,8 @@ let tochaCarga = 1; // 1 = tocha nova; QUEIMA acesa (raio encolhe) e recupera ap
 let vida = 100; const VIDA_MAX = 100; let defesa = 0; // defesa sobe ao equipar armadura
 const equipados = {}; // slot -> item de armadura
 let ouro = 0; // moeda do jogo (loot/pesca) — compra casas
+let bancoOuro = 0; // ouro guardado em banco/depot de imóveis
+const imoveisEstado = {}; // id -> contrato/cor/sono (salvo por conta)
 let danoArma = 2; // 2 = mãos · 5 = graveto · espadas etc. sobem
 const MAT_METAL = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.6, roughness: 0.4 });
 
@@ -1228,8 +1230,9 @@ function sincronizaDragaoCompanheiro() {
 // escala o modelo 3D do dragão pelo estágio (filhote/jovem/adulto) — só o
 // dragaozinho procedural escala limpo; draptor mantém escala base.
 function aplicaEstagioNoModelo() {
-  if (!gato || !dragaoCompanheiro || dragaoCompanheiro.petTipo !== 'dragaozinho') return;
-  const base = 0.16; // escala original do filhote em pet.js
+  if (!gato || !dragaoCompanheiro || !ehDragaoPet(petTipo)) return;
+  const base = gato.userData.baseScale || (dragaoCompanheiro.petTipo === 'dragaozinho' ? 0.16 : null);
+  if (!base) return; // draptors mantêm escala própria
   const est = ESTAGIO_INFO[dragaoCompanheiro.estagio] || ESTAGIO_INFO.filhote;
   const s = base * (est.escala / ESTAGIO_INFO.filhote.escala);
   gato.scale.setScalar(s);
@@ -1273,6 +1276,11 @@ const DOMAVEIS = [
 DOMAVEIS.push(
   { tipo: 'coruja', nome: 'Coruja Gigante', emoji: 'O', x: 124, z: -12, item: 'Dourado', chance: 0.18, dica: 'um Dourado pescado no Rio Fundo' },
   { tipo: 'morcego', nome: 'Morcego Grande', emoji: 'M', x: -690, z: -54, item: 'Fragmento de Obsidiana', chance: 0.16, dica: 'fragmentos dos Drakari no Ermo das Cinzas' },
+  { tipo: 'furiaDoDia', nome: 'Fúria do Dia', emoji: 'D', x: 566, z: 74, item: 'Escama de Ouro', chance: 0.09, dica: 'escamas douradas dos guardiões de Aurélia' },
+  { tipo: 'furiaDaNoite', nome: 'Fúria da Noite', emoji: 'N', x: -742, z: -62, item: 'Selo da Lua Partida', chance: 0.07, dica: 'a cadeia do Arconte precisa estar avançada' },
+  { tipo: 'dragaoPantano', nome: 'Dragão do Pântano', emoji: 'P', x: -410, z: 20, item: 'Gota da Veia', chance: 0.10, dica: 'sentir os veios antigos pode revelar uma gota viva' },
+  { tipo: 'dragaoGelo', nome: 'Dragão de Gelo', emoji: 'G', x: 118, z: 336, y: 36, item: 'Cristal do Pico', chance: 0.08, dica: 'cristais raros das cavernas do Pico' },
+  { tipo: 'dragaoVeia', nome: 'Dragão da Veia', emoji: 'V', x: -6, z: -38, item: 'Relíquia de Vorag', chance: 0.035, dica: 'relíquia lendária da cadeia de Vorag' },
 );
 const domaveisVivos = [];
 DOMAVEIS.forEach((d) => {
@@ -1327,6 +1335,10 @@ Object.assign(MONTARIA_VEL, { coruja: 2.05, morcego: 2.1, draptor: 2.45, draptor
 Object.assign(MONTARIA_SELA, { coruja: 1.55, morcego: 1.25, draptor: 1.35, draptorLendario: 1.55 });
 Object.assign(PET_DANO, { coruja: 6, morcego: 7, draptor: 12, draptorLendario: 18 });
 Object.assign(PET_NOMES, { coruja: 'Coruja Gigante', morcego: 'Morcego Grande', draptor: 'Draptor', draptorLendario: 'Draptor Lendário' });
+Object.assign(MONTARIA_VEL, { furiaDoDia: 2.25, furiaDaNoite: 2.3, dragaoPantano: 2.1, dragaoGelo: 2.15, dragaoVeia: 2.55 });
+Object.assign(MONTARIA_SELA, { furiaDoDia: 1.1, furiaDaNoite: 1.1, dragaoPantano: 1.05, dragaoGelo: 1.05, dragaoVeia: 1.2 });
+Object.assign(PET_DANO, { furiaDoDia: 12, furiaDaNoite: 13, dragaoPantano: 12, dragaoGelo: 13, dragaoVeia: 18 });
+Object.assign(PET_NOMES, { furiaDoDia: 'Fúria do Dia', furiaDaNoite: 'Fúria da Noite', dragaoPantano: 'Dragão do Pântano', dragaoGelo: 'Dragão de Gelo', dragaoVeia: 'Dragão da Veia' });
 let montado = false;
 let petAlvo = null, petProxMordida = 0;
 function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
@@ -2028,26 +2040,149 @@ const TIPOS_COLETA = {
   interativos.push(it);
 }));
 
-// CASAS À VENDA (compra com ouro; depois personaliza o telhado)
+// IMÓVEIS ALUGÁVEIS (RV16.0): casa deixa de ser cosmético e vira progressão.
+// Inspiração: casas/guildhalls de MMORPG clássico, mas com função própria em Venor.
 const TELHADOS = [0x8a4632, 0x4a5666, 0x6a4a8a, 0x3a6b30, 0x2a5a9c, 0x7a3a2a];
-[{ x: 43, z: 6, casaIdx: 0 }, { x: -43, z: 6, casaIdx: 1 }].forEach((cv) => { // placas junto às portas novas (lado da rua)
-  cv.custo = 15; cv.corIdx = 0;
-  const placa = new THREE.Group(); placa.position.set(cv.x, 0, cv.z);
-  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6), MAT_MADEIRA); poste.position.y = 0.9; placa.add(poste);
-  const tab = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 0.08), new THREE.MeshStandardMaterial({ color: 0xc0392b })); tab.position.y = 1.6; placa.add(tab);
-  scene.add(placa);
-  const it = { x: cv.x, z: cv.z, raio: 2.6, titulo: 'Casa', acao: `Comprar casa (${cv.custo} 🪙)` };
-  it.onAcao = () => {
-    if (!cv.comprada) {
-      if (ouro >= cv.custo) { ouro -= cv.custo; cv.comprada = true; it.acao = 'Personalizar telhado 🎨'; hud.ouro(ouro); tab.material = new THREE.MeshStandardMaterial({ color: 0x2e7d32 }); mostraMensagem('🏠 Casa comprada! Agora é sua — entre e use AÇÃO aqui pra mudar o telhado.'); }
-      else mostraMensagem(`Faltam moedas: ${ouro}/${cv.custo} 🪙. Lute e pesque pra juntar!`);
-    } else {
-      const casa = casas[cv.casaIdx];
-      if (casa) { cv.corIdx = (cv.corIdx + 1) % TELHADOS.length; casa.roof.material = new THREE.MeshStandardMaterial({ color: TELHADOS[cv.corIdx], roughness: 0.9 }); mostraMensagem('🎨 Telhado repintado!'); }
-    }
+const placasImoveis = [];
+const IMOVEIS = [
+  { id: 'casa_leste_venor', nome: 'Casa do Portão Leste', tipo: 'Casa', x: 43, z: 6, custo: 85, aluguel: 8, casaIdx: 0, ml: 1, xpDragao: 80,
+    beneficios: { depot: true, lixo: true, dormir: true } },
+  { id: 'casa_oeste_venor', nome: 'Casa do Portão Oeste', tipo: 'Casa', x: -43, z: 6, custo: 85, aluguel: 8, casaIdx: 1, ml: 1, xpDragao: 80,
+    beneficios: { depot: true, lixo: true, dormir: true } },
+  { id: 'mansao_ponte', nome: 'Mansão da Ponte', tipo: 'Mansão', x: 101, z: 57, custo: 340, aluguel: 28, ml: 3, xpDragao: 220,
+    beneficios: { depot: true, banco: true, lixo: true, dormir: true } },
+  { id: 'mansao_fundadores', nome: 'Mansão dos Fundadores', tipo: 'Mansão', x: -101, z: 57, custo: 380, aluguel: 32, ml: 4, xpDragao: 260,
+    beneficios: { depot: true, banco: true, lixo: true, dormir: true } },
+  { id: 'solar_canal', nome: 'Solar do Canal', tipo: 'Mansão', x: -352, z: 68, custo: 520, aluguel: 44, ml: 5, xpDragao: 340,
+    beneficios: { depot: true, banco: true, lixo: true, dormir: true } },
+  { id: 'guildhouse_venore', nome: 'Salão das Guildas', tipo: 'Guildhouse', x: -312, z: 27, custo: 920, aluguel: 75, ml: 8, xpDragao: 620, requerGuilda: true,
+    beneficios: { depot: true, banco: true, lixo: true, dormir: true, guilda: true } },
+];
+function estadoImovel(id) {
+  if (!imoveisEstado[id]) imoveisEstado[id] = { alugado: false, corIdx: 0, ultimoSono: -9999 };
+  return imoveisEstado[id];
+}
+function sincronizaPlacasImoveis() {
+  for (const p of placasImoveis) {
+    const st = estadoImovel(p.def.id);
+    p.tab.material.color.setHex(st.alugado ? 0x2e7d32 : (p.def.tipo === 'Guildhouse' ? 0x6a4a8a : 0xc0392b));
+    p.it.acao = st.alugado ? 'Administrar imóvel 🏠' : `Alugar ${p.def.tipo.toLowerCase()} (${p.def.custo} 🪙)`;
+  }
+}
+function beneficiosTexto(def) {
+  const b = [];
+  if (def.beneficios.depot) b.push('Depósito');
+  if (def.beneficios.banco) b.push('Banco');
+  if (def.beneficios.lixo) b.push('Lixeira');
+  if (def.beneficios.dormir) b.push(`Dormir: +${def.ml} ML do dragão`);
+  if (def.beneficios.guilda) b.push('Base de guilda');
+  return b.join(' · ');
+}
+function abreBancoImovel(def) {
+  const dep = (n) => {
+    if (ouro < n) { dialogo.abre(def.nome, `Você tem ${ouro} 🪙 na mão. Não dá para depositar ${n}.`, [{ texto: 'Voltar', onClick: () => abreBancoImovel(def) }]); return; }
+    ouro -= n; bancoOuro += n; hud.ouro(ouro); salvaJogo(); abreBancoImovel(def);
   };
+  const sac = (n) => {
+    if (bancoOuro < n) { dialogo.abre(def.nome, `Seu banco tem ${bancoOuro} 🪙. Não dá para sacar ${n}.`, [{ texto: 'Voltar', onClick: () => abreBancoImovel(def) }]); return; }
+    bancoOuro -= n; ouro += n; hud.ouro(ouro); salvaJogo(); abreBancoImovel(def);
+  };
+  dialogo.abre('🏦 Banco do Imóvel', `Na mão: ${ouro} 🪙\nGuardado: ${bancoOuro} 🪙`, [
+    { texto: 'Depositar 50 🪙', onClick: () => dep(50) },
+    { texto: 'Depositar 200 🪙', onClick: () => dep(200) },
+    { texto: 'Sacar 50 🪙', onClick: () => sac(50) },
+    { texto: 'Sacar 200 🪙', onClick: () => sac(200) },
+    { texto: 'Voltar', onClick: () => abreImovel(def) },
+  ]);
+}
+function limpaLixoImovel(def) {
+  const descartaveis = ['Cauda de rato', 'Osso', 'Frasco', 'Cogumelo', 'Concha', 'Coco', 'Erva'];
+  let n = 0;
+  for (const nome of descartaveis) while (inventario.consomeItem(nome)) n++;
+  mostraMensagem(n ? `🗑️ Lixeira de ${def.nome}: ${n} item(ns) barato(s) descartado(s).` : '🗑️ Nada barato para descartar.');
+  salvaJogo();
+}
+function dormirNoImovel(def) {
+  const st = estadoImovel(def.id);
+  if (tempo - st.ultimoSono < 300) {
+    const falta = Math.ceil((300 - (tempo - st.ultimoSono)) / 60);
+    mostraMensagem(`🛏️ Você já descansou aqui há pouco. Volte em ~${falta} min.`);
+    return;
+  }
+  st.ultimoSono = tempo;
+  vida = Math.min(VIDA_MAX, vida + 35 + def.ml * 4);
+  mana = Math.min(MANA_MAX, mana + 24 + def.ml * 3);
+  hud.vida(vida, VIDA_MAX); hud.mana(mana, MANA_MAX);
+  if (dragaoCompanheiro) {
+    dragaoCompanheiro.ml = (dragaoCompanheiro.ml || 0) + def.ml;
+    ganhaXpDragao(dragaoCompanheiro, def.xpDragao);
+    dragaoCompanheiro.hpMax = hpMaxDe(dragaoCompanheiro);
+    dragaoCompanheiro.hp = dragaoCompanheiro.hpMax;
+    aplicaEstagioNoModelo();
+    mostraMensagem(`🛏️ Descanso profundo: seu dragão ganhou +${def.ml} ML e +${def.xpDragao} XP.`);
+  } else {
+    mostraMensagem('🛏️ Você descansou e recuperou vida/mana. Com um dragão, a cama também treina ML.');
+  }
+  salvaJogo();
+}
+function alugaImovel(def) {
+  const st = estadoImovel(def.id);
+  if (st.alugado) { abreImovel(def); return; }
+  if (def.requerGuilda && !guildaMembro) {
+    dialogo.abre(def.nome, 'A Guildhouse só aceita membro reconhecido da Guilda de Venore. Derrube dragões e fale com o Mestre da Guilda.', [{ texto: 'Entendi', onClick: () => dialogo.fecha() }]);
+    return;
+  }
+  if (ouro < def.custo) {
+    dialogo.abre(def.nome, `Contrato inicial: ${def.custo} 🪙.\nVocê tem ${ouro} 🪙.`, [{ texto: 'Voltar', onClick: () => dialogo.fecha() }]);
+    return;
+  }
+  ouro -= def.custo; hud.ouro(ouro);
+  st.alugado = true; st.desde = Math.floor(tempo); st.aluguel = def.aluguel;
+  sincronizaPlacasImoveis(); sons.tesouro(); salvaJogo();
+  mostraMensagem(`🏠 Você alugou ${def.nome}. Agora esse lugar tem valor real.`);
+  abreImovel(def);
+}
+function abreImovel(def) {
+  const st = estadoImovel(def.id);
+  if (!st.alugado) {
+    dialogo.abre(def.nome, `${def.tipo} disponível.\nContrato inicial: ${def.custo} 🪙 · aluguel-base: ${def.aluguel} 🪙.\nBenefícios: ${beneficiosTexto(def)}.`, [
+      { texto: `Alugar por ${def.custo} 🪙`, onClick: () => alugaImovel(def) },
+      { texto: 'Deixar para depois', onClick: () => dialogo.fecha() },
+    ]);
+    return;
+  }
+  const ops = [];
+  if (def.beneficios.dormir) ops.push({ texto: `Dormir e treinar dragão (+${def.ml} ML) 🛏️`, onClick: () => { dialogo.fecha(); dormirNoImovel(def); } });
+  if (def.beneficios.depot) ops.push({ texto: 'Abrir depósito 🧰', onClick: () => { dialogo.fecha(); abreCofre(); } });
+  if (def.beneficios.banco) ops.push({ texto: 'Abrir banco 🏦', onClick: () => abreBancoImovel(def) });
+  if (def.beneficios.lixo) ops.push({ texto: 'Usar lixeira 🗑️', onClick: () => { dialogo.fecha(); limpaLixoImovel(def); } });
+  if (typeof def.casaIdx === 'number') ops.push({ texto: 'Repintar telhado 🎨', onClick: () => {
+    const casa = casas[def.casaIdx], est = estadoImovel(def.id);
+    if (casa && casa.roof) {
+      est.corIdx = (est.corIdx + 1) % TELHADOS.length;
+      casa.roof.material = new THREE.MeshStandardMaterial({ color: TELHADOS[est.corIdx], roughness: 0.9 });
+      salvaJogo(); mostraMensagem('🎨 Telhado repintado!');
+    }
+    dialogo.fecha();
+  } });
+  ops.push({ texto: 'Fechar', onClick: () => dialogo.fecha() });
+  dialogo.abre(def.nome, `Contrato ativo.\nAluguel-base: ${def.aluguel} 🪙.\nBenefícios: ${beneficiosTexto(def)}.\nBanco: ${bancoOuro} 🪙 guardado.`, ops);
+}
+function registraImovel(def) {
+  const placa = new THREE.Group(); placa.position.set(def.x, 0, def.z);
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6), MAT_MADEIRA); poste.position.y = 0.9; placa.add(poste);
+  const tab = new THREE.Mesh(new THREE.BoxGeometry(def.tipo === 'Guildhouse' ? 1.7 : 1.35, 0.62, 0.08), new THREE.MeshStandardMaterial({ color: 0xc0392b }));
+  tab.position.y = 1.6; placa.add(tab);
+  const topo = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.34, 4), new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.6, roughness: 0.35 }));
+  topo.position.y = 2.1; placa.add(topo);
+  scene.add(placa);
+  const it = { x: def.x, z: def.z, raio: def.tipo === 'Guildhouse' ? 4.2 : 3.0, titulo: `🏠 ${def.nome}`, acao: `Alugar ${def.tipo.toLowerCase()} (${def.custo} 🪙)` };
+  it.onAcao = () => abreImovel(def);
   interativos.push(it);
-});
+  placasImoveis.push({ def, it, tab });
+}
+IMOVEIS.forEach(registraImovel);
+sincronizaPlacasImoveis();
 
 let acessoAtual = 0;
 function desce(i = 0) {
@@ -3273,7 +3408,7 @@ function salvaJogo() {
     localStorage.setItem(chaveConta(nomeJogador), JSON.stringify({
       v: 1, cores: { ...coresJogador },
       x: _sp.x, z: _sp.z,
-      ouro, vida, hud: hud.estado(), mochila: inventario.estado(),
+      ouro, bancoOuro, vida, hud: hud.estado(), mochila: inventario.estado(),
       equip: Object.values(equipados).filter(Boolean),
       economia, // estoque regional dos NPCs (ofertas raras liberadas)
       pet: petTipo, pets: petsDomados, // companheiros domados
@@ -3281,6 +3416,7 @@ function salvaJogo() {
       quests: questEstado, // missões aceitas/cumpridas
       codice: codice.estado(), // Códice da Veia: veios sentidos + Quarto Veio
       cofre, // Depósito de Venore (itens guardados em segurança)
+      imoveis: imoveisEstado, // casas/mansões/guildhouses alugadas
       dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
       bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
       vorag: voragInvocado, // a Ossada erguida não volta a dormir
@@ -3293,7 +3429,7 @@ function carregaJogo(nome) {
     const raw = localStorage.getItem(chaveConta(nome));
     if (!raw) return false;
     const d = JSON.parse(raw);
-    ouro = d.ouro || 0; vida = d.vida || VIDA_MAX;
+    ouro = d.ouro || 0; bancoOuro = d.bancoOuro || 0; vida = d.vida || VIDA_MAX;
     Object.assign(coresJogador, d.cores || {});
     montaAvatar();
     if (typeof d.x === 'number' && typeof d.z === 'number') {
@@ -3308,6 +3444,9 @@ function carregaJogo(nome) {
     codice.carrega(d.codice); // Códice da Veia volta com os veios já sentidos
     sincronizaVeiosMapa(); atualizaReliquias(); // mapa e relíquias refletem o save
     cofre.length = 0; (d.cofre || []).forEach((c) => cofre.push({ ...c })); // Depósito volta intacto
+    Object.keys(imoveisEstado).forEach((k) => delete imoveisEstado[k]);
+    Object.assign(imoveisEstado, d.imoveis || {});
+    sincronizaPlacasImoveis();
     dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
     if (d.vorag) invocaVorag(); // a Ossada erguida continua erguida
@@ -4043,6 +4182,7 @@ function passo() {
           // AFINIDADE quando o período (dia/noite) casa com o dele.
           if (dragaoCompanheiro && ehDragaoPet(petTipo)) {
             const sd = statsDragao(dragaoCompanheiro); dnP = sd.dano;
+            if (sd.ml) dnP = Math.round(dnP * (1 + Math.min(30, sd.ml) * 0.025)); // ML treinado dormindo em imóveis
             if (sd.afinidade === (ehNoite ? 'noite' : 'dia')) dnP = Math.round(dnP * 1.5);
           }
           petAlvo.hp -= dnP; petAlvo.piscar = 0.15;

@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv14-era-dos-dragoes';
+const PATCH_ID = 'rv16-moradias-dragoes';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = '🐉 PATCH RV14';
+  badge.textContent = '🐉 PATCH RV16';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -38,14 +38,14 @@ export function criaPatchNotes() {
   card.innerHTML = `
     <div style="height:300px;background:
       linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.34),rgba(5,8,10,.06)),
-      url('/splash.jpg') center/cover no-repeat;
+      url('/patches/rv16-moradias-dragoes.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:560px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV14</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">A Era dos Dragões</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Moradias & Dragões</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Dragões no centro do mundo: companheiros que crescem com você, ficha de personagem completa,
-          cidades viram castelos murados e um passe de qualidade gráfica.
+          Casas agora têm valor real: aluguel, depósito, banco, lixeira e descanso que fortalece o ML do dragão.
+          Venor também recebe mansões, guildhouse, vapor nos bueiros, vento nas plantas e novas linhagens raras.
         </div>
       </div>
     </div>
@@ -53,16 +53,16 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direção do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Venor passa a girar em torno dos <b>dragões</b>. Você cria o seu desde filhote e o faz crescer
-          — devagar, ganhando experiência junto da sua jornada — até virar uma fera de guerra. E o mundo
-          ficou mais bonito: casas refeitas, cidades muradas e arte nova feita à mão.
+          Venor ganha uma camada de valor persistente: imóveis deixam de ser decoração e passam a ser
+          objetivo econômico. Alugar uma casa, mansão ou guildhouse desbloqueia serviços e descanso; dormir
+          treina o <b>ML do dragão</b>, criando uma rotina de progressão mais próxima de RPG clássico.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Dragão-companheiro:</b> cresce de filhote a adulto e segue a sua história. Escolha a afinidade ☀️ Dia / 🌙 Noite — ela influencia as caças.</li>
-          <li><b>Ficha do personagem (tecla C):</b> nível, vida, mana, XP, suas armaduras e o dragão ativo num painel estilo Tibia.</li>
-          <li><b>Casas refeitas:</b> enxaimel, pedra e reboco premium, com telhados de telha, ardósia e palha.</li>
-          <li><b>Cidades muradas:</b> o vilarejo virou castelo, com muralha, torres e portões.</li>
-          <li><b>Bestiário ampliado:</b> Fúria da Noite, Fúria do Dia, o Trífauce, o Colosso e o Guardião do Coração.</li>
+          <li><b>Imóveis alugáveis:</b> casas, mansões e guildhouse com contrato salvo por personagem.</li>
+          <li><b>Benefícios reais:</b> depósito, banco, lixeira e cama para recuperar vida/mana e treinar ML do dragão.</li>
+          <li><b>Casario repaginado:</b> mansões maiores, pórticos, sacadas, alas, torres, jardins e guildhouse com estandartes.</li>
+          <li><b>Mundo vivo:</b> bueiros soltam vapor e arbustos/pinheiros de grupo balançam ao vento.</li>
+          <li><b>Novas linhagens:</b> Fúria do Dia, Fúria da Noite, Dragão do Pântano, Dragão de Gelo e Dragão da Veia.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">

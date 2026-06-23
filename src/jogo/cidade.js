@@ -3,7 +3,7 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaMuralha, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaMuralha, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, criaMansao, criaGuildHouse, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira, criaCranioDragao } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
@@ -239,6 +239,8 @@ export function criaCidade() {
   const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x655f57, roughness: 1, flatShading: true });
   const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x423d38, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false });
   const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x24211f, roughness: 0.9, metalness: 0.05 });
+  const vaporRuaAnimados = [];
+  const vaporRuaMat = new THREE.MeshStandardMaterial({ color: 0xd9dde4, transparent: true, opacity: 0.18, roughness: 1, depthWrite: false });
   function detalhaRua(cx, cz, w, d, y = 0.095) {
     const horizontal = w >= d;
     const guiaGeo = horizontal ? new THREE.BoxGeometry(w, 0.04, 0.28) : new THREE.BoxGeometry(0.28, 0.04, d);
@@ -276,15 +278,21 @@ export function criaCidade() {
     for (let i = 0; i < ralos; i++) {
       const t = (i + 0.5) / ralos;
       const lado = i % 2 ? 1 : -1;
-      dRua.position.set(
-        horizontal ? cx - w / 2 + w * t : cx + lado * (w / 2 - 0.55),
-        y + 0.038,
-        horizontal ? cz + lado * (d / 2 - 0.55) : cz - d / 2 + d * t
-      );
+      const rx = horizontal ? cx - w / 2 + w * t : cx + lado * (w / 2 - 0.55);
+      const rz = horizontal ? cz + lado * (d / 2 - 0.55) : cz - d / 2 + d * t;
+      dRua.position.set(rx, y + 0.038, rz);
       dRua.rotation.set(0, 0, 0);
       dRua.scale.set(1, 1, 1);
       dRua.updateMatrix();
       ralosMesh.setMatrixAt(i, dRua.matrix);
+      if (i % 3 === 0) {
+        const fumaca = [];
+        for (let p = 0; p < 3; p++) {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(0.16 + p * 0.045, 6, 5), vaporRuaMat);
+          puff.position.set(rx, y + 0.18, rz); scene.add(puff); fumaca.push(puff);
+        }
+        vaporRuaAnimados.push({ fumaca, baseY: y + 0.18, baseX: rx, baseZ: rz, fase: Math.random() * 6 });
+      }
     }
     ralosMesh.receiveShadow = true;
     scene.add(ralosMesh);
@@ -301,6 +309,7 @@ export function criaCidade() {
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
 
   const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [], lagos = [];
+  vaporRuaAnimados.forEach((a) => animados.push(a));
   const add = (res) => {
     // o que nasce "no chão" (y=0) assenta na colina local (zonas planas = +0)
     if (res.grupo.position.y === 0) res.grupo.position.y = alturaColinas(res.grupo.position.x, res.grupo.position.z);
@@ -373,6 +382,12 @@ export function criaCidade() {
   // RV5.4: dois lotes que eram decorativos viraram casas ENTRÁVEIS de verdade
   add(criaCasaInterior(64, 0, { frente: 'oeste', cor: 0xe0d0a0, corTelhado: 0x7a3a2a }));
   add(criaCasaInterior(0, 64, { frente: 'sul', cor: 0x9ab0a4, corTelhado: 0x4a5666 }));
+  // RV16.0: imóveis aspiracionais no entorno do vilarejo. Casas pequenas
+  // continuam existindo; mansões viram objetivo econômico, como em RPG antigo.
+  add(criaMansao(112, 58, { rot: -Math.PI / 2, cor: 0xd6c29a, corTelhado: 0x6a4a6a, luxo: 1 }));
+  add(criaPlaca(101, 57, 'Mansao da Ponte', -Math.PI / 2));
+  add(criaMansao(-112, 58, { rot: Math.PI / 2, cor: 0xc9b78e, corTelhado: 0x4a5666, luxo: 1 }));
+  add(criaPlaca(-101, 57, 'Mansao dos Fundadores', Math.PI / 2));
 
   // === PORTÕES DO VILAREJO (RV5.4): paliçada de madeira com tabuleta nas
   // 3 entradas — a vila ganha rosto (e quem chega sabe onde chegou)
@@ -1008,7 +1023,7 @@ export function criaCidade() {
     const largoG = new THREE.Mesh(new THREE.BoxGeometry(22, 0.12, 16), pisoMat);
     largoG.position.set(-320, 0.03, 18); largoG.receiveShadow = true; scene.add(largoG);
     add(criaEstatua(-326, 18)); // herói fundador no Largo
-    add(criaPredio({ x: -320, z: 36, larg: 16, prof: 13, alt: 12, cor: 0xcab98e, corTelhado: 0x6a4a6a, rot: Math.PI })); // SALÃO DAS GUILDAS
+    add(criaGuildHouse(-320, 36, { rot: Math.PI, cor: 0xcab98e, corTelhado: 0x6a4a6a })); // SALÃO DAS GUILDAS
     add(criaPlaca(-312, 27, 'Salão das Guildas', Math.PI));
     add(criaMarco('igreja', { x: -390, z: 16, rot: Math.PI / 2 })); // CATEDRAL DE VENORE (campanário + sino)
     add(criaPlaca(-380, 8, 'Catedral de Venore', Math.PI / 2));
@@ -1031,6 +1046,10 @@ export function criaCidade() {
         // Venore é capital de PEDRA (cidade-castelo): pedra + ardósia, com alguns enxaiméis
         estiloParede: i % 3 === 0 ? 'madeira_viga' : 'pedra_castelo', estiloTelhado: 'ardosia',
       })));
+    add(criaMansao(-360, 78, { rot: Math.PI, cor: 0xbfae86, corTelhado: 0x315f58, estiloParede: 'pedra_castelo', estiloTelhado: 'ardosia', luxo: 2 }));
+    add(criaPlaca(-352, 68, 'Solar do Canal', Math.PI));
+    add(criaMansao(-260, 76, { rot: Math.PI, cor: 0xd1bd94, corTelhado: 0x6b3e30, estiloParede: 'madeira_viga', estiloTelhado: 'telha', luxo: 2 }));
+    add(criaPlaca(-268, 66, 'Casa Alta do Mercado', Math.PI));
     add(criaCasaInterior(-296, 64, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x4a5666 }));
     add(criaCasaInterior(-272, 28, { frente: 'oeste', cor: 0xcaa890, corTelhado: 0x6a4a6a })); // RV5.4
     [[-330, 10], [-310, 26], [-352, 64], [-300, 64]].forEach(([x, z]) => add(criaPoste(x, z)));

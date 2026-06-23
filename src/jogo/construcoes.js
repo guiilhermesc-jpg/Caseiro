@@ -531,7 +531,11 @@ export function criaPinheiro(x = 0, z = 0) {
     const c = new THREE.Mesh(desloca(new THREE.ConeGeometry(r, h, 7), r * 0.16), matFlat(corFolha));
     c.position.y = y; c.castShadow = true; g.add(c);
   });
-  return { grupo: g, colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }] };
+  return {
+    grupo: g,
+    colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }],
+    animados: [{ mesh: g, sway: true, amp: 0.018 + Math.random() * 0.012, vel: 0.55 + Math.random() * 0.25, fase: Math.random() * 6 }],
+  };
 }
 
 export function criaArbusto(x = 0, z = 0) {
@@ -549,7 +553,11 @@ export function criaArbusto(x = 0, z = 0) {
     f.position.set(Math.cos(ang) * r, 1.0 + Math.random() * 0.5, Math.sin(ang) * r);
     g.add(f);
   }
-  return { grupo: g, colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }] };
+  return {
+    grupo: g,
+    colisores: [{ minX: x - 1.0, maxX: x + 1.0, minZ: z - 1.0, maxZ: z + 1.0 }],
+    animados: [{ mesh: g, sway: true, amp: 0.028 + Math.random() * 0.018, vel: 0.9 + Math.random() * 0.4, fase: Math.random() * 6 }],
+  };
 }
 
 // fonte com 2 taças + jatos de água animados (gotas)
@@ -667,6 +675,129 @@ export function criaMercado(x = 0, z = 0, w = 11, d = 8) {
     }
   });
   return { grupo: g, colisores };
+}
+
+// MANSÃO alugável: casa grande, simétrica, com alas laterais, varanda e jardim.
+// Visualmente ela deve parecer "prêmio", não só uma casa esticada.
+export function criaMansao(x = 0, z = 0, opts = {}) {
+  const {
+    rot = 0, cor = 0xd7c7a5, corTelhado = 0x65406f,
+    estiloParede = 'pedra_castelo', estiloTelhado = 'ardosia',
+    luxo = 1,
+  } = opts;
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+  const parede = matParedeEstilo(cor, estiloParede);
+  const pedra = mat(0x8d8576, 1);
+  const madeira = mat(0x5e4228, 0.9);
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.68, roughness: 0.32, emissive: 0x302000, emissiveIntensity: 0.22 });
+  const portaMat = mat(0x3b2416, 0.85);
+  const animados = [];
+
+  const addBox = (w, h, d, material, px, py, pz) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    m.position.set(px, py, pz); m.castShadow = m.receiveShadow = true; g.add(m); return m;
+  };
+
+  addBox(20, 0.75, 15.5, pedra, 0, 0.38, 0);
+  addBox(14.8, 9.8, 12.8, parede, 0, 5.65, 0);
+  addBox(5.2, 7.6, 10.8, parede, -9.3, 4.55, -0.8);
+  addBox(5.2, 7.6, 10.8, parede, 9.3, 4.55, -0.8);
+  const tetoCentro = telhadoDuasAguas(15.2, 13.2, 4.2, corTelhado, 10.55, estiloTelhado);
+  const tetoE = telhadoDuasAguas(5.8, 11.4, 3.3, corTelhado, 8.35, estiloTelhado); tetoE.position.x = -9.3;
+  const tetoD = telhadoDuasAguas(5.8, 11.4, 3.3, corTelhado, 8.35, estiloTelhado); tetoD.position.x = 9.3;
+  g.add(tetoCentro, tetoE, tetoD);
+
+  // pórtico frontal com colunas e sacada
+  addBox(7.8, 0.35, 2.4, pedra, 0, 0.86, 7.55);
+  [-3.0, -1.0, 1.0, 3.0].forEach((px) => {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 4.2, 10), pedra);
+    col.position.set(px, 3.0, 7.2); col.castShadow = true; g.add(col);
+  });
+  addBox(8.5, 0.32, 2.2, pedra, 0, 5.2, 7.25);
+  addBox(8.1, 0.14, 0.16, madeira, 0, 6.05, 8.22);
+  for (let i = -4; i <= 4; i++) addBox(0.1, 0.75, 0.1, madeira, i, 5.65, 8.2);
+
+  const porta = addBox(2.0, 3.3, 0.22, portaMat, 0, 2.55, 6.54);
+  porta.castShadow = true;
+  addBox(0.18, 3.5, 0.26, madeira, -1.15, 2.55, 6.68);
+  addBox(0.18, 3.5, 0.26, madeira, 1.15, 2.55, 6.68);
+  addBox(2.6, 0.22, 0.28, madeira, 0, 4.34, 6.7);
+  const brasao = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), ouro);
+  brasao.position.set(0, 6.2, 6.72); g.add(brasao);
+  animados.push({ mesh: brasao, gira: 0.35, pulsa: ouro, fase: Math.random() * 6 });
+
+  // janelas alinhadas, não aleatórias
+  [-5.1, -2.6, 2.6, 5.1].forEach((jx) => {
+    const j = criaJanela({ w: 1.25, h: 1.45, shutters: true, floreira: true });
+    j.position.set(jx, 4.1, 6.47); g.add(j);
+    const j2 = criaJanela({ w: 1.15, h: 1.25, shutters: false, floreira: false });
+    j2.position.set(jx, 7.35, 6.47); g.add(j2);
+  });
+  [-9.3, 9.3].forEach((sx) => {
+    [-1.7, 1.7].forEach((jz) => {
+      const jl = criaJanela({ w: 1.05, h: 1.2, shutters: true, floreira: true });
+      jl.position.set(sx, 3.95, jz); jl.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2; g.add(jl);
+    });
+  });
+
+  // jardim frontal e lamparinas
+  [-6.4, 6.4].forEach((px) => {
+    addBox(2.4, 0.32, 1.1, mat(0x5a3a22, 1), px, 0.22, 8.9);
+    for (let k = 0; k < 6; k++) {
+      const fl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 5), mat([0xe85d75, 0xf2c14e, 0xd06ad0, 0xefefef][k % 4]));
+      fl.position.set(px - 0.9 + k * 0.36, 0.58, 8.92); g.add(fl);
+    }
+  });
+  [-4.0, 4.0].forEach((px) => {
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffb84a, emissiveIntensity: 0.9, roughness: 0.4 });
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), lampMat);
+    lamp.position.set(px, 4.75, 6.82); g.add(lamp);
+    animados.push({ chama: lamp, chamaMat: lampMat, fase: Math.random() * 6 });
+  });
+
+  if (luxo > 1) {
+    [-6.2, 6.2].forEach((px) => {
+      const torre = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.45, 8.5, 10), parede);
+      torre.position.set(px, 8.6, -6.6); torre.castShadow = torre.receiveShadow = true; g.add(torre);
+      const chapeu = new THREE.Mesh(new THREE.ConeGeometry(1.75, 3.0, 10), matTelhaEstilo(corTelhado, estiloTelhado));
+      chapeu.position.set(px, 14.35, -6.6); chapeu.castShadow = true; g.add(chapeu);
+    });
+  }
+
+  const fuma = [];
+  for (let i = 0; i < 3; i++) {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(0.26 + i * 0.06, 6, 5), MAT_FUMACA);
+    puff.position.set(5.0, 12.0, -3.2); g.add(puff); fuma.push(puff);
+  }
+  addBox(0.8, 2.0, 0.8, pedra, 5.0, 11.1, -3.2);
+  animados.push({ fumaca: fuma, baseY: 12.1, baseX: 5.0, baseZ: -3.2, fase: Math.random() * 6 });
+
+  const w = luxo > 1 ? 22 : 20, d = 18;
+  const girado = Math.abs(Math.sin(rot)) > 0.5;
+  const wA = girado ? d : w, dA = girado ? w : d;
+  return { grupo: g, colisores: [{ minX: x - wA / 2, maxX: x + wA / 2, minZ: z - dA / 2, maxZ: z + dA / 2 }], animados };
+}
+
+// Guildhouse: salão grande, torres, estandartes e leitura de "base de grupo".
+export function criaGuildHouse(x = 0, z = 0, opts = {}) {
+  const { rot = 0, cor = 0xbfae86, corTelhado = 0x5b3568 } = opts;
+  const res = criaMansao(x, z, { rot, cor, corTelhado, estiloParede: 'pedra_castelo', estiloTelhado: 'ardosia', luxo: 2 });
+  const g = res.grupo;
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.78, roughness: 0.28, emissive: 0x2a1b04, emissiveIntensity: 0.28 });
+  const emblema = new THREE.Group(); emblema.position.set(0, 9.0, 6.85);
+  const escudo = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 0.95, 0.22, 5), ouro);
+  escudo.rotation.x = Math.PI / 2; emblema.add(escudo);
+  const dente = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.25, 5), mat(0xf0e4c2, 0.45));
+  dente.position.set(0, -0.1, 0.16); dente.rotation.x = Math.PI; emblema.add(dente);
+  g.add(emblema);
+  [-8.5, 8.5].forEach((px) => {
+    const bandeira = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2), new THREE.MeshStandardMaterial({ color: px < 0 ? 0x7a1f1f : 0x243f74, roughness: 0.9, side: THREE.DoubleSide }));
+    bandeira.position.set(px, 8.3, 7.0); g.add(bandeira);
+    res.animados.push({ mesh: bandeira, balanca: true, fase: Math.random() * 6 });
+  });
+  // colisão um pouco mais larga para as alas de guilda.
+  res.colisores = [{ minX: x - 13, maxX: x + 13, minZ: z - 10, maxZ: z + 10 }];
+  return res;
 }
 
 // poste de luz (luminária emissiva + PointLight controlada pelo ciclo dia/noite)

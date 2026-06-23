@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV15.6 (v110)**, publicado em produção.
+> Documento de passagem de bastão. Estado em **RV16.0 (v111)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV15.6 (v110)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.0 (v111)'`. **Suba a cada entrega.**
 
 ---
 
@@ -65,9 +65,10 @@ imagens geradas por IA (que dá pra ver como imagem).
   - `ratos.js` — TODOS os bichos (`criaRato`, `criaDragao`, `criaBeholder`, `criaOrc`, `criaCiclope`...)
     + `atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo)` (anima idle: respiração/patas/asas/garganta/tentáculos).
   - `props.js` — `criaBandeira/criaBau/...` + **`animaProps(animados, dt, tempo)`** (vocabulário:
-    `gira, giraZ, flutua, pulsa, balanca, porta, fumaca, chama, atualiza(dt,t)`).
+    `gira, giraZ, flutua, pulsa, balanca, sway, porta, fumaca, chama, atualiza(dt,t)`).
   - `construcoes.js` — `criaPredio` (casas, com `estiloParede`/`estiloTelhado`), `matParedeEstilo`,
-    `matTelhaEstilo`, `criaMuralha`, `criaMarco` (igreja→Templo c/ Orbe da Veia), `aplicaTexturaReal`.
+    `matTelhaEstilo`, `criaMuralha`, `criaMansao`, `criaGuildHouse`, `criaMarco` (igreja→Templo c/ Orbe da Veia),
+    `aplicaTexturaReal`.
   - `interiores.js` — interiores entráveis (porta animada, lamparina/lareira piscam via `animados`).
   - `natureza.js` — lago/riacho/deck (água entra em `aguas[]` p/ a marola).
   - `esgoto.js`, `nuvens.js` (Aurélia, cidade nas nuvens), `irmas.js`, `deserto.js`, `catedral` — ZONAS
@@ -78,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV14 — A Era dos Dragões").
+    `patchNotes.js` (painel "PATCH RV16 — Moradias & Dragoes").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -117,14 +118,23 @@ imagens geradas por IA (que dá pra ver como imagem).
 
 ---
 
-## 7. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
+## 7. Estado novo do RV16.0 (Codex)
+
+- `public/patches/rv16-moradias-dragoes.png` é a arte oficial do patch; também está no manifesto, página `/baixar.html`, `patchNotes.js` e cache offline.
+- `main3d.js` tem `imoveisEstado` e `bancoOuro` salvos por conta. O bloco de imóveis fica perto do antigo bloco "CASAS À VENDA".
+- Imóveis atuais: 2 casas simples, 3 mansões e 1 guildhouse. Placas usam `registraImovel`; benefícios usam `abreImovel`.
+- Dormir em imóvel recupera vida/mana e, se houver dragão-companheiro, aumenta `dragaoCompanheiro.ml` + XP.
+- `statsDragao()` expõe `ml` e `bonusMagico`; dano do pet-dragão multiplica por ML com limite.
+- `pet.js` adicionou variantes 3D tintadas: `furiaDoDia`, `furiaDaNoite`, `dragaoPantano`, `dragaoGelo`, `dragaoVeia`.
+- `cidade.js` adicionou vapor nos bueiros e mansões/guildhouse; `props.js` ganhou `sway`.
+- Documento da rodada: `docs/RV16_0_MORADIAS_DRAGOES.md`.
+
+## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
-1. **Bueiros com vapor** — `cidade.js` ~270 tem `ralos` como **InstancedMesh** (sem anim). Adicionar 2-3
-   puffs (padrão `MAT_FUMACA` de `construcoes.js`) perto dos ralos, empurrando 1 obj em `animados` (`fumaca`).
-2. **Árvores ao vento** — `criaPinheiro`/`criaArbusto` (construcoes.js 525/537) NÃO balançam, e parte da
-   vegetação é **InstancedMesh** (cuidado com perf). Sway sutil (rotation.z pivotando na base) só nos Groups.
+1. **Interiores de mansão/guildhouse** — o RV16 criou os modelos externos e benefícios; falta interior próprio grande.
+2. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
 3. **Armas dos monstros no golpe** — orc(machado)/ciclope(clava, msg "ergue a clava" mas não ergue)/drakari(lança):
    armas são filhos soltos de `g` (não em `userData`). Coletar `arma` no `userData` em ratos.js e GIRAR na investida.
 4. **Olhos seguindo o jogador** — olhos são malhas fixas; leve giro da cabeça/olho na direção do alvo em aggro.
@@ -141,7 +151,7 @@ Saídas completas da auditoria/design ficam nos arquivos de output das tasks de 
 
 ---
 
-## 8. Constraints e regras do maestro (NÃO esquecer)
+## 9. Constraints e regras do maestro (NÃO esquecer)
 
 - Deploy só com "pode publicar" literal (ver §2).
 - Qualidade é prioridade absoluta: **nada estático, nada feio, tudo harmônico**. Dragões são a joia da coroa.

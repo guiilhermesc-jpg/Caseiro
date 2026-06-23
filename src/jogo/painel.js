@@ -61,6 +61,7 @@ export function criaPainelPersonagem({ getDados, aoTrocaAfinidade }) {
         + `<div style="flex:1;min-width:0;">`
         + `<div style="font:800 16px Georgia,serif;color:#f4e3b0;">${dr.nome}</div>`
         + `<div style="font-size:11.5px;color:#bcae8e;margin:2px 0 6px;">${dr.estagioNome || ''} · Nv ${dr.nivel || 1} · ${af}</div>`
+        + `<div style="font-size:11px;color:#d7c28a;margin:-2px 0 7px;">Dano ${dr.dano || 0} · ML ${dr.ml || 0} ${dr.bonusMagico ? `(+${Math.round(dr.bonusMagico)}%)` : ''}</div>`
         + `<div style="font-size:10.5px;color:#9b8f74;margin-bottom:2px;">Vida do dragão</div>`
         + bar('linear-gradient(90deg,#7a1f1f,#e0584e)', dr.vidaMax ? (dr.vida / dr.vidaMax) * 100 : 0)
         + `<div style="font-size:10.5px;color:#9b8f74;margin:6px 0 2px;">Crescimento (XP)</div>`

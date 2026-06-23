@@ -111,7 +111,7 @@
           navigator.serviceWorker.register('/sw.js')
             .then(async () => {
               if (!('caches' in window)) return;
-              const cache = await caches.open('venor-rv82-offline-v1');
+              const cache = await caches.open('venor-rv16-offline-v1');
               const urls = new Set(['/', '/index.html', '/baixar.html', '/manifest.webmanifest', '/icon.svg']);
               performance.getEntriesByType('resource')
                 .map((entry) => entry.name)

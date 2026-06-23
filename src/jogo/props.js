@@ -198,6 +198,11 @@ export function animaProps(animados, dt, tempo) {
       a.mesh.rotation.z = Math.sin(tempo * 3.1 + a.fase) * 0.08;
       a.mesh.scale.x = 1 + Math.sin(tempo * 4 + a.fase) * 0.05;
     }
+    if (a.sway) { // vento sutil em grupos orgânicos (árvores/arbustos)
+      const amp = a.amp || 0.025;
+      a.mesh.rotation.z = Math.sin(tempo * (a.vel || 0.85) + a.fase) * amp;
+      a.mesh.rotation.x = Math.cos(tempo * (a.vel || 0.85) * 0.72 + a.fase) * amp * 0.55;
+    }
     if (a.chama) { // chama de poste/tocha tremeluzindo
       const f = 0.85 + Math.sin(tempo * 12 + a.fase) * 0.15;
       a.chama.scale.set(1 + Math.sin(tempo * 9 + a.fase) * 0.12, f, 1 + Math.cos(tempo * 10 + a.fase) * 0.12);
@@ -210,6 +215,7 @@ export function animaProps(animados, dt, tempo) {
         const t = (tempo * 0.22 + a.fase + i * 0.34) % 1;
         p.position.y = a.baseY + t * 3.4;
         p.position.x = a.baseX + Math.sin(tempo * 0.8 + i) * 0.25 * t; // deriva no vento
+        if (a.baseZ != null) p.position.z = a.baseZ + Math.cos(tempo * 0.65 + i + a.fase) * 0.18 * t;
         p.scale.setScalar(0.5 + t * 1.3); // cresce e "dissolve" ao subir
       }
     }

@@ -25,6 +25,9 @@ export const ESPECIES_DRAGAO = {
   dragaozinho:       { nome: 'Filhote de Dragão',      baseHP: 70,  baseDano: 9,  afinidade: 'dia',   raridade: 'comum',    cor: 0x6fd06f, retrato: 'noite_filhote' },
   furiaDoDia:        { nome: 'Fúria do Dia',           baseHP: 130, baseDano: 17, afinidade: 'dia',   raridade: 'raro',     cor: 0xf0d878, retrato: 'furia_dia' },
   furiaDaNoite:      { nome: 'Fúria da Noite',         baseHP: 140, baseDano: 19, afinidade: 'noite', raridade: 'raro',     cor: 0x2a2730, retrato: 'furia_noite' },
+  dragaoPantano:     { nome: 'Dragão do Pântano',      baseHP: 150, baseDano: 18, afinidade: 'noite', raridade: 'raro',     cor: 0x3f7a4a, retrato: 'pantano' },
+  dragaoGelo:        { nome: 'Dragão de Gelo',         baseHP: 160, baseDano: 20, afinidade: 'dia',   raridade: 'raro',     cor: 0x9fd7ff, retrato: 'gelo' },
+  dragaoVeia:        { nome: 'Dragão da Veia',         baseHP: 260, baseDano: 34, afinidade: 'dia',   raridade: 'lendario', cor: 0xc9a75a, retrato: 'veia' },
   dragaoTresCabecas: { nome: 'Dragão de Três Cabeças', baseHP: 240, baseDano: 30, afinidade: 'noite', raridade: 'lendario', cor: 0x7a1f1f, retrato: 'tres_cabecas' },
   colosso:           { nome: 'Colosso',                baseHP: 440, baseDano: 46, afinidade: 'dia',   raridade: 'mitico',   cor: 0x4a3a2a, retrato: 'colosso' },
 };
@@ -69,6 +72,7 @@ export function statsDragao(d) {
     montaria: est.montaria, voa: est.voa,
     nivel: d.nivel, xp: d.xp, prox: proxXp(d.estagio),
     afinidade: d.afinidade, cor: esp.cor, raridade: esp.raridade,
+    ml: d.ml || 0, bonusMagico: Math.min(30, d.ml || 0) * 2.5,
     img: '/assets/dragoes/' + esp.retrato + '.png',
     hp: d.hp != null ? d.hp : hpMaxDe(d), hpMax: hpMaxDe(d),
     dano: Math.round(esp.baseDano * est.multDano),

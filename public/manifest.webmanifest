@@ -14,11 +14,11 @@
   ],
   "screenshots": [
     {
-      "src": "/patches/rv8-pacto-da-semana.png",
-      "sizes": "1792x1024",
+      "src": "/patches/rv16-moradias-dragoes.png",
+      "sizes": "1536x1024",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Venor - Pacto da Semana"
+      "label": "Venor - Moradias e Dragoes"
     }
   ]
 }
