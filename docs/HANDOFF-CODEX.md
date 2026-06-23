@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.8 (v119)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.9 (v120)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.8 (v119)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.9 (v120)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.8 - Lore Operacional").
+    `patchNotes.js` (painel "PATCH RV16.9 - Mago Viajante").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -226,17 +226,27 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Previas visuais salvas em `docs/PREVIAS_VISUAIS_RV16_9.md` e `public/patches/concepts/`.
   Em rodada grafica nova, sempre gerar/usar previa e transformar a imagem em lista de implementacao.
 
+## 7.10 Estado novo do RV16.9 (Codex)
+
+- `src/main3d.js` subiu para **RV16.9 (v120)**.
+- `public/patches/rv16-9-mago-viajante.png` e a arte oficial do patch, conectada em patch notes, manifest, baixar e cache offline.
+- Novo item raro: **Manto do Mago Viajante** (`slot: tronco`, defesa 9, outfit `magoViajante`).
+- Nova quest da Helyra: **O Manto do Mago Viajante**, requer `terceiroSinal`, nivel 10 e `Cristal do Pico`.
+- Ao equipar o manto, o avatar ganha capuz, capa longa azul-profunda, bordas douradas, orbe violeta, ombreiras e cajado ritual visual.
+- Dragoes procedurais ficaram menos infantis: corpo escuro, pescoco/cabeca reposicionados, asas maiores, cauda mais longa e escala de crescimento maior.
+- Documento da rodada: `docs/RV16_9_MAGO_VIAJANTE.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV16.9 - Interiores como realidade** - mansoes/guildhouses com hall nobre, candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
-2. **RV16.10 - Bichos e hunts como realidade** - criaturas/hunts com silhueta, ataque, impacto, terreno, loot visual e escala.
-3. **RV16.11 - Continente e viagens** - mapa jogavel por regioes, rotas longas, pontos de descanso, carrocas e montarias.
-4. **RV16.12 - Moradias, aluguel e economia** - aluguel semanal, renovacao, avisos, banco, depot, lixeira e ML do dragao.
-5. **RV16.13 - Hunt do Pantano Vivo** - territorio do Dragao do Pantano, lama, veneno, pontes e item-chave de doma rara.
+1. **RV16.10 - Interiores como realidade** - mansoes/guildhouses com hall nobre, candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
+2. **RV16.11 - Bichos e hunts como realidade** - criaturas/hunts com silhueta, ataque, impacto, terreno, loot visual e escala.
+3. **RV16.12 - Continente e viagens** - mapa jogavel por regioes, rotas longas, pontos de descanso, carrocas e montarias.
+4. **RV16.13 - Moradias, aluguel e economia** - aluguel semanal, renovacao, avisos, banco, depot, lixeira e ML do dragao.
+5. **RV16.14 - Hunt do Pantano Vivo** - territorio do Dragao do Pantano, lama, veneno, pontes e item-chave de doma rara.
 6. **RV17 - Portal publico** - noticias, contas, personagens, rankings, bestiario, mapa e patch notes.
 7. **RV18 - Instalavel premium** - app instalado quando GLBs/texturas/animacoes passarem do peso saudavel da web.
 8. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.

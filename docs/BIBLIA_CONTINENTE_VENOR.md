@@ -288,28 +288,33 @@ mantem historico e detalhamento local de fases ja executadas ou planejadas dentr
 - Barris, caixas e baus ganharam detalhes materiais.
 - Regra: imagem de patch so vira oficial quando o sistema correspondente existir no mundo jogavel.
 
-### RV16.8 - Interiores como realidade
+### RV16.10 - Interiores como realidade
 - mansoes/guildhouses precisam bater com a arte de interior nobre;
 - revisar sala central, candelabros, escadas, biblioteca, bau, mesa, tapetes, trofeus e porta iluminada;
 - garantir que tudo seja interativo ou tenha leitura clara de funcao.
 
-### RV16.9 - Bichos e hunts como realidade
+### RV16.9 - Mago Viajante e dragoes
+- Status: entregue no `docs/RV16_9_MAGO_VIAJANTE.md`.
+- Manto raro conquistavel via Helyra.
+- Proporcao dos dragoes ajustada para bater melhor com a referencia visual.
+
+### RV16.11 - Bichos e hunts como realidade
 - dragao, aranha, orc, ciclope, escorpiao e caranguejo precisam ter silhueta melhor, ataque legivel e reacao;
 - hunts precisam ter terreno, props, risco e rota de viagem;
 - bosses e invasoes devem ter composicao visual propria.
 
-### RV16.10 - Continente e viagens
+### RV16.12 - Continente e viagens
 - mapa continental precisa virar plano jogavel por regioes;
 - rotas longas, carrocas, montarias e biomas precisam sustentar a sensacao de jornada;
 - cada imagem de mapa deve apontar para cidades/biomas/hunts reais.
 
-### RV16.11 - Aluguel semanal e economia
+### RV16.13 - Aluguel semanal e economia
 - vencimento;
 - renovacao;
 - avisos;
 - perda de beneficios sem apagar itens.
 
-### RV16.12 - Hunt do Pantano Vivo
+### RV16.14 - Hunt do Pantano Vivo
 - territorio do Dragao do Pantano;
 - veneno, agua, lama, pontes;
 - item-chave para doma rara.

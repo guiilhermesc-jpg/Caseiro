@@ -85,7 +85,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV16.8 (v119)';
+const VERSAO = 'RV16.9 (v120)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -1476,6 +1476,19 @@ const QUESTS = [
     fala: 'O Arconte ainda respira?', recompensa: { ouro: 420, xp: 360, item: { nome: 'Selo da Lua Partida', icone: '🌑', slot: 'anel', defesa: 7 } } },
 ];
 QUESTS.push({
+  id: 'mantoMagoViajante',
+  npc: 'Helyra',
+  requer: 'terceiroSinal',
+  nivel: 10,
+  tipo: 'coletar',
+  item: 'Cristal do Pico',
+  meta: 1,
+  titulo: 'O Manto do Mago Viajante',
+  pede: 'A profecia ja caminhou com voce. Traga 1 Cristal do Pico: vou costurar um manto de viagem capaz de guardar calor, noite e memoria da Veia. Nao e roupa de loja; e roupa de quem cruzou montanha com dragao ao lado.',
+  fala: 'Trouxe o cristal vivo do Pico?',
+  recompensa: { ouro: 0, xp: 260, item: { nome: 'Manto do Mago Viajante', icone: 'M', slot: 'tronco', defesa: 9, raro: true, outfit: 'magoViajante' } },
+});
+QUESTS.push({
   id: 'selaDraptor',
   npc: 'Helyra',
   requer: 'arconteLuaPartida',
@@ -2830,6 +2843,7 @@ function aoEquipar(item) {
 // couro=marrom, ferro=cinza, dragão=obsidiana, ouro/guilda=dourado, manto=pano.
 function estiloEquip(item) {
   const n = ((item && item.nome) || '').toLowerCase();
+  if (n.includes('mago viajante') || item?.outfit === 'magoViajante') return { cor: 0x121a2d, metal: 0.06, rough: 0.9, ouro: true };
   if (n.includes('drag')) return { cor: 0x2a2730, metal: 0.55, rough: 0.45 };
   if (n.includes('ouro') || n.includes('dourad') || n.includes('guilda')) return { cor: 0xc99a2e, metal: 0.82, rough: 0.3 };
   if (n.includes('obsidiana') || n.includes('sombra') || n.includes('lua')) return { cor: 0x1d1a22, metal: 0.42, rough: 0.5 };
@@ -2837,6 +2851,57 @@ function estiloEquip(item) {
   return { cor: 0xb8bcc4, metal: 0.62, rough: 0.36 }; // ferro/aço/placa (padrão)
 }
 function matEquipItem(item) { const e = estiloEquip(item); return new THREE.MeshStandardMaterial({ color: e.cor, metalness: e.metal, roughness: e.rough, envMapIntensity: 0.16 }); }
+function ehMantoMagoViajante(item) {
+  const n = ((item && item.nome) || '').toLowerCase();
+  return item?.outfit === 'magoViajante' || n.includes('mago viajante');
+}
+function adicionaMantoMagoViajante(p) {
+  const pano = new THREE.MeshStandardMaterial({ color: 0x11192a, roughness: 0.94, metalness: 0.02, envMapIntensity: 0.18 });
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xd0a23a, roughness: 0.38, metalness: 0.46, envMapIntensity: 0.22 });
+  const sombra = new THREE.MeshStandardMaterial({ color: 0x05070c, roughness: 0.96, metalness: 0.0 });
+  const cristal = new THREE.MeshStandardMaterial({ color: 0x8e63ff, emissive: 0x6a36ff, emissiveIntensity: 1.05, roughness: 0.24, metalness: 0.05 });
+  const add = (obj, parent = avatar) => { obj.name = 'equipCorpo'; obj.castShadow = true; obj.receiveShadow = true; parent.add(obj); return obj; };
+
+  const saia = add(new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.92, 1.28, 16, 1, false), pano));
+  saia.position.y = 0.78;
+  const capa = add(new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.95, 0.08), pano));
+  capa.position.set(0, 1.32, -0.46); capa.rotation.x = 0.09;
+
+  [-0.38, 0.38].forEach((ox) => {
+    const tira = add(new THREE.Mesh(new THREE.BoxGeometry(0.055, 1.35, 0.055), ouro));
+    tira.position.set(ox, 1.22, 0.36);
+    const bordaCapa = add(new THREE.Mesh(new THREE.BoxGeometry(0.055, 1.82, 0.045), ouro));
+    bordaCapa.position.set(ox * 1.18, 1.28, -0.51);
+  });
+  const barra = add(new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.07, 0.055), ouro));
+  barra.position.set(0, 0.24, 0.36);
+  const seloPeito = add(new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), cristal));
+  seloPeito.position.set(0, 1.78, 0.38);
+
+  if (!equipados.cabeca) {
+    const capuz = add(new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.58, 0.92), pano));
+    capuz.position.y = 2.88;
+    const abertura = add(new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.34, 0.08), sombra));
+    abertura.position.set(0, 2.65, 0.48);
+  }
+
+  [-0.66, 0.66].forEach((ox) => {
+    const om = add(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.24, 0.6), pano));
+    om.position.set(ox, 2.06, 0);
+    const fio = add(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.055, 0.62), ouro));
+    fio.position.set(ox, 2.21, 0.01);
+  });
+
+  const cajado = new THREE.Group(); cajado.name = 'equipCorpo';
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 2.25, 7), new THREE.MeshStandardMaterial({ color: 0x4a321e, roughness: 0.86 }));
+  haste.position.y = 0.8; cajado.add(haste);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 6, 18), ouro);
+  aro.position.y = 1.94; aro.rotation.x = Math.PI / 2; cajado.add(aro);
+  const orbe = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), cristal);
+  orbe.position.y = 2.02; cajado.add(orbe);
+  cajado.position.set(-0.72, 0.42, -0.34); cajado.rotation.z = 0.18; cajado.rotation.x = -0.08;
+  add(cajado);
+}
 function poeCorpoEquip() {
   const p = avatar.userData.partes; if (!p) return;
   // limpa as peças anteriores em TODAS as partes que recebem equip (senão acumula)
@@ -2852,6 +2917,7 @@ function poeCorpoEquip() {
   if (equipados.tronco) { // OMBREIRAS (volume) — o peito já está re-skinado acima
     const mt = matEquipItem(equipados.tronco);
     [-0.66, 0.66].forEach((ox) => { const om = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.32, 0.62), mt); om.name = 'equipCorpo'; om.position.set(ox, 2.04, 0); om.castShadow = true; avatar.add(om); });
+    if (ehMantoMagoViajante(equipados.tronco)) adicionaMantoMagoViajante(p);
   }
   if (equipados.pes) { // BOTAS reais nas duas pernas
     const mt = matEquipItem(equipados.pes);

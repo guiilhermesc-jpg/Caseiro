@@ -51,7 +51,16 @@ funcionalidades, proporcoes, efeitos, monstros, interiores ou sistemas ela obrig
 - Saves antigos mantem economia via `legacyNome`.
 - Aceite: nenhum NPC importante deve parecer placeholder.
 
-## Fase RV16.9 - Interiores como realidade
+## Fase RV16.9 - Mago Viajante e proporcao dos dragoes
+
+- Status: entregue em `docs/RV16_9_MAGO_VIAJANTE.md`.
+- O Manto do Mago Viajante entrou como item raro conquistavel.
+- Helyra libera a quest depois do Terceiro Sinal, exigindo Cristal do Pico.
+- O item aparece no corpo com capuz, capa, bordas douradas, orbe e cajado ritual.
+- Dragoes ganharam proporcao mais premium: escala maior por estagio, corpo escuro, asas mais amplas, pescoco mais longo e cauda mais imponente.
+- Arte oficial: `public/patches/rv16-9-mago-viajante.png`.
+
+## Fase RV16.10 - Interiores como realidade
 
 Referencia: imagem do grande hall nobre.
 
@@ -60,7 +69,7 @@ Referencia: imagem do grande hall nobre.
 - Ajustar proporcao: pe direito alto, objetos grandes, caminhos legiveis, camera sem esconder o jogador.
 - Aceite: entrar numa guildhouse deve parecer entrar numa sede valiosa, nao numa caixa decorada.
 
-## Fase RV16.10 - Bichos e hunts como realidade
+## Fase RV16.11 - Bichos e hunts como realidade
 
 Referencia: imagem de criaturas/bestiario.
 
@@ -69,7 +78,7 @@ Referencia: imagem de criaturas/bestiario.
 - Hunts precisam de territorio: vegetacao, rochas, fogueiras, ossadas, placas, loot visual e risco.
 - Aceite: o jogador deve reconhecer uma hunt pela composicao visual antes de ler qualquer texto.
 
-## Fase RV16.11 - Continente e viagens
+## Fase RV16.12 - Continente e viagens
 
 Referencia: imagem do mapa continental.
 
@@ -78,14 +87,14 @@ Referencia: imagem do mapa continental.
 - Cada cidade deve ter identidade propria, economia local, NPCs e motivo para voltar.
 - Aceite: a distancia deve criar aventura, nao vazio.
 
-## Fase RV16.12 - Moradias, aluguel e economia
+## Fase RV16.13 - Moradias, aluguel e economia
 
 - Aluguel semanal, renovacao, avisos e perda temporaria de beneficios sem apagar itens.
 - Beneficios reais: depot, banco, lixeira, cama, treino magico do dragao, acesso de guilda.
 - Casas simples, mansoes e guildhouses precisam ter preco, raridade, localizacao e vantagem.
 - Aceite: morar em Venor precisa ser aspiracional, como casa boa em MMO classico.
 
-## Fase RV16.13 - Hunt do Pantano Vivo
+## Fase RV16.14 - Hunt do Pantano Vivo
 
 - Territorio do Dragao do Pantano.
 - Pontes, lama, veneno, agua, plantas densas, bueiros/galerias conectando a cidade ao perigo.

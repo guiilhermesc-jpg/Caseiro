@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv16-8-lore-operacional';
+const PATCH_ID = 'rv16-9-mago-viajante';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV16.8';
+  badge.textContent = 'PATCH RV16.9';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -38,14 +38,14 @@ export function criaPatchNotes() {
   card.innerHTML = `
     <div style="height:300px;background:
       linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.38),rgba(5,8,10,.08)),
-      url('/patches/rv16-8-lore-operacional.png') center/cover no-repeat;
+      url('/patches/rv16-9-mago-viajante.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:590px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.8</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Lore Operacional</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.9</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Mago Viajante</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Venor recebeu uma passada de mundo vivo: NPCs deixam de soar como placeholders, quests e lojas
-          usam nomes de lore, e o processo premium vira regra dura antes de qualquer nova criatura, GIF ou imagem.
+          A referencia visual do mago com dragoes virou conteudo real: um manto raro conquistavel,
+          dragao-companheiro mais imponente e proporcoes novas para as criaturas draconicas.
         </div>
       </div>
     </div>
@@ -53,15 +53,15 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Este update fecha uma base de producao: todo personagem, item, monstro, GIF e imagem futura precisa
-          entrar com funcao jogavel, animacao coerente, offline/cache e registro na biblia do mundo.
+          Este update transforma uma imagem aprovada em regra jogavel: roupa rara precisa existir,
+          ter caminho de conquista, aparecer no corpo e conversar com a escala dos dragoes.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>NPCs de lore:</b> nomes de vilarejo, capital, Thais, estrada e Noctaria ganharam identidade mais tradicional.</li>
-          <li><b>Saves preservados:</b> estoques antigos de comerciantes migram para os nomes novos.</li>
-          <li><b>Quests intactas:</b> os IDs internos continuam estaveis para nao resetar progresso.</li>
-          <li><b>Gate premium:</b> criacao nova so entra com funcao, movimento/animacao, teste e documentacao.</li>
-          <li><b>Rumo instalavel:</b> RV17/RV18 ja consideram app instalado quando o peso grafico passar do aceitavel no navegador.</li>
+          <li><b>Manto do Mago Viajante:</b> recompensa rara da Helyra apos o arco de Vorag, exigindo Cristal do Pico.</li>
+          <li><b>Visual equipado:</b> capuz, capa azul-profunda, bordas douradas, orbe violeta e cajado ritual.</li>
+          <li><b>Dragoes maiores:</b> filhote, jovem e adulto ganharam leitura de tamanho mais forte.</li>
+          <li><b>Modelo draconico:</b> corpo escuro, asas mais amplas, pescoco mais nobre e cauda mais longa.</li>
+          <li><b>Imagem como contrato:</b> a arte do patch mostra o que agora guia a implementacao real.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">

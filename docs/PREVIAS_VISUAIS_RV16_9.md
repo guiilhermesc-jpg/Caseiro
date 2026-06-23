@@ -64,7 +64,8 @@ Direcao de implementacao:
 
 ## Uso no cronograma
 
-- RV16.9 usa principalmente as imagens 1 e 2.
-- RV16.10 usa principalmente a imagem 3.
+- RV16.9 usou a imagem 4 como base para o Mago Viajante e proporcao dos dragoes.
+- RV16.10 usa principalmente as imagens 1 e 2.
+- RV16.11 usa principalmente a imagem 3.
 - RV21 usa principalmente a imagem 4.
 - RV30 so fecha o Pacto 01/30 quando imagens desse nivel tiverem correspondencia jogavel.

@@ -9,9 +9,9 @@
 // .scale do modelo procedural; multHP/multDano escalam a força.
 export const ESTAGIOS = ['filhote', 'jovem', 'adulto'];
 export const ESTAGIO_INFO = {
-  filhote: { nome: 'Filhote', escala: 0.30, multHP: 1.0, multDano: 1.0, montaria: false, voa: false, emoji: '🥚' },
-  jovem:   { nome: 'Jovem',   escala: 0.62, multHP: 1.9, multDano: 1.7, montaria: true,  voa: false, emoji: '🐲' },
-  adulto:  { nome: 'Adulto',  escala: 1.05, multHP: 3.4, multDano: 2.8, montaria: true,  voa: true,  emoji: '🐉' },
+  filhote: { nome: 'Filhote', escala: 0.36, multHP: 1.0, multDano: 1.0, montaria: false, voa: false, emoji: '🥚' },
+  jovem:   { nome: 'Jovem',   escala: 0.78, multHP: 1.9, multDano: 1.7, montaria: true,  voa: false, emoji: '🐲' },
+  adulto:  { nome: 'Adulto',  escala: 1.22, multHP: 3.4, multDano: 2.8, montaria: true,  voa: true,  emoji: '🐉' },
 };
 
 // Crescimento DIFÍCIL e LENTO: muito XP por estágio (ganha metade do XP do

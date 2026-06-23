@@ -627,17 +627,17 @@ export function criaBeholder(x, z) {
 // VERDE = dragão comum (estilo Tibia); lord=true = DRAGON LORD vermelho 5×.
 export function criaDragao(x, z, lord = false) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
-  const s = lord ? 2.55 : 2.18;
+  const s = lord ? 2.68 : 2.28;
   const corpoMat = new THREE.MeshStandardMaterial({
-    color: lord ? 0x8e2419 : 0x456f43,
+    color: lord ? 0x8e2419 : 0x2f3840,
     roughness: 0.76,
     metalness: 0.02,
     flatShading: true,
   });
-  const ventreMat = new THREE.MeshStandardMaterial({ color: lord ? 0xc58242 : 0xb7ad68, roughness: 0.82, flatShading: true });
-  const escuro = new THREE.MeshStandardMaterial({ color: lord ? 0x45100d : 0x203c2a, roughness: 0.9, flatShading: true });
+  const ventreMat = new THREE.MeshStandardMaterial({ color: lord ? 0xc58242 : 0x8c7a5a, roughness: 0.82, flatShading: true });
+  const escuro = new THREE.MeshStandardMaterial({ color: lord ? 0x45100d : 0x141820, roughness: 0.9, flatShading: true });
   const membranaMat = new THREE.MeshStandardMaterial({
-    color: lord ? 0x6d1c14 : 0xb08a30,
+    color: lord ? 0x6d1c14 : 0x7b5a36,
     roughness: 0.72,
     metalness: 0.0,
     side: THREE.DoubleSide,
@@ -667,9 +667,9 @@ export function criaDragao(x, z, lord = false) {
   };
 
   // Corpo em três massas facetadas: peito alto, caixa torácica e quadril.
-  facet(1.28 * s, corpoMat, 0, 2.35 * s, 0.8 * s, 0.95, 1.05, 1.18);
-  facet(1.48 * s, corpoMat, 0, 1.88 * s, -0.7 * s, 1.05, 0.86, 1.45);
-  facet(1.04 * s, corpoMat, 0, 1.65 * s, -2.12 * s, 0.92, 0.78, 1.05);
+  facet(1.22 * s, corpoMat, 0, 2.42 * s, 0.92 * s, 0.92, 1.06, 1.28);
+  facet(1.52 * s, corpoMat, 0, 1.92 * s, -0.72 * s, 1.02, 0.84, 1.58);
+  facet(1.02 * s, corpoMat, 0, 1.66 * s, -2.28 * s, 0.88, 0.76, 1.16);
 
   // Barriga segmentada no eixo do peito, como armadura natural.
   for (let i = 0; i < 7; i++) {
@@ -688,10 +688,11 @@ export function criaDragao(x, z, lord = false) {
 
   // Pescoço longo em S: segmentos facetados sobem e avançam.
   const neck = [
-    [0, 3.05, 1.35, 0.66],
-    [0, 3.62, 1.92, 0.58],
-    [0, 4.22, 2.42, 0.50],
-    [0, 4.82, 2.87, 0.44],
+    [0, 3.12, 1.52, 0.64],
+    [0, 3.72, 2.14, 0.56],
+    [0, 4.34, 2.72, 0.49],
+    [0, 4.98, 3.18, 0.43],
+    [0, 5.46, 3.52, 0.36],
   ];
   const pescoco = [];
   neck.forEach(([nx, ny, nz, r], i) => {
@@ -701,33 +702,33 @@ export function criaDragao(x, z, lord = false) {
   });
 
   // Cabeça angular de dragão, com focinho comprido e mandíbula aberta.
-  const cabeca = box(0.96 * s, 0.72 * s, 1.05 * s, corpoMat, 0, 5.28 * s, 3.32 * s);
+  const cabeca = box(1.02 * s, 0.7 * s, 1.14 * s, corpoMat, 0, 5.74 * s, 3.86 * s);
   cabeca.rotation.x = -0.08;
-  const focinho = box(0.66 * s, 0.42 * s, 0.92 * s, corpoMat, 0, 5.14 * s, 4.12 * s);
+  const focinho = box(0.68 * s, 0.4 * s, 1.02 * s, corpoMat, 0, 5.6 * s, 4.7 * s);
   focinho.rotation.x = -0.12;
-  const mandibula = box(0.58 * s, 0.18 * s, 0.92 * s, escuro, 0, 4.88 * s, 4.03 * s);
+  const mandibula = box(0.6 * s, 0.18 * s, 0.98 * s, escuro, 0, 5.32 * s, 4.62 * s);
   mandibula.rotation.x = 0.22;
   const garganta = new THREE.Mesh(new THREE.SphereGeometry(0.18 * s, 8, 6), brasaMat);
-  garganta.position.set(0, 5.02 * s, 4.62 * s); g.add(garganta);
+  garganta.position.set(0, 5.46 * s, 5.2 * s); g.add(garganta);
   const olhosD = [];
   [-1, 1].forEach((ld) => {
-    box(0.38 * s, 0.16 * s, 0.36 * s, escuro, ld * 0.39 * s, 5.38 * s, 3.1 * s); // bochecha/placa lateral
+    box(0.38 * s, 0.16 * s, 0.36 * s, escuro, ld * 0.4 * s, 5.86 * s, 3.64 * s); // bochecha/placa lateral
     const olho = new THREE.Mesh(new THREE.SphereGeometry(0.115 * s, 8, 8), olhoMat);
-    olho.position.set(ld * 0.34 * s, 5.32 * s, 3.95 * s); g.add(olho); olhosD.push(olho);
-    cone(0.08 * s, 0.36 * s, osso, ld * 0.21 * s, 4.99 * s, 4.55 * s, Math.PI); // dentes frontais
+    olho.position.set(ld * 0.35 * s, 5.82 * s, 4.52 * s); g.add(olho); olhosD.push(olho);
+    cone(0.08 * s, 0.36 * s, osso, ld * 0.21 * s, 5.43 * s, 5.13 * s, Math.PI); // dentes frontais
   });
   for (let i = 0; i < 5; i++) [-1, 1].forEach((ld) => {
-    const dente = cone(0.045 * s, 0.18 * s, osso, ld * 0.23 * s, 5.03 * s, (3.55 + i * 0.18) * s, Math.PI);
+    const dente = cone(0.045 * s, 0.18 * s, osso, ld * 0.23 * s, 5.47 * s, (4.08 + i * 0.19) * s, Math.PI);
     dente.rotation.z = ld * 0.12;
   });
 
   // Chifres longos para trás + espinhos no queixo.
   [-1, 1].forEach((ld) => {
-    const h1 = cone(0.13 * s, 1.05 * s, osso, ld * 0.34 * s, 5.78 * s, 2.98 * s, -1.03, ld * 0.18);
+    const h1 = cone(0.13 * s, 1.22 * s, osso, ld * 0.34 * s, 6.26 * s, 3.46 * s, -1.06, ld * 0.18);
     h1.rotation.y = ld * 0.16;
-    const h2 = cone(0.085 * s, 0.78 * s, osso, ld * 0.48 * s, 5.7 * s, 3.2 * s, -0.82, ld * 0.34);
+    const h2 = cone(0.085 * s, 0.86 * s, osso, ld * 0.5 * s, 6.16 * s, 3.74 * s, -0.84, ld * 0.34);
     h2.rotation.y = ld * 0.28;
-    cone(0.055 * s, 0.32 * s, osso, ld * 0.28 * s, 4.66 * s, 3.82 * s, 0.25, ld * 0.2);
+    cone(0.055 * s, 0.32 * s, osso, ld * 0.28 * s, 5.1 * s, 4.42 * s, 0.25, ld * 0.2);
   });
 
   // Asas: membrana triangular real, não caixa. O grupo é animado no loop.
@@ -736,14 +737,14 @@ export function criaDragao(x, z, lord = false) {
     const geo = new THREE.BufferGeometry();
     const v = new Float32Array([
       0, 0, 0,
-      ld * 5.25 * s, 1.18 * s, -0.45 * s,
-      ld * 4.42 * s, -1.28 * s, 1.15 * s,
+      ld * 6.35 * s, 1.58 * s, -0.72 * s,
+      ld * 5.2 * s, -1.48 * s, 1.22 * s,
       0, 0, 0,
-      ld * 4.42 * s, -1.28 * s, 1.15 * s,
-      ld * 2.28 * s, -1.04 * s, 1.92 * s,
+      ld * 5.2 * s, -1.48 * s, 1.22 * s,
+      ld * 2.72 * s, -1.14 * s, 2.04 * s,
       0, 0, 0,
-      ld * 2.28 * s, -1.04 * s, 1.92 * s,
-      ld * 1.02 * s, -0.58 * s, 1.24 * s,
+      ld * 2.72 * s, -1.14 * s, 2.04 * s,
+      ld * 1.12 * s, -0.6 * s, 1.32 * s,
     ]);
     geo.setAttribute('position', new THREE.BufferAttribute(v, 3));
     geo.computeVertexNormals();
@@ -752,9 +753,9 @@ export function criaDragao(x, z, lord = false) {
   [-1, 1].forEach((ld) => {
     const asa = new THREE.Group(); asa.position.set(ld * 0.95 * s, 3.3 * s, -0.55 * s);
     const mem = criaMembrana(ld); mem.castShadow = true; mem.receiveShadow = true; asa.add(mem);
-    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * s, 0.12 * s, 5.45 * s, 6), corpoMat);
-    braco.position.set(ld * 2.62 * s, 0.58 * s, -0.22 * s); braco.rotation.z = ld * (Math.PI / 2 - 0.23); braco.rotation.y = ld * 0.09; asa.add(braco);
-    [[1.1, 1.7], [2.2, 2.18], [3.25, 2.25], [4.35, 1.7]].forEach(([dx, len], i) => {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * s, 0.12 * s, 6.5 * s, 6), corpoMat);
+    braco.position.set(ld * 3.05 * s, 0.72 * s, -0.32 * s); braco.rotation.z = ld * (Math.PI / 2 - 0.24); braco.rotation.y = ld * 0.09; asa.add(braco);
+    [[1.24, 1.92], [2.48, 2.5], [3.72, 2.65], [4.92, 2.02]].forEach(([dx, len], i) => {
       const dedo = new THREE.Mesh(new THREE.CylinderGeometry(0.035 * s, 0.065 * s, len * s, 5), escuro);
       dedo.position.set(ld * dx * s, (-0.18 - i * 0.18) * s, (0.42 + i * 0.32) * s);
       dedo.rotation.z = ld * (Math.PI / 2 - 0.62 + i * 0.08);
@@ -780,12 +781,12 @@ export function criaDragao(x, z, lord = false) {
   // Cauda sinuosa longa, com segmentos facetados e lâmina no fim.
   const cauda = []; // RV15.2: coletada p/ ANIMAR (onda propagada na cauda)
   for (let i = 0; i < 11; i++) {
-    const zz = (-2.45 - i * 0.48) * s;
+    const zz = (-2.58 - i * 0.55) * s;
     const xx = Math.sin(i * 0.72) * 0.22 * s;
     const yy = (1.45 - i * 0.035) * s;
     cauda.push(facet((0.45 - i * 0.025) * s, corpoMat, xx, yy, zz, 0.92, 0.74, 1.08));
   }
-  cone(0.28 * s, 1.05 * s, osso, Math.sin(11 * 0.72) * 0.22 * s, 1.02 * s, -7.85 * s, -Math.PI / 2);
+  cone(0.28 * s, 1.05 * s, osso, Math.sin(11 * 0.72) * 0.22 * s, 1.02 * s, -8.62 * s, -Math.PI / 2);
 
   // Cristas serrilhadas do crânio até a cauda.
   for (let i = 0; i < 15; i++) {
