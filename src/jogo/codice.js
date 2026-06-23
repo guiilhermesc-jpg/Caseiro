@@ -32,7 +32,7 @@ export const TESSITURA = {
         + 'primeira pedra a ter vontade; não foi vencido, foi ADORMECIDO quando a '
         + 'terra esfriou por fora pra deixar a carne mole brotar.',
       deixa:
-        'A obsidiana ainda corre em tudo, em gradação: o pó frio com que Calder '
+        'A obsidiana ainda corre em tudo, em gradação: o pó frio com que Caldrath '
         + 'forja em Noctaria, os Cristais do Pico (lágrimas jovens, ainda mornas) e '
         + 'o Coração de Obsidiana do Arconte (o sangue-frio mais antigo e puro). A '
         + 'Fenda da Lua Partida pulsa vermelho porque ali a pedra ainda está QUENTE.',
@@ -64,7 +64,7 @@ export const TESSITURA = {
       deixa:
         'Há três Venor(e)s empilhadas no mesmo nervo: o Vilarejo vivo, a Venore Antiga '
         + 'afogada (Catacumbas e Cripta) e a Venore Mercante por cima do brejo. A mesma '
-        + 'lei explica os esqueletos noturnos e por que Hela "paga pela paz deles": '
+        + 'lei explica os esqueletos noturnos e por que Helyra "paga pela paz deles": '
         + 'devolver um morto à terra é deixar a memória voltar a correr.',
     },
     {
@@ -115,7 +115,7 @@ export const TESSITURA = {
     {
       id: 'obsidiana',
       nome: 'O Veio da Obsidiana',
-      liga: 'Ermo das Cinzas ⟷ Noctaria (forja de Calder) ⟷ Fenda da Lua Partida',
+      liga: 'Ermo das Cinzas ⟷ Noctaria (forja de Caldrath) ⟷ Fenda da Lua Partida',
       cor: 0x9a6aff,
       texto:
         'A oeste, a Veia está velha e esfriada: o sangue da terra ali já endureceu em '

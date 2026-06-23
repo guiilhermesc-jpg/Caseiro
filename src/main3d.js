@@ -85,7 +85,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV16.7 (v118)';
+const VERSAO = 'RV16.8 (v119)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -729,7 +729,7 @@ addMonstro(criaCyclops(415, 50), 150, 60, 18, 1.3, true, areaMon(415, 50, 16), {
   });
 }
 // EVENTO NOTURNO (RV5.7): os mortos do Cemitério Abandonado se ERGUEM à
-// noite e viram pó ao amanhecer — o aviso da Gil sempre foi verdade
+// noite e viram pó ao amanhecer — o aviso da Gildren sempre foi verdade
 const ESQUELETOS_NOTURNOS = [];
 [[126, -52], [134, -66], [140, -58]].forEach(([x, z]) => {
   const e = criaEsqueleto(x, z);
@@ -936,13 +936,13 @@ const LUGARES_MAPA = [
 // LOJAS identificadas (estilo Tibia): ícone no MINIMAPA + marcador flutuante na cena
 const LUGARES_JORNADA = pontosJornadaParaMapa();
 const LOJAS_MAPA = [
-  { x: 17, z: 11, icone: '💰' },   // Otto (mercador — compra tudo)
-  { x: -17, z: 11, icone: '⚒️' },  // Bram (forja: armas; compra couro/osso/presas)
-  { x: -22, z: 17, icone: '✨' },  // Eldra (runas; compra erva/frasco/relíquias)
-  { x: 22, z: -15, icone: '🏹' },  // Falk (arco & flecha; compra couro/seda)
-  { x: 32, z: 0, icone: '🧪' },    // Sira (poções, dentro do hospital; compra ervas)
-  { x: 552, z: 10, icone: '💰' },  // Yara (mercadora de Thais)
-  { x: -590, z: -52, icone: '⚒️' }, // Calder (forja sombria de Noctaria)
+  { x: 17, z: 11, icone: '💰' },   // Othmar (mercador — compra tudo)
+  { x: -17, z: 11, icone: '⚒️' },  // Brannor (forja: armas; compra couro/osso/presas)
+  { x: -22, z: 17, icone: '✨' },  // Eldrith (runas; compra erva/frasco/relíquias)
+  { x: 22, z: -15, icone: '🏹' },  // Falric (arco & flecha; compra couro/seda)
+  { x: 32, z: 0, icone: '🧪' },    // Seranna (poções, dentro do hospital; compra ervas)
+  { x: 552, z: 10, icone: '💰' },  // Ysolde (mercadora de Thais)
+  { x: -590, z: -52, icone: '⚒️' }, // Caldrath (forja sombria de Noctaria)
   { x: -588, z: -10, icone: '💰' },  // Mira Noctar (suprimentos)
 ];
 const ROTAS_MAPA = rotasParaMapa();
@@ -1423,45 +1423,45 @@ window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && jogoIniciad
 
 // === QUESTS (estilo Tibia: fale com o NPC, cumpra, volte pra recompensa) ===
 const QUESTS = [
-  { id: 'lobosPonte', npc: 'Bruno', tipo: 'matar', especie: 'lobo', meta: 4,
+  { id: 'lobosPonte', npc: 'Brannar', tipo: 'matar', especie: 'lobo', meta: 4,
     titulo: 'Lobos da Ponte', pede: 'Os lobos rondam a Ponte de Pedra e ninguém cruza em paz. Cace 4 lobos e a estrada agradece.',
     fala: 'E aí, deu conta dos lobos?', recompensa: { ouro: 40, xp: 30 } },
-  { id: 'cenourasGil', npc: 'Gil', tipo: 'coletar', item: 'Cenoura', meta: 3,
-    titulo: 'Colheita do Gil', pede: 'O burro comeu metade da minha colheita! Me traga 3 Cenouras que eu pago bem.',
+  { id: 'cenourasGil', npc: 'Gildren', tipo: 'coletar', item: 'Cenoura', meta: 3,
+    titulo: 'Colheita do Gildren', pede: 'O burro comeu metade da minha colheita! Me traga 3 Cenouras que eu pago bem.',
     fala: 'Trouxe minhas cenouras?', recompensa: { ouro: 25, xp: 15, item: { nome: 'Poção de Vida', icone: '🧪', usavel: 'pocao' } } },
-  { id: 'esqueletosTobias', npc: 'Tobias', tipo: 'matar', especie: 'esqueleto', meta: 3,
+  { id: 'esqueletosTobias', npc: 'Tovaryn', tipo: 'matar', especie: 'esqueleto', meta: 3,
     titulo: 'Descanso dos Mortos', pede: 'O cemitério da estrada anda agitado... Devolva 3 esqueletos ao descanso e os deuses recompensarão.',
     fala: 'Os mortos já descansam?', recompensa: { ouro: 60, xp: 50 } },
   // RV5.3: O FINALE DA LORE — a Ossada se ergue (cereja do Patch 1)
-  { id: 'terceiroSinal', npc: 'Hela', requer: 'guardiaoOvo', tipo: 'matar', especie: 'vorag', meta: 1, invoca: 'vorag',
+  { id: 'terceiroSinal', npc: 'Helyra', requer: 'guardiaoOvo', tipo: 'matar', especie: 'vorag', meta: 1, invoca: 'vorag',
     titulo: 'O Terceiro Sinal', pede: 'A coroa brilhou sob a terra. A seda cobriu a floresta. E agora o filhote anda ao seu lado... O TERCEIRO SINAL se cumpriu — e a Ossada no campo a leste NÃO está mais dormindo. Vá. Termine o que a profecia começou.',
     fala: 'Os ossos ainda andam?', recompensa: { ouro: 300, xp: 200, item: { nome: 'Relíquia de Vorag', icone: '🦴', slot: 'anel', defesa: 5 } } },
   // RV5.8: o Mestre da Guilda quer os cristais das profundezas
-  { id: 'profundezasPico', npc: 'Ulric', tipo: 'matar', especie: 'trollAnciao', meta: 1,
+  { id: 'profundezasPico', npc: 'Ulrion', tipo: 'matar', especie: 'trollAnciao', meta: 1,
     titulo: 'Profundezas do Pico', pede: 'Acharam uma boca de caverna na encosta sul do Pico — e o que mora lá dentro não paga aluguel. Derrube o TROLL ANCIÃO e a Guilda fica devendo uma.',
     fala: 'As cavernas já têm dono novo?', recompensa: { ouro: 160, xp: 120 } },
   // RV5.2: o caçador de Thais quer a cabeça do Senhor da Guerra
-  { id: 'senhorGuerra', npc: 'Khan', tipo: 'matar', especie: 'orcWarlord', meta: 1,
+  { id: 'senhorGuerra', npc: 'Kael', tipo: 'matar', especie: 'orcWarlord', meta: 1,
     titulo: 'O Senhor da Guerra', pede: 'Os orcs das Ruínas da Estrada ganharam um COMANDANTE — e comandante junta exército. Derrube o Senhor da Guerra antes que ele marche sobre Thais.',
     fala: 'O estandarte deles ainda tremula?', recompensa: { ouro: 140, xp: 100 } },
   // RV4.6: o arqueiro do vilarejo precisa de seda pro arco
-  { id: 'sedaFalk', npc: 'Falk', tipo: 'coletar', item: 'Seda de Aranha', meta: 3,
+  { id: 'sedaFalk', npc: 'Falric', tipo: 'coletar', item: 'Seda de Aranha', meta: 3,
     titulo: 'Cordas de Seda', pede: 'O Ninho das Aranhas, na Floresta do Oeste, tem a melhor seda do reino. Traga 3 Sedas de Aranha — corda de arco boa não se faz sozinha.',
     fala: 'Conseguiu minha seda?', recompensa: { ouro: 45, xp: 35 } },
   // RV4.4: a sacerdotisa quer paz nas catacumbas sob a Catedral
-  { id: 'pazCatacumbas', npc: 'Hela', tipo: 'matar', especie: 'reiEsqueleto', meta: 1,
+  { id: 'pazCatacumbas', npc: 'Helyra', tipo: 'matar', especie: 'reiEsqueleto', meta: 1,
     titulo: 'Paz nas Catacumbas', pede: 'Algo acordou sob a Catedral... O REI ESQUELETO senta num trono entre as tumbas. Devolva-o ao descanso (a descida fica na cripta atrás da Catedral).',
     fala: 'O rei voltou a dormir?', recompensa: { ouro: 120, xp: 80, item: { nome: 'Amuleto Sagrado', icone: '📿', slot: 'colar', defesa: 5 } } },
-  // RV5.1: o PET DA PROFECIA — cadeia da Hela (liga o Fragmento Profético aos ovos do Pico)
-  { id: 'guardiaoOvo', npc: 'Hela', requer: 'pazCatacumbas', tipo: 'coletar', item: 'Escama de Dragão', meta: 1,
+  // RV5.1: o PET DA PROFECIA — cadeia da Helyra (liga o Fragmento Profético aos ovos do Pico)
+  { id: 'guardiaoOvo', npc: 'Helyra', requer: 'pazCatacumbas', tipo: 'coletar', item: 'Escama de Dragão', meta: 1,
     titulo: 'O Guardião do Ovo', pede: 'Você leu o Fragmento das Ruínas? "Três ovos ao calor da lava..." Pois um deles CHOCOU — e o filhote não pode cair em mãos erradas. Traga-me 1 Escama de Dragão como prova de força, e ele será SEU pra criar.',
     fala: 'Trouxe a escama? O filhote não para quieto...', recompensa: { ouro: 0, xp: 120, pet: 'dragaozinho' } },
   // RV4.1: limpeza do Brejo Profundo (a Capitã de Venore paga bem)
-  { id: 'brejoMara', npc: 'Capitã Mara', tipo: 'matar', especie: 'cobra', meta: 3,
+  { id: 'brejoMara', npc: 'Mara Veyr', tipo: 'matar', especie: 'cobra', meta: 3,
     titulo: 'Limpeza do Brejo', pede: 'O Brejo Profundo, ao sul do porto, está infestado de cobras venenosas. Mate 3 e Venore te paga como soldado.',
     fala: 'O brejo já está mais limpo?', recompensa: { ouro: 50, xp: 40 } },
   // RV3.0: a QUEST ÉPICA do tema — derrote um DRAGÃO de verdade
-  { id: 'cacaDragao', npc: 'Dorian', tipo: 'matar', especie: 'dragao', meta: 1,
+  { id: 'cacaDragao', npc: 'Darian', tipo: 'matar', especie: 'dragao', meta: 1,
     titulo: 'A Caça ao Dragão', pede: 'Os dragões voltaram a dominar estas terras — o do Pico cospe fogo até sobre Venore. Derrote UM dragão e Thais te honrará com o ELMO DO DRAGÃO.',
     fala: 'O dragão ainda voa?', recompensa: { ouro: 150, xp: 100, item: { nome: 'Elmo do Dragão', icone: '🐲', slot: 'cabeca', defesa: 6 } } },
   // RV6.0: primeira questline de alto nivel em Noctaria.
@@ -1477,7 +1477,7 @@ const QUESTS = [
 ];
 QUESTS.push({
   id: 'selaDraptor',
-  npc: 'Hela',
+  npc: 'Helyra',
   requer: 'arconteLuaPartida',
   nivel: 14,
   tipo: 'coletar',
@@ -1541,8 +1541,14 @@ function tabelaComEscassez(tabela) {
 // ESTOQUE REGIONAL: o que você vende pra cada NPC fica registrado (e salvo);
 // ao atingir a meta, a OFERTA RARA dele entra na loja pra sempre.
 const economia = {}; // nomeNpc -> { total, liberadas: [] }
+function economiaDoNPC(npc) {
+  const atual = economia[npc.nome];
+  const legado = npc.legacyNome ? economia[npc.legacyNome] : null;
+  if (!atual && legado) economia[npc.nome] = legado;
+  return economia[npc.nome] || (economia[npc.nome] = { total: 0, liberadas: [] });
+}
 function registraVenda(npc, qtd) {
-  const e = economia[npc.nome] || (economia[npc.nome] = { total: 0, liberadas: [] });
+  const e = economiaDoNPC(npc);
   e.total += qtd;
   const novas = [];
   (npc.ofertas || []).forEach((of) => {
@@ -1557,8 +1563,9 @@ function registraVenda(npc, qtd) {
 }
 function restauraEconomia() { // pós-load: reinjeta as ofertas já liberadas
   for (const n of npcs) {
-    const e = economia[n.nome];
-    if (!e || !n.ofertas) continue;
+    if (!n.ofertas) continue;
+    const e = economiaDoNPC(n);
+    if (!e) continue;
     n.ofertas.forEach((of) => {
       if (e.liberadas.includes(of.item.nome) && !(n.loja || []).some((it) => it.nome === of.item.nome)) {
         n.loja = n.loja || []; n.loja.push({ ...of.item });
@@ -1614,8 +1621,8 @@ function abreDialogo(npc) {
         + (q.recompensa.pet ? ' 🐲 O FILHOTE DE DRAGÃO agora é seu — ele te segue (e aceita sela: tecla M)!' : '') + '.', opcoes);
     } });
   }
-  // GUILDA DE VENORE (RV4.2): o Mestre Ulric aceita quem provou valor
-  if (npc.nome === 'Ulric') {
+  // GUILDA DE VENORE (RV4.2): o Mestre Ulrion aceita quem provou valor
+  if (npc.nome === 'Ulrion') {
     const rotuloG = guildaMembro ? '🛡️ Guilda: você é MEMBRO' : `🛡️ Entrar para a Guilda (${Math.min(dragoesMortos, 2)}/2 dragões)`;
     opcoes.splice(opcoes.length - 1, 0, { texto: rotuloG, onClick: () => {
       if (guildaMembro) { dialogo.abre(npc.nome, 'Você já é dos nossos, caçador de dragões. O Salão é sua casa.', opcoes); return; }
@@ -1648,7 +1655,7 @@ function abreDialogo(npc) {
     } });
   }
   // LOJA do NPC (estilo Tibia: cada vendedor tem sua mercadoria — armas na
-  // forja, runas com a Eldra, flechas com o Falk, poções com a Sira...)
+  // forja, runas com a Eldrith, flechas com o Falric, poções com a Seranna...)
   if (npc.loja) {
     for (const produto of npc.loja) {
       opcoes.splice(opcoes.length - 1, 0, { texto: `${produto.icone} ${produto.nome} — ${produto.preco}🪙`, onClick: () => {
@@ -1814,7 +1821,7 @@ BUEIROS.forEach((bp, i) => {
 // (vilarejo 5🪙 / praia 8🪙); vilarejo e praia têm a volta — fast-travel
 // clássico de capital mercante, pago e salvo.
 function viajaBarca(dx, dz, custo, nomeDestino) {
-  if (ouro < custo) { mostraMensagem(`A passagem custa ${custo} 🪙 — venda um peixe pro Tonho!`); return; }
+  if (ouro < custo) { mostraMensagem(`A passagem custa ${custo} 🪙 — venda um peixe pro Tormund!`); return; }
   ouro -= custo; hud.ouro(ouro);
   sons.agua();
   montado = false; petAlvo = null;
@@ -1945,9 +1952,9 @@ const TOMOS = [
   { x: -340, z: -6, y: -40, lugar: 'Catacumbas (junto ao trono)', titulo: '📘 O Último Rei', paginas: [
     'Aqui jaz — e não descansa — Ossivaldo II, o Último Rei de Venore Antiga. Em vida, taxou até a chuva; em morte, sentou-se de novo no trono e nunca mais se levantou.',
     'Quando o pântano engoliu a primeira Venore, o rei recusou-se a partir com o povo. "Um rei não abandona o cofre", disse. O cofre, como sabes, está um andar abaixo. A coroa, ele usa até hoje.',
-    'Se leres isto à luz de tocha, com os guardiões acordados ao redor: foge. Se já os venceste: a sacerdotisa Hela paga bem pela paz deles.' ] },
+    'Se leres isto à luz de tocha, com os guardiões acordados ao redor: foge. Se já os venceste: a sacerdotisa Helyra paga bem pela paz deles.' ] },
   { x: -290, z: -54, lugar: 'Torre do Depósito', titulo: '📙 Cartas de um Mercador', paginas: [
-    '"Querida Ema: o brejo é horrível, o ar morde, e eu nunca vi tanto OURO em toda a minha vida. Vamos ficar." — assim começa a primeira carta de Anselmo, o Velho, avô do atual.',
+    '"Querida Ema: o brejo é horrível, o ar morde, e eu nunca vi tanto OURO em toda a minha vida. Vamos ficar." — assim começa a primeira carta de Anshelm, o Velho, avô do atual.',
     'A nova Venore nasceu da teimosia dos mercadores: se o pântano engoliu a cidade antiga, a nova andaria POR CIMA dele. Canal, calçadão, barcas — a água que nos venceu virou estrada.',
     'A última carta termina assim: "construímos a torre alta não pela vaidade, mas para que quem fugiu veja de longe que voltamos. O relógio atrasa cinco minutos. Deixei assim. É o tempo que um mercador honesto deve ao passado."' ] },
   { x: 124, z: -4, lugar: 'Torre de Vigia', titulo: '📒 Diário do Vigia', paginas: [
@@ -1957,7 +1964,7 @@ const TOMOS = [
   { x: 154, z: 246, lugar: 'Ruínas Antigas', titulo: '📓 Fragmento Profético', paginas: [
     '...e quando a coroa voltar a brilhar sob a terra, e a seda voltar a cobrir a floresta, sabei: é o TERCEIRO SINAL. (o resto da página está queimado)',
     '...três ovos ao calor da lava, pacientes como só a pedra. O primeiro a nascer chamará os outros. O que dorme no covil do norte é apenas o avô deles...',
-    '...não temais o fogo no céu. Temei o dia em que ele POUSAR. (aqui o fragmento termina; alguém rabiscou embaixo, com letra recente: "contar pra Hela?")' ] },
+    '...não temais o fogo no céu. Temei o dia em que ele POUSAR. (aqui o fragmento termina; alguém rabiscou embaixo, com letra recente: "contar pra Helyra?")' ] },
 ];
 const MAT_LIVRO = new THREE.MeshStandardMaterial({ color: 0x7a3a2a, roughness: 0.7 });
 const MAT_PEDESTAL = new THREE.MeshStandardMaterial({ color: 0x6f675c, roughness: 1 });
@@ -2771,13 +2778,13 @@ function aoEquipar(item) {
     mostraMensagem('✨ Runa de Cura! +50 ❤️');
     return true;
   }
-  if (item.usavel === 'pocaoGrande') { // poção grande (oferta rara da Sira): +80
+  if (item.usavel === 'pocaoGrande') { // poção grande (oferta rara da Seranna): +80
     if (vida >= VIDA_MAX) { mostraMensagem('Você já está com a vida cheia. ❤️'); return false; }
     vida = Math.min(VIDA_MAX, vida + 80); hud.vida(vida, VIDA_MAX);
     mostraMensagem('🧉 GOLE GRANDE! +80 de vida! ❤️');
     return true;
   }
-  if (item.usavel === 'runaExplosiva') { // runa explosiva (oferta rara da Eldra): 50 em área 6
+  if (item.usavel === 'runaExplosiva') { // runa explosiva (oferta rara da Eldrith): 50 em área 6
     let acertou = 0;
     for (const r of ratos) {
       if (!r.vivo || Math.abs(r.g.position.y - avatar.position.y) > 6) continue;
@@ -3162,7 +3169,7 @@ function atacar() {
     if (!melhor) { mostraMensagem('Nenhum alvo ao alcance do arco. 🏹'); return; }
     // VIROTE (RV5.1): munição PESADA — se tiver na mochila, sai primeiro e bate +4
     const usouVirote = inventario.consomeItem('Virote');
-    if (!usouVirote && !inventario.consomeItem('Flecha')) { mostraMensagem('Sem munição! Flechas/Virotes com Falk (vilarejo), Tonho (Venore) ou Yara (Thais). ➹'); return; }
+    if (!usouVirote && !inventario.consomeItem('Flecha')) { mostraMensagem('Sem munição! Flechas/Virotes com Falric (vilarejo), Tormund (Venore) ou Ysolde (Thais). ➹'); return; }
     const danoTiro = dano + (usouVirote ? 4 : 0);
     petAlvo = melhor; // o pet entra na briga junto
     sons.golpe();
@@ -3208,7 +3215,7 @@ function tentaCapturarDraptor(r) {
   if (!r || (r.especie !== 'draptor' && r.especie !== 'draptorLendario')) return;
   const questFeita = (questEstado.selaDraptor || {}).feita;
   if (!questFeita || !inventario.temItem('Sela Dracônica')) {
-    mostraMensagem('O Draptor cai, mas ninguém consegue conter a fera sem a Sela Dracônica da Hela.');
+    mostraMensagem('O Draptor cai, mas ninguém consegue conter a fera sem a Sela Dracônica da Helyra.');
     return;
   }
   const alvoPet = r.especie === 'draptorLendario' ? 'draptorLendario' : 'draptor';
@@ -3995,7 +4002,7 @@ criaSelecao({
       } else if (voc === 'paladino') {
         inventario.addItem({ nome: 'Arco', icone: '🏹', slot: 'maoDir', dano: 10, arma: true, arco: true });
         for (let q = 0; q < 24; q++) inventario.addItem({ nome: 'Flecha', icone: '➹' });
-        setTimeout(() => mostraMensagem('🏹 PALADINO: Arco + 24 Flechas — cace de LONGE! Virotes (Falk/Tonho) batem +4.'), 2600);
+        setTimeout(() => mostraMensagem('🏹 PALADINO: Arco + 24 Flechas — cace de LONGE! Virotes (Falric/Tormund) batem +4.'), 2600);
       } else if (voc === 'feiticeiro') {
         inventario.addItem({ nome: 'Runa de Fogo', icone: '🔥', slot: 'runa', usavel: 'runaFogo' });
         inventario.addItem({ nome: 'Runa de Fogo', icone: '🔥', slot: 'runa', usavel: 'runaFogo' });

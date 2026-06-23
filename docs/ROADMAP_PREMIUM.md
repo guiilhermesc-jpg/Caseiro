@@ -9,6 +9,7 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. PC com Tauri: instalador Windows, depois macOS/Linux, com auto-update.
 4. iOS por TestFlight/App Store: evitar promessa de IPA solto; seguir fluxo oficial da Apple.
 5. Pipeline de versoes: selo do jogo, changelog, pagina de download e checagem de bundle publicado.
+6. Decisao RV17/RV18: se a qualidade grafica exigir pacote pesado, o alvo principal vira instalado; navegador fica como preview/dev.
 
 ## Pilar 2 - Visual premium
 
@@ -17,6 +18,7 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. Materiais por bioma: grama, terra, pedra, areia, pantano, cinzas, lava e interiores com linguagem propria.
 4. Agua e clima: reflexo controlado, espuma, chuva, neblina local, vento em vegetacao e ciclo dia/noite mais dramatico.
 5. Direcao de camera/UX visual: leitura forte de personagem, combate claro, perigo no solo e mapa sem poluicao.
+6. Criacao nova so entra com funcao: monstro, roupa, item, GIF/animacao, montaria e NPC precisam nascer com uso jogavel, idle/impacto quando aplicavel e validacao.
 
 ## Pilar 3 - Mundo 30x com densidade
 
@@ -41,6 +43,7 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. Performance sempre junto da arte: instancing, merge, textura pre-carregada e testes mobile.
 4. Assets externos so com licenca segura; Tibia, Albion, Pokemon e Zelda entram como referencia de qualidade e mecanica, nao como copia.
 5. A cada 5 rodadas: rodada so de bugfix, jogabilidade e performance.
+6. NPCs, racas e faccoes entram na biblia antes de virarem conteudo jogavel.
 
 ## Rodadas premium recentes e proximas
 
@@ -56,3 +59,8 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 10. RV8.4: casas reais, posse persistente, bau privado, decoracao e permissao de familia/grupo.
 11. RV8.5: interiores premium e padrao de entrada/saida em casas, lojas e templos.
 12. RV8.6: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.
+13. RV16.8 entregue: Lore Operacional - NPCs renomeados, biblia de NPCs, compatibilidade de economia e gate premium.
+14. RV17: portal publico com noticias, contas, personagens, highscores, bestiario, mapa e patch notes quando as imagens ja baterem com o jogo real.
+15. RV18: base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
+16. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
+17. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.

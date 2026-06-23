@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.7 (v118)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.8 (v119)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.7 (v118)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.8 (v119)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.7 — Identidade Premium").
+    `patchNotes.js` (painel "PATCH RV16.8 - Lore Operacional").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -196,20 +196,34 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js` apontam para o RV16.7 e cache `venor-rv16-7-offline-v1`.
 - Documento da rodada: `docs/RV16_7_IDENTIDADE_PREMIUM.md`.
 
+## 7.8 Estado novo do RV16.8 (Codex)
+
+- `public/patches/rv16-8-lore-operacional.png` eh a arte oficial do patch; copia versionada da praca aprovada porque RV16.8 e base/lore/processo, nao uma promessa visual nova.
+- `src/main3d.js` subiu para **RV16.8 (v119)**.
+- `src/jogo/npcs.js` migrou nomes de NPCs para lore tradicional e adicionou `legacyNome` para preservar economia de saves antigos.
+- `src/jogo/npcs.js` agora copia `loja`, `compra` e `ofertas` para o NPC vivo; isso evita dialogo sem comercio.
+- `src/main3d.js` manteve IDs de quest existentes estaveis e passou a restaurar economia pelo nome novo ou legado.
+- Criado `docs/BIBLIA_NPCS.md` com nomes novos, nomes antigos, papeis e regra de criacao.
+- `docs/CRONOGRAMA_IDENTIDADE_PREMIUM.md` virou gate de qualidade: criacao nova so entra com funcao, animacao/GIF quando aplicavel, cache/offline, teste e documentacao.
+- `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js` apontam para RV16.8 e cache `venor-rv16-8-offline-v1`.
+- Documento da rodada: `docs/RV16_8_LORE_OPERACIONAL.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
-1. **RV16.8 - Interiores como realidade** — alinhar mansoes/guildhouses ao hall nobre: candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
-2. **RV16.9 - Bichos e hunts como realidade** — alinhar criaturas/hunts a arte de bestiario: silhueta, ataque, impacto, terreno e loot visual.
-3. **RV16.10 - Continente e viagens** — transformar a arte de mapa em plano jogavel por regioes, rotas longas e pontos de viagem.
+1. **RV16.9 - Interiores como realidade** — alinhar mansoes/guildhouses ao hall nobre: candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
+2. **RV16.10 - Bichos e hunts como realidade** — alinhar criaturas/hunts a arte de bestiario: silhueta, ataque, impacto, terreno e loot visual.
+3. **RV16.11 - Continente e viagens** — transformar a arte de mapa em plano jogavel por regioes, rotas longas e pontos de viagem.
 4. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
 5. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
    já em `PRECOS`), falta: drop do Coração em invasão/boss + consagrar "Sela Dracônica" + fluxo de domação adulta.
 6. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
 7. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
 8. **Portal Patch 17**: site publico estilo Tibia, com noticias de updates, contas, personagens, rankings e pagina de patch.
-9. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
+9. **RV18 instalavel premium**: preparar app instalado quando GLBs/texturas/animacoes passarem do peso saudavel da web.
+10. **RV22/RV25 racas e era antiga**: orcs, anoes, paladinos, bruxos/feiticeiros, druidas, dragoes antigos, maquinas e anomalias externas conforme `docs/BIBLIA_NPCS.md`.
+11. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
    orfana coordenadas — fazer com cuidado/validação. **Deferido**.
 
 Saídas completas da auditoria/design ficam nos arquivos de output das tasks de workflow (em

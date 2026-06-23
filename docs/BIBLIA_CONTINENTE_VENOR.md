@@ -35,6 +35,12 @@ economia, atalhos futuros e uma razao para o jogador lembrar dele.
    - A expansao das maquinas nao nega a magia; ela tenta industrializar a Veia.
    - Aliens entram depois como misterio externo, nao como quebra brusca de tom.
 
+6. **NPCs carregam a cultura do mundo**
+   - A fonte operacional de nomes e papeis e `docs/BIBLIA_NPCS.md`.
+   - Nomes simples de prototipo foram migrados no RV16.8 para nomes de lore.
+   - Todo NPC novo precisa ter oficio, posto, fala util e funcao jogavel ou funcao de historia.
+   - IDs internos de quest continuam estaveis mesmo quando o nome visual evolui.
+
 ## Macro-regioes
 
 ### 1. Coracao de Venor
@@ -145,6 +151,21 @@ Conteudos previstos:
 Regra de design:
 - Aliens devem chegar como "anomalia de mundo", primeiro por sinais, depois por contato.
 
+### 8. Racas mortais e faccoes antigas
+
+Funcao: grandes updates futuros, previstos para RV22+.
+
+Conteudos previstos:
+- orcs com clãs, fortalezas e hierarquia;
+- anoes com minas, forjas, comercio e rotas subterraneas;
+- paladinos como ordem de fronteira e juramento;
+- bruxos/feiticeiros como escolas rivais de magia;
+- druidas como circulos da natureza e da Veia viva.
+
+Regra de design:
+- nenhuma raca entra apenas como skin.
+- cada raca precisa de arquitetura, NPCs, inimigos, aliados, economia, loot e pelo menos uma cadeia de quest.
+
 ## Hunts de dragoes
 
 | Hunt | Local | Nivel alvo | Requisito | Recompensa central | Observacao |
@@ -163,7 +184,7 @@ Regra de design:
 ## Cadeias de quest que precisam se cruzar
 
 1. **Ovo do Pico -> Filhote -> ML**
-   - Hela envia ao Pico.
+   - Helyra envia ao Pico.
    - Jogador consegue dragaozinho.
    - Dormir em casa treina ML do dragao.
    - Isso conecta moradia, economia e combate.
@@ -171,7 +192,7 @@ Regra de design:
 2. **Guilda de Venore -> Draptor**
    - Derrotar dragoes prova valor.
    - Entrar na guilda libera guildhouse/contratos.
-   - Hela consagra Sela Draconica.
+   - Helyra consagra Sela Draconica.
    - Invasao aleatoria abre chance de Draptor.
 
 3. **Noctaria -> Obsidiana -> Maquinas**

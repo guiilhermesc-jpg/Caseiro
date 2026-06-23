@@ -648,11 +648,11 @@ export function criaCidade() {
   add(criaCasaInterior(78, 24, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
   add(criaCasaInterior(-78, 24, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
   // LOJAS estilo Tibia (cada NPC com sua finalidade — runas, arco & flecha, forja)
-  add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldra
-  add(criaPlaca(-26, 14, 'Runas — Eldra', Math.PI / 2));
-  add(criaBarraca(22, -12, 0, 0x2a8a4a));               // banca de ARCO & FLECHA do Falk
+  add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldrith
+  add(criaPlaca(-26, 14, 'Runas — Eldrith', Math.PI / 2));
+  add(criaBarraca(22, -12, 0, 0x2a8a4a));               // banca de ARCO & FLECHA do Falric
   add(criaPlaca(26, -12, 'Arco & Flecha', -Math.PI / 2));
-  add(criaPlaca(-21, 11, 'Forja — Armas', Math.PI / 2)); // armas com Bram, o ferreiro
+  add(criaPlaca(-21, 11, 'Forja — Armas', Math.PI / 2)); // armas com Brannor, o ferreiro
 
   // placas de rua (estilo Tibia)
   add(criaPlaca(20, 6, 'Rua do Mercado', -Math.PI / 2));
@@ -910,9 +910,9 @@ export function criaCidade() {
   add(criaPlaca(506, -7, 'Bem-vindo a Thais'));   // logo após o portão
   // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
-  // LOJA DE POÇÕES da Yara — primeira loja com INTERIOR de verdade em Thais
+  // LOJA DE POÇÕES da Ysolde — primeira loja com INTERIOR de verdade em Thais
   add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80, loja: true }));
-  add(criaPlaca(576, -12, 'Poções — Yara', Math.PI));
+  add(criaPlaca(576, -12, 'Poções — Ysolde', Math.PI));
   // (528,0 bloqueava a rota portão→chafariz; ao lado colide com o casario —
   // posição calculada livre: sul da via, porta pro norte voltada pra rua)
   add(criaCasaInterior(524, -14, { frente: 'norte', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
@@ -1157,12 +1157,12 @@ export function criaCidade() {
     add(criaCasaInterior(-376, -16, { frente: 'sul', cor: 0xb0b8c0, corTelhado: 0x55636f }));
     // LOJA ARCANA DA ILDA (RV4.3): runas atendidas em interior de verdade
     add(criaCasaInterior(-340, -12, { frente: 'leste', cor: 0xc7b394, corTelhado: 0x6a4a8a, loja: true }));
-    add(criaPlaca(-334, -7, 'Runas — Ilda', -Math.PI / 2));
+    add(criaPlaca(-334, -7, 'Runas — Ilyndra', -Math.PI / 2));
     // casas ENTRÁVEIS + a LOJA DA ALQUIMISTA (interior de loja de verdade)
     add(criaCasaInterior(-392, -16, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x55636f }));
     add(criaCasaInterior(-272, -16, { frente: 'sul', cor: 0xa8bcae, corTelhado: 0x6a4a6a }));
     add(criaCasaInterior(-284, -44, { frente: 'norte', cor: 0xd0a0a0, corTelhado: 0x8a4632, loja: true }));
-    add(criaPlaca(-280, -38, 'Alquimia — Berta', Math.PI));
+    add(criaPlaca(-280, -38, 'Alquimia — Berthya', Math.PI));
 
     // === PORTO DE VENORE (lagoa + cais; pesca!) ===
     add(criaLago(-330, -92, 14));
@@ -1173,10 +1173,10 @@ export function criaCidade() {
 
     // === FORJA DO GROM (RV4.2): oficina entrável com bigorna e forno aceso
     add(criaCasaInterior(-308, -50, { frente: 'norte', cor: 0x9a9282, corTelhado: 0x3a4656, forja: true }));
-    add(criaPlaca(-303, -44, 'Forja — Grom', Math.PI));
+    add(criaPlaca(-303, -44, 'Forja — Gromar', Math.PI));
     // === ARMADURAS DA TESSA (RV4.2): loja entrável no Largo das Guildas
     add(criaCasaInterior(-290, 22, { frente: 'oeste', cor: 0xb0a890, corTelhado: 0x55636f, loja: true }));
-    add(criaPlaca(-296, 27, 'Armaduras — Tessa', Math.PI / 2));
+    add(criaPlaca(-296, 27, 'Armaduras — Thessara', Math.PI / 2));
 
     // === VIDA DE PRAÇA: barracas, poço, bancos, canteiros, bandeiras, postes
     add(criaBarraca(-330, -38, 0.2, 0xb23a3a));

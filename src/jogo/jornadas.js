@@ -29,7 +29,7 @@ export const ROTAS_JORNADA = [
     tempo: '6-9 min',
     funcao: 'viagem longa classica: torre, ponte, fazenda, cemiterio e perigo noturno',
     biomas: ['campo aberto', 'ponte', 'cemiterio', 'ruinas'],
-    encontros: ['lobos da ponte', 'fazenda de Gil', 'esqueletos a noite', 'bandidos na curva'],
+    encontros: ['lobos da ponte', 'fazenda de Gildren', 'esqueletos a noite', 'bandidos na curva'],
     recompensa: ['quests iniciais', 'itens de caca', 'acesso a loja de Thais', 'lore dos viajantes'],
     criterio: 'o jogador deve lembrar de 3 marcos visuais antes de chegar',
   },
@@ -133,7 +133,7 @@ export const HABITATS_FIXOS = [
     criaturas: ['lobo'],
     raro: 'lobo alfa futuro',
     respawn: 'baixo e constante',
-    valor: 'primeira caca real, couro e quest do Bruno',
+    valor: 'primeira caca real, couro e quest do Brannar',
   },
   {
     id: 'cemiterio',
@@ -142,7 +142,7 @@ export const HABITATS_FIXOS = [
     criaturas: ['esqueleto'],
     raro: 'morto noturno',
     respawn: 'mais forte a noite',
-    valor: 'morte, lore, quest do Tobias e risco por horario',
+    valor: 'morte, lore, quest do Tovaryn e risco por horario',
   },
   {
     id: 'ninho-aranhas',
@@ -187,7 +187,7 @@ export const HABITATS_FIXOS = [
     criaturas: ['cobra', 'troll'],
     raro: 'Dente do Profundo',
     respawn: 'veneno e emboscada',
-    valor: 'material venenoso, quest da Capita Mara e leitura de bioma',
+    valor: 'material venenoso, quest da Mara Veyr e leitura de bioma',
   },
   {
     id: 'lua-partida',

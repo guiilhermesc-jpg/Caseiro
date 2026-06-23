@@ -32,7 +32,7 @@ export function mascateHoje(date = new Date()) {
     dia,
     posto,
     texto: aberto
-      ? `Hoje é ${dia.nome}: Zé das Rotas está em ${posto.nome}.`
+      ? `Hoje é ${dia.nome}: Zareth das Rotas está em ${posto.nome}.`
       : `Hoje é ${dia.nome}: o mascate não montou acampamento. Volte na terça, quinta ou sábado.`,
   };
 }
