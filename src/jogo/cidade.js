@@ -398,6 +398,86 @@ export function criaCidade() {
   const pinh = (x, z) => VEG.pinheiros.push([x, z]);
   const pedr = (x, z, s = 1) => VEG.pedras.push([x, z, s]);
 
+  function criaEscadariaCenica(x, z, rot = 0, w = 13, degraus = 5) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const pedra = matPBR(0x8d8576, { tipo: 'pedra', repeat: 1.3, rough: 1, relevo: 0.55 });
+    const musgo = new THREE.MeshStandardMaterial({ color: 0x3b5d36, roughness: 1, flatShading: true });
+    const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.62, roughness: 0.36, emissive: 0x241500, emissiveIntensity: 0.18 });
+    for (let i = 0; i < degraus; i++) {
+      const d = new THREE.Mesh(new THREE.BoxGeometry(w - i * 0.42, 0.16 + i * 0.035, 0.88), pedra);
+      d.position.set(0, 0.08 + i * 0.035, i * 0.72);
+      d.castShadow = d.receiveShadow = true;
+      g.add(d);
+      if (i % 2 === 0) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry((w - i) * 0.24, 0.025, 0.55), musgo);
+        m.position.set((i % 4 ? -1 : 1) * (w * 0.22), 0.18 + i * 0.036, i * 0.72 + 0.06);
+        m.rotation.y = (i % 4 ? -0.08 : 0.1);
+        g.add(m);
+      }
+    }
+    [-1, 1].forEach((s) => {
+      const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 1.2, 8), pedra);
+      pilar.position.set(s * (w / 2 - 0.55), 0.6, degraus * 0.72 + 0.25);
+      pilar.castShadow = pilar.receiveShadow = true;
+      g.add(pilar);
+      const topo = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), ouro);
+      topo.position.set(s * (w / 2 - 0.55), 1.36, degraus * 0.72 + 0.25);
+      topo.castShadow = true;
+      g.add(topo);
+    });
+    return { grupo: g };
+  }
+
+  function criaVasoNobre(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const ceramica = matPBR(0x8a5a37, { tipo: 'terra', repeat: 0.8, rough: 0.92, relevo: 0.35 });
+    const folhaMat = new THREE.MeshStandardMaterial({ color: 0x3f6f38, roughness: 1, flatShading: true });
+    const florMat = new THREE.MeshStandardMaterial({ color: 0xe8d16a, roughness: 0.75, emissive: 0x2a1800, emissiveIntensity: 0.08 });
+    const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.34, 0.75, 10), ceramica);
+    corpo.position.y = 0.38; corpo.castShadow = corpo.receiveShadow = true; g.add(corpo);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const folha = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22 + (i % 2) * 0.05, 0), folhaMat);
+      folha.position.set(Math.cos(a) * 0.34, 0.88 + (i % 3) * 0.09, Math.sin(a) * 0.34);
+      folha.scale.set(1.1, 0.55, 0.75);
+      folha.rotation.y = a;
+      folha.castShadow = true;
+      g.add(folha);
+    }
+    const flor = new THREE.Mesh(new THREE.SphereGeometry(0.13, 7, 6), florMat);
+    flor.position.y = 1.22; g.add(flor);
+    return { grupo: g, colisores: [{ minX: x - 0.45, maxX: x + 0.45, minZ: z - 0.45, maxZ: z + 0.45 }] };
+  }
+
+  function criaMesaMercante(x, z, rot = 0, cor = 0x334f7a) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const madeira = matPBR(0x6b4a2a, { tipo: 'madeira', repeat: 1.1, rough: 0.88, relevo: 0.45 });
+    const tecido = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.96, side: THREE.DoubleSide });
+    const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.58, roughness: 0.34, emissive: 0x2a1600, emissiveIntensity: 0.2 });
+    const tampo = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.18, 1.35), madeira);
+    tampo.position.y = 0.92; tampo.castShadow = tampo.receiveShadow = true; g.add(tampo);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(3.15, 0.045, 1.5), tecido);
+    pano.position.y = 1.04; g.add(pano);
+    [-1.25, 1.25].forEach((px) => [-0.48, 0.48].forEach((pz) => {
+      const pe = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.82, 0.13), madeira);
+      pe.position.set(px, 0.48, pz); pe.castShadow = true; g.add(pe);
+    }));
+    for (let i = 0; i < 5; i++) {
+      const pacote = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.28, 0.36), mat([0x9a7a45, 0x5a6f3a, 0x7a3a42][i % 3], 0.8));
+      pacote.position.set(-1.0 + i * 0.5, 1.25, (i % 2 ? -0.28 : 0.25));
+      pacote.rotation.y = (i - 2) * 0.08;
+      pacote.castShadow = true;
+      g.add(pacote);
+    }
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), ouro);
+    lamp.position.set(1.18, 1.34, 0.42); g.add(lamp);
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 1.6, maxX: x + 1.6, minZ: z - 0.8, maxZ: z + 0.8 }],
+      animados: [{ mesh: lamp, pulsa: ouro, gira: 0.35, fase: Math.random() * 6 }],
+    };
+  }
+
   // praça: fonte central + bancos + postes nas esquinas
   add(criaFonte(0, 0));
   // Bancos nos cantos da praca: o corredor central fica livre para templo,
@@ -406,6 +486,14 @@ export function criaCidade() {
   add(criaBanco(9, 8, -Math.PI / 2));
   add(criaBanco(-9, -8, Math.PI / 2));
   add(criaBanco(9, -8, -Math.PI / 2));
+  add(criaEscadariaCenica(0, -23, 0, 15.5, 5));
+  add(criaEscadariaCenica(0, 20.5, Math.PI, 13.5, 4));
+  [[-18, -10, 0], [18, -10, 0.1], [-18, 10, -0.1], [18, 10, 0]]
+    .forEach(([x, z, r]) => add(criaVasoNobre(x, z, r)));
+  [[-17.5, -16, 0.18, 0x334f7a], [17.5, 15.5, -0.2, 0x7a3f30], [-15.5, 17.5, Math.PI / 2, 0x3f6b46]]
+    .forEach(([x, z, r, c]) => add(criaMesaMercante(x, z, r, c)));
+  [[-23, -7, 0x6a2ab0], [23, -7, 0xb8902a], [-23, 7, 0x2a5a9c], [23, 7, 0x9c2a2a]]
+    .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
 
   // marcos (virados PARA a praça)
   const marcos = [
@@ -438,7 +526,7 @@ export function criaCidade() {
   const ESTILO_PAREDE = ['madeira_viga', 'reboco', 'madeira_viga', 'reboco', 'pedra_castelo'];
   const ESTILO_TELHA = ['telha', 'ardosia', 'telha', 'palha', 'telha'];
   lotes.forEach(([x, z], i) => add(criaPredio({
-    x, z, larg: rnd(8, 13), prof: rnd(8, 12), alt: rnd(6, 11),
+    x, z, larg: rnd(10, 15), prof: rnd(9, 13), alt: rnd(8, 13),
     cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
     estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
     estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],
@@ -1145,6 +1233,14 @@ export function criaCidade() {
 
     // ====== RV4.5 — ACABAMENTO URBANO (Patch 1) ======
     add(criaFonte(-320, -30)); // chafariz do Grande Mercado (água viva e gotas na praça)
+    add(criaEscadariaCenica(-320, -66, 0, 18, 6));
+    add(criaEscadariaCenica(-320, 8, Math.PI, 15, 4));
+    [[-342, -30, 0], [-298, -30, 0], [-320, -66, 0.1], [-320, 8, -0.1]]
+      .forEach(([x, z, r]) => add(criaVasoNobre(x, z, r)));
+    [[-340, -18, -0.25, 0x243f74], [-300, -42, 0.3, 0x7a3f30], [-338, -46, Math.PI / 2, 0x4d6f3f]]
+      .forEach(([x, z, r, c]) => add(criaMesaMercante(x, z, r, c)));
+    [[-344, -8, 0x243f74], [-296, -8, 0x7a1f1f], [-344, -52, 0x2a8a4a], [-296, -52, 0xd9a522]]
+      .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
     // ruas secundárias pavimentadas ligando os distritos
     const ruaN = new THREE.Mesh(new THREE.BoxGeometry(96, 0.1, 6), matRua(18, 1.2));
     ruaN.position.set(-352, 0.02, 18); ruaN.receiveShadow = true; scene.add(ruaN); // Largo ↔ Catedral

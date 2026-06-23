@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.5 (v116)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.6 (v117)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.5 (v116)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.6 (v117)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.5 — Cidade Profissional").
+    `patchNotes.js` (painel "PATCH RV16.6 — Praca Jogavel").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -175,6 +175,16 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `src/jogo/texturas.js` melhorou o tipo `grama` com sulcos, laminas e variacao para reduzir leitura de papel de parede.
 - `src/jogo/avatar.js` removeu o cone do mago legado e adicionou capuz, robe com bordas, broche, cajado e orbe; feiticeiro/druida tambem ganharam bordas e cajado.
 - Documento da rodada: `docs/RV16_5_CIDADE_PROFISSIONAL.md`.
+
+## 7.6 Estado novo do RV16.6 (Codex)
+
+- `public/patches/rv16-6-praca-jogavel.png` eh a arte oficial do patch; derivada da imagem aprovada pelo maestro como contrato visual da experiencia jogavel.
+- `src/main3d.js` subiu para **RV16.6 (v117)**.
+- `src/jogo/construcoes.js` reforcou `criaPredio`: fachadas de madeira_viga ganharam diagonais de enxaimel e vegetacao escalando a parede.
+- `src/jogo/cidade.js` ganhou helpers de densidade urbana (`criaEscadariaCenica`, `criaVasoNobre`, `criaMesaMercante`) aplicados na praca inicial e no Grande Mercado de Venore.
+- O casario inicial ficou maior e mais proporcional: casas decorativas agora nascem com escala de vila medieval em vez de leitura baixa/prototipo.
+- `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js` apontam para o RV16.6 e mantem o jogo offline-first.
+- Documento da rodada: `docs/RV16_6_PRACA_JOGAVEL.md`.
 
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 

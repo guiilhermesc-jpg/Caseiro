@@ -54,7 +54,8 @@ capim 3D e personagem com mais acabamento.
 
 ## Proximas frentes recomendadas
 
-1. RV16.6: aluguel semanal com vencimento, renovacao e beneficios reais.
-2. RV16.7: hunt regional nova de dragao com territorio proprio.
-3. RV16.8: doma de dragao adulto com Coracao/Sela Draconica.
+1. RV16.6: praca jogavel, casario maior e arte aprovada refletida no mundo real do jogo.
+2. RV16.7: aluguel semanal com vencimento, renovacao e beneficios reais.
+3. RV16.8: hunt regional nova de dragao com territorio proprio.
+4. RV16.9: doma de dragao adulto com Coracao/Sela Draconica.
 4. Patch 17: site/portal publico com noticias, contas, personagens e rankings.

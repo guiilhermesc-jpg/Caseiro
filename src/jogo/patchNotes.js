@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv16-5-cidade-profissional';
+const PATCH_ID = 'rv16-6-praca-jogavel';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV16.5';
+  badge.textContent = 'PATCH RV16.6';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -38,14 +38,14 @@ export function criaPatchNotes() {
   card.innerHTML = `
     <div style="height:300px;background:
       linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.38),rgba(5,8,10,.08)),
-      url('/patches/rv16-5-cidade-profissional.png') center/cover no-repeat;
+      url('/patches/rv16-6-praca-jogavel.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:590px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.5</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Cidade Profissional</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.6</div>
+        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Praca Jogavel</div>
         <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Venor recebeu um passe de materialidade: fonte de pedra refeita, ruas com sujeira, musgo,
-          fissuras e seixos, grama mais volumetrica e conjuradores com capuz, robe e cajado.
+          A arte aprovada virou regra de mundo: a praca onde o jogador nasce agora recebe escala,
+          fachadas maiores, mesas mercantes, vasos, escadarias, estandartes e uma fonte que organiza a cena.
         </div>
       </div>
     </div>
@@ -53,15 +53,16 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Este update troca a leitura infantil por uma cidade mais adulta, densa e material. A imagem do patch
-          mostra elementos que agora existem no jogo: fonte viva, pedra gasta, grama com volume e magos mais ricos.
+          Este update aproxima a primeira tela jogavel da imagem alvo: menos vazio, mais cidade, mais proporcao
+          e mais leitura de RPG antigo com materialidade atual. A partir daqui, cada arte de patch precisa apontar
+          para algo que realmente existe no jogo.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Fonte refeita:</b> pedra com relevo, bordas, espuma, musgo e mais gotas animadas.</li>
-          <li><b>Ruas mais reais:</b> manchas de terra, fissuras, musgo e seixos sobre o calcamento.</li>
-          <li><b>Grama menos papel:</b> menos placas planas e mais capim 3D, terra exposta e microterreno.</li>
-          <li><b>Outfits melhores:</b> magos e conjuradores ganham capuz, robe com bordas, cajado e orbe.</li>
-          <li><b>Offline-first:</b> a arte e o patch novo entram no cache do app instalavel para jogar solo sem internet.</li>
+          <li><b>Praca mais rica:</b> escadarias, vasos nobres, mesas mercantes, bandeiras e props nas bordas.</li>
+          <li><b>Casas maiores:</b> o casario inicial ganhou escala de vila medieval, com fachadas mais altas.</li>
+          <li><b>Fachadas melhores:</b> enxaimel com vigas diagonais e vegetacao subindo nas paredes.</li>
+          <li><b>Venore reforcada:</b> o Grande Mercado tambem recebeu escadarias, vasos, bancas e estandartes.</li>
+          <li><b>Offline-first:</b> a arte aprovada entra no cache do app instalavel para jogar solo sem internet.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">

@@ -239,13 +239,21 @@ Exemplo de ciclo:
 - Magos/conjuradores com capuz, robe detalhado, cajado e orbe.
 - Arte oficial do patch refletindo a nova praca jogavel.
 
-### RV16.6 - Aluguel semanal e economia
+### RV16.6 - Praca Jogavel
+- Status: entregue no `docs/RV16_6_PRACA_JOGAVEL.md`.
+- A arte aprovada virou contrato visual do jogo.
+- Praca inicial recebeu escadarias, vasos nobres, mesas mercantes, bandeiras e props nas bordas.
+- Casario inicial ficou maior e mais proporcional.
+- Fachadas de enxaimel ganharam vigas diagonais e vegetacao subindo nas paredes.
+- Grande Mercado de Venore recebeu a mesma linguagem visual da praca.
+
+### RV16.7 - Aluguel semanal e economia
 - vencimento;
 - renovacao;
 - avisos;
 - perda de beneficios sem apagar itens.
 
-### RV16.7 - Hunt do Pantano Vivo
+### RV16.8 - Hunt do Pantano Vivo
 - territorio do Dragao do Pantano;
 - veneno, agua, lama, pontes;
 - item-chave para doma rara.

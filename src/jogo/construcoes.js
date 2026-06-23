@@ -297,6 +297,22 @@ export function criaPredio(opts) {
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
     gbox(geosMad, 0.3, alt, 0.3, sx * larg / 2, FB + alt / 2, sz * prof / 2);
   });
+  if (estiloParede === 'madeira_viga') {
+    [[-0.34, -1], [0.34, 1]].forEach(([ang, sx]) => {
+      const diag = new THREE.Mesh(new THREE.BoxGeometry(0.18, alt * 0.82, 0.14), madeira);
+      diag.position.set(sx * larg * 0.24, FB + alt * 0.52, prof / 2 + 0.12);
+      diag.rotation.z = ang;
+      diag.castShadow = true;
+      g.add(diag);
+    });
+    [[-0.34, 1], [0.34, -1]].forEach(([ang, sx]) => {
+      const diag = new THREE.Mesh(new THREE.BoxGeometry(0.18, alt * 0.62, 0.12), madeira);
+      diag.position.set(sx * larg * 0.23, FB + alt * 0.52, -prof / 2 - 0.12);
+      diag.rotation.z = ang;
+      diag.castShadow = true;
+      g.add(diag);
+    });
+  }
   // telhado de duas águas + cumeeira
   g.add(telhadoDuasAguas(larg, prof, Math.max(2.6, alt * 0.45), corTelhado, topo, estiloTelhado));
   // chaminé com fumeiro
@@ -355,6 +371,18 @@ export function criaPredio(opts) {
       barra.position.set(i * 0.5, FB + 3.5, fz + 0.47);
       barra.rotation.x = -0.22;
       g.add(barra);
+    }
+  }
+
+  if (Math.random() < 0.52) {
+    const folhagem = new THREE.MeshStandardMaterial({ color: 0x3f6b36, roughness: 1, flatShading: true });
+    const lado = Math.random() < 0.5 ? -1 : 1;
+    for (let i = 0; i < 6; i++) {
+      const folha = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12 + (i % 3) * 0.035, 0), folhagem);
+      folha.scale.set(1.25, 0.65, 0.85);
+      folha.position.set(lado * (larg / 2 - 0.55 - (i % 2) * 0.18), FB + 1.1 + i * 0.42, fz + 0.18);
+      folha.castShadow = true;
+      g.add(folha);
     }
   }
 
