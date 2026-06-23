@@ -61,5 +61,6 @@ rotas, dragoes, casas e expansoes futuras.
 3. RV16.4: luz, detalhe e arte oficial mais proxima do jogo real.
 4. RV16.5: cidade profissional, fonte refeita, grama com volume e outfits melhores.
 5. RV16.6: praca jogavel, casario maior e arte refletida no mundo real.
-6. RV16.7: aluguel semanal com vencimento.
-7. RV16.8: primeira hunt nova de dragao regional.
+6. RV16.7: identidade premium e cronograma total.
+7. RV16.8: interiores como realidade.
+8. RV16.9: primeira hunt nova de dragao regional.

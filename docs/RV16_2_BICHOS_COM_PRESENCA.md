@@ -61,6 +61,7 @@ os bichos atuais parecerem menos estaticos: olhando, preparando ataque, usando a
 2. RV16.4: luz, detalhe e arte oficial mais proxima do jogo real.
 3. RV16.5: cidade profissional, fonte refeita, grama com volume e outfits melhores.
 4. RV16.6: praca jogavel, casario maior e arte refletida no mundo real.
-5. RV16.7: aluguel semanal com vencimento, renovacao e perda temporaria de beneficios.
-6. RV16.8: primeira hunt regional nova de dragao com territorio proprio.
-7. RV16.9: doma de dragao adulto com Coracao/Sela Draconica e boss de invasao.
+5. RV16.7: identidade premium e cronograma total.
+6. RV16.8: interiores como realidade.
+7. RV16.9: primeira hunt regional nova de dragao com territorio proprio.
+8. RV16.10: doma de dragao adulto com Coracao/Sela Draconica e boss de invasao.

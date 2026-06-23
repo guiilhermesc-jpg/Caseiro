@@ -1,11 +1,11 @@
-const CACHE_VERSION = 'venor-rv16-6-offline-v1';
+const CACHE_VERSION = 'venor-rv16-7-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/baixar.html',
   '/manifest.webmanifest',
   '/icon.svg',
-  '/patches/rv16-6-praca-jogavel.png',
+  '/patches/rv16-7-identidade-premium.png',
   '/texturas/ceu.png',
   '/texturas/grama.png',
   '/texturas/pedra.png',

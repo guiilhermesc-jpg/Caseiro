@@ -27,6 +27,9 @@ para o jogo.
 - `public/patches/rv16-6-praca-jogavel.png`
   - origem: derivado da arte aprovada do Patch RV16.5 em 23/06/2026, mantido como contrato visual do RV16.6.
   - uso: arte oficial do Patch RV16.6, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-7-identidade-premium.png`
+  - origem: derivado da arte aprovada de praca/cidade em 23/06/2026; usado como contrato visual enquanto a repaginacao sistemica avanca.
+  - uso: arte oficial do Patch RV16.7, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
 
 ## Assets existentes
 

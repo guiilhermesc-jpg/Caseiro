@@ -59,7 +59,8 @@ rotina fisica: entrar, andar, usar objetos, dormir, guardar ouro e sentir que aq
 1. RV16.4: luz, detalhe e arte oficial mais proxima do jogo real.
 2. RV16.5: cidade profissional, fonte refeita, grama com volume e outfits melhores.
 3. RV16.6: praca jogavel, casario maior e arte refletida no mundo real.
-4. RV16.7: aluguel semanal com vencimento, renovacao e avisos.
-5. RV16.8: hunt regional nova de dragao com territorio proprio.
-6. RV16.9: doma de dragao adulto com Coracao/Sela Draconica.
-7. RV17.0: examinar objetos/NPCs no estilo MMO classico e portal publico.
+4. RV16.7: identidade premium e cronograma total.
+5. RV16.8: interiores como realidade.
+6. RV16.9: hunt regional nova de dragao com territorio proprio.
+7. RV16.10: doma de dragao adulto com Coracao/Sela Draconica.
+8. RV17.0: examinar objetos/NPCs no estilo MMO classico e portal publico.

@@ -247,13 +247,35 @@ Exemplo de ciclo:
 - Fachadas de enxaimel ganharam vigas diagonais e vegetacao subindo nas paredes.
 - Grande Mercado de Venore recebeu a mesma linguagem visual da praca.
 
-### RV16.7 - Aluguel semanal e economia
+### RV16.7 - Identidade Premium
+- Status: entregue no `docs/RV16_7_IDENTIDADE_PREMIUM.md`.
+- Criado o cronograma `docs/CRONOGRAMA_IDENTIDADE_PREMIUM.md`.
+- Bueiros ganharam moldura, grades, umidade e vapor mais presente.
+- Barris, caixas e baus ganharam detalhes materiais.
+- Regra: imagem de patch so vira oficial quando o sistema correspondente existir no mundo jogavel.
+
+### RV16.8 - Interiores como realidade
+- mansoes/guildhouses precisam bater com a arte de interior nobre;
+- revisar sala central, candelabros, escadas, biblioteca, bau, mesa, tapetes, trofeus e porta iluminada;
+- garantir que tudo seja interativo ou tenha leitura clara de funcao.
+
+### RV16.9 - Bichos e hunts como realidade
+- dragao, aranha, orc, ciclope, escorpiao e caranguejo precisam ter silhueta melhor, ataque legivel e reacao;
+- hunts precisam ter terreno, props, risco e rota de viagem;
+- bosses e invasoes devem ter composicao visual propria.
+
+### RV16.10 - Continente e viagens
+- mapa continental precisa virar plano jogavel por regioes;
+- rotas longas, carrocas, montarias e biomas precisam sustentar a sensacao de jornada;
+- cada imagem de mapa deve apontar para cidades/biomas/hunts reais.
+
+### RV16.11 - Aluguel semanal e economia
 - vencimento;
 - renovacao;
 - avisos;
 - perda de beneficios sem apagar itens.
 
-### RV16.8 - Hunt do Pantano Vivo
+### RV16.12 - Hunt do Pantano Vivo
 - territorio do Dragao do Pantano;
 - veneno, agua, lama, pontes;
 - item-chave para doma rara.

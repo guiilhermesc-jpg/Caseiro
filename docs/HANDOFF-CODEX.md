@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.6 (v117)** no `main`, **não publicado**.
+> Documento de passagem de bastão. Estado em **RV16.7 (v118)** no `main`, **não publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.6 (v117)'`. **Suba a cada entrega.**
+- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.7 (v118)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.6 — Praca Jogavel").
+    `patchNotes.js` (painel "PATCH RV16.7 — Identidade Premium").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -186,17 +186,30 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js` apontam para o RV16.6 e mantem o jogo offline-first.
 - Documento da rodada: `docs/RV16_6_PRACA_JOGAVEL.md`.
 
+## 7.7 Estado novo do RV16.7 (Codex)
+
+- `public/patches/rv16-7-identidade-premium.png` eh a arte oficial do patch; herdada da praca aprovada enquanto a repaginacao sistemica avanca.
+- `src/main3d.js` subiu para **RV16.7 (v118)**.
+- `docs/CRONOGRAMA_IDENTIDADE_PREMIUM.md` registra a regra nova: imagem oficial precisa representar sistema real do jogo.
+- `src/jogo/cidade.js` melhorou `detalhaRua()`: bueiros agora tem tampa maior, moldura, grade, mancha de umidade e vapor mais presente.
+- `src/jogo/props.js` melhorou props base: barris com tampas/frisos, caixas com diagonais/selo, baus com ferragens/moedas.
+- `patchNotes.js`, `manifest.webmanifest`, `baixar.html` e `sw.js` apontam para o RV16.7 e cache `venor-rv16-7-offline-v1`.
+- Documento da rodada: `docs/RV16_7_IDENTIDADE_PREMIUM.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
-1. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
-2. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
+1. **RV16.8 - Interiores como realidade** — alinhar mansoes/guildhouses ao hall nobre: candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
+2. **RV16.9 - Bichos e hunts como realidade** — alinhar criaturas/hunts a arte de bestiario: silhueta, ataque, impacto, terreno e loot visual.
+3. **RV16.10 - Continente e viagens** — transformar a arte de mapa em plano jogavel por regioes, rotas longas e pontos de viagem.
+4. **Aluguel recorrente** — hoje é contrato inicial salvo; falta vencimento semanal/renovação estilo MMO.
+5. **Domar dragão ADULTO** via boss do **Coração** — dados prontos (`ESPECIES_DRAGAO`, item "Coração de Dragão"
    já em `PRECOS`), falta: drop do Coração em invasão/boss + consagrar "Sela Dracônica" + fluxo de domação adulta.
-3. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
-4. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
-5. **Portal Patch 17**: site publico estilo Tibia, com noticias de updates, contas, personagens, rankings e pagina de patch.
-6. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
+6. **Variantes 3D** do Colosso/Trífauce (3 cabeças) como bosses no mundo (clonar cabeça/pescoço em criaDragao).
+7. **QoL do Tibia**: examinar (clique-direito em NPC/objeto mostra info); magias gated por vocação.
+8. **Portal Patch 17**: site publico estilo Tibia, com noticias de updates, contas, personagens, rankings e pagina de patch.
+9. **Escala Tibia** (cidades mais longe): `escala.js` tem `FATOR` global (=1.0=idêntico). Virar o fator
    orfana coordenadas — fazer com cuidado/validação. **Deferido**.
 
 Saídas completas da auditoria/design ficam nos arquivos de output das tasks de workflow (em

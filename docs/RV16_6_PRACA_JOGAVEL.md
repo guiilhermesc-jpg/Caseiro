@@ -58,7 +58,8 @@ props de mercado, vasos, estandartes, escadarias e materialidade de vila medieva
 
 ## Proximas frentes recomendadas
 
-1. RV16.7: aluguel semanal com vencimento, renovacao, beneficios e perda temporaria sem apagar itens.
-2. RV16.8: Hunt do Pantano Vivo com territorio proprio do Dragao do Pantano.
-3. RV16.9: doma de dragao adulto com Coracao/Sela Draconica e boss de invasao.
-4. Patch 17: site/portal publico com noticias, contas, personagens e rankings.
+1. RV16.7: identidade premium aplicada aos microdetalhes urbanos e cronograma total.
+2. RV16.8: interiores como realidade, alinhando a arte nobre aos interiores jogaveis.
+3. RV16.9: bichos e hunts como realidade, alinhando a arte de criaturas ao combate.
+4. RV16.10: continente e viagens, alinhando mapa/rotas/biomas ao jogo real.
+5. RV16.11: aluguel semanal com vencimento, renovacao, beneficios e perda temporaria sem apagar itens.

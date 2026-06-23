@@ -238,9 +238,12 @@ export function criaCidade() {
   }
   const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x655f57, roughness: 1, flatShading: true });
   const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x423d38, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false });
-  const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x24211f, roughness: 0.9, metalness: 0.05 });
+  const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x151414, roughness: 0.72, metalness: 0.42 });
+  const raloAroMat = new THREE.MeshStandardMaterial({ color: 0x4a4540, roughness: 0.62, metalness: 0.48, flatShading: true });
+  const raloGradeMat = new THREE.MeshStandardMaterial({ color: 0x1f2224, roughness: 0.52, metalness: 0.7 });
+  const raloUmidoMat = new THREE.MeshStandardMaterial({ color: 0x203c34, transparent: true, opacity: 0.34, roughness: 0.38, metalness: 0.18, depthWrite: false });
   const vaporRuaAnimados = [];
-  const vaporRuaMat = new THREE.MeshStandardMaterial({ color: 0xd9dde4, transparent: true, opacity: 0.18, roughness: 1, depthWrite: false });
+  const vaporRuaMat = new THREE.MeshStandardMaterial({ color: 0xd9e4df, transparent: true, opacity: 0.24, roughness: 1, depthWrite: false });
   function detalhaRua(cx, cz, w, d, y = 0.095) {
     const horizontal = w >= d;
     const guiaGeo = horizontal ? new THREE.BoxGeometry(w, 0.04, 0.28) : new THREE.BoxGeometry(0.28, 0.04, d);
@@ -271,24 +274,66 @@ export function criaCidade() {
 
     const ralos = Math.max(2, Math.min(10, Math.floor(len / 28)));
     const ralosMesh = new THREE.InstancedMesh(
-      horizontal ? new THREE.BoxGeometry(0.78, 0.035, 0.22) : new THREE.BoxGeometry(0.22, 0.035, 0.78),
+      horizontal ? new THREE.BoxGeometry(1.16, 0.035, 0.52) : new THREE.BoxGeometry(0.52, 0.035, 1.16),
       ralinhoMat,
       ralos
     );
+    const raloUmidoGeo = new THREE.CircleGeometry(0.56, 12);
+    raloUmidoGeo.rotateX(-Math.PI / 2);
+    const raloUmido = new THREE.InstancedMesh(raloUmidoGeo, raloUmidoMat, ralos);
+    const moldLonga = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(1.24, 0.044, 0.055) : new THREE.BoxGeometry(0.055, 0.044, 1.24),
+      raloAroMat,
+      ralos * 2
+    );
+    const moldCurta = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(0.055, 0.044, 0.58) : new THREE.BoxGeometry(0.58, 0.044, 0.055),
+      raloAroMat,
+      ralos * 2
+    );
+    const gradeRalo = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(0.055, 0.052, 0.42) : new THREE.BoxGeometry(0.42, 0.052, 0.055),
+      raloGradeMat,
+      ralos * 5
+    );
+    let imLonga = 0, imCurta = 0, imGrade = 0;
     for (let i = 0; i < ralos; i++) {
       const t = (i + 0.5) / ralos;
       const lado = i % 2 ? 1 : -1;
       const rx = horizontal ? cx - w / 2 + w * t : cx + lado * (w / 2 - 0.55);
       const rz = horizontal ? cz + lado * (d / 2 - 0.55) : cz - d / 2 + d * t;
-      dRua.position.set(rx, y + 0.038, rz);
+      dRua.position.set(rx, y + 0.036, rz);
       dRua.rotation.set(0, 0, 0);
       dRua.scale.set(1, 1, 1);
       dRua.updateMatrix();
       ralosMesh.setMatrixAt(i, dRua.matrix);
+      dRua.position.set(rx, y + 0.019, rz);
+      dRua.scale.set(horizontal ? 1.35 : 0.78, 1, horizontal ? 0.78 : 1.35);
+      dRua.updateMatrix();
+      raloUmido.setMatrixAt(i, dRua.matrix);
+      dRua.scale.set(1, 1, 1);
+
+      const offLong = horizontal ? [0, 0.28] : [0.28, 0];
+      [-1, 1].forEach((s) => {
+        dRua.position.set(rx + offLong[0] * s, y + 0.066, rz + offLong[1] * s);
+        dRua.rotation.set(0, 0, 0); dRua.scale.set(1, 1, 1); dRua.updateMatrix();
+        moldLonga.setMatrixAt(imLonga++, dRua.matrix);
+      });
+      const offCurto = horizontal ? [0.62, 0] : [0, 0.62];
+      [-1, 1].forEach((s) => {
+        dRua.position.set(rx + offCurto[0] * s, y + 0.067, rz + offCurto[1] * s);
+        dRua.rotation.set(0, 0, 0); dRua.scale.set(1, 1, 1); dRua.updateMatrix();
+        moldCurta.setMatrixAt(imCurta++, dRua.matrix);
+      });
+      for (let b = -2; b <= 2; b++) {
+        dRua.position.set(rx + (horizontal ? b * 0.18 : 0), y + 0.073, rz + (horizontal ? 0 : b * 0.18));
+        dRua.rotation.set(0, 0, 0); dRua.scale.set(1, 1, 1); dRua.updateMatrix();
+        gradeRalo.setMatrixAt(imGrade++, dRua.matrix);
+      }
       if (i % 3 === 0) {
         const fumaca = [];
-        for (let p = 0; p < 3; p++) {
-          const puff = new THREE.Mesh(new THREE.SphereGeometry(0.16 + p * 0.045, 6, 5), vaporRuaMat);
+        for (let p = 0; p < 4; p++) {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(0.18 + p * 0.05, 7, 5), vaporRuaMat);
           puff.position.set(rx, y + 0.18, rz); scene.add(puff); fumaca.push(puff);
         }
         vaporRuaAnimados.push({ fumaca, baseY: y + 0.18, baseX: rx, baseZ: rz, fase: Math.random() * 6 });
@@ -296,6 +341,10 @@ export function criaCidade() {
     }
     ralosMesh.receiveShadow = true;
     scene.add(ralosMesh);
+    raloUmido.receiveShadow = true; scene.add(raloUmido);
+    moldLonga.receiveShadow = true; scene.add(moldLonga);
+    moldCurta.receiveShadow = true; scene.add(moldCurta);
+    gradeRalo.receiveShadow = true; scene.add(gradeRalo);
   }
   const ruaMatH = matRua(34, 1.6), ruaMatV = matRua(1.6, 34);
   const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMatH); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); detalhaRua(0, z, 180, 8); };
