@@ -85,7 +85,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV17.1 (v122)';
+const VERSAO = 'RV17.5 (v126)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -876,29 +876,29 @@ let dragaoNuvens = null;
   sp.sentinelas.forEach(({ x, z }) => {
     const s = criaSentinelaCeleste(x, z); s.position.y = -80;
     addMonstro(s, 145, 72, 18, 2.25, true, areaMon(x, z, 14), {
-      especie: 'sentinelaCeleste', y0: -80, atira: 'magia', alcanceTiro: 17, danoTiro: 14, cadencia: 3.2,
-      lootEspecial: { nome: 'Pena Celeste', icone: 'P' },
+      especie: 'sentinelaCeleste', y0: -80, atira: 'magia', alcanceTiro: 18, danoTiro: 16, cadencia: 3.0,
+      lootEspecial: { nome: 'Fragmento de Armadura Celeste', icone: 'A' },
     });
   });
   sp.golems.forEach(({ x, z }) => {
     const g = criaGolemCristal(x, z); g.position.y = -80;
-    addMonstro(g, 260, 130, 28, 1.25, true, areaMon(x, z, 12), {
+    addMonstro(g, 320, 165, 34, 1.2, true, areaMon(x, z, 12), {
       especie: 'golemCristal', y0: -80, boss: false,
-      lootEspecial: { nome: 'Nucleo de Cristal Vivo', icone: 'C' },
+      lootEspecial: { nome: 'Gema Prismatica', icone: 'G' },
     });
   });
   sp.wyverns.forEach(({ x, z }) => {
     const w = criaWyvernCeleste(x, z); w.position.y = -80;
-    addMonstro(w, 360, 180, 32, 1.8, true, areaMon(x, z, 18), {
-      especie: 'wyvernCeleste', y0: -80, dragao: true, atira: 'magia', alcanceTiro: 26, danoTiro: 20, cadencia: 3.6,
-      lootEspecial: { nome: 'Escama de Wyvern Celeste', icone: 'W' },
+    addMonstro(w, 430, 220, 38, 1.82, true, areaMon(x, z, 18), {
+      especie: 'wyvernCeleste', y0: -80, dragao: true, atira: 'magia', alcanceTiro: 28, danoTiro: 22, cadencia: 3.4,
+      lootEspecial: { nome: 'Membrana Celeste', icone: 'M' },
     });
   });
   const b = sp.boss;
   const bossVento = criaGolemCristal(b.x, b.z); bossVento.position.y = -80; bossVento.scale.setScalar(1.45);
-  addMonstro(bossVento, 920, 520, 42, 1.15, true, areaMon(b.x, b.z, 18), {
-    especie: 'guardiaoPrimeiroVento', y0: -80, boss: true, atira: 'magia', alcanceTiro: 28, danoTiro: 26, cadencia: 2.9,
-    lootEspecial: { nome: 'Selo do Primeiro Vento', icone: 'V' },
+  addMonstro(bossVento, 1080, 680, 48, 1.12, true, areaMon(b.x, b.z, 18), {
+    especie: 'guardiaoPrimeiroVento', y0: -80, boss: true, atira: 'magia', alcanceTiro: 30, danoTiro: 30, cadencia: 2.8,
+    lootEspecial: { nome: 'Nucleo do Primeiro Vento', icone: 'N' },
   });
 }
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
@@ -1573,6 +1573,32 @@ QUESTS.push({
   fala: 'O Guardiao do Primeiro Vento ainda segura o selo?',
   recompensa: { ouro: 480, xp: 680, item: { nome: 'Sigilo do Voo Rasante', icone: 'S', slot: 'anel', defesa: 4, raro: true } },
 });
+QUESTS.push({
+  id: 'contratoHuntCeleste',
+  npc: 'Ulrion',
+  requer: 'primeiroVento',
+  nivel: 18,
+  tipo: 'matar',
+  especie: 'wyvernCeleste',
+  meta: 2,
+  titulo: 'Contrato da Hunt Celeste',
+  pede: 'Agora que o primeiro selo caiu, a Guilda precisa mapear a hunt de verdade. Derrube 2 Wyverns Celestes: elas controlam as pontes altas e ensinam o preco de viajar sem leitura de terreno.',
+  fala: 'As wyverns ainda fecham as pontes?',
+  recompensa: { ouro: 560, xp: 740, item: { nome: 'Contrato de Hunt Celeste', icone: 'H', raro: true } },
+});
+QUESTS.push({
+  id: 'brasaoMoradia',
+  npc: 'Helyra',
+  requer: 'contratoHuntCeleste',
+  nivel: 18,
+  tipo: 'matar',
+  especie: 'golemCristal',
+  meta: 2,
+  titulo: 'Brasao de Moradia',
+  pede: 'Toda casa que guarda dragao precisa de base arcana. Quebre 2 Golems de Cristal e eu marco seu contrato com um Brasao de Moradia, usado nas proximas melhorias de interiores e aluguel.',
+  fala: 'Os cristais ja foram quebrados?',
+  recompensa: { ouro: 420, xp: 640, item: { nome: 'Brasao de Moradia', icone: 'B', raro: true } },
+});
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 // GUILDA DE VENORE (RV4.2): 2 dragões abatidos = entrada + Manto da Guilda
 let dragoesMortos = 0, guildaMembro = false;
@@ -1618,6 +1644,7 @@ const PRECOS = {
   'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500, 'Cristal do Pico': 150,
   'Escama Drakari': 70, 'Fragmento de Obsidiana': 140, 'Coração de Obsidiana': 650,
   'Pena Celeste': 120, 'Nucleo de Cristal Vivo': 260, 'Escama de Wyvern Celeste': 320, 'Selo do Primeiro Vento': 900, 'Fragmento de Asa Antiga': 520,
+  'Fragmento de Armadura Celeste': 180, 'Gema Prismatica': 340, 'Membrana Celeste': 420, 'Nucleo do Primeiro Vento': 1100, 'Contrato de Hunt Celeste': 760, 'Brasao de Moradia': 480,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -2196,12 +2223,65 @@ const IMOVEIS = [
     beneficios: { depot: true, banco: true, lixo: true, dormir: true, guilda: true } },
 ];
 const interioresImoveis = {};
+const DIA_ALUGUEL_MS = 24 * 60 * 60 * 1000;
+const CONTRATO_INICIAL_DIAS = 7;
+function diasAluguelRestantes(def) {
+  const st = estadoImovel(def.id);
+  if (!st.alugado) return 0;
+  if (!st.pagoAte) st.pagoAte = Date.now() + CONTRATO_INICIAL_DIAS * DIA_ALUGUEL_MS;
+  return Math.max(0, Math.ceil((st.pagoAte - Date.now()) / DIA_ALUGUEL_MS));
+}
+function imovelEmDia(def) { return diasAluguelRestantes(def) > 0; }
+function textoAluguel(def) {
+  const dias = diasAluguelRestantes(def);
+  return dias > 0 ? `${dias} dia(s) pagos` : 'ATRASADO - beneficios suspensos';
+}
+function custoRenovacao(def, dias = 7) { return Math.max(def.aluguel, def.aluguel * dias); }
+function renovaAluguel(def, dias = 7) {
+  const st = estadoImovel(def.id);
+  if (!st.alugado) { alugaImovel(def); return; }
+  const custo = custoRenovacao(def, dias);
+  if (ouro < custo) {
+    dialogo.abre(def.nome, `Renovar ${dias} dia(s) custa ${custo} moedas. Voce tem ${ouro}.`, [{ texto: 'Voltar', onClick: () => abreImovel(def) }]);
+    return;
+  }
+  ouro -= custo; hud.ouro(ouro);
+  const base = Math.max(Date.now(), st.pagoAte || 0);
+  st.pagoAte = base + dias * DIA_ALUGUEL_MS;
+  st.aluguel = def.aluguel;
+  sincronizaPlacasImoveis();
+  sons.moeda(); salvaJogo();
+  mostraMensagem(`Contrato renovado: ${def.nome} tem ${diasAluguelRestantes(def)} dia(s) pagos.`);
+  abreImovel(def);
+}
+function exigeImovelEmDia(def, volta = null) {
+  if (imovelEmDia(def)) return true;
+  dialogo.abre(def.nome, `O aluguel de ${def.nome} esta atrasado. O interior ainda existe, mas banco, deposito, dormir e servicos ficam suspensos ate renovar.`, [
+    { texto: `Renovar 7 dias (${custoRenovacao(def, 7)} moedas)`, onClick: () => renovaAluguel(def, 7) },
+    { texto: 'Voltar', onClick: () => (volta ? volta() : abreImovel(def)) },
+  ]);
+  return false;
+}
+function abreBeneficiosImovel(def) {
+  dialogo.abre(def.nome, `Beneficios ativos quando o aluguel esta em dia:\n- Deposito: protege itens importantes da morte.\n- Banco: separa ouro de viagem e ouro guardado.\n- Lixeira: limpa itens baratos sem lotar mochila.\n- Descanso: recupera vida/mana e treina o ML do dragao.\n- Interiores: base visual para roleplay, familia e guilda.\n\nAluguel: ${textoAluguel(def)}.`, [
+    { texto: 'Renovar 7 dias', onClick: () => renovaAluguel(def, 7) },
+    { texto: 'Voltar', onClick: () => abreImovel(def) },
+  ]);
+}
 function acaoInteriorImovel(def, kind) {
   if (kind === 'sair') { saiInteriorImovel(def); return; }
-  if (kind === 'depot') { abreCofre(); return; }
-  if (kind === 'banco') { abreBancoImovel(def); return; }
-  if (kind === 'lixo') { limpaLixoImovel(def); return; }
-  if (kind === 'dormir') { dormirNoImovel(def); return; }
+  if (kind === 'depot') { if (exigeImovelEmDia(def)) abreCofre(); return; }
+  if (kind === 'banco') { if (exigeImovelEmDia(def)) abreBancoImovel(def); return; }
+  if (kind === 'lixo') { if (exigeImovelEmDia(def)) limpaLixoImovel(def); return; }
+  if (kind === 'dormir') { if (exigeImovelEmDia(def)) dormirNoImovel(def); return; }
+  if (kind === 'quadroImovel') { abreBeneficiosImovel(def); return; }
+  if (kind === 'despensa') {
+    if (!exigeImovelEmDia(def)) return;
+    dialogo.abre('Despensa da Base', `Provisoes de ${def.nome}: comida seca, mapas, velas e material de reparo. Nesta versao ela e leitura de imersao; nos proximos patches vira preparo de viagem e buff de rota.`, [
+      { texto: 'Entendi', onClick: () => dialogo.fecha() },
+    ]);
+    return;
+  }
   if (kind === 'guilda') {
     dialogo.abre('Mesa de Conselho', 'Rotas, hunts e tarefas da guilda ficam marcadas aqui. Este salao ja serve como base social; nas proximas rodadas ele vira centro de missoes de grupo.', [
       { texto: 'Entendi', onClick: () => dialogo.fecha() },
@@ -2229,14 +2309,15 @@ function escondeZonasCarregadas() {
     .forEach((z) => { if (z && z.grupo) z.grupo.visible = false; });
 }
 function estadoImovel(id) {
-  if (!imoveisEstado[id]) imoveisEstado[id] = { alugado: false, corIdx: 0, ultimoSono: -9999 };
+  if (!imoveisEstado[id]) imoveisEstado[id] = { alugado: false, corIdx: 0, ultimoSono: -9999, pagoAte: 0 };
   return imoveisEstado[id];
 }
 function sincronizaPlacasImoveis() {
   for (const p of placasImoveis) {
     const st = estadoImovel(p.def.id);
-    p.tab.material.color.setHex(st.alugado ? 0x2e7d32 : (p.def.tipo === 'Guildhouse' ? 0x6a4a8a : 0xc0392b));
-    p.it.acao = st.alugado ? 'Administrar imóvel 🏠' : `Alugar ${p.def.tipo.toLowerCase()} (${p.def.custo} 🪙)`;
+    const ativo = st.alugado && imovelEmDia(p.def);
+    p.tab.material.color.setHex(st.alugado ? (ativo ? 0x2e7d32 : 0xc47f2a) : (p.def.tipo === 'Guildhouse' ? 0x6a4a8a : 0xc0392b));
+    p.it.acao = st.alugado ? (ativo ? 'Administrar imóvel 🏠' : 'Renovar aluguel do imóvel') : `Alugar ${p.def.tipo.toLowerCase()} (${p.def.custo} 🪙)`;
   }
 }
 function beneficiosTexto(def) {
@@ -2246,9 +2327,11 @@ function beneficiosTexto(def) {
   if (def.beneficios.lixo) b.push('Lixeira');
   if (def.beneficios.dormir) b.push(`Dormir: +${def.ml} ML do dragão`);
   if (def.beneficios.guilda) b.push('Base de guilda');
+  b.push(`Aluguel: ${def.aluguel} moedas/dia`);
   return b.join(' · ');
 }
 function abreBancoImovel(def) {
+  if (!exigeImovelEmDia(def)) return;
   const dep = (n) => {
     if (ouro < n) { dialogo.abre(def.nome, `Você tem ${ouro} 🪙 na mão. Não dá para depositar ${n}.`, [{ texto: 'Voltar', onClick: () => abreBancoImovel(def) }]); return; }
     ouro -= n; bancoOuro += n; hud.ouro(ouro); salvaJogo(); abreBancoImovel(def);
@@ -2266,6 +2349,7 @@ function abreBancoImovel(def) {
   ]);
 }
 function limpaLixoImovel(def) {
+  if (!exigeImovelEmDia(def)) return;
   const descartaveis = ['Cauda de rato', 'Osso', 'Frasco', 'Cogumelo', 'Concha', 'Coco', 'Erva'];
   let n = 0;
   for (const nome of descartaveis) while (inventario.consomeItem(nome)) n++;
@@ -2273,6 +2357,7 @@ function limpaLixoImovel(def) {
   salvaJogo();
 }
 function dormirNoImovel(def) {
+  if (!exigeImovelEmDia(def)) return;
   const st = estadoImovel(def.id);
   if (tempo - st.ultimoSono < 300) {
     const falta = Math.ceil((300 - (tempo - st.ultimoSono)) / 60);
@@ -2307,9 +2392,9 @@ function alugaImovel(def) {
     return;
   }
   ouro -= def.custo; hud.ouro(ouro);
-  st.alugado = true; st.desde = Math.floor(tempo); st.aluguel = def.aluguel;
+  st.alugado = true; st.desde = Math.floor(tempo); st.aluguel = def.aluguel; st.pagoAte = Date.now() + CONTRATO_INICIAL_DIAS * DIA_ALUGUEL_MS;
   sincronizaPlacasImoveis(); sons.tesouro(); salvaJogo();
-  mostraMensagem(`🏠 Você alugou ${def.nome}. Agora esse lugar tem valor real.`);
+  mostraMensagem(`🏠 Você alugou ${def.nome}. Contrato inicial: ${CONTRATO_INICIAL_DIAS} dias pagos.`);
   abreImovel(def);
 }
 function entraInteriorImovel(def) {
@@ -2354,9 +2439,11 @@ function abreImovel(def) {
     return;
   }
   const ops = [];
+  ops.push({ texto: `Renovar 7 dias (${custoRenovacao(def, 7)} moedas)`, onClick: () => renovaAluguel(def, 7) });
+  ops.push({ texto: 'Ver beneficios do imovel', onClick: () => abreBeneficiosImovel(def) });
   if (interioresImoveis[def.id]) ops.push({ texto: 'Entrar no interior', onClick: () => { dialogo.fecha(); entraInteriorImovel(def); } });
   if (def.beneficios.dormir) ops.push({ texto: `Dormir e treinar dragão (+${def.ml} ML) 🛏️`, onClick: () => { dialogo.fecha(); dormirNoImovel(def); } });
-  if (def.beneficios.depot) ops.push({ texto: 'Abrir depósito 🧰', onClick: () => { dialogo.fecha(); abreCofre(); } });
+  if (def.beneficios.depot) ops.push({ texto: 'Abrir depósito 🧰', onClick: () => { dialogo.fecha(); if (exigeImovelEmDia(def)) abreCofre(); } });
   if (def.beneficios.banco) ops.push({ texto: 'Abrir banco 🏦', onClick: () => abreBancoImovel(def) });
   if (def.beneficios.lixo) ops.push({ texto: 'Usar lixeira 🗑️', onClick: () => { dialogo.fecha(); limpaLixoImovel(def); } });
   if (typeof def.casaIdx === 'number') ops.push({ texto: 'Repintar telhado 🎨', onClick: () => {
@@ -2369,7 +2456,7 @@ function abreImovel(def) {
     dialogo.fecha();
   } });
   ops.push({ texto: 'Fechar', onClick: () => dialogo.fecha() });
-  dialogo.abre(def.nome, `Contrato ativo.\nAluguel-base: ${def.aluguel} 🪙.\nBenefícios: ${beneficiosTexto(def)}.\nBanco: ${bancoOuro} 🪙 guardado.`, ops);
+  dialogo.abre(def.nome, `Contrato ativo.\nAluguel: ${textoAluguel(def)}.\nBenefícios: ${beneficiosTexto(def)}.\nBanco: ${bancoOuro} 🪙 guardado.`, ops);
 }
 function registraImovel(def) {
   const placa = new THREE.Group(); placa.position.set(def.x, 0, def.z);

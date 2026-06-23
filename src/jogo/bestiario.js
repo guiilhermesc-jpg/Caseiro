@@ -34,21 +34,21 @@ const DRAGOES = [
 
 const CRIATURAS_GRANDE_ONDA = [
   { nome: 'Sentinela Celeste', glifo: 'S', cor: '#bfa6ff',
-    hist: 'Guarda armada dos corredores altos de Aurelia. Luta em linha reta, prepara a lanca e pune quem entra no calabouco sem ler o chao.',
-    funcao: 'Porta de entrada da hunt: ensina telegraph, alcance e valor de posicionamento.',
-    loot: 'Pena Celeste, Elmo da Sentinela Celeste.' },
+    hist: 'Guarda armada dos corredores altos de Aurelia. Agora carrega escudo, asas rituais e brilho de lanca para que o jogador leia o golpe antes de ser punido.',
+    funcao: 'Porta de entrada da hunt: ensina telegraph, alcance, linha reta e valor de posicionamento.',
+    loot: 'Pena Celeste, Fragmento de Armadura Celeste, Elmo da Sentinela Celeste.' },
   { nome: 'Golem de Cristal', glifo: 'G', cor: '#9b72ff',
-    hist: 'Pedra viva com cristais de vento presos no peito. E lento, pesado e feito para segurar sala, nao para perseguir corredor vazio.',
-    funcao: 'Tanque de masmorra: golpe anunciado, vida alta e recompensa economica forte.',
-    loot: 'Nucleo de Cristal Vivo, Anel de Cristal Vivo.' },
+    hist: 'Pedra viva com cristais de vento presos no peito. Fragmentos orbitam seu corpo e a runa no chao denuncia que ele pertence aquela sala.',
+    funcao: 'Tanque de masmorra: golpe anunciado, vida alta, dano pesado e recompensa economica forte.',
+    loot: 'Nucleo de Cristal Vivo, Gema Prismatica, Anel de Cristal Vivo.' },
   { nome: 'Wyvern Celeste', glifo: 'W', cor: '#78a8ff',
-    hist: 'Parente menor dos dragoes, adaptada aos rasgos de vento entre ilhas. Nao e montaria ainda: e predadora de altura.',
-    funcao: 'Ameaca de mobilidade e pressagio das hunts aereas futuras.',
-    loot: 'Escama de Wyvern Celeste, Capa de Asa Celeste.' },
+    hist: 'Parente menor dos dragoes, adaptada aos rasgos de vento entre ilhas. Cristais nas costas e garganta azul avisam que nao e montaria ainda: e predadora de altura.',
+    funcao: 'Ameaca de mobilidade, contrato de guilda e pressagio das hunts aereas futuras.',
+    loot: 'Escama de Wyvern Celeste, Membrana Celeste, Capa de Asa Celeste.' },
   { nome: 'Guardiao do Primeiro Vento', glifo: 'V', cor: '#d6bcff',
-    hist: 'O boss que mantem o primeiro selo do voo. Guarda a memoria de quando os homens aprenderam a subir montados em dragao.',
+    hist: 'O boss que mantem o primeiro selo do voo. Sua runa de sala e o nucleo vivo no peito dizem que a masmorra tem dono, regra e recompensa.',
     funcao: 'Final do primeiro calabouco grande: escala, preparo, boss gate e sigilo de progressao.',
-    loot: 'Selo do Primeiro Vento, Lanca do Primeiro Vento.' },
+    loot: 'Selo do Primeiro Vento, Nucleo do Primeiro Vento, Lanca do Primeiro Vento.' },
 ];
 
 export function criaBestiario() {

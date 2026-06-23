@@ -68,7 +68,7 @@ padrao para os proximos 29.
 14. RV16.9 entregue: Mago Viajante, manto raro conquistavel e proporcao premium dos dragoes.
 15. RV17 entregue: A Grande Onda - Aurelia expandida, arquipelago celeste, primeiro calabouco grande, Sentinelas/Golems/Wyverns, armas de cla e quests de altura.
 16. RV17.1 entregue: Calabouco Vivo - arte oficial nova, braseiros, altar de armas, bau unico, bestiario celeste e recompensa ligada ao voo futuro.
-17. RV17.2-RV17.5: bichos premium, interiores como realidade, viagens longas, moradias/economia e Pantano Vivo.
+17. RV17.2-RV17.5 entregue: bichos premium, interiores como realidade, contratos de viagem e moradias/economia com aluguel real.
 18. RV18: portal publico + base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
 19. RV19: escala local e rotas de jornada do Pacto 01/30.
 20. RV20: hunts por bioma e monstros profissionais.

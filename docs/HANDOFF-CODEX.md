@@ -259,17 +259,31 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `bestiario.js` ganhou a secao **Criaturas da Grande Onda** com funcao e loot de Sentinela, Golem, Wyvern e Guardiao.
 - Documento da rodada: `docs/RV17_1_CALABOUCO_VIVO.md`.
 
+## 7.13 Estado novo do RV17.2-RV17.5 (Codex)
+
+- `src/main3d.js` subiu para **RV17.5 (v126)**.
+- Artes oficiais salvas:
+  - `public/patches/rv17-2-bichos-premium.png`
+  - `public/patches/rv17-3-interiores-realidade.png`
+  - `public/patches/rv17-4-rotas-continente.png`
+  - `public/patches/rv17-5-moradias-economia.png`
+- `ratos.js`: Sentinela/Golem/Wyvern celestes ganharam mais presenca procedural, animacao e leitura visual.
+- `main3d.js`: novos drops celestes, quest `Contrato da Hunt Celeste`, quest `Brasao de Moradia` e aluguel com validade real/renovacao.
+- `interiores.js`: mansoes/guildhouses receberam mesa de contratos, cartografia, quadro e despensa interativa.
+- `jornadas.js`: quadro `ROTAS` ganhou contratos de viagem com custo, risco, requisito e funcao.
+- `patchNotes.js`, `manifest`, `baixar`, `sw` e `index` atualizados para RV17.5/offline.
+- Documentos da rodada: `docs/RV17_2_BICHOS_PREMIUM.md`, `docs/RV17_3_INTERIORES_REALIDADE.md`, `docs/RV17_4_ROTAS_CONTINENTE.md`, `docs/RV17_5_MORADIAS_ECONOMIA.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV17.2 - Bichos com qualidade premium** - criaturas/hunts com silhueta, ataque, impacto, terreno, loot visual e escala.
-2. **RV17.3 - Interiores como realidade** - mansoes/guildhouses com hall nobre, candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
-3. **RV17.4 - Continente e viagens** - mapa jogavel por regioes, rotas longas, pontos de descanso, carrocas e montarias.
-4. **RV17.5 - Moradias, aluguel e economia** - aluguel semanal, renovacao, avisos, banco, depot, lixeira e ML do dragao.
-6. **RV18 - Portal publico + instalavel premium** - noticias, contas, personagens, rankings, bestiario, mapa, patch notes e foco app instalado se o peso grafico exigir.
+1. **RV18 - Portal publico + instalavel premium** - noticias, contas, personagens, rankings, bestiario, mapa, patch notes e foco app instalado se o peso grafico exigir.
+2. **RV18.1 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
+3. **RV18.2 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
+4. **RV18.3 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
 7. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
 9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
 10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.

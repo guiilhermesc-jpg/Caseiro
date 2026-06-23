@@ -299,6 +299,49 @@ export const SISTEMAS_RPG_PRIORITARIOS = [
   },
 ];
 
+export const CONTRATOS_VIAGEM_RV174 = [
+  {
+    id: 'caravana-venore',
+    nome: 'Caravana do Pantano',
+    origem: 'Venor',
+    destino: 'Venore',
+    custo: 18,
+    requisito: 'nivel 1+',
+    funcao: 'atalho barato para comercio, mas com menos loot que caminhar pela estrada',
+    risco: 'baixo',
+  },
+  {
+    id: 'carroca-thais',
+    nome: 'Carroca da Vigia',
+    origem: 'Venor',
+    destino: 'Thais',
+    custo: 46,
+    requisito: 'nivel 4+',
+    funcao: 'economiza tempo quando o jogador ja conhece a rota e quer voltar ao objetivo',
+    risco: 'moderado',
+  },
+  {
+    id: 'barca-sal',
+    nome: 'Barca do Sal',
+    origem: 'Portos',
+    destino: 'Praia de Venor',
+    custo: 22,
+    requisito: 'porto descoberto',
+    funcao: 'liga pesca, conchas e comercio sem apagar o valor da trilha costeira',
+    risco: 'seguro',
+  },
+  {
+    id: 'subida-aurelia',
+    nome: 'Ritual de Subida',
+    origem: 'Pico do Dragao',
+    destino: 'Aurelia',
+    custo: 120,
+    requisito: 'Manto do Mago Viajante',
+    funcao: 'viagem premium para conteudo de alturas; prepara a futura montaria voadora',
+    risco: 'alto',
+  },
+];
+
 export function rotasParaMapa() {
   return ROTAS_JORNADA.map((rota) => ({
     ...rota.mapa,
@@ -380,15 +423,26 @@ export function criaQuadroJornadas({ onMarcarDestino = null, onAbrirMapa = null 
     </article>`;
   }
 
+  function contratoHtml(c) {
+    return `<article style="border:1px solid rgba(232,217,160,.16);background:rgba(232,217,160,.05);border-radius:9px;padding:10px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;">
+        <b style="color:#f4e9c8;font-size:13px;">${c.nome}</b>
+        <span style="font-size:11px;color:#e8d9a0;">${c.custo} moedas</span>
+      </div>
+      <div style="font-size:12px;color:#aeb9c8;line-height:1.45;margin-top:5px;">${c.origem} -> ${c.destino} - ${c.funcao}</div>
+      <div style="font-size:11px;color:#8795a5;margin-top:5px;">requisito: ${c.requisito} - risco: ${c.risco}</div>
+    </article>`;
+  }
+
   function render() {
     card.innerHTML = `
       <div style="padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
         <div>
-          <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17.1</div>
-          <div style="font:900 34px Georgia,serif;line-height:1;color:#fff;text-shadow:0 3px 16px #000;">A Grande Onda</div>
+          <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17.5</div>
+          <div style="font:900 34px Georgia,serif;line-height:1;color:#fff;text-shadow:0 3px 16px #000;">A Grande Onda Expandida</div>
           <p style="margin:10px 0 0;color:#b7c3cf;line-height:1.55;max-width:720px;">
-            A distancia agora tambem sobe: cada rota tem risco, funcao, encontros, economia e criterio de qualidade.
-            O RV17 abre as alturas de Aurelia, o primeiro calabouco grande e o caminho tecnico para o voo draconico.
+            Distancia agora tem custo, funcao e escolha. O RV17.2-RV17.5 transforma hunts,
+            interiores, contratos de viagem e moradias em sistemas mais proximos de MMO classico.
           </p>
         </div>
         <button id="jornadas-fechar" style="width:36px;height:34px;border-radius:8px;border:1px solid #445266;background:#172334;color:#e8eef7;font-size:16px;cursor:pointer;">X</button>
@@ -403,6 +457,8 @@ export function criaQuadroJornadas({ onMarcarDestino = null, onAbrirMapa = null 
         <aside>
           <h2 style="margin:0 0 10px;font:800 18px Georgia,serif;color:#f4e9c8;">Habitats fixos</h2>
           <div style="display:flex;flex-direction:column;gap:9px;">${HABITATS_FIXOS.map(habitatHtml).join('')}</div>
+          <h2 style="margin:14px 0 10px;font:800 18px Georgia,serif;color:#f4e9c8;">Contratos de viagem</h2>
+          <div style="display:flex;flex-direction:column;gap:9px;">${CONTRATOS_VIAGEM_RV174.map(contratoHtml).join('')}</div>
           <div style="margin-top:14px;border:1px solid rgba(232,217,160,.22);border-radius:10px;padding:12px;background:rgba(232,217,160,.055);">
             <b style="display:block;color:#e8d9a0;margin-bottom:5px;">Regra do patch</b>
             <div style="color:#c8d3df;font-size:12px;line-height:1.55;">

@@ -620,6 +620,45 @@ function criaInteriorImovelBase(opts = {}) {
   const lixeira = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.46, 0.85, 8), metal);
   lixeira.position.set(hx - 4.3, y + 0.43, hz - 5.8); g.add(lixeira); col(hx - 4.3, hz - 5.8, 1.0, 1.0);
 
+  // RV17.3: a casa precisa parecer uma base jogavel, nao um quarto vazio.
+  // Mesa de contratos, cartografia e provisoes fazem o interior representar
+  // as decisoes reais: guardar, planejar rota, renovar aluguel e descansar.
+  const mesaContratos = new THREE.Group();
+  mesaContratos.position.set(guilda ? -hx + 10.5 : -hx + 8.2, y, -hz + 5.3);
+  mesaContratos.add(meshBox(guilda ? 4.8 : 3.6, 0.22, guilda ? 2.2 : 1.7, madeira, 0, 0.92, 0));
+  [[-1.7, -0.72], [1.7, -0.72], [-1.7, 0.72], [1.7, 0.72]].forEach(([px, pz]) => mesaContratos.add(meshBox(0.16, 0.92, 0.16, madeira, px, 0.46, pz)));
+  const mapaMesa = new THREE.Mesh(new THREE.BoxGeometry(guilda ? 3.8 : 2.7, 0.045, guilda ? 1.45 : 1.05), mat(0xd9c79a, 0.86));
+  mapaMesa.position.set(0, 1.065, 0); mesaContratos.add(mapaMesa);
+  for (let i = 0; i < 5; i++) {
+    const ficha = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.035, 0.62), mat(i % 2 ? 0xe8d9a8 : 0xc8b07a, 0.9));
+    ficha.position.set(-1.25 + i * 0.58, 1.11 + i * 0.006, 0.38 - (i % 2) * 0.76);
+    ficha.rotation.y = -0.35 + i * 0.18;
+    mesaContratos.add(ficha);
+  }
+  const compasso = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.025, 6, 18), ouro);
+  compasso.position.set(guilda ? 1.72 : 1.18, 1.15, -0.42);
+  compasso.rotation.x = Math.PI / 2;
+  mesaContratos.add(compasso);
+  g.add(mesaContratos); col(mesaContratos.position.x, mesaContratos.position.z, guilda ? 5.4 : 4.2, guilda ? 2.8 : 2.2);
+
+  const quadroContrato = new THREE.Mesh(new THREE.PlaneGeometry(guilda ? 5.8 : 4.4, guilda ? 2.2 : 1.7),
+    new THREE.MeshBasicMaterial({ map: placaCanvas(guilda ? 'CONSELHO' : 'CONTRATOS'), transparent: false }));
+  quadroContrato.position.set(guilda ? -hx + 0.07 : -hx + 0.07, y + (guilda ? 4.6 : 3.9), -hz + 8.4);
+  quadroContrato.rotation.y = Math.PI / 2;
+  g.add(quadroContrato);
+
+  const provisoes = new THREE.Group();
+  provisoes.position.set(hx - 8.4, y, guilda ? -hz + 6.1 : -hz + 5.1);
+  provisoes.add(meshBox(3.4, 0.95, 0.45, madeira, 0, 0.48, 0));
+  provisoes.add(meshBox(3.4, 0.14, 1.45, madeira, 0, 1.05, 0));
+  [-1.1, 0, 1.1].forEach((px, i) => {
+    const pote = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.62, 8), i === 1 ? metal : mat(0x8a5a35, 0.9));
+    pote.position.set(px, 1.42, -0.08); provisoes.add(pote);
+    const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 8), ouro);
+    tampa.position.set(px, 1.77, -0.08); provisoes.add(tampa);
+  });
+  g.add(provisoes); col(provisoes.position.x, provisoes.position.z, 3.8, 1.7);
+
   const ninho = new THREE.Group(); ninho.position.set(guilda ? 0 : hx - 5.0, y, guilda ? -hz + 5.2 : -hz + 5.8);
   const ninhoMat = mat(guilda ? 0x4a3a2a : 0x6a4a2a, 1);
   for (let i = 0; i < 10; i++) {
@@ -656,6 +695,8 @@ function criaInteriorImovelBase(opts = {}) {
   interativos.push({ kind: 'depot', x: -hx + 5.0, z: hz - 5.8, y, raio: 2.6, titulo: 'Deposito do imovel', acao: 'Abrir deposito' });
   interativos.push({ kind: 'banco', x: -hx + 9.0, z: hz - 5.6, y, raio: 2.6, titulo: 'Banco do imovel', acao: 'Abrir banco' });
   interativos.push({ kind: 'lixo', x: hx - 4.3, z: hz - 5.8, y, raio: 2.4, titulo: 'Lixeira do imovel', acao: 'Descartar itens baratos' });
+  interativos.push({ kind: 'quadroImovel', x: mesaContratos.position.x, z: mesaContratos.position.z, y, raio: 3.1, titulo: guilda ? 'Mesa de estrategia' : 'Mesa de contratos', acao: guilda ? 'Rever rotas e contratos' : 'Ver contrato do imovel' });
+  interativos.push({ kind: 'despensa', x: provisoes.position.x, z: provisoes.position.z, y, raio: 2.6, titulo: 'Despensa da base', acao: 'Conferir provisoes' });
   interativos.push({ kind: 'dormir', x: guilda ? 0 : hx - 5.0, z: guilda ? -hz + 5.2 : -7.3, y, raio: guilda ? 4.0 : 3.0, titulo: guilda ? 'Berco draconico' : 'Cama da mansao', acao: 'Descansar e treinar dragao' });
   if (guilda) interativos.push({ kind: 'guilda', x: 0, z: 2.0, y, raio: 4.0, titulo: 'Mesa de Conselho', acao: 'Rever plano da guilda' });
 

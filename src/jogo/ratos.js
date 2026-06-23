@@ -82,6 +82,32 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
     if (g.userData.orbe && g.userData.orbe.material && g.userData.orbe.material.emissiveIntensity != null) {
       g.userData.orbe.material.emissiveIntensity = 0.85 + Math.sin(r.tempo * 3.2) * 0.25;
     }
+    if (g.userData.asasCelestes) g.userData.asasCelestes.forEach((a, i) => {
+      const b = baseRot(a);
+      const lado = i % 2 ? -1 : 1;
+      a.rotation.y = b.y + lado * Math.sin(r.tempo * 2.2 + i) * 0.12;
+      a.rotation.z = b.z + lado * (0.16 + Math.sin(r.tempo * 3.1 + i) * 0.09);
+      if (a.material && a.material.emissiveIntensity != null) a.material.emissiveIntensity = 0.65 + Math.sin(r.tempo * 2.6 + i) * 0.18;
+    });
+    if (g.userData.fragmentos) g.userData.fragmentos.forEach((frag, i) => {
+      const p = basePos(frag);
+      const a = r.tempo * (0.75 + i * 0.06) + i * 1.8;
+      const rr = frag.userData.raio || 1.9;
+      frag.position.x = Math.cos(a) * rr;
+      frag.position.z = Math.sin(a) * rr;
+      frag.position.y = p.y + Math.sin(r.tempo * 2.4 + i) * 0.18;
+      frag.rotation.x += dt * 0.5;
+      frag.rotation.y += dt * 0.8;
+      if (frag.material && frag.material.emissiveIntensity != null) frag.material.emissiveIntensity = 0.72 + Math.sin(r.tempo * 3.0 + i) * 0.24;
+    });
+    if (g.userData.runaChao) {
+      g.userData.runaChao.rotation.z += dt * 0.18;
+      if (g.userData.runaChao.material) g.userData.runaChao.material.opacity = 0.18 + Math.sin(r.tempo * 2.0) * 0.05;
+    }
+    if (g.userData.escudo) {
+      const b = baseRot(g.userData.escudo);
+      g.userData.escudo.rotation.y = b.y + Math.sin(r.tempo * 1.7 + r._fase) * 0.08;
+    }
     // RV15.4: tentáculos (beholder) flutuam SEMPRE — organico, não congelado
     if (g.userData.tentaculos) g.userData.tentaculos.forEach((t, i) => { t.rotation.x = Math.sin(r.tempo * 2.2 + i * 0.7) * 0.28; t.rotation.z = Math.cos(r.tempo * 1.8 + i * 0.9) * 0.22; });
     animaPresencaVisual(r, dt, jog, ativo);
@@ -823,12 +849,34 @@ export function criaWyvernCeleste(x, z) {
   const g = criaDragao(x, z, false);
   g.scale.setScalar(0.72);
   tingeGrupo(g, 0x6f86a8, 0x2b4a8a, 0.16);
+  const u = g.userData || {};
+  const cristal = new THREE.MeshStandardMaterial({ color: 0x8fb6ff, emissive: 0x3155d8, emissiveIntensity: 0.75, roughness: 0.22, metalness: 0.05, flatShading: true });
+  const bronze = new THREE.MeshStandardMaterial({ color: 0xb08a48, roughness: 0.38, metalness: 0.55, emissive: 0x211505, emissiveIntensity: 0.18, flatShading: true });
+  const cristais = [];
+  for (let i = 0; i < 5; i++) {
+    const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.16 + i * 0.018, 0), cristal);
+    c.position.set(0, 2.35 + i * 0.18, -0.55 - i * 0.36);
+    c.rotation.y = i * 0.8;
+    c.castShadow = true;
+    g.add(c);
+    cristais.push(c);
+  }
+  [-1, 1].forEach((ld) => {
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.045, 6, 18), bronze);
+    aro.position.set(ld * 0.62, 1.62, 0.34);
+    aro.rotation.y = Math.PI / 2;
+    aro.rotation.z = ld * 0.28;
+    aro.castShadow = true;
+    g.add(aro);
+  });
   if (g.userData.garganta && g.userData.garganta.material && g.userData.garganta.material.emissive) {
     g.userData.garganta.material.emissive.setHex(0x7aa7ff);
     g.userData.garganta.material.emissiveIntensity = 1.25;
   }
-  g.userData.tipo = 'boss';
-  g.userData.wyvern = true;
+  u.cristais = [...(u.cristais || []), ...cristais];
+  u.tipo = 'boss';
+  u.wyvern = true;
+  g.userData = u;
   return g;
 }
 
@@ -836,8 +884,9 @@ export function criaGolemCristal(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const pedra = new THREE.MeshStandardMaterial({ color: 0x34303a, roughness: 0.78, metalness: 0.12, flatShading: true });
   const cristal = new THREE.MeshStandardMaterial({ color: 0x8e63ff, emissive: 0x5226d8, emissiveIntensity: 0.75, roughness: 0.22, metalness: 0.06, flatShading: true });
+  const runaMat = new THREE.MeshBasicMaterial({ color: 0x9b72ff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false });
   const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
-  const cristais = [];
+  const cristais = [], fragmentos = [];
   const torso = add(new THREE.Mesh(new THREE.DodecahedronGeometry(1.25, 0), pedra));
   torso.position.y = 2.7; torso.scale.set(1.15, 1.45, 0.9);
   const cabeca = add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.74, 0), pedra));
@@ -857,7 +906,18 @@ export function criaGolemCristal(x, z) {
     const c = add(new THREE.Mesh(new THREE.OctahedronGeometry(s, 0), cristal));
     c.position.set(cx, cy, cz); cristais.push(c);
   });
-  g.userData = { patas: [], cabeca, olhos: olhosG, cristais, orbe, corpoMat: pedra, tipo: 'boss' };
+  for (let i = 0; i < 5; i++) {
+    const f = add(new THREE.Mesh(new THREE.OctahedronGeometry(0.18 + (i % 2) * 0.08, 0), cristal));
+    f.position.set(Math.cos(i) * 1.8, 2.0 + i * 0.18, Math.sin(i) * 1.8);
+    f.userData.raio = 1.65 + i * 0.18;
+    fragmentos.push(f);
+  }
+  const runaChao = new THREE.Mesh(new THREE.RingGeometry(1.4, 2.25, 28), runaMat);
+  runaChao.rotation.x = -Math.PI / 2;
+  runaChao.position.y = 0.08;
+  runaChao.renderOrder = 6;
+  g.add(runaChao);
+  g.userData = { patas: [], cabeca, olhos: olhosG, cristais, fragmentos, runaChao, orbe, corpoMat: pedra, tipo: 'boss' };
   return g;
 }
 
@@ -867,7 +927,7 @@ export function criaSentinelaCeleste(x, z) {
   const ouro = new THREE.MeshStandardMaterial({ color: 0xc9a75a, roughness: 0.32, metalness: 0.72, emissive: 0x241805, emissiveIntensity: 0.14 });
   const violeta = new THREE.MeshStandardMaterial({ color: 0x8e63ff, emissive: 0x5226d8, emissiveIntensity: 0.85, roughness: 0.24 });
   const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
-  const patas = [], bracos = [];
+  const patas = [], bracos = [], asasCelestes = [];
   add(new THREE.Mesh(new THREE.BoxGeometry(0.92, 1.35, 0.55), armadura)).position.y = 1.72;
   const cabeca = add(new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.56, 0.58), armadura)); cabeca.position.y = 2.7;
   const olhosS = olhos(g, 0.16, 2.78, 0.34, 0.06, 0xbfa6ff);
@@ -881,15 +941,21 @@ export function criaSentinelaCeleste(x, z) {
       0, 0, 0, ld * 1.15, -0.95, -0.15, ld * 0.3, -0.6, -0.1,
     ]), 3));
     asa.geometry.computeVertexNormals();
-    asa.position.set(ld * 0.35, 2.35, -0.36); g.add(asa);
+    asa.position.set(ld * 0.35, 2.35, -0.36); g.add(asa); asasCelestes.push(asa);
   });
+  const escudo = add(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.13, 6), ouro));
+  escudo.position.set(-0.82, 1.86, 0.28);
+  escudo.rotation.z = Math.PI / 2;
+  escudo.scale.y = 1.22;
+  const placaPeito = add(new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.12, 0.08), ouro));
+  placaPeito.position.set(0, 2.08, 0.34);
   const haste = add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 2.9, 7), ouro));
   haste.position.set(0.92, 1.35, 0.22); haste.rotation.z = -0.12;
   const ponta = add(new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.55, 5), violeta));
   ponta.position.set(0.92, 2.95, 0.22);
   const orbe = add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), violeta));
   orbe.position.set(0, 2.0, 0.36);
-  g.userData = { patas, bracos, arma: haste, armas: [haste, ponta], cabeca, olhos: olhosS, orbe, corpoMat: armadura, tipo: 'monstro' };
+  g.userData = { patas, bracos, arma: haste, armas: [haste, ponta], escudo, asasCelestes, cabeca, olhos: olhosS, orbe, corpoMat: armadura, tipo: 'monstro' };
   return g;
 }
 
