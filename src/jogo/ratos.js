@@ -74,6 +74,14 @@ export function atualizaRatos(ratos, dt, jog, podeAndar, alturaSolo) {
     // asas (dragão) batem de leve mesmo parado
     if (g.userData.asas) { const f = Math.sin(r.tempo * 3.5) * 0.5; g.userData.asas[0].rotation.z = 0.2 - f; g.userData.asas[1].rotation.z = -0.2 + f; }
     if (g.userData.garganta) g.userData.garganta.scale.setScalar(1 + Math.sin(r.tempo * 8) * 0.12);
+    if (g.userData.cristais) g.userData.cristais.forEach((c, i) => {
+      c.rotation.y += dt * (0.45 + i * 0.05);
+      c.scale.setScalar(1 + Math.sin(r.tempo * 2.8 + i) * 0.05);
+      if (c.material && c.material.emissiveIntensity != null) c.material.emissiveIntensity = 0.65 + Math.sin(r.tempo * 2.4 + i) * 0.18;
+    });
+    if (g.userData.orbe && g.userData.orbe.material && g.userData.orbe.material.emissiveIntensity != null) {
+      g.userData.orbe.material.emissiveIntensity = 0.85 + Math.sin(r.tempo * 3.2) * 0.25;
+    }
     // RV15.4: tentáculos (beholder) flutuam SEMPRE — organico, não congelado
     if (g.userData.tentaculos) g.userData.tentaculos.forEach((t, i) => { t.rotation.x = Math.sin(r.tempo * 2.2 + i * 0.7) * 0.28; t.rotation.z = Math.cos(r.tempo * 1.8 + i * 0.9) * 0.22; });
     animaPresencaVisual(r, dt, jog, ativo);
@@ -796,6 +804,92 @@ export function criaDragao(x, z, lord = false) {
   }
 
   g.userData = { patas, asas, corpoMat, garganta, cauda, cabeca, olhos: olhosD, mandibula, pescoco: pescoco[pescoco.length - 1], tipo: 'boss' };
+  return g;
+}
+
+function tingeGrupo(root, cor, emissivo = null, intensidade = 0.12) {
+  root.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material) || !o.material.clone) return;
+    o.material = o.material.clone();
+    if (o.material.color) o.material.color.lerp(new THREE.Color(cor), 0.48);
+    if (emissivo && o.material.emissive) {
+      o.material.emissive.setHex(emissivo);
+      o.material.emissiveIntensity = intensidade;
+    }
+  });
+}
+
+export function criaWyvernCeleste(x, z) {
+  const g = criaDragao(x, z, false);
+  g.scale.setScalar(0.72);
+  tingeGrupo(g, 0x6f86a8, 0x2b4a8a, 0.16);
+  if (g.userData.garganta && g.userData.garganta.material && g.userData.garganta.material.emissive) {
+    g.userData.garganta.material.emissive.setHex(0x7aa7ff);
+    g.userData.garganta.material.emissiveIntensity = 1.25;
+  }
+  g.userData.tipo = 'boss';
+  g.userData.wyvern = true;
+  return g;
+}
+
+export function criaGolemCristal(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const pedra = new THREE.MeshStandardMaterial({ color: 0x34303a, roughness: 0.78, metalness: 0.12, flatShading: true });
+  const cristal = new THREE.MeshStandardMaterial({ color: 0x8e63ff, emissive: 0x5226d8, emissiveIntensity: 0.75, roughness: 0.22, metalness: 0.06, flatShading: true });
+  const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+  const cristais = [];
+  const torso = add(new THREE.Mesh(new THREE.DodecahedronGeometry(1.25, 0), pedra));
+  torso.position.y = 2.7; torso.scale.set(1.15, 1.45, 0.9);
+  const cabeca = add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.74, 0), pedra));
+  cabeca.position.y = 4.35; cabeca.scale.set(0.9, 0.82, 0.95);
+  const orbe = add(new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), cristal));
+  orbe.position.set(0, 3.25, 0.78);
+  const olhosG = olhos(g, 0.22, 4.44, 0.52, 0.08, 0xbfa6ff);
+  [-1, 1].forEach((ld) => {
+    const br = add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.48, 0), pedra));
+    br.position.set(ld * 1.25, 3.0, 0); br.scale.set(0.72, 1.55, 0.58);
+    const mao = add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.58, 0), pedra));
+    mao.position.set(ld * 1.65, 1.8, 0.08);
+    const per = add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.58, 0), pedra));
+    per.position.set(ld * 0.48, 1.05, 0); per.scale.set(0.8, 1.25, 0.7);
+  });
+  [[0, 5.02, -0.18, 0.42], [-0.58, 3.78, -0.4, 0.34], [0.58, 3.72, -0.42, 0.34], [0, 2.0, -0.85, 0.5]].forEach(([cx, cy, cz, s]) => {
+    const c = add(new THREE.Mesh(new THREE.OctahedronGeometry(s, 0), cristal));
+    c.position.set(cx, cy, cz); cristais.push(c);
+  });
+  g.userData = { patas: [], cabeca, olhos: olhosG, cristais, orbe, corpoMat: pedra, tipo: 'boss' };
+  return g;
+}
+
+export function criaSentinelaCeleste(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const armadura = new THREE.MeshStandardMaterial({ color: 0xd8d1c8, roughness: 0.42, metalness: 0.42, flatShading: true });
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xc9a75a, roughness: 0.32, metalness: 0.72, emissive: 0x241805, emissiveIntensity: 0.14 });
+  const violeta = new THREE.MeshStandardMaterial({ color: 0x8e63ff, emissive: 0x5226d8, emissiveIntensity: 0.85, roughness: 0.24 });
+  const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+  const patas = [], bracos = [];
+  add(new THREE.Mesh(new THREE.BoxGeometry(0.92, 1.35, 0.55), armadura)).position.y = 1.72;
+  const cabeca = add(new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.56, 0.58), armadura)); cabeca.position.y = 2.7;
+  const olhosS = olhos(g, 0.16, 2.78, 0.34, 0.06, 0xbfa6ff);
+  const crista = add(new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.55, 5), ouro)); crista.position.y = 3.18;
+  [-1, 1].forEach((ld) => {
+    const per = add(new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.95, 0.28), armadura)); per.position.set(ld * 0.24, 0.72, 0); patas.push(per);
+    const br = add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.0, 0.24), armadura)); br.position.set(ld * 0.68, 1.9, 0); br.rotation.z = ld * 0.18; bracos.push(br);
+    const asa = new THREE.Mesh(new THREE.BufferGeometry(), violeta);
+    asa.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+      0, 0, 0, ld * 1.9, 0.65, -0.25, ld * 1.15, -0.95, -0.15,
+      0, 0, 0, ld * 1.15, -0.95, -0.15, ld * 0.3, -0.6, -0.1,
+    ]), 3));
+    asa.geometry.computeVertexNormals();
+    asa.position.set(ld * 0.35, 2.35, -0.36); g.add(asa);
+  });
+  const haste = add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 2.9, 7), ouro));
+  haste.position.set(0.92, 1.35, 0.22); haste.rotation.z = -0.12;
+  const ponta = add(new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.55, 5), violeta));
+  ponta.position.set(0.92, 2.95, 0.22);
+  const orbe = add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), violeta));
+  orbe.position.set(0, 2.0, 0.36);
+  g.userData = { patas, bracos, arma: haste, armas: [haste, ponta], cabeca, olhos: olhosS, orbe, corpoMat: armadura, tipo: 'monstro' };
   return g;
 }
 

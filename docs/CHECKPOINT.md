@@ -2,6 +2,11 @@
 > Documento-mestre para **retomar o projeto do zero** sem perder contexto.
 > Atualizado: 12/06/2026 (Patch 2 RV7.0 v55 + verificação Railway/Codex). Leia este arquivo primeiro ao reabrir o projeto.
 
+> Atualizacao rapida 23/06/2026: o estado operacional mais recente esta em `docs/HANDOFF-CODEX.md`.
+> RV17.0 (v121) - **A Grande Onda** adiciona Aurelia expandida, arquipelago celeste, primeiro
+> calabouco grande, monstros de altura, armas de cla e quests novas. Documento da rodada:
+> `docs/RV17_GRANDE_ONDA.md`. **Nao publicado sem "pode publicar".**
+
 ---
 
 ## 🤝 HANDOFF PRO CODEX (12/06/2026) — 54ª RODADA FECHADA / 55ª PRÓXIMA

@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastão. Estado em **RV16.9 (v120)** no `main`, **não publicado**.
+> Documento de passagem de bastao. Estado em **RV17.0 (v121)** no `main`, **nao publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versão atual**: constante `VERSAO` em `src/main3d.js` = `'RV16.9 (v120)'`. **Suba a cada entrega.**
+- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV17.0 (v121)'`. **Suba a cada entrega.**
 
 ---
 
@@ -79,7 +79,7 @@ imagens geradas por IA (que dá pra ver como imagem).
     `criaDragaoData`, `statsDragao`, `ganhaXpDragao`, afinidade, XP_JOVEM/XP_ADULTO).
   - `bestiario.js` — overlay 🐲 com os dragões + lore. `selecao.js`, `customizar.js`, `hud.js`,
     `dialogo.js`, `calendario.js`, `texturas.js` (matPBR/normal), `escala.js` (FATOR global, =1.0),
-    `patchNotes.js` (painel "PATCH RV16.9 - Mago Viajante").
+    `patchNotes.js` (painel "PATCH RV17 - A Grande Onda").
 - `scripts/gera-*.mjs` — geradores de arte com **OpenAI gpt-image-1** (`OPENAI_API_KEY` no `.env`).
   Padrão: POST `api.openai.com/v1/images/generations`, `quality:high`, `b64_json`. `sharp` instalado p/
   reduzir (1024→512). Prompts "night dragon" às vezes batem no safety — suavizar (evitar "war-mount/plasma").
@@ -236,20 +236,32 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Dragoes procedurais ficaram menos infantis: corpo escuro, pescoco/cabeca reposicionados, asas maiores, cauda mais longa e escala de crescimento maior.
 - Documento da rodada: `docs/RV16_9_MAGO_VIAJANTE.md`.
 
+## 7.11 Estado novo do RV17.0 (Codex)
+
+- `src/main3d.js` subiu para **RV17.0 (v121)**.
+- `public/patches/rv17-grande-onda.png` e a arte oficial do patch; conectada em patch notes, manifest, baixar, SW e cache offline.
+- Aurelia ganhou arquipelago celeste com Jardins Suspensos, Portao dos Primeiros Ventos, Mirante do Voo Rasante e Obelisco da Linhagem.
+- Novo `criaCalaboucoVentos()` em `src/jogo/nuvens.js`: primeira masmorra grande das alturas, com salas, corredores, cristais, boss arena e retorno para Aurelia.
+- Novos monstros em `src/jogo/ratos.js`: Sentinela Celeste, Golem de Cristal, Wyvern Celeste e Guardiao do Primeiro Vento.
+- Novas quests: **A Grande Onda** (Ulrion, Sentinelas Celestes) e **O Primeiro Vento** (Helyra, boss do calabouco).
+- Armas de cla por vocacao: Lamina do Portao Antigo, Arco do Horizonte, Cajado da Veia Alta e Cetro de Raiz Viva. Ulrion concede uma vez por save, apos entrada na Guilda.
+- Quadro `ROTAS` agora registra rotas/habitats de Aurelia e do Calabouco dos Primeiros Ventos.
+- Dragao adulto montado ganhou planeio inicial: salto mais alto e queda suavizada em zona aberta. Voo livre completo segue como fase futura.
+- Documento da rodada: `docs/RV17_GRANDE_ONDA.md`.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV16.10 - Interiores como realidade** - mansoes/guildhouses com hall nobre, candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
-2. **RV16.11 - Bichos e hunts como realidade** - criaturas/hunts com silhueta, ataque, impacto, terreno, loot visual e escala.
-3. **RV16.12 - Continente e viagens** - mapa jogavel por regioes, rotas longas, pontos de descanso, carrocas e montarias.
-4. **RV16.13 - Moradias, aluguel e economia** - aluguel semanal, renovacao, avisos, banco, depot, lixeira e ML do dragao.
-5. **RV16.14 - Hunt do Pantano Vivo** - territorio do Dragao do Pantano, lama, veneno, pontes e item-chave de doma rara.
-6. **RV17 - Portal publico** - noticias, contas, personagens, rankings, bestiario, mapa e patch notes.
-7. **RV18 - Instalavel premium** - app instalado quando GLBs/texturas/animacoes passarem do peso saudavel da web.
-8. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
+1. **RV17.1 - Polimento da Grande Onda** - validar calabouco, colisao, spawn, telegraph, loot e leitura visual das ilhas.
+2. **RV17.2 - Bichos com qualidade premium** - criaturas/hunts com silhueta, ataque, impacto, terreno, loot visual e escala.
+3. **RV17.3 - Interiores como realidade** - mansoes/guildhouses com hall nobre, candelabro, escada, mesa, biblioteca, bau, trofeus e funcao.
+4. **RV17.4 - Continente e viagens** - mapa jogavel por regioes, rotas longas, pontos de descanso, carrocas e montarias.
+5. **RV17.5 - Moradias, aluguel e economia** - aluguel semanal, renovacao, avisos, banco, depot, lixeira e ML do dragao.
+6. **RV18 - Portal publico + instalavel premium** - noticias, contas, personagens, rankings, bestiario, mapa, patch notes e foco app instalado se o peso grafico exigir.
+7. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
 9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
 10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.
 11. **Racas/faccoes/era antiga** - orcs, anoes, paladinos, bruxos, druidas, dragoes antigos, maquinas e anomalias.

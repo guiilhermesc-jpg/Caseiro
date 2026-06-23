@@ -28,12 +28,12 @@ import { criaDragaoData, statsDragao, ganhaXpDragao, hpMaxDe, ESPECIES_DRAGAO, E
 import { criaEsgoto, criaCatacumbas, criaCriptaProfunda, criaCavernasPico } from './jogo/esgoto.js';
 import { criaIrmasIlha1 } from './jogo/irmas.js'; // 🌊 As Irmãs Afundadas (Fase 3)
 import { criaDeserto, criaCatedralInterior } from './jogo/deserto.js'; // 🏜️ As Areias do Veio Seco (Fase 3)
-import { criaCidadeNuvens } from './jogo/nuvens.js'; // ☁️🐉 Aurélia, a Cidade nas Nuvens
+import { criaCidadeNuvens, criaCalaboucoVentos } from './jogo/nuvens.js'; // ☁️🐉 Aurélia, a Cidade nas Nuvens
 import { criaAtmosfera } from './jogo/atmosfera.js'; // ✨ poeira/pólen no ar (RV11.0)
 import { texPBR } from './jogo/texturas.js'; // 💧 normal map de ondas da água (RV11.7)
 import { criaMansaoInterior, criaGuildHouseInterior } from './jogo/interiores.js';
 import { criaAudio } from './jogo/audio.js';
-import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo } from './jogo/ratos.js';
+import { criaRato, criaRatos, atualizaRatos, criaCobra, criaCrocodilo, criaTroll, criaCyclops, criaAranhaGigante, criaAranhaPequena, criaLadrao, criaEscorpiao, criaBeholder, criaDragao, criaDrakari, criaLobo, criaUrso, criaEsqueleto, criaOrc, criaCaranguejo, criaWyvernCeleste, criaGolemCristal, criaSentinelaCeleste } from './jogo/ratos.js';
 import { criaHUD } from './jogo/hud.js';
 import { aplicaTexturaReal, defineRendererTexturas } from './jogo/construcoes.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -85,7 +85,7 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV16.9 (v120)';
+const VERSAO = 'RV17.0 (v121)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
@@ -339,6 +339,9 @@ function podeAndarBicho(x, z, y) {
     for (const o of cavernasPico.colisores) {
       if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
     }
+    for (const o of calaboucoVentos.colisores) {
+      if (x > o.minX - 0.5 && x < o.maxX + 0.5 && z > o.minZ - 0.5 && z < o.maxZ + 0.5) return false;
+    }
     return true;
   }
   const arr = gradeCol.get(Math.floor(x / CELULA) * 4096 + Math.floor(z / CELULA));
@@ -374,6 +377,10 @@ catedralI.grupo.visible = false;
 // AURÉLIA, A CIDADE NAS NUVENS (RV13.0): base dos dragões, zona carregada celeste
 const aurelia = criaCidadeNuvens(); scene.add(aurelia.grupo);
 aurelia.grupo.visible = false;
+// RV17: primeiro calabouco grande das alturas. Entra por Aurelia, mas roda
+// como zona separada para poder ter colisao, monstros e retorno proprio.
+const calaboucoVentos = criaCalaboucoVentos(); scene.add(calaboucoVentos.grupo);
+calaboucoVentos.grupo.visible = false;
 // emissivos que PULSAM com o bloom (RV11.2): a Veia presa, a rosácea e os vitrais
 // respiram — efeito mágico premium.
 const glowsPulsantes = [...(deserto.glows || []), ...(catedralI.glows || [])];
@@ -620,6 +627,10 @@ const MODELOS_MONSTROS = [
   { arquivo: 'drakari', especie: 'drakari', tam: 3.8 },
   { arquivo: 'drakari', especie: 'drakariElite', tam: 4.6 },
   { arquivo: 'drakari', especie: 'arconteDrakari', tam: 8.4 },
+  { arquivo: 'sentinela-celeste', especie: 'sentinelaCeleste', tam: 4.2 },
+  { arquivo: 'golem-cristal', especie: 'golemCristal', tam: 6.0 },
+  { arquivo: 'wyvern-celeste', especie: 'wyvernCeleste', tam: 8.2 },
+  { arquivo: 'golem-cristal', especie: 'guardiaoPrimeiroVento', tam: 9.0 },
 ];
 const baseGLBPorEspecie = {}; // espécie -> base pronta (spawns novos também vestem)
 function preparaBaseGLB(gltf, tam) {
@@ -857,6 +868,37 @@ let dragaoNuvens = null;
   [[ce.x - 24, ce.z + 6], [ce.x + 24, ce.z - 4]].forEach(([x, z]) => {
     const d = criaDragao(x, z); d.position.y = -40; d.scale.setScalar(1.15);
     addMonstro(d, 320, 150, 26, 1.8, true, areaMon(x, z, 16), { especie: 'dragao', dragao: true, atira: 'fogo', alcanceTiro: 34, danoTiro: 20, cadencia: 3.0, y0: -40, lootEspecial: { nome: 'Escama de Ouro', icone: '✨' } });
+  });
+}
+// RV17 - CALABOUCO DOS PRIMEIROS VENTOS: primeira hunt grande das alturas.
+{
+  const sp = calaboucoVentos.spawns;
+  sp.sentinelas.forEach(({ x, z }) => {
+    const s = criaSentinelaCeleste(x, z); s.position.y = -80;
+    addMonstro(s, 145, 72, 18, 2.25, true, areaMon(x, z, 14), {
+      especie: 'sentinelaCeleste', y0: -80, atira: 'magia', alcanceTiro: 17, danoTiro: 14, cadencia: 3.2,
+      lootEspecial: { nome: 'Pena Celeste', icone: 'P' },
+    });
+  });
+  sp.golems.forEach(({ x, z }) => {
+    const g = criaGolemCristal(x, z); g.position.y = -80;
+    addMonstro(g, 260, 130, 28, 1.25, true, areaMon(x, z, 12), {
+      especie: 'golemCristal', y0: -80, boss: false,
+      lootEspecial: { nome: 'Nucleo de Cristal Vivo', icone: 'C' },
+    });
+  });
+  sp.wyverns.forEach(({ x, z }) => {
+    const w = criaWyvernCeleste(x, z); w.position.y = -80;
+    addMonstro(w, 360, 180, 32, 1.8, true, areaMon(x, z, 18), {
+      especie: 'wyvernCeleste', y0: -80, dragao: true, atira: 'magia', alcanceTiro: 26, danoTiro: 20, cadencia: 3.6,
+      lootEspecial: { nome: 'Escama de Wyvern Celeste', icone: 'W' },
+    });
+  });
+  const b = sp.boss;
+  const bossVento = criaGolemCristal(b.x, b.z); bossVento.position.y = -80; bossVento.scale.setScalar(1.45);
+  addMonstro(bossVento, 920, 520, 42, 1.15, true, areaMon(b.x, b.z, 18), {
+    especie: 'guardiaoPrimeiroVento', y0: -80, boss: true, atira: 'magia', alcanceTiro: 28, danoTiro: 26, cadencia: 2.9,
+    lootEspecial: { nome: 'Selo do Primeiro Vento', icone: 'V' },
   });
 }
 ratos.forEach((r) => { scene.add(r.g); if (!r.sombraContato) sombraBicho(r); });
@@ -1342,6 +1384,10 @@ Object.assign(MONTARIA_VEL, { furiaDoDia: 2.25, furiaDaNoite: 2.3, dragaoPantano
 Object.assign(MONTARIA_SELA, { furiaDoDia: 1.1, furiaDaNoite: 1.1, dragaoPantano: 1.05, dragaoGelo: 1.05, dragaoVeia: 1.2 });
 Object.assign(PET_DANO, { furiaDoDia: 12, furiaDaNoite: 13, dragaoPantano: 12, dragaoGelo: 13, dragaoVeia: 18 });
 Object.assign(PET_NOMES, { furiaDoDia: 'Fúria do Dia', furiaDaNoite: 'Fúria da Noite', dragaoPantano: 'Dragão do Pântano', dragaoGelo: 'Dragão de Gelo', dragaoVeia: 'Dragão da Veia' });
+function permiteMontariaAqui() { return !noEsgoto || subsoloAtual === aurelia; }
+function dragaoAdultoMontado() {
+  return montado && ehDragaoPet(petTipo) && dragaoCompanheiro && dragaoCompanheiro.estagio === 'adulto';
+}
 let montado = false;
 let petAlvo = null, petProxMordida = 0;
 function animaCompanheiro(g, movendo, ritmo = 1, voando = false) {
@@ -1402,7 +1448,7 @@ function marcaAtaqueCompanheiro(g) {
 }
 function montaOuDesmonta() {
   if (!gato) { mostraMensagem('🐾 Você precisa DOMAR um bicho primeiro (procure os crachás 🐾 pelo mundo).'); return; }
-  if (noEsgoto) { mostraMensagem('Aqui embaixo não dá pra montar. 🪢'); return; }
+  if (!permiteMontariaAqui()) { mostraMensagem('Aqui nao da pra montar. Procure terreno aberto ou as ilhas de Aurelia.'); return; }
   montado = !montado;
   if (montado) {
     petAlvo = null;
@@ -1501,6 +1547,32 @@ QUESTS.push({
   fala: 'Trouxe o coração da fenda?',
   recompensa: { ouro: 0, xp: 420, item: { nome: 'Sela Dracônica', icone: 'S' } },
 });
+QUESTS.push({
+  id: 'grandeOndaAlturas',
+  npc: 'Ulrion',
+  requer: 'mantoMagoViajante',
+  nivel: 16,
+  tipo: 'matar',
+  especie: 'sentinelaCeleste',
+  meta: 3,
+  titulo: 'A Grande Onda',
+  pede: 'Aurelia abriu um portao que nao constava nos mapas antigos. As Sentinelas Celestes guardam a primeira passagem. Derrube 3 delas e prove que sua guilda consegue coordenar uma subida real, nao uma excursao bonita.',
+  fala: 'As sentinelas ainda bloqueiam o caminho dos ventos?',
+  recompensa: { ouro: 260, xp: 360, item: { nome: 'Carta das Alturas', icone: 'C' } },
+});
+QUESTS.push({
+  id: 'primeiroVento',
+  npc: 'Helyra',
+  requer: 'grandeOndaAlturas',
+  nivel: 17,
+  tipo: 'matar',
+  especie: 'guardiaoPrimeiroVento',
+  meta: 1,
+  titulo: 'O Primeiro Vento',
+  pede: 'A Carta das Alturas confirma o que os monges escondiam: existe um calabouco sob as ilhas, e nele dorme o Guardiao do Primeiro Vento. Venca-o para receber o primeiro sigilo do futuro voo draconico.',
+  fala: 'O Guardiao do Primeiro Vento ainda segura o selo?',
+  recompensa: { ouro: 480, xp: 680, item: { nome: 'Sigilo do Voo Rasante', icone: 'S', slot: 'anel', defesa: 4, raro: true } },
+});
 const questEstado = {}; // id -> { aceita, prog, feita } (vai no save)
 // GUILDA DE VENORE (RV4.2): 2 dragões abatidos = entrada + Manto da Guilda
 let dragoesMortos = 0, guildaMembro = false;
@@ -1545,6 +1617,7 @@ const PRECOS = {
   'Cogumelo': 2, 'Concha': 4, 'Coco': 3, 'Cenoura': 2,
   'Presa do Boss': 20, 'Olho do Beholder': 40, 'Escama de Dragão': 90, 'Coração de Dragão': 400, 'Coroa Antiga': 250, 'Olho Lapidado': 180, 'Estandarte Orc': 220, 'Coração Ancestral': 500, 'Cristal do Pico': 150,
   'Escama Drakari': 70, 'Fragmento de Obsidiana': 140, 'Coração de Obsidiana': 650,
+  'Pena Celeste': 120, 'Nucleo de Cristal Vivo': 260, 'Escama de Wyvern Celeste': 320, 'Selo do Primeiro Vento': 900,
   'Rubi': 30, 'Safira': 30, 'Esmeralda': 30, 'Pérola': 22, 'Âmbar': 18, 'Anel de Ouro': 35,
   'Lambari': 1, 'Tilápia': 2, 'Traíra': 3, 'Carpa': 3, 'Bagre': 3, 'Tucunaré': 6, 'Dourado': 12, 'Pintado': 16,
 };
@@ -1644,6 +1717,17 @@ function abreDialogo(npc) {
       inventario.addItem({ nome: 'Manto da Guilda', icone: '🛡️', slot: 'tronco', defesa: 6 });
       hud.ganhaXP(120); salvaJogo();
       dialogo.abre(npc.nome, '🏅 BEM-VINDO À GUILDA DE VENORE! Seu MANTO DA GUILDA (defesa 6) está na mochila — vista com orgulho. +120 XP', opcoes);
+    } });
+    const vocAtual = coresJogador.tipo || 'cavaleiro';
+    const armaCla = ARMAS_CLA_RV17[vocAtual] || ARMAS_CLA_RV17.cavaleiro;
+    const rotuloArma = armamentoClanConcedido ? `Arma de cla: ${armaCla.nome}` : `Arma de cla: ${armaCla.cla}`;
+    opcoes.splice(opcoes.length - 1, 0, { texto: rotuloArma, onClick: () => {
+      if (!guildaMembro) { dialogo.abre(npc.nome, 'Primeiro entre para a Guilda de Venore. Arma de cla e compromisso, nao brinde.', opcoes); return; }
+      if (armamentoClanConcedido) { dialogo.abre(npc.nome, `Voce ja recebeu ${armaCla.nome}. Use bem; arma de cla nao se troca como moeda de feira.`, opcoes); return; }
+      armamentoClanConcedido = true;
+      inventario.addItem({ ...armaCla });
+      salvaJogo();
+      dialogo.abre(npc.nome, `A Grande Onda exige identidade. Sua vocacao responde por ${armaCla.cla}; leve ${armaCla.nome} e volte inteiro das alturas.`, opcoes);
     } });
   }
   // ECONOMIA CIRCULAR (estilo Tibia): mercadores compram TUDO; lojistas
@@ -1774,7 +1858,11 @@ function executaAcao() {
     let subiu = false;
     for (let i = 0; i < subsoloAtual.acessos.length; i++) {
       const a = subsoloAtual.acessos[i];
-      if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { sobe(i); subiu = true; break; }
+      if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) {
+        if (subsoloAtual === calaboucoVentos) voltaAureliaDoCalabouco();
+        else sobe(i);
+        subiu = true; break;
+      }
     }
     if (!subiu) {
       const itEsg = achaInterativo(); // ex.: sua mochila caída no esgoto
@@ -2137,7 +2225,7 @@ function preparaInteriorImovel(def, idx) {
 }
 IMOVEIS.forEach(preparaInteriorImovel);
 function escondeZonasCarregadas() {
-  [esgoto, catacumbas, criptaProfunda, cavernasPico, irmas1, catedralI, aurelia, ...Object.values(interioresImoveis)]
+  [esgoto, catacumbas, criptaProfunda, cavernasPico, irmas1, catedralI, aurelia, calaboucoVentos, ...Object.values(interioresImoveis)]
     .forEach((z) => { if (z && z.grupo) z.grupo.visible = false; });
 }
 function estadoImovel(id) {
@@ -2565,6 +2653,72 @@ function ascendeNuvens() {
   };
   interativos.push(it);
 }
+function entraCalaboucoVentos() {
+  if (montado) { montado = false; mostraMensagem('Voce desmontou antes de entrar no calabouco.'); }
+  acessoAtual = 0;
+  aurelia.grupo.visible = false;
+  calaboucoVentos.grupo.visible = true;
+  subsoloAtual = calaboucoVentos;
+  chaoY = -80; areaAtiva = calaboucoVentos.bounds; noEsgoto = true;
+  const a = calaboucoVentos.acessos[0];
+  avatar.position.set(a.x, -80, a.z + 2.5); vy = 0; noChao = true;
+  hemi.intensity = 0.24; sun.intensity = 0.12;
+  minimapa.esconde(); petAlvo = null; sons.corda();
+  dialogo.abre('Portao dos Primeiros Ventos',
+    'Voce atravessa uma membrana violeta e o som do mundo fica longe. Este e o primeiro calabouco grande das alturas: salas antigas, armas de cla, golems de cristal, sentinelas e wyverns guardando a memoria do voo. Aqui nasce a estrada para voar com dragao de verdade.',
+    [{ texto: 'Entrar na Grande Onda', onClick: () => dialogo.fecha() }]);
+}
+function voltaAureliaDoCalabouco() {
+  calaboucoVentos.grupo.visible = false;
+  aurelia.grupo.visible = true;
+  subsoloAtual = aurelia;
+  chaoY = -40; areaAtiva = aurelia.bounds; noEsgoto = true;
+  const r = calaboucoVentos.retornoAurelia;
+  avatar.position.set(r.x - 4, -40, r.z + 4); vy = 0; noChao = true;
+  hemi.intensity = 0.9; sun.intensity = 0.72;
+  mostraMensagem('Voce voltou ao Portao dos Primeiros Ventos.');
+}
+{
+  const e = aurelia.calaboucoEntrada;
+  const it = { x: e.x, z: e.z, y: -40, raio: 5.0, titulo: 'Portao dos Primeiros Ventos', acao: 'Entrar no calabouco RV17' };
+  it.onAcao = () => {
+    if (subsoloAtual !== aurelia) return;
+    dialogo.abre('Portao dos Primeiros Ventos',
+      'A porta nao leva para baixo. Leva para dentro de uma memoria suspensa: o primeiro calabouco grande das alturas. Entre preparado; a hunt foi feita para grupo pequeno ou personagem bem equipado.',
+      [
+        { texto: 'Entrar agora', onClick: () => { dialogo.fecha(); entraCalaboucoVentos(); } },
+        { texto: 'Preparar primeiro', onClick: () => dialogo.fecha() },
+      ]);
+  };
+  interativos.push(it);
+}
+{
+  const a = calaboucoVentos.acessos[0];
+  const it = { x: a.x, z: a.z, y: -80, raio: 3.2, titulo: 'Saida dos Ventos', acao: 'Voltar para Aurelia' };
+  it.onAcao = () => { if (subsoloAtual === calaboucoVentos) voltaAureliaDoCalabouco(); };
+  interativos.push(it);
+}
+for (const p of calaboucoVentos.pois) {
+  const it = { x: p.x, z: p.z, y: -80, raio: p.raio || 3.2, titulo: p.nome, acao: 'Examinar memoria antiga' };
+  it.onAcao = () => {
+    if (subsoloAtual !== calaboucoVentos) return;
+    dialogo.abre(p.nome,
+      'As marcas no chao mostram rotas de expedicao, armas de cla e calculos de vento. Nada aqui e decoracao: cada sala ensina uma parte do futuro voo draconico.',
+      [{ texto: 'Continuar explorando', onClick: () => dialogo.fecha() }]);
+  };
+  interativos.push(it);
+}
+if (aurelia.miranteVoo) {
+  const m = aurelia.miranteVoo;
+  const it = { x: m.x, z: m.z, y: -40, raio: 3.8, titulo: 'Mirante do Voo Rasante', acao: 'Estudar correntes de ar' };
+  it.onAcao = () => {
+    if (subsoloAtual !== aurelia) return;
+    dialogo.abre('Mirante do Voo Rasante',
+      'As correntes sobem em espiral. Dragao adulto ainda nao tem voo livre completo nesta versao, mas ja ganha salto e planeio rasante quando montado na superficie. O voo total vira sistema maior: altura, stamina, camera, pouso e hunts aereas.',
+      [{ texto: 'Guardar a rota do ceu', onClick: () => dialogo.fecha() }]);
+  };
+  interativos.push(it);
+}
 
 // BAÚ ANCESTRAL: o tesouro dos reis (UMA vez por conta — vai no save)
 let bauCriptaAberto = false;
@@ -2711,7 +2865,56 @@ function poeArmaNaMao() {
   const item = equipados.maoDir;
   const m = new THREE.Group(); m.name = 'arma';
   const nome = item ? item.nome : null;
-  if (item && item.arco) { // ARCO: haste curva + corda tensionada
+  const estilo = item && item.estiloArma;
+  if (estilo === 'espadaPortao') {
+    const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.13, 1.38, 0.055), MAT_METAL);
+    lamina.position.y = 0.72; m.add(lamina);
+    const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.22, 4), MAT_METAL);
+    ponta.position.y = 1.52; ponta.rotation.y = Math.PI / 4; m.add(ponta);
+    const guarda = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.08, 0.14), MAT_OURO);
+    guarda.position.y = 0.06; m.add(guarda);
+    const gema = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0x8e63ff, emissive: 0x6a36ff, emissiveIntensity: 0.9 }));
+    gema.position.y = -0.14; m.add(gema);
+    m.position.set(0, -1.02, 0.28); m.rotation.x = -0.48;
+  } else if (estilo === 'arcoHorizonte') {
+    const haste = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.055, 7, 16, Math.PI), MAT_OURO);
+    haste.rotation.z = -Math.PI / 2; m.add(haste);
+    const corda = new THREE.Mesh(new THREE.BoxGeometry(0.025, 1.38, 0.025), MAT_METAL);
+    m.add(corda);
+    const nucleo = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshStandardMaterial({ color: 0x9fd7ff, emissive: 0x5db8ff, emissiveIntensity: 0.75 }));
+    nucleo.position.set(0, 0, 0.06); m.add(nucleo);
+    m.position.set(0, -1.0, 0.2); m.rotation.x = 0.18;
+  } else if (estilo === 'cajadoVeia' || estilo === 'cetroRaiz') {
+    const madeira = new THREE.MeshStandardMaterial({ color: estilo === 'cetroRaiz' ? 0x31502a : 0x3c2a1d, roughness: 0.88 });
+    const brilho = new THREE.MeshStandardMaterial({
+      color: estilo === 'cetroRaiz' ? 0x74b85a : 0x8e63ff,
+      emissive: estilo === 'cetroRaiz' ? 0x2f9a38 : 0x6a36ff,
+      emissiveIntensity: 1.05,
+      roughness: 0.24,
+    });
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 1.85, 7), madeira);
+    haste.position.y = 0.42; m.add(haste);
+    const topo = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), brilho);
+    topo.position.y = 1.42; m.add(topo);
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.025, 6, 18), estilo === 'cetroRaiz' ? madeira : MAT_OURO);
+    aro.position.y = 1.42; aro.rotation.x = Math.PI / 2; m.add(aro);
+    if (estilo === 'cetroRaiz') {
+      [-1, 1].forEach((ld) => {
+        const folha = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.32, 5), brilho);
+        folha.position.set(ld * 0.16, 1.18, 0); folha.rotation.z = ld * 0.75; m.add(folha);
+      });
+    }
+    m.position.set(0, -1.08, 0.22); m.rotation.x = -0.12; m.rotation.z = -0.12;
+  } else if (estilo === 'adagaObsidiana') {
+    const obs = new THREE.MeshStandardMaterial({ color: 0x17151f, roughness: 0.42, metalness: 0.28, emissive: 0x27105a, emissiveIntensity: 0.22 });
+    const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.68, 0.05), obs);
+    lamina.position.y = 0.42; m.add(lamina);
+    const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 4), obs);
+    ponta.position.y = 0.84; m.add(ponta);
+    const guarda = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.055, 0.09), MAT_OURO);
+    guarda.position.y = 0.04; m.add(guarda);
+    m.position.set(0, -1.0, 0.27); m.rotation.x = -0.48;
+  } else if (item && item.arco) { // ARCO: haste curva + corda tensionada
     const haste = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 6, 12, Math.PI), MAT_MADEIRA);
     haste.rotation.z = -Math.PI / 2; m.add(haste);
     const corda = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.1, 0.02), MAT_METAL);
@@ -2777,6 +2980,13 @@ const ARMAS = [
   { nome: 'Espada', icone: '⚔️', slot: 'maoDir', dano: 12, arma: true },
   { nome: 'Machado', icone: '🪓', slot: 'maoDir', dano: 16, arma: true },
 ];
+const ARMAS_CLA_RV17 = {
+  cavaleiro: { nome: 'Lamina do Portao Antigo', icone: 'K', slot: 'maoDir', dano: 24, arma: true, estiloArma: 'espadaPortao', cla: 'Ordem do Portao' },
+  paladino: { nome: 'Arco do Horizonte', icone: 'H', slot: 'maoDir', dano: 22, arma: true, arco: true, alcance: 22, estiloArma: 'arcoHorizonte', cla: 'Vigilia do Horizonte' },
+  feiticeiro: { nome: 'Cajado da Veia Alta', icone: 'V', slot: 'maoDir', dano: 23, arma: true, estiloArma: 'cajadoVeia', cla: 'Circulo da Veia' },
+  druida: { nome: 'Cetro de Raiz Viva', icone: 'R', slot: 'maoDir', dano: 20, arma: true, estiloArma: 'cetroRaiz', cla: 'Circulo Verde' },
+};
+let armamentoClanConcedido = false;
 function aoEquipar(item) {
   if (item.usavel === 'tocha') { alternaTocha(); return false; } // acende/apaga, não consome
   if (item.usavel === 'pocao') { // poção de vida: cura na hora (consome 1)
@@ -3023,6 +3233,10 @@ const PERFIS_MONSTRO_RV70 = {
 Object.assign(PERFIS_MONSTRO_RV70, {
   draptor: { aggro: 28, dist: 9.2, cd: 5.7, aviso: 0.58, dur: 0.36, alcance: 2.75, mult: 1.42, raio: 2.35, cor: 0x7fe06a, msg: 'O Draptor raspa as garras no chão e dispara!' },
   draptorLendario: { aggro: 34, dist: 10.4, cd: 5.2, aviso: 0.54, dur: 0.34, alcance: 3.05, mult: 1.6, raio: 2.8, cor: 0x68d8ff, msg: 'O Draptor Lendário dobra a luz e investe!' },
+  sentinelaCeleste: { aggro: 24, dist: 8.2, cd: 5.8, aviso: 0.58, dur: 0.3, alcance: 2.45, mult: 1.28, raio: 1.9, cor: 0xbfa6ff, msg: 'A Sentinela Celeste firma a lanca e risca o chao!' },
+  golemCristal: { aggro: 22, dist: 7.2, cd: 7.0, aviso: 0.86, dur: 0.42, alcance: 3.0, mult: 1.48, raio: 2.6, cor: 0x9b72ff, msg: 'O Golem de Cristal carrega um impacto lento!' },
+  wyvernCeleste: { aggro: 30, dist: 10.0, cd: 6.2, aviso: 0.68, dur: 0.36, alcance: 3.2, mult: 1.44, raio: 2.8, cor: 0x78a8ff, msg: 'A Wyvern dobra as asas para o bote!' },
+  guardiaoPrimeiroVento: { aggro: 34, dist: 10.2, cd: 7.4, aviso: 0.95, dur: 0.46, alcance: 3.45, mult: 1.68, raio: 3.4, cor: 0xc7a6ff, msg: 'O Guardiao do Primeiro Vento puxa toda a sala para o golpe!' },
 });
 const MAT_PROJ_FOGO = new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff4a00, emissiveIntensity: 1 });
 const MAT_PROJ_MAGIA = new THREE.MeshStandardMaterial({ color: 0xc44aff, emissive: 0x8a2ad8, emissiveIntensity: 1 });
@@ -3276,6 +3490,10 @@ const RAROS = {
 Object.assign(RAROS, {
   draptor: { chance: 0.08, item: { nome: 'Garra de Draptor', icone: 'G', slot: 'colar', defesa: 5 } },
   draptorLendario: { chance: 0.18, item: { nome: 'Crista Lendária do Draptor', icone: 'C', slot: 'cabeca', defesa: 9 } },
+  sentinelaCeleste: { chance: 0.07, item: { nome: 'Elmo da Sentinela Celeste', icone: 'E', slot: 'cabeca', defesa: 7 } },
+  golemCristal: { chance: 0.08, item: { nome: 'Anel de Cristal Vivo', icone: 'A', slot: 'anel', defesa: 5 } },
+  wyvernCeleste: { chance: 0.06, item: { nome: 'Capa de Asa Celeste', icone: 'W', slot: 'tronco', defesa: 10 } },
+  guardiaoPrimeiroVento: { chance: 0.18, item: { nome: 'Lanca do Primeiro Vento', icone: 'L', slot: 'maoDir', dano: 36, arma: true, estiloArma: 'espadaPortao' } },
 });
 function tentaCapturarDraptor(r) {
   if (!r || (r.especie !== 'draptor' && r.especie !== 'draptorLendario')) return;
@@ -3612,7 +3830,8 @@ function salvaJogo() {
       codice: codice.estado(), // Códice da Veia: veios sentidos + Quarto Veio
       cofre, // Depósito de Venore (itens guardados em segurança)
       imoveis: imoveisEstado, // casas/mansões/guildhouses alugadas
-      dragoes: dragoesMortos, guilda: guildaMembro, // currículo + Guilda de Venore
+      dragoes: dragoesMortos, guilda: guildaMembro, armamentoClan: armamentoClanConcedido, // currículo + Guilda de Venore
+      provaFogo: provaFogoFeita, // prova das alturas de Aurelia
       bauCripta: bauCriptaAberto, // tesouro dos reis é um só por conta
       vorag: voragInvocado, // a Ossada erguida não volta a dormir
       arconte: arconteInvocado, // o Arconte despertado também continua no mundo
@@ -3642,7 +3861,8 @@ function carregaJogo(nome) {
     Object.keys(imoveisEstado).forEach((k) => delete imoveisEstado[k]);
     Object.assign(imoveisEstado, d.imoveis || {});
     sincronizaPlacasImoveis();
-    dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; // Guilda de Venore
+    dragoesMortos = d.dragoes || 0; guildaMembro = !!d.guilda; armamentoClanConcedido = !!d.armamentoClan; // Guilda de Venore
+    provaFogoFeita = !!d.provaFogo; // prova das alturas de Aurelia
     bauCriptaAberto = !!d.bauCripta; // Baú Ancestral (uma vez por conta)
     if (d.vorag) invocaVorag(); // a Ossada erguida continua erguida
     if (d.arconte || ((questEstado.arconteLuaPartida || {}).aceita && !(questEstado.arconteLuaPartida || {}).feita)) invocaArconteDrakari();
@@ -3967,6 +4187,7 @@ function atualizaLocal() {
       : subsoloAtual === irmas1 ? 'As Irmãs Afundadas · A Quebra-Mar'
       : subsoloAtual === catedralI ? 'Catedral da Lua Coada · Nave Profanada'
       : subsoloAtual === aurelia ? '☁️ Aurélia · A Cidade nas Nuvens'
+      : subsoloAtual === calaboucoVentos ? 'Calabouco dos Primeiros Ventos'
       : subsoloAtual && subsoloAtual.tipo === 'imovel' ? `Interior · ${subsoloAtual.nome}` : 'Esgoto';
   }
   else for (const d of DISTRITOS) { const dist = Math.hypot(avatar.position.x - d.x, avatar.position.z - d.z); if (dist < d.raio && dist < melhorD) { melhorD = dist; nome = d.nome; } }
@@ -4202,7 +4423,7 @@ function passo() {
       let vel = CONFIG3D.velocidade;
       if (correndo) vel *= 1.8;
       if (abaixado) vel *= 0.55;
-      if (montado && !noEsgoto) vel *= MONTARIA_VEL[petTipo] || 1.3; // MONTARIA: velocidade por raça
+      if (montado && permiteMontariaAqui()) vel *= MONTARIA_VEL[petTipo] || 1.3; // MONTARIA: velocidade por raça
       if (gmVel) vel *= 3; // GM: velocidade ×3
       alvoVX = mx * vel; alvoVZ = mz * vel;
     }
@@ -4218,11 +4439,12 @@ function passo() {
       if (!colide(avatar.position.x, nz)) avatar.position.z = nz; else velAvatarZ *= -0.08;
       giraSuave(avatar, Math.atan2(velAvatarX, velAvatarZ), dt * 16);
     }
-    if (controles.querPular() && noChao) { vy = 9; noChao = false; }
-    vy -= 25 * dt;
+    if (controles.querPular() && noChao) { vy = dragaoAdultoMontado() ? 13.5 : 9; noChao = false; }
+    vy -= (dragaoAdultoMontado() && !noChao && correndo && vy < 0 ? 10 : 25) * dt;
+    if (dragaoAdultoMontado() && !noChao && correndo && vy < -4.2) vy = -4.2; // RV17: planeio rasante, nao voo livre ainda
     avatar.position.y += vy * dt;
     let solo = noEsgoto ? chaoY : alturaTerreno(avatar.position.x, avatar.position.z);
-    if (montado && !noEsgoto) solo += MONTARIA_SELA[petTipo] || 0.6; // sela: avatar sobe na garupa
+    if (montado && permiteMontariaAqui()) solo += MONTARIA_SELA[petTipo] || 0.6; // sela: avatar sobe na garupa
     if (avatar.position.y <= solo) { avatar.position.y = solo; vy = 0; noChao = true; }
     const escalaY = abaixado ? 0.6 : 1;
     avatar.scale.y += (escalaY - avatar.scale.y) * Math.min(1, dt * 12);
@@ -4241,7 +4463,12 @@ function passo() {
     // DICA de ação (Roblox-style): o que a tecla E / botão AÇÃO faz aqui perto
     let dica = null;
     if (noEsgoto) {
-      for (const a of subsoloAtual.acessos) { if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) { dica = 'Subir pela corda 🪢'; break; } }
+      for (const a of subsoloAtual.acessos) {
+        if (Math.hypot(avatar.position.x - a.x, avatar.position.z - a.z) < 2.8) {
+          dica = subsoloAtual === calaboucoVentos ? 'Voltar para Aurelia' : 'Subir pela corda 🪢';
+          break;
+        }
+      }
       if (!dica) { const itE = achaInterativo(); if (itE) dica = itE.acao || itE.titulo; }
       if (!dica && corpseProximo()) dica = 'Saquear o corpo 💀';
       if (!dica && alvoRato(alcanceAtaque())) dica = alcanceAtaque() > 3 ? 'Atirar 🏹' : 'Atacar ⚔️';

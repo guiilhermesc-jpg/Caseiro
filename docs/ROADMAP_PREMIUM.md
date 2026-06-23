@@ -66,12 +66,12 @@ padrao para os proximos 29.
 12. RV8.6: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.
 13. RV16.8 entregue: Lore Operacional - NPCs renomeados, biblia de NPCs, compatibilidade de economia e gate premium.
 14. RV16.9 entregue: Mago Viajante, manto raro conquistavel e proporcao premium dos dragoes.
-15. RV16.10-RV16.14: interiores, bichos/hunts, continente/viagens, moradias/economia e Pantano Vivo.
-16. RV17: portal publico com noticias, contas, personagens, highscores, bestiario, mapa e patch notes quando as imagens ja baterem com o jogo real.
-17. RV18: base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
+15. RV17 entregue: A Grande Onda - Aurelia expandida, arquipelago celeste, primeiro calabouco grande, Sentinelas/Golems/Wyverns, armas de cla e quests de altura.
+16. RV17.1-RV17.5: polimento da Grande Onda, bichos premium, interiores como realidade, viagens longas, moradias/economia e Pantano Vivo.
+17. RV18: portal publico + base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
 18. RV19: escala local e rotas de jornada do Pacto 01/30.
 19. RV20: hunts por bioma e monstros profissionais.
-20. RV21: crescimento profundo dos dragoes.
+20. RV21: crescimento profundo dos dragoes e voo draconico com custo, estamina, zonas aereas e hunts de altitude.
 21. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
 22. RV23: profissoes, economia e contratos.
 23. RV24: guildas, grupos e expedicoes.

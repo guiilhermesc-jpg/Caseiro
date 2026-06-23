@@ -123,6 +123,36 @@ export const ROTAS_JORNADA = [
     recompensa: ['economia de tempo', 'custo de oportunidade', 'ciclo porto-venda'],
     criterio: 'barca deve economizar tempo, mas a estrada deve render descoberta e loot',
   },
+  {
+    id: 'aurelia-primeiros-ventos',
+    nome: 'Rota dos Primeiros Ventos',
+    origem: { nome: 'Aurelia', x: -720, z: 720 },
+    destino: { nome: 'Portao dos Primeiros Ventos', x: -612, z: 700 },
+    mapa: { x1: -720, z1: 720, x2: -612, z2: 700, w: 5 },
+    nivel: '16-22',
+    risco: 8,
+    tempo: 'rota vertical / entrada de calabouco',
+    funcao: 'primeiro conteudo de alturas: prepara voo, medo de queda, visao de mundo e boss de era',
+    biomas: ['ilhas suspensas', 'pontes de pedra', 'cristais violetas', 'vento sagrado'],
+    encontros: ['Sentinelas Celestes', 'Golems de Cristal', 'Wyverns Celestes', 'Guardiao do Primeiro Vento'],
+    recompensa: ['Pena Celeste', 'Nucleo de Cristal Vivo', 'Selo do Primeiro Vento', 'sigilo de voo futuro'],
+    criterio: 'deve parecer uma grande viagem curta: cada ponte precisa de leitura, risco e recompensa',
+  },
+  {
+    id: 'aurelia-ilhas-perdidas',
+    nome: 'Arquipelago Suspenso',
+    origem: { nome: 'Aurelia', x: -720, z: 720 },
+    destino: { nome: 'Mirante do Voo Rasante', x: -664, z: 802 },
+    mapa: { x1: -720, z1: 720, x2: -664, z2: 802, w: 4 },
+    nivel: '14-20',
+    risco: 7,
+    tempo: 'exploracao aberta',
+    funcao: 'laboratorio do voo draconico: lugar bonito, perigoso e grande o bastante para voltar depois',
+    biomas: ['jardins suspensos', 'obeliscos de linhagem', 'mirantes', 'neblina alta'],
+    encontros: ['patrulhas celestes', 'cristais de afinidade', 'lore dos primeiros dragoeiros'],
+    recompensa: ['atalhos visuais', 'memorias antigas', 'preparacao para montarias voadoras'],
+    criterio: 'deve vender a promessa do voo sem liberar voo livre antes da hora',
+  },
 ];
 
 export const HABITATS_FIXOS = [
@@ -197,6 +227,24 @@ export const HABITATS_FIXOS = [
     raro: 'Lamina da Lua Partida',
     respawn: 'boss por invocacao de quest',
     valor: 'conteudo de era, preparo e prestigio social',
+  },
+  {
+    id: 'calabouco-primeiros-ventos',
+    nome: 'Calabouco dos Primeiros Ventos',
+    x: -1010, z: 840, raio: 120, nivel: '16-22', risco: 8,
+    criaturas: ['Sentinela Celeste', 'Golem de Cristal', 'Wyvern Celeste', 'Guardiao do Primeiro Vento'],
+    raro: 'Lanca do Primeiro Vento',
+    respawn: 'salas densas, boss lento e rota de retorno por Aurelia',
+    valor: 'primeiro calabouco grande: quest, loot caro, prova de grupo e preparacao para voo',
+  },
+  {
+    id: 'mirante-voo-rasante',
+    nome: 'Mirante do Voo Rasante',
+    x: -664, z: 802, raio: 44, nivel: '14-20', risco: 6,
+    criaturas: ['patrulhas celestes futuras', 'dragoes de treino futuros'],
+    raro: 'Sigilo do Voo Rasante',
+    respawn: 'baixo, mais exploracao que farm',
+    valor: 'define onde o jogador sente pela primeira vez que voar sera possivel',
   },
 ];
 
@@ -336,11 +384,11 @@ export function criaQuadroJornadas({ onMarcarDestino = null, onAbrirMapa = null 
     card.innerHTML = `
       <div style="padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
         <div>
-          <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV8.1</div>
-          <div style="font:900 34px Georgia,serif;line-height:1;color:#fff;text-shadow:0 3px 16px #000;">Jornadas Valiosas</div>
+          <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17</div>
+          <div style="font:900 34px Georgia,serif;line-height:1;color:#fff;text-shadow:0 3px 16px #000;">A Grande Onda</div>
           <p style="margin:10px 0 0;color:#b7c3cf;line-height:1.55;max-width:720px;">
-            A distancia passa a ter valor: cada rota tem risco, funcao, encontros, economia e criterio de qualidade.
-            Isso e a base para criar o prazer de viajar entre cidades sem transformar o mapa em espaco vazio.
+            A distancia agora tambem sobe: cada rota tem risco, funcao, encontros, economia e criterio de qualidade.
+            O RV17 abre as alturas de Aurelia, o primeiro calabouco grande e o caminho tecnico para o voo draconico.
           </p>
         </div>
         <button id="jornadas-fechar" style="width:36px;height:34px;border-radius:8px;border:1px solid #445266;background:#172334;color:#e8eef7;font-size:16px;cursor:pointer;">X</button>

@@ -1,6 +1,6 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv16-9-mago-viajante';
+const PATCH_ID = 'rv17-grande-onda';
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +15,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV16.9';
+  badge.textContent = 'PATCH RV17';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -32,36 +32,37 @@ export function criaPatchNotes() {
     'position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;'
     + 'background:rgba(4,8,12,.72);font-family:Arial,sans-serif;color:#f4ead2;padding:18px;');
   const card = css(document.createElement('div'),
-    'width:min(980px,94vw);max-height:88vh;overflow:auto;border:1px solid rgba(232,217,160,.38);'
+    'width:min(1040px,94vw);max-height:88vh;overflow:auto;border:1px solid rgba(232,217,160,.38);'
     + 'background:linear-gradient(180deg,rgba(25,22,17,.97),rgba(12,15,18,.98));border-radius:14px;'
     + 'box-shadow:0 18px 70px rgba(0,0,0,.68);');
   card.innerHTML = `
-    <div style="height:300px;background:
-      linear-gradient(90deg,rgba(5,8,10,.9),rgba(5,8,10,.38),rgba(5,8,10,.08)),
-      url('/patches/rv16-9-mago-viajante.png') center/cover no-repeat;
+    <div style="height:330px;background:
+      linear-gradient(90deg,rgba(5,8,10,.92),rgba(5,8,10,.38),rgba(5,8,10,.04)),
+      url('/patches/rv17-grande-onda.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
-      <div style="position:absolute;left:28px;bottom:24px;max-width:590px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV16.9</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Mago Viajante</div>
-        <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          A referencia visual do mago com dragoes virou conteudo real: um manto raro conquistavel,
-          dragao-companheiro mais imponente e proporcoes novas para as criaturas draconicas.
+      <div style="position:absolute;left:28px;bottom:24px;max-width:650px;">
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">A Grande Onda</div>
+        <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
+          Aurelia deixa de ser promessa e vira fronteira: ilhas suspensas, primeiro calabouco grande,
+          armas de cla e criaturas celestes preparando o caminho para o voo com dragoes.
         </div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:18px;padding:22px;">
+    <div style="display:grid;grid-template-columns:1.12fr .88fr;gap:18px;padding:22px;">
       <section>
-        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
+        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Conteudo jogavel</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Este update transforma uma imagem aprovada em regra jogavel: roupa rara precisa existir,
-          ter caminho de conquista, aparecer no corpo e conversar com a escala dos dragoes.
+          O RV17 transforma a nova identidade visual em mapa, combate e progressao. A inspiracao vem da
+          viagem valiosa de Tibia, da leitura de escala de World of Warcraft e do valor social das rotas de Albion.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Manto do Mago Viajante:</b> recompensa rara da Helyra apos o arco de Vorag, exigindo Cristal do Pico.</li>
-          <li><b>Visual equipado:</b> capuz, capa azul-profunda, bordas douradas, orbe violeta e cajado ritual.</li>
-          <li><b>Dragoes maiores:</b> filhote, jovem e adulto ganharam leitura de tamanho mais forte.</li>
-          <li><b>Modelo draconico:</b> corpo escuro, asas mais amplas, pescoco mais nobre e cauda mais longa.</li>
-          <li><b>Imagem como contrato:</b> a arte do patch mostra o que agora guia a implementacao real.</li>
+          <li><b>Arquipelago de Aurelia:</b> jardins suspensos, mirante do voo, obelisco de linhagem e portal dos ventos.</li>
+          <li><b>Calabouco dos Primeiros Ventos:</b> primeira masmorra grande, com salas, pontes internas, boss e retorno por Aurelia.</li>
+          <li><b>Novos monstros:</b> Sentinela Celeste, Golem de Cristal, Wyvern Celeste e Guardiao do Primeiro Vento.</li>
+          <li><b>Quests novas:</b> A Grande Onda e O Primeiro Vento conectam guilda, Helyra, dragao e futuro voo.</li>
+          <li><b>Armas de cla:</b> cavaleiro, paladino, feiticeiro e druida recebem armas de identidade pelo Ulrion.</li>
+          <li><b>Planeio inicial:</b> dragao adulto montado ganha salto mais alto e queda suavizada nas zonas abertas.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -71,7 +72,7 @@ export function criaPatchNotes() {
         </p>
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
           Mascate: Terca, Quinta e Sabado.<br>
-          Abra a ficha do heroi com a tecla <b>C</b> e o Bestiario pelo painel do jogo.<br>
+          Ficha do heroi: tecla <b>C</b>. Montaria: tecla <b>M</b>.<br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>
       </aside>

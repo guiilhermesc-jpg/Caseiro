@@ -49,6 +49,7 @@ matar por contato invisivel; ele precisa anunciar o perigo.
 | Deserto Solar | escorpiao, cobra, ciclope seco, verme de duna | Furia Solar | queimadura, areia, miragem | carapaca, veneno, osso seco | montaria de areia |
 | Costa da Estrela | caranguejo de recife, serpente marinha, naufrago | Vigia do Meteoro | agua, puxao, campo estranho | concha, sal, cristal estranho | pressagio alienigena |
 | Fronteira Ferrum | guarda mecanico, humanoide de ferro, roboide | Fundidor da Veia | armadura, choque, vapor | engrenagem, placa, nucleo | montaria mecanica futura |
+| Aurelia e Alturas | Sentinela Celeste, Golem de Cristal, Wyvern Celeste | Guardiao do Primeiro Vento | vento, magia, pontes, escala vertical | Pena Celeste, Nucleo Vivo, Escama Celeste, Selo do Vento | voo draconico e hunts aereas futuras |
 
 ## Regras de hunts
 
@@ -136,8 +137,9 @@ Quando uma imagem de patch mostrar monstros:
 
 ## Prioridade de implementacao
 
-1. RV16.10: melhorar silhueta/animacao/reacao dos bichos ja existentes.
-2. RV20: matriz de hunts por bioma com escala e loot.
-3. RV21: crescimento profundo de dragoes.
-4. RV24: bosses de grupo e eventos coordenados.
-5. RV25+: dragoes antigos, maquinas e anomalias.
+1. RV17.1: validar e polir Sentinela Celeste, Golem de Cristal, Wyvern Celeste e Guardiao do Primeiro Vento.
+2. RV17.2: melhorar silhueta/animacao/reacao dos bichos ja existentes.
+3. RV20: matriz de hunts por bioma com escala e loot.
+4. RV21: crescimento profundo de dragoes e voo com regras.
+5. RV24: bosses de grupo e eventos coordenados.
+6. RV25+: dragoes antigos, maquinas e anomalias.
