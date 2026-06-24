@@ -274,6 +274,16 @@ imagens geradas por IA (que dá pra ver como imagem).
 - `patchNotes.js`, `manifest`, `baixar`, `sw` e `index` atualizados para RV17.5/offline.
 - Documentos da rodada: `docs/RV17_2_BICHOS_PREMIUM.md`, `docs/RV17_3_INTERIORES_REALIDADE.md`, `docs/RV17_4_ROTAS_CONTINENTE.md`, `docs/RV17_5_MORADIAS_ECONOMIA.md`.
 
+## 7.14 Estado novo do RV17.5.1 (Codex)
+
+- `src/main3d.js` subiu para **RV17.5.1 (v127)**.
+- `cidade.js` recebeu camada de paridade visual com a arte de rua noturna:
+  - Mural de Contratos de Venor interativo.
+  - Loja Noturna de Venor iluminada.
+  - Dragao descansando decorativo/interativo.
+  - Bau, caixa e barril adicionais no primeiro anel da vila.
+- Criado `docs/CONTRATO_VISUAL_PREMIUM.md`: imagem oficial precisa corresponder a sistema real; caso contrario deve ser marcada como previa/conceito.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.

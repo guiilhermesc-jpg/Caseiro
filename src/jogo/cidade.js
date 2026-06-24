@@ -528,6 +528,118 @@ export function criaCidade() {
   }
 
   // praça: fonte central + bancos + postes nas esquinas
+  function criaMuralContratosRua(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const madeira = matPBR(0x5f3d24, { tipo: 'madeira', repeat: 1.2, rough: 0.86, relevo: 0.48 });
+    const papel = new THREE.MeshStandardMaterial({ color: 0xd8c49a, roughness: 0.92 });
+    const luzMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffa83a, emissiveIntensity: 1.05, roughness: 0.34 });
+    [-1.45, 1.45].forEach((px) => {
+      const poste = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.75, 0.18), madeira);
+      poste.position.set(px, 1.36, 0); poste.castShadow = true; g.add(poste);
+    });
+    const tab = new THREE.Mesh(new THREE.BoxGeometry(3.45, 2.1, 0.16), madeira);
+    tab.position.set(0, 1.85, 0); tab.castShadow = tab.receiveShadow = true; g.add(tab);
+    const topo = new THREE.Mesh(new THREE.BoxGeometry(3.75, 0.18, 0.28), madeira);
+    topo.position.set(0, 2.98, 0); topo.castShadow = true; g.add(topo);
+    for (let i = 0; i < 12; i++) {
+      const aviso = new THREE.Mesh(new THREE.BoxGeometry(0.55 + (i % 3) * 0.08, 0.36 + (i % 2) * 0.08, 0.035), papel);
+      aviso.position.set(-1.13 + (i % 4) * 0.75, 2.35 - Math.floor(i / 4) * 0.52, 0.105);
+      aviso.rotation.z = -0.08 + (i % 5) * 0.04; g.add(aviso);
+    }
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), luzMat);
+    lamp.position.set(1.72, 2.82, 0.26); g.add(lamp);
+    const luz = new THREE.PointLight(0xffb85a, 0.45, 10, 2);
+    luz.position.set(x, 2.82, z); scene.add(luz); postes.push({ luz, lumMat: luzMat });
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 1.9, maxX: x + 1.9, minZ: z - 0.35, maxZ: z + 0.35 }],
+      animados: [{ mesh: lamp, pulsa: luzMat, gira: 0.2, fase: Math.random() * 6 }],
+      interativo: { x, z, raio: 3.3, titulo: 'Mural de Contratos de Venor', acao: 'Ler contratos', msg: 'O mural registra alugueis, viagens, hunts celestes e avisos da Guilda. Arte oficial precisa virar sistema jogavel.' },
+    };
+  }
+
+  function criaLojaAbertaNoturna(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const madeira = matPBR(0x6b4a2a, { tipo: 'madeira', repeat: 1.1, rough: 0.84, relevo: 0.45 });
+    const pedra = matPBR(0x766f64, { tipo: 'pedra', repeat: 1.0, rough: 0.95, relevo: 0.45 });
+    const tecido = new THREE.MeshStandardMaterial({ color: 0x162747, roughness: 0.95, side: THREE.DoubleSide });
+    const luzMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffa83a, emissiveIntensity: 1.05, roughness: 0.34 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.35, 2.1), pedra);
+    base.position.y = 0.18; base.castShadow = base.receiveShadow = true; g.add(base);
+    const balcao = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.9, 0.55), madeira);
+    balcao.position.set(0, 0.82, 0.58); balcao.castShadow = balcao.receiveShadow = true; g.add(balcao);
+    const fundo = new THREE.Mesh(new THREE.BoxGeometry(5.3, 2.8, 0.32), madeira);
+    fundo.position.set(0, 1.65, -0.78); fundo.castShadow = fundo.receiveShadow = true; g.add(fundo);
+    const toldo = new THREE.Mesh(new THREE.BoxGeometry(5.7, 0.14, 2.0), tecido);
+    toldo.position.set(0, 3.15, 0.1); toldo.rotation.x = -0.16; toldo.castShadow = true; g.add(toldo);
+    [-1.65, 0, 1.65].forEach((px) => {
+      const prateleira = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.2), pedra);
+      prateleira.position.set(px, 1.78, -0.55); g.add(prateleira);
+      for (let i = 0; i < 3; i++) {
+        const frasco = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.32, 7), mat([0x6fb0ff, 0xd96aff, 0xffd36a][i], 0.45));
+        frasco.position.set(px - 0.3 + i * 0.3, 2.02, -0.45); g.add(frasco);
+      }
+    });
+    for (let i = 0; i < 7; i++) {
+      const item = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.28), mat([0x9a7a45, 0x5a6f3a, 0x7a3a42][i % 3], 0.8));
+      item.position.set(-1.9 + i * 0.63, 1.36, 0.62); item.rotation.y = -0.25 + i * 0.08; item.castShadow = true; g.add(item);
+    }
+    [-2.2, 2.2].forEach((px) => {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), luzMat);
+      lamp.position.set(px, 2.62, 0.72); g.add(lamp);
+      const luz = new THREE.PointLight(0xffb85a, 0.52, 12, 2);
+      luz.position.set(x + Math.cos(rot) * px + Math.sin(rot) * 0.72, 2.62, z - Math.sin(rot) * px + Math.cos(rot) * 0.72);
+      scene.add(luz); postes.push({ luz, lumMat: luzMat });
+      animados.push({ mesh: lamp, pulsa: luzMat, gira: 0.16, fase: Math.random() * 6 });
+    });
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 2.8, maxX: x + 2.8, minZ: z - 1.25, maxZ: z + 1.25 }],
+      interativo: { x, z, raio: 3.6, titulo: 'Loja Noturna de Venor', acao: 'Examinar vitrine', msg: 'Frascos, mapas e contratos ficam iluminados ao anoitecer. Venor precisa parecer habitada de perto.' },
+    };
+  }
+
+  function criaDragaoDescansandoDecorativo(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const escama = new THREE.MeshStandardMaterial({ color: 0x253549, roughness: 0.72, metalness: 0.06, emissive: 0x08111f, emissiveIntensity: 0.18, flatShading: true });
+    const crista = new THREE.MeshStandardMaterial({ color: 0x9c7a45, roughness: 0.42, metalness: 0.38, emissive: 0x221500, emissiveIntensity: 0.2, flatShading: true });
+    const asaMat = new THREE.MeshStandardMaterial({ color: 0x202638, roughness: 0.8, side: THREE.DoubleSide, flatShading: true });
+    const olhoMat = new THREE.MeshStandardMaterial({ color: 0xffc45a, emissive: 0xff7a22, emissiveIntensity: 0.9, roughness: 0.35 });
+    const corpo = new THREE.Mesh(new THREE.DodecahedronGeometry(1.25, 0), escama);
+    corpo.position.y = 0.86; corpo.scale.set(1.8, 0.75, 0.95); corpo.castShadow = corpo.receiveShadow = true; g.add(corpo);
+    const cabeca = new THREE.Mesh(new THREE.DodecahedronGeometry(0.62, 0), escama);
+    cabeca.position.set(-2.08, 0.74, 0.1); cabeca.scale.set(1.15, 0.7, 0.82); g.add(cabeca);
+    [-0.18, 0.18].forEach((oz) => {
+      const olho = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), olhoMat);
+      olho.position.set(-2.55, 0.86, oz); g.add(olho);
+    });
+    for (let i = 0; i < 8; i++) {
+      const cauda = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42 - i * 0.026, 0), escama);
+      cauda.position.set(1.35 + i * 0.36, 0.66 - i * 0.025, Math.sin(i * 0.75) * 0.28);
+      cauda.scale.set(1.08, 0.55, 0.58); cauda.castShadow = true; g.add(cauda);
+    }
+    [-1, 1].forEach((ld) => {
+      const asa = new THREE.Mesh(new THREE.BufferGeometry(), asaMat);
+      asa.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+        0, 0, 0, 1.55, 0.22 * ld, -0.95 * ld, 0.75, -0.28 * ld, -2.05 * ld,
+        0, 0, 0, 0.75, -0.28 * ld, -2.05 * ld, -0.35, -0.18 * ld, -1.18 * ld,
+      ]), 3));
+      asa.geometry.computeVertexNormals(); asa.position.set(-0.15, 1.12, 0.18 * ld); asa.rotation.y = -0.15 * ld; g.add(asa);
+    });
+    for (let i = 0; i < 9; i++) {
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 5), crista);
+      c.position.set(-1.75 + i * 0.38, 1.33 - Math.abs(i - 4) * 0.035, 0); c.rotation.x = Math.PI; g.add(c);
+    }
+    const tapete = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.055, 28), new THREE.MeshStandardMaterial({ color: 0x5a2020, roughness: 0.92 }));
+    tapete.position.y = 0.035; tapete.scale.z = 0.62; tapete.receiveShadow = true; g.add(tapete);
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 3.0, maxX: x + 3.0, minZ: z - 2.0, maxZ: z + 2.0 }],
+      animados: [{ mesh: corpo, flutua: true, baseY: 0.86, fase: Math.random() * 6 }],
+      interativo: { x, z, raio: 4.2, titulo: 'Dragao descansando', acao: 'Observar dragao', msg: 'O dragao descansa na rua porque moradias, guildas e dragoes agora fazem parte da vida de Venor.' },
+    };
+  }
+
   add(criaFonte(0, 0));
   // Bancos nos cantos da praca: o corredor central fica livre para templo,
   // hospital, escola e delegacia, principalmente no joystick do celular.
@@ -541,6 +653,12 @@ export function criaCidade() {
     .forEach(([x, z, r]) => add(criaVasoNobre(x, z, r)));
   [[-17.5, -16, 0.18, 0x334f7a], [17.5, 15.5, -0.2, 0x7a3f30], [-15.5, 17.5, Math.PI / 2, 0x3f6b46]]
     .forEach(([x, z, r, c]) => add(criaMesaMercante(x, z, r, c)));
+  add(criaMuralContratosRua(-24, -19, Math.PI / 7));
+  add(criaLojaAbertaNoturna(24, -19, -Math.PI / 7));
+  add(criaDragaoDescansandoDecorativo(22, 22, -Math.PI / 4));
+  add(criaBau(15.5, 22.5, -0.35));
+  add(criaCaixa(18.5, 23.5, 0.75, 0.25));
+  add(criaBarril(19.8, 21.6));
   [[-23, -7, 0x6a2ab0], [23, -7, 0xb8902a], [-23, 7, 0x2a5a9c], [23, 7, 0x9c2a2a]]
     .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
 
