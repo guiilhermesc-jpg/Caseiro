@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'venor-rv17-5-offline-v1';
+const CACHE_VERSION = 'venor-rv17-9-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -10,6 +10,11 @@ const CORE_ASSETS = [
   '/patches/rv17-3-interiores-realidade.png',
   '/patches/rv17-4-rotas-continente.png',
   '/patches/rv17-5-moradias-economia.png',
+  '/patches/rv17-6-contrato-visual.png',
+  '/patches/rv17-7-bases-vivas.png',
+  '/patches/rv17-8-hunts-reacao.png',
+  '/patches/rv17-9-preparacao-rv18.png',
+  '/patches/rv18-grande-pacto.png',
   '/texturas/ceu.png',
   '/texturas/grama.png',
   '/texturas/pedra.png',

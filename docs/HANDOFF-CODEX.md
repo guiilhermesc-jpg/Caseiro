@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastao. Estado em **RV17.1 (v122)** no `main`, **nao publicado**.
+> Documento de passagem de bastao. Estado em **RV17.9 (v131)** no `main`, **nao publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV17.1 (v122)'`. **Suba a cada entrega.**
+- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV17.9 (v131)'`. **Suba a cada entrega.**
 
 ---
 
@@ -283,6 +283,21 @@ imagens geradas por IA (que dá pra ver como imagem).
   - Dragao descansando decorativo/interativo.
   - Bau, caixa e barril adicionais no primeiro anel da vila.
 - Criado `docs/CONTRATO_VISUAL_PREMIUM.md`: imagem oficial precisa corresponder a sistema real; caso contrario deve ser marcada como previa/conceito.
+
+## 7.15 Estado novo do RV17.6-RV17.9 (Codex)
+
+- `src/main3d.js` subiu para **RV17.9 (v131)**.
+- Artes oficiais salvas:
+  - `public/patches/rv17-6-contrato-visual.png`
+  - `public/patches/rv17-7-bases-vivas.png`
+  - `public/patches/rv17-8-hunts-reacao.png`
+  - `public/patches/rv17-9-preparacao-rv18.png`
+- Previa visual do proximo ciclo:
+  - `public/patches/rv18-grande-pacto.png`
+- `patchNotes.js`, `manifest.webmanifest`, `baixar.html`, `sw.js` e `index.html` foram conectados ao cache `venor-rv17-9-offline-v1`.
+- `cidade.js` ganhou a pedra interativa **Pacto 18** no primeiro anel de Venor, deixando a preparacao do Patch 18 dentro do mundo.
+- Docs criados: `RV17_6_CONTRATO_VISUAL.md`, `RV17_7_BASES_VIVAS.md`, `RV17_8_HUNTS_REACAO.md`, `RV17_9_PREPARACAO_RV18.md`, `PATCH18_GRANDE_PACTO.md`.
+- Regra mantida: `rv18-grande-pacto.png` e previa, nao promessa entregue.
 
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 

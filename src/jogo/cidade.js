@@ -659,6 +659,16 @@ export function criaCidade() {
   add(criaBau(15.5, 22.5, -0.35));
   add(criaCaixa(18.5, 23.5, 0.75, 0.25));
   add(criaBarril(19.8, 21.6));
+  const cristalPacto18 = criaCristal(-21.5, 23.5);
+  cristalPacto18.interativo = {
+    x: -21.5,
+    z: 23.5,
+    raio: 3.4,
+    titulo: 'Pacto 18',
+    acao: 'Ler o pacto',
+    msg: 'A pedra registra o proximo ciclo: instalacao premium, rotas altas, primeiro grande calabouco e preparo real para voo draconico.',
+  };
+  add(cristalPacto18);
   [[-23, -7, 0x6a2ab0], [23, -7, 0xb8902a], [-23, 7, 0x2a5a9c], [23, 7, 0x9c2a2a]]
     .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
 

@@ -69,19 +69,20 @@ padrao para os proximos 29.
 15. RV17 entregue: A Grande Onda - Aurelia expandida, arquipelago celeste, primeiro calabouco grande, Sentinelas/Golems/Wyverns, armas de cla e quests de altura.
 16. RV17.1 entregue: Calabouco Vivo - arte oficial nova, braseiros, altar de armas, bau unico, bestiario celeste e recompensa ligada ao voo futuro.
 17. RV17.2-RV17.5 entregue: bichos premium, interiores como realidade, contratos de viagem e moradias/economia com aluguel real.
-18. RV18: portal publico + base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
-19. RV19: escala local e rotas de jornada do Pacto 01/30.
-20. RV20: hunts por bioma e monstros profissionais.
-21. RV21: crescimento profundo dos dragoes e voo draconico com custo, estamina, zonas aereas e hunts de altitude.
-22. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
-23. RV23: profissoes, economia e contratos.
-24. RV24: guildas, grupos e expedicoes.
-25. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
-26. RV26: transporte, montarias e viagens raras.
-27. RV27: familia, conta e multiplayer social.
-28. RV28: QoL profissional e colecoes.
-29. RV29: polimento, performance e instalacao.
-30. RV30: fechamento do Pacto Continental 01/30.
+18. RV17.6-RV17.9 entregue: contrato visual premium, bases vivas, hunts com reacao, pedra Pacto 18 e preparacao instalada/offline.
+19. RV18: portal publico + base instalavel premium, caso o pacote grafico/GLB/texturas ultrapasse o limite saudavel da web.
+20. RV19: escala local e rotas de jornada do Pacto 01/30.
+21. RV20: hunts por bioma e monstros profissionais.
+22. RV21: crescimento profundo dos dragoes e voo draconico com custo, estamina, zonas aereas e hunts de altitude.
+23. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
+24. RV23: profissoes, economia e contratos.
+25. RV24: guildas, grupos e expedicoes.
+26. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
+27. RV26: transporte, montarias e viagens raras.
+28. RV27: familia, conta e multiplayer social.
+29. RV28: QoL profissional e colecoes.
+30. RV29: polimento, performance e instalacao.
+31. RV30: fechamento do Pacto Continental 01/30.
 
 Documentos canonicos novos:
 - `docs/PLANO_30_CONTINENTES.md`

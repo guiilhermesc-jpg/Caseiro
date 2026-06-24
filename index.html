@@ -111,13 +111,18 @@
           navigator.serviceWorker.register('/sw.js')
             .then(async () => {
               if (!('caches' in window)) return;
-              const cache = await caches.open('venor-rv17-5-offline-v1');
+              const cache = await caches.open('venor-rv17-9-offline-v1');
               const urls = new Set(['/', '/index.html', '/baixar.html', '/manifest.webmanifest', '/icon.svg',
                 '/patches/rv17-1-calabouco-vivo.png',
                 '/patches/rv17-2-bichos-premium.png',
                 '/patches/rv17-3-interiores-realidade.png',
                 '/patches/rv17-4-rotas-continente.png',
-                '/patches/rv17-5-moradias-economia.png']);
+                '/patches/rv17-5-moradias-economia.png',
+                '/patches/rv17-6-contrato-visual.png',
+                '/patches/rv17-7-bases-vivas.png',
+                '/patches/rv17-8-hunts-reacao.png',
+                '/patches/rv17-9-preparacao-rv18.png',
+                '/patches/rv18-grande-pacto.png']);
               performance.getEntriesByType('resource')
                 .map((entry) => entry.name)
                 .filter((url) => url.startsWith(location.origin))

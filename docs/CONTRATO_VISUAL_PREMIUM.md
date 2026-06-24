@@ -38,3 +38,12 @@ A imagem de rua noturna de Venor foi aproximada no jogo com:
 
 Objetivo: reduzir a distancia entre expectativa visual e experiencia jogavel.
 
+## Aplicado no RV17.6-RV17.9
+
+- `rv17-6-contrato-visual.png`: imagem oficial de Venor noturna; corresponde a mural, loja, fonte, luzes, rua, dragao e vida urbana.
+- `rv17-7-bases-vivas.png`: imagem oficial de bases; corresponde a aluguel, beneficios de imovel, depot, banco, lixo, dormir e interiores funcionais.
+- `rv17-8-hunts-reacao.png`: imagem oficial de direcao de hunts; corresponde a telegraph, flinch, investida, bestiario e regra de escala dos monstros.
+- `rv17-9-preparacao-rv18.png`: imagem oficial de preparacao; corresponde a rotas, contratos, pedra Pacto 18, offline/instalavel e cronograma.
+- `rv18-grande-pacto.png`: **previa visual**, nao imagem oficial entregue. Mostra alvo para voo, ilhas altas e calabouco gigante.
+
+Qualquer imagem futura precisa entrar nesta tabela antes de aparecer como patch para jogador.
