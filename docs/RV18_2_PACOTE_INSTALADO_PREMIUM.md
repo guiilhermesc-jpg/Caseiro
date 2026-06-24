@@ -35,7 +35,7 @@ Apple para iOS.
 - `dist`: 92 MB.
 - JS gzip inicial: 0.36 MB, dentro do orcamento web de 0.45 MB.
 - Pacote total: acima do alvo core de 80 MB por causa das artes oficiais grandes.
-- Decisao: manter as artes premium, mas no RV18.4 separar assets por grupo/patcher para o app instalado baixar melhor.
+- Decisao: manter as artes premium, mas separar assets por grupo/patcher a partir do RV18.5 para o app instalado baixar melhor.
 
 ## Proximo bloco
 

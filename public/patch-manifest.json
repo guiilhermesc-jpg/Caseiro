@@ -1,12 +1,12 @@
 {
-  "id": "rv18-3-ranking-personagem",
-  "version": "RV18.3",
-  "build": 135,
-  "cache": "venor-rv18-3-offline-v1",
+  "id": "rv18-4-resgate-visual-praca",
+  "version": "RV18.4",
+  "build": 136,
+  "cache": "venor-rv18-4-offline-v1",
   "channel": "installed-first",
   "releasedAt": "2026-06-24",
-  "title": "Ranking e Personagem Publico",
-  "summary": "Nasce o hall local de personagens: ranking, ficha publica, progresso, dragao, imoveis e links para portal/launcher.",
+  "title": "Resgate Visual da Praca",
+  "summary": "Patch corretivo no mundo jogavel: luz mais legivel, praca nobre, casario mais medieval, janelas quentes e calcamento menos escuro.",
   "assets": [
     "/",
     "/index.html",
@@ -38,6 +38,12 @@
     "/modelos/dragao2.glb"
   ],
   "updates": [
+    {
+      "id": "rv18-4",
+      "title": "Resgate visual da praca",
+      "status": "entregue",
+      "body": "Iluminacao, neblina, ruas, praca, casas e janelas foram corrigidas para aproximar o jogo real da direcao premium."
+    },
     {
       "id": "rv18-3",
       "title": "Ranking local",
@@ -76,8 +82,8 @@
     }
   ],
   "next": [
-    "RV18.4: patcher real com delta de assets e historico de builds.",
-    "RV18.5: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado.",
-    "RV18.6: dados de nuvem no ranking com privacidade e opt-in."
+    "RV18.5: patcher real com delta de assets e historico de builds.",
+    "RV18.6: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado.",
+    "RV18.7: dados de nuvem no ranking com privacidade e opt-in."
   ]
 }

@@ -41,7 +41,7 @@ function texturaGrama(rep = 60) {
 
 export function criaCidade() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xc9d9e6, 250, 760); // neblina com mais profundidade e menos branco estourado
+  scene.fog = new THREE.Fog(0xd6cbb4, 320, 920); // RV18.4: ar mais quente e distante na vila
 
   // céu em gradiente (claro)
   const skyMat = new THREE.ShaderMaterial({
@@ -59,9 +59,10 @@ export function criaCidade() {
     ceu.material = new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false });
   }, undefined, () => {});
 
-  const hemi = new THREE.HemisphereLight(0xc4dcf2, 0x5d6a44, 0.86);
+  const hemi = new THREE.HemisphereLight(0xf5e5c8, 0x6c7551, 1.06);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xffe3b8, 1.42); // sol dourado com leitura mais cinematográfica
+  scene.add(new THREE.AmbientLight(0xffead0, 0.22));
+  const sun = new THREE.DirectionalLight(0xffd39a, 1.72); // RV18.4: luz dourada mais presente
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1536, 1536); // RV12.1: 1536 destrava (era 2048) sem perda visível
@@ -232,12 +233,12 @@ export function criaCidade() {
   // ruas em GRADE — agora CALÇADAS de pedra (textura), quase no nível do chão
   function matRua(rx, rz) {
     const t = texturaPedra(1); t.repeat.set(rx, rz);
-    const m = new THREE.MeshStandardMaterial({ map: t, color: 0x9a9a98, roughness: 1 });
+    const m = new THREE.MeshStandardMaterial({ map: t, color: 0xd2c3aa, roughness: 0.92 });
     aplicaTexturaReal(m, 'pedra', rx, rz, false, true); // calçamento REAL + relevo
     return m;
   }
-  const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x655f57, roughness: 1, flatShading: true });
-  const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x423d38, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false });
+  const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x8a7b63, roughness: 0.96, flatShading: true });
+  const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x3a3028, roughness: 1, transparent: true, opacity: 0.42, depthWrite: false });
   const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x151414, roughness: 0.72, metalness: 0.42 });
   const raloAroMat = new THREE.MeshStandardMaterial({ color: 0x4a4540, roughness: 0.62, metalness: 0.48, flatShading: true });
   const raloGradeMat = new THREE.MeshStandardMaterial({ color: 0x1f2224, roughness: 0.52, metalness: 0.7 });
@@ -352,7 +353,7 @@ export function criaCidade() {
   const ruas = [-48, -16, 16, 48];
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
-  const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), roughness: 1 }); // calçamento das praças
+  const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), color: 0xd0c1aa, roughness: 0.92 }); // calcamento das pracas
   aplicaTexturaReal(pisoMat, 'piso_castelo', 5, 5, false, true); // RV14.8: lajões de castelo na praça (spawn premium)
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
@@ -640,6 +641,51 @@ export function criaCidade() {
     };
   }
 
+  function criaPracaNobre() {
+    const g = new THREE.Group();
+    const pedraClara = matPBR(0xc5b79f, { tipo: 'pedra', repeat: 2.2, rough: 0.92, relevo: 0.52 });
+    const pedraEscura = matPBR(0x756a5d, { tipo: 'pedra', repeat: 1.6, rough: 0.96, relevo: 0.6 });
+    const terra = new THREE.MeshStandardMaterial({ color: 0x473327, roughness: 1 });
+    const folha = new THREE.MeshStandardMaterial({ color: 0x426b36, roughness: 1, flatShading: true });
+    const ouro = new THREE.MeshStandardMaterial({ color: 0xd9b25a, emissive: 0x8a4b12, emissiveIntensity: 0.45, roughness: 0.55, metalness: 0.15 });
+    const addBox = (w, h, d, m, x, y, z, ry = 0) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+      mesh.position.set(x, y, z); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh);
+      return mesh;
+    };
+    addBox(33.2, 0.22, 0.54, pedraEscura, 0, 0.18, 15.46);
+    addBox(33.2, 0.22, 0.54, pedraEscura, 0, 0.18, -15.46);
+    addBox(0.54, 0.22, 33.2, pedraEscura, 15.46, 0.18, 0);
+    addBox(0.54, 0.22, 33.2, pedraEscura, -15.46, 0.18, 0);
+    [[-7.6, -7.6], [7.6, -7.6], [-7.6, 7.6], [7.6, 7.6]].forEach(([x, z], idx) => {
+      addBox(4.4, 0.18, 1.25, terra, x, 0.16, z, idx % 2 ? 0.18 : -0.18);
+      for (let i = 0; i < 8; i++) {
+        const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22 + (i % 3) * 0.04, 0), folha);
+        b.scale.set(1.35, 0.5, 0.9);
+        b.position.set(x - 1.55 + i * 0.44, 0.42, z + Math.sin(i) * 0.18);
+        b.rotation.y = i * 0.6;
+        b.castShadow = true;
+        g.add(b);
+        if (i % 2 === 0) {
+          const fl = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 5), mat([0xe8e0c6, 0xd95d7a, 0xcfa84a, 0x9f86d9][(i + idx) % 4], 0.7));
+          fl.position.set(b.position.x, 0.67, b.position.z + 0.08);
+          g.add(fl);
+        }
+      }
+    });
+    [[-11.8, -11.8], [11.8, -11.8], [-11.8, 11.8], [11.8, 11.8]].forEach(([x, z]) => {
+      addBox(0.22, 1.25, 0.22, pedraClara, x, 0.76, z);
+      const chama = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), ouro);
+      chama.position.set(x, 1.55, z);
+      g.add(chama);
+      const luz = new THREE.PointLight(0xffb45c, 0.42, 10, 2);
+      luz.position.set(x, 1.55, z);
+      g.add(luz);
+    });
+    return { grupo: g };
+  }
+
+  add(criaPracaNobre());
   add(criaFonte(0, 0));
   // Bancos nos cantos da praca: o corredor central fica livre para templo,
   // hospital, escola e delegacia, principalmente no joystick do celular.
@@ -686,8 +732,8 @@ export function criaCidade() {
   add(criaHospitalInterior(32, 0));
 
   // casas diversas, ALINHADAS em ângulo reto (colisão correta) e viradas pro centro
-  const cores = [0xd8c4a0, 0xc8a86a, 0xa8bcae, 0xd0a0a0, 0xb0b8c0, 0xe0d0a0, 0x9ab0a4, 0xcaa890];
-  const telhados = [0x8a4632, 0x6a4a6a, 0x55636f, 0x7a3a2a, 0x4a5666, 0x6b4a2a];
+  const cores = [0xe7d7b8, 0xd9c29a, 0xcbb995, 0xc7b7a0, 0xc9c2ad, 0xddc6a3, 0xb9c4b2, 0xcfad88];
+  const telhados = [0x9b4630, 0x7d3427, 0x68656f, 0x5c5368, 0x8b5a2b, 0x74402f];
   const rnd = (a, b) => a + Math.random() * (b - a);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const snap = (ang) => Math.round(ang / (Math.PI / 2)) * (Math.PI / 2); // alinha a 0/90/180/270
@@ -701,9 +747,9 @@ export function criaCidade() {
   // RV14.1: estilos premium variados — enxaimel (Tudor), reboco e pedra, com
   // telhados de telha/ardósia/palha, pra a vila parecer um vilarejo de verdade.
   const ESTILO_PAREDE = ['madeira_viga', 'reboco', 'madeira_viga', 'reboco', 'pedra_castelo'];
-  const ESTILO_TELHA = ['telha', 'ardosia', 'telha', 'palha', 'telha'];
+  const ESTILO_TELHA = ['telha', 'ardosia', 'telha', 'telha', 'telha'];
   lotes.forEach(([x, z], i) => add(criaPredio({
-    x, z, larg: rnd(10, 15), prof: rnd(9, 13), alt: rnd(8, 13),
+    x, z, larg: rnd(12, 17), prof: rnd(10, 14), alt: rnd(9.5, 14.5),
     cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
     estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
     estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],

@@ -24,4 +24,4 @@ status de mundo. Esta rodada cria o primeiro esqueleto desse ecossistema sem esp
 
 ## Proximo bloco
 
-RV18.4 deve criar o patcher real: grupos de assets, historico de builds, delta por pacote e reparo por categoria.
+RV18.4 foi redirecionado para resgate visual da praca apos feedback do maestro. O patcher real passa para RV18.5.

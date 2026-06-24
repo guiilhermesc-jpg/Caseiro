@@ -1,7 +1,7 @@
 {
-  "id": "rv18-2-installed-heavy",
-  "version": "RV18.2",
-  "build": 134,
+  "id": "rv18-4-installed-visual",
+  "version": "RV18.4",
+  "build": 136,
   "target": "installed-first",
   "graphicsProfiles": [
     {

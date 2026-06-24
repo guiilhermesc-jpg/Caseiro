@@ -86,13 +86,13 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV18.3 (v135)';
+const VERSAO = 'RV18.4 (v136)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
   titulo.innerHTML = 'VENOR'
     + '<div style="font-size:15px;letter-spacing:6px;color:#e8d9a0;margin-top:2px;">ERA DOS DRAGÕES</div>'
-    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">- PATCH 18.3 -</div>';
+    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">- PATCH 18.4 -</div>';
   titulo.style.cssText = 'position:fixed;top:7%;left:50%;transform:translateX(-50%);z-index:36;'
     + 'font:bold 54px Georgia,serif;letter-spacing:10px;color:#f4e9c8;text-align:center;'
     + 'text-shadow:0 2px 6px #000,0 0 28px rgba(217,165,34,.45);pointer-events:none;';
@@ -2894,25 +2894,25 @@ function aplicaDiaNoite(dt) {
   tempoDia = (tempoDia + dt / 300) % 1; // ciclo ~5 min
   const d = (Math.sin((tempoDia - 0.25) * Math.PI * 2) + 1) / 2; // 0=noite, 1=meio-dia
   fatorDiaVisual = d;
-  ehNoite = d < 0.35;
+  ehNoite = d < 0.28;
   // NOITE ESTILO OT (RV4.2): madrugada ESCURA de verdade — a tocha, os
   // lampiões e o luar viram a diferença entre andar e tropeçar
-  sun.intensity = 0.12 + d * 0.93;  // RV12.1: piso de noite +3x (era 0.04) — navegável
-  hemi.intensity = 0.18 + d * 0.46;
+  sun.intensity = 0.28 + d * 1.12;  // RV18.4: primeira vila legivel mesmo no entardecer
+  hemi.intensity = 0.38 + d * 0.55;
   // RV8.3: a EXPOSIÇÃO do tonemap também escurece à noite (antes ficava fixa
   // em 0.80 o tempo todo) — a "madrugada de verdade" agora bate com o grading.
-  renderer.toneMappingExposure = 0.68 + d * 0.12; // RV12.1: noite ~0.68 (era 0.58), dia ~0.80
+  renderer.toneMappingExposure = 0.86 + d * 0.12; // RV18.4: tira a praca do preto chapado
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
     atualizaCeuRegiao(); // RV14.7: troca o panorama pela região (pântano/cinzas/vulcânico)
-    ceu.material.color.setRGB(0.16 + d * 0.84, 0.2 + d * 0.8, 0.34 + d * 0.66);
+    ceu.material.color.setRGB(0.28 + d * 0.72, 0.32 + d * 0.68, 0.46 + d * 0.54);
   } else {
     skyMat.uniforms.corTopo.value.copy(C_TOPO_NOITE).lerp(C_TOPO_DIA, d);
     skyMat.uniforms.corBase.value.copy(C_BASE_NOITE).lerp(C_BASE_DIA, d);
   }
   if (scene.fog) {
     scene.fog.color.copy(C_FOG_NOITE).lerp(C_FOG_DIA, d);
-    scene.fog.near = 165 + d * 95;  // RV12.1: névoa não fecha tanto à noite (era 110)
-    scene.fog.far = 500 + d * 220;  // (vê-se MUITO mais longe de madrugada agora)
+    scene.fog.near = 220 + d * 115;
+    scene.fog.far = 680 + d * 260;
   }
   const noite = 1 - d;
   // aviso de sobrevivência (1× por noite): acende a tocha!
@@ -2947,8 +2947,8 @@ function aplicaDiaNoite(dt) {
     // só acende a PointLight dos postes PERTO do jogador (limita luzes dinâmicas → perf no PC)
     const pp = p.luz.parent ? p.luz.parent.position : null;
     const perto = pp && Math.abs(pp.x - avatar.position.x) < 55 && Math.abs(pp.z - avatar.position.z) < 55;
-    p.luz.intensity = (!ehMobile && noite > 0.45 && perto) ? (noite - 0.45) * 3.4 : 0; // sem point-lights no mobile
-    if (p.lumMat) p.lumMat.emissiveIntensity = 0.15 + noite * 1.85; // emissivo forte tambem no mobile
+    p.luz.intensity = (noite > 0.36 && perto) ? (noite - 0.36) * (ehMobile ? 1.25 : 3.2) : 0;
+    if (p.lumMat) p.lumMat.emissiveIntensity = 0.35 + noite * 2.2; // emissivo forte tambem no mobile
   }
   const aceso = Math.min(1, Math.max(0, (noite - 0.22) * 1.65));
   for (const l of luzesUrbanas) {

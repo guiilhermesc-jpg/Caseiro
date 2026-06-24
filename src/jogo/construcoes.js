@@ -98,7 +98,7 @@ export function aplicaTexturaReal(material, arquivo, rx, rz, manterCor = false, 
 
 // VIDRO de janela compartilhado: reflexo, não lâmpada. Emissivo alto fazia
 // casas e rostos "estourarem" com bloom no PC.
-export const VIDRO = new THREE.MeshStandardMaterial({ color: 0x8bb6c4, roughness: 0.14, metalness: 0.22, emissive: 0x07131a, emissiveIntensity: 0.035 });
+export const VIDRO = new THREE.MeshStandardMaterial({ color: 0xf0c47a, roughness: 0.18, metalness: 0.12, emissive: 0xff9f3a, emissiveIntensity: 0.22 });
 
 // textura procedural de PEDRA/calçamento (paralelepípedos com junta) p/ praças e pisos
 let _texPedra = null;
@@ -297,6 +297,14 @@ export function criaPredio(opts) {
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
     gbox(geosMad, 0.3, alt, 0.3, sx * larg / 2, FB + alt / 2, sz * prof / 2);
   });
+  [-0.32, 0.32].forEach((fator) => {
+    gbox(geosMad, 0.18, alt * 0.82, 0.18, larg * fator, FB + alt * 0.52, prof / 2 + 0.13);
+    gbox(geosMad, 0.18, alt * 0.82, 0.18, larg * fator, FB + alt * 0.52, -prof / 2 - 0.13);
+  });
+  [0.28, 0.72].forEach((fy) => {
+    gbox(geosMad, larg + 0.12, 0.16, 0.18, 0, FB + alt * fy, prof / 2 + 0.14);
+    gbox(geosMad, larg + 0.12, 0.16, 0.18, 0, FB + alt * fy, -prof / 2 - 0.14);
+  });
   if (estiloParede === 'madeira_viga') {
     [[-0.34, -1], [0.34, 1]].forEach(([ang, sx]) => {
       const diag = new THREE.Mesh(new THREE.BoxGeometry(0.18, alt * 0.82, 0.14), madeira);
@@ -353,7 +361,7 @@ export function criaPredio(opts) {
     }
   });
   const luzPorta = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6),
-    new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff9f2a, emissiveIntensity: 0.75, roughness: 0.45 }));
+    new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff9f2a, emissiveIntensity: 1.45, roughness: 0.45 }));
   luzPorta.position.set(-0.95, FB + 2.35, fz + 0.22); g.add(luzPorta);
   if (Math.random() < 0.58) {
     const tecido = new THREE.MeshStandardMaterial({

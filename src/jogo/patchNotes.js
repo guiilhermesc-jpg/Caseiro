@@ -1,8 +1,14 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv18-3-ranking-personagem';
+const PATCH_ID = 'rv18-4-resgate-visual-praca';
 
 const PATCHES = [
+  {
+    id: 'rv18-4',
+    titulo: 'Resgate Visual da Praca',
+    img: '/patches/rv17-6-contrato-visual.png',
+    texto: 'Luz, neblina, calcamento, praca, casas e janelas foram corrigidos dentro do mundo jogavel.',
+  },
   {
     id: 'rv18-3',
     titulo: 'Ranking e Personagem Publico',
@@ -66,7 +72,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV18.3';
+  badge.textContent = 'PATCH RV18.4';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -93,11 +99,11 @@ export function criaPatchNotes() {
       url('/patches/rv17-9-preparacao-rv18.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:740px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.3</div>
-        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Ranking e Personagem Publico</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.4</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Resgate Visual da Praca</div>
         <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
-          Venor ganha seu primeiro hall de personagens: ranking local, ficha publica,
-          progresso, dragao, imoveis e links de portal.
+          Correcao direta na primeira impressao do jogo: luz, neblina, calcamento,
+          praca, casario e janelas agora trabalham para a mesma direcao premium.
         </div>
       </div>
     </div>
@@ -105,15 +111,15 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que entrou na direcao do jogo</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          RV18.3 cria a primeira camada de comunidade. Hoje ela usa saves locais do aparelho;
-          no ciclo de nuvem, a mesma base vira ranking online com privacidade e opt-in.
+          RV18.4 interrompeu a fila de sistemas para atacar o que estava errado:
+          a arte oficial prometia uma vila viva, mas o canvas ainda parecia prototipo.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Ranking:</b> nova pagina /ranking.html lista personagens locais.</li>
-          <li><b>Ficha:</b> /personagem.html mostra nivel, ouro, dragao, progresso e equipamento.</li>
-          <li><b>Privacidade:</b> senha/PIN nunca aparecem na vitrine.</li>
-          <li><b>Offline:</b> cache sobe para venor-rv18-3-offline-v1.</li>
-          <li><b>Portal:</b> ranking entra como bloco publico do ecossistema instalado.</li>
+          <li><b>Luz:</b> exposicao, hemisferio, sol, fog e lampioes ficaram mais legiveis.</li>
+          <li><b>Praca:</b> borda nobre, canteiros e lampioes proximos entraram no mundo real.</li>
+          <li><b>Casas:</b> cores, proporcao e enxaimel foram reforcados.</li>
+          <li><b>Janelas:</b> vidro frio virou luz quente visivel.</li>
+          <li><b>Offline:</b> cache sobe para venor-rv18-4-offline-v1.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">

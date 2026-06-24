@@ -26,5 +26,4 @@ Criar a primeira versao do portal publico de Venor dentro do app instalado: uma 
 
 - RV18.2: medir pacote pesado e decidir Tauri/Capacitor.
 - RV18.3: personagem publico com dados de nuvem.
-- RV18.4: ranking e historico de builds.
-
+- RV18.4 foi redirecionado para resgate visual da praca; historico de builds/patcher ficou para RV18.5.

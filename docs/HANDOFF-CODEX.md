@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastao. Estado em **RV18.3 (v135)** no `main`, **nao publicado**.
+> Documento de passagem de bastao. Estado em **RV18.4 (v136)** no `main`, **nao publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.3 (v135)'`. **Suba a cada entrega.**
+- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.4 (v136)'`. **Suba a cada entrega.**
 
 ---
 
@@ -344,17 +344,29 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Documento da rodada: `docs/RV18_3_RANKING_PERSONAGEM.md`.
 - Nao publicar esta rodada sem novo OK literal do maestro.
 
+## 7.20 Estado novo do RV18.4 (Codex)
+
+- `src/main3d.js` subiu para **RV18.4 (v136)**.
+- Patch corretivo direto apos feedback do maestro: o canvas publicado parecia prototipo e nao correspondia as imagens oficiais.
+- `main3d.js`: ciclo dia/noite ficou mais legivel, com exposicao, sol, hemisferio, fog e lampioes ajustados.
+- `cidade.js`: luz base mais quente, fog menos fechado, ruas/praca menos escuras, e nova camada `criaPracaNobre()`.
+- `construcoes.js`: janelas ficaram quentes/emissivas e casas ganharam enxaimel mais visivel.
+- `patch-manifest.json`, `sw.js`, `index.html`, `launcher.html`, `portal.html` e `patchNotes.js` subiram para **RV18.4 / build 136 / venor-rv18-4-offline-v1**.
+- Documento da rodada: `docs/RV18_4_RESGATE_VISUAL_PRACA.md`.
+- Nao publicar esta rodada sem novo OK literal do maestro.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV18.4 - Patcher real** - delta de assets, historico de builds, botao reparar por grupo e registro de falhas.
-2. **RV18.5 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
-3. **RV18.6 - Ranking em nuvem com privacidade** - opt-in, perfil publico, endpoint seguro e cache local.
-4. **RV18.7 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
-5. **RV18.8 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
+1. **RV18.4.x - Validar visual real publicado** - se a praca ainda nao bater com a promessa, continuar polindo antes de sistemas novos.
+2. **RV18.5 - Patcher real** - delta de assets, historico de builds, botao reparar por grupo e registro de falhas.
+3. **RV18.6 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
+4. **RV18.7 - Ranking em nuvem com privacidade** - opt-in, perfil publico, endpoint seguro e cache local.
+5. **RV18.8 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
+6. **RV18.9 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
 7. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
 9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
 10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.
