@@ -765,54 +765,93 @@ export function criaFonte(x = 0, z = 0) {
   });
   const espumaMat = new THREE.MeshStandardMaterial({ color: 0xe5f5f8, roughness: 0.55, transparent: true, opacity: 0.52, depthWrite: false });
 
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(3.45, 3.95, 1.05, 32), pedraEsc);
-  base.position.y = 0.52; base.castShadow = true; base.receiveShadow = true; g.add(base);
-  const bordaBaixa = new THREE.Mesh(new THREE.TorusGeometry(3.48, 0.18, 10, 36), pedra);
-  bordaBaixa.position.y = 1.08; bordaBaixa.rotation.x = Math.PI / 2; bordaBaixa.castShadow = true; bordaBaixa.receiveShadow = true; g.add(bordaBaixa);
-  const bordaBase = new THREE.Mesh(new THREE.TorusGeometry(3.72, 0.12, 8, 36), pedraEsc);
-  bordaBase.position.y = 0.16; bordaBase.rotation.x = Math.PI / 2; bordaBase.receiveShadow = true; g.add(bordaBase);
-  const agua1 = new THREE.Mesh(new THREE.CylinderGeometry(2.95, 2.95, 0.18, 32), aguaMat);
-  agua1.position.y = 1.16; agua1.userData.baseY = 1.16; agua1.userData.fase = 0; g.add(agua1);
-  const espuma1 = new THREE.Mesh(new THREE.TorusGeometry(2.72, 0.035, 6, 48), espumaMat);
-  espuma1.position.y = 1.29; espuma1.rotation.x = Math.PI / 2; g.add(espuma1);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(4.65, 5.35, 1.35, 48), pedraEsc);
+  base.position.y = 0.68; base.castShadow = true; base.receiveShadow = true; g.add(base);
+  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(5.15, 5.55, 0.32, 48), pedraEsc);
+  pedestal.position.y = 0.18; pedestal.castShadow = true; pedestal.receiveShadow = true; g.add(pedestal);
+  const bordaBaixa = new THREE.Mesh(new THREE.TorusGeometry(4.78, 0.26, 12, 56), pedra);
+  bordaBaixa.position.y = 1.39; bordaBaixa.rotation.x = Math.PI / 2; bordaBaixa.castShadow = true; bordaBaixa.receiveShadow = true; g.add(bordaBaixa);
+  const bordaBase = new THREE.Mesh(new THREE.TorusGeometry(5.15, 0.14, 10, 48), pedraEsc);
+  bordaBase.position.y = 0.24; bordaBase.rotation.x = Math.PI / 2; bordaBase.receiveShadow = true; g.add(bordaBase);
+  const agua1 = new THREE.Mesh(new THREE.CylinderGeometry(4.18, 4.18, 0.2, 48), aguaMat);
+  agua1.position.y = 1.48; agua1.userData.baseY = 1.48; agua1.userData.fase = 0; g.add(agua1);
+  const espuma1 = new THREE.Mesh(new THREE.TorusGeometry(3.88, 0.05, 8, 64), espumaMat);
+  espuma1.position.y = 1.63; espuma1.rotation.x = Math.PI / 2; g.add(espuma1);
 
-  const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.65, 2.2, 16), pedraEsc);
-  pilar.position.y = 2.08; pilar.castShadow = true; pilar.receiveShadow = true; g.add(pilar);
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    const friso = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.05, 0.08), pedra);
-    friso.position.set(Math.cos(a) * 0.5, 2.1, Math.sin(a) * 0.5);
+  const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.86, 2.75, 20), pedraEsc);
+  pilar.position.y = 2.82; pilar.castShadow = true; pilar.receiveShadow = true; g.add(pilar);
+  const aroPilar = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.08, 8, 24), pedra);
+  aroPilar.position.y = 3.86; aroPilar.rotation.x = Math.PI / 2; g.add(aroPilar);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const friso = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.55, 0.08), pedra);
+    friso.position.set(Math.cos(a) * 0.68, 2.82, Math.sin(a) * 0.68);
     friso.rotation.y = -a;
     friso.castShadow = true;
     g.add(friso);
   }
-  const taca = new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.03, 0.48, 24), pedra);
-  taca.position.y = 3.08; taca.castShadow = true; taca.receiveShadow = true; g.add(taca);
-  const bordaTaca = new THREE.Mesh(new THREE.TorusGeometry(1.42, 0.11, 8, 28), pedraEsc);
-  bordaTaca.position.y = 3.36; bordaTaca.rotation.x = Math.PI / 2; bordaTaca.castShadow = true; g.add(bordaTaca);
-  const agua2 = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.12, 24), aguaMat);
-  agua2.position.y = 3.43; agua2.userData.baseY = 3.43; agua2.userData.fase = 1.5; g.add(agua2);
-  const espuma2 = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.028, 6, 32), espumaMat);
-  espuma2.position.y = 3.52; espuma2.rotation.x = Math.PI / 2; g.add(espuma2);
+  const taca = new THREE.Mesh(new THREE.CylinderGeometry(2.08, 1.36, 0.58, 32), pedra);
+  taca.position.y = 4.34; taca.castShadow = true; taca.receiveShadow = true; g.add(taca);
+  const bordaTaca = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.14, 10, 36), pedraEsc);
+  bordaTaca.position.y = 4.68; bordaTaca.rotation.x = Math.PI / 2; bordaTaca.castShadow = true; g.add(bordaTaca);
+  const agua2 = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, 0.13, 32), aguaMat);
+  agua2.position.y = 4.78; agua2.userData.baseY = 4.78; agua2.userData.fase = 1.5; g.add(agua2);
+  const espuma2 = new THREE.Mesh(new THREE.TorusGeometry(1.42, 0.035, 8, 40), espumaMat);
+  espuma2.position.y = 4.87; espuma2.rotation.x = Math.PI / 2; g.add(espuma2);
 
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2;
+  const coroa = new THREE.Mesh(new THREE.OctahedronGeometry(0.54, 0), new THREE.MeshStandardMaterial({
+    color: 0xd9b25a,
+    emissive: 0x8a3f12,
+    emissiveIntensity: 0.38,
+    metalness: 0.45,
+    roughness: 0.35,
+  }));
+  coroa.position.y = 5.38; coroa.castShadow = true; g.add(coroa);
+
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const hx = Math.cos(a) * 1.18;
+    const hz = Math.sin(a) * 1.18;
+    const cab = new THREE.Mesh(new THREE.DodecahedronGeometry(0.28, 0), pedraEsc);
+    cab.position.set(hx, 3.5, hz);
+    cab.scale.set(1.3, 0.72, 0.88);
+    cab.rotation.y = -a + Math.PI / 2;
+    cab.castShadow = true;
+    g.add(cab);
+    [-1, 1].forEach((s) => {
+      const chifre = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.32, 5), pedra);
+      chifre.position.set(hx + Math.cos(a + s * 0.62) * 0.18, 3.72, hz + Math.sin(a + s * 0.62) * 0.18);
+      chifre.rotation.x = Math.PI;
+      chifre.castShadow = true;
+      g.add(chifre);
+    });
+    const curva = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(Math.cos(a) * 1.42, 3.36, Math.sin(a) * 1.42),
+      new THREE.Vector3(Math.cos(a) * 2.3, 2.65, Math.sin(a) * 2.3),
+      new THREE.Vector3(Math.cos(a) * 3.35, 1.58, Math.sin(a) * 3.35),
+    ]);
+    const jato = new THREE.Mesh(new THREE.TubeGeometry(curva, 18, 0.045, 6, false), espumaMat);
+    g.add(jato);
+  }
+
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2;
     const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16 + (i % 3) * 0.035, 0), musgo);
     m.scale.set(1.35, 0.32, 0.78);
-    m.position.set(Math.cos(a) * (3.02 + (i % 2) * 0.22), 1.19 + (i % 2) * 0.04, Math.sin(a) * (3.02 + (i % 2) * 0.22));
+    m.position.set(Math.cos(a) * (4.22 + (i % 2) * 0.28), 1.47 + (i % 2) * 0.04, Math.sin(a) * (4.22 + (i % 2) * 0.28));
     m.rotation.y = a;
     g.add(m);
   }
 
   // gotas dos jatos (animadas no loop: sobem do topo e caem na taça)
   const gotas = [];
-  for (let i = 0; i < 32; i++) {
+  for (let i = 0; i < 48; i++) {
     const d = new THREE.Mesh(new THREE.SphereGeometry(0.08 + (i % 3) * 0.018, 7, 6), aguaMat);
-    d.userData = { t: i / 32, ang: Math.random() * Math.PI * 2, vel: 0.65 + Math.random() * 0.55 };
+    d.userData = { t: i / 48, ang: Math.random() * Math.PI * 2, vel: 0.65 + Math.random() * 0.55 };
     g.add(d); gotas.push(d);
   }
 
-  return { grupo: g, colisores: [{ minX: x - 3.8, maxX: x + 3.8, minZ: z - 3.8, maxZ: z + 3.8 }], aguas: [agua1, agua2], gotas };
+  return { grupo: g, colisores: [{ minX: x - 5.4, maxX: x + 5.4, minZ: z - 5.4, maxZ: z + 5.4 }], aguas: [agua1, agua2], gotas };
 }
 
 // banco de praça

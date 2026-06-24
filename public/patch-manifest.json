@@ -1,12 +1,12 @@
 {
-  "id": "rv18-5-mapa-continental",
-  "version": "RV18.5",
-  "build": 137,
-  "cache": "venor-rv18-5-offline-v1",
+  "id": "rv18-6-prova-visual-real",
+  "version": "RV18.6",
+  "build": 138,
+  "cache": "venor-rv18-6-offline-v1",
   "channel": "installed-first",
   "releasedAt": "2026-06-24",
-  "title": "Mapa Continental do Pacto 01/30",
-  "summary": "Patch corretivo no mapa grande: saiu o grid tecnico e entrou uma leitura continental com mar, biomas, rotas, hunts, cidades e ilhas flutuantes.",
+  "title": "Prova Visual Real de Venor",
+  "summary": "Patch corretivo no gameplay inicial: fonte central refeita em escala maior, lotes nobres na praca, dragao GLB visivel em Venor e luz inicial mais clara para auditoria.",
   "assets": [
     "/",
     "/index.html",
@@ -38,6 +38,12 @@
     "/modelos/dragao2.glb"
   ],
   "updates": [
+    {
+      "id": "rv18-6",
+      "title": "Prova visual real em Venor",
+      "status": "entregue para auditoria",
+      "body": "A primeira praca recebeu mudancas reais no 3D: fonte monumental, quatro lotes nobres maiores, remocao do dragao decorativo procedural da praca e dragao GLB como vitrine visivel perto da Guildhouse."
+    },
     {
       "id": "rv18-5",
       "title": "Mapa continental do Pacto 01/30",
@@ -88,8 +94,8 @@
     }
   ],
   "next": [
-    "RV18.6: patcher real com delta de assets e historico de builds.",
-    "RV18.7: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado.",
-    "RV18.8: dados de nuvem no ranking com privacidade e opt-in."
+    "RV18.7: continuar a auditoria visual por blocos: casas restantes, ruas, grama, fonte em outras cidades e dragao companheiro.",
+    "RV18.8: patcher real com delta de assets e historico de builds.",
+    "RV18.9: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado."
   ]
 }

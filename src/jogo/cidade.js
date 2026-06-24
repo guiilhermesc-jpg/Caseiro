@@ -701,7 +701,8 @@ export function criaCidade() {
     .forEach(([x, z, r, c]) => add(criaMesaMercante(x, z, r, c)));
   add(criaMuralContratosRua(-24, -19, Math.PI / 7));
   add(criaLojaAbertaNoturna(24, -19, -Math.PI / 7));
-  add(criaDragaoDescansandoDecorativo(22, 22, -Math.PI / 4));
+  // O dragao de vitrine agora vem do GLB em main3d.js. O placeholder
+  // procedural saiu daqui porque mantinha a praca com leitura de prototipo.
   add(criaBau(15.5, 22.5, -0.35));
   add(criaCaixa(18.5, 23.5, 0.75, 0.25));
   add(criaBarril(19.8, 21.6));
@@ -748,12 +749,30 @@ export function criaCidade() {
   // telhados de telha/ardósia/palha, pra a vila parecer um vilarejo de verdade.
   const ESTILO_PAREDE = ['madeira_viga', 'reboco', 'madeira_viga', 'reboco', 'pedra_castelo'];
   const ESTILO_TELHA = ['telha', 'ardosia', 'telha', 'telha', 'telha'];
-  lotes.forEach(([x, z], i) => add(criaPredio({
-    x, z, larg: rnd(12, 17), prof: rnd(10, 14), alt: rnd(9.5, 14.5),
-    cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
-    estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
-    estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],
-  })));
+  const lotesNobres = {
+    '32,32': { tipo: 'mansao', nome: 'Mansao do Conselho', rot: Math.PI, cor: 0xd8c39a, corTelhado: 0x5d354f, estiloParede: 'madeira_viga', estiloTelhado: 'ardosia' },
+    '-32,32': { tipo: 'guilda', nome: 'Guildhouse da Veia', rot: Math.PI, cor: 0xc7b48e, corTelhado: 0x253f65 },
+    '32,-32': { tipo: 'mansao', nome: 'Casa Alta do Dragoeiro', rot: 0, cor: 0xcab98e, corTelhado: 0x703528, estiloParede: 'pedra_castelo', estiloTelhado: 'telha' },
+    '-32,-32': { tipo: 'mansao', nome: 'Mansao das Lanternas', rot: 0, cor: 0xd4c0a0, corTelhado: 0x394c5a, estiloParede: 'madeira_viga', estiloTelhado: 'ardosia' },
+  };
+  lotes.forEach(([x, z], i) => {
+    const nobre = lotesNobres[`${x},${z}`];
+    if (nobre) {
+      const res = nobre.tipo === 'guilda'
+        ? criaGuildHouse(x, z, { rot: nobre.rot, cor: nobre.cor, corTelhado: nobre.corTelhado })
+        : criaMansao(x, z, { rot: nobre.rot, cor: nobre.cor, corTelhado: nobre.corTelhado, estiloParede: nobre.estiloParede, estiloTelhado: nobre.estiloTelhado, luxo: 2 });
+      add(res);
+      const placaZ = z > 0 ? z - 12.5 : z + 12.5;
+      add(criaPlaca(x, placaZ, nobre.nome, z > 0 ? Math.PI : 0));
+      return;
+    }
+    add(criaPredio({
+      x, z, larg: rnd(13.5, 18.5), prof: rnd(11.5, 15.5), alt: rnd(10.5, 15.5),
+      cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
+      estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
+      estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],
+    }));
+  });
   // RV14.5: o Vilarejo de Venor vira CASTELO MURADO — muralha de pedra com
   // ameias, torres nas quinas e PORTÕES (leste p/ Thais, oeste e sul).
   add(criaMuralha(0, 0, { HX: 90, HZ: 90, ALT: 9, gw: 15, portoes: ['leste', 'oeste', 'sul'], corTorre: 0x6a4a8a }));

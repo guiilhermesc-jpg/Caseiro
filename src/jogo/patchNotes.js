@@ -1,8 +1,14 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv18-5-mapa-continental';
+const PATCH_ID = 'rv18-6-prova-visual-real';
 
 const PATCHES = [
+  {
+    id: 'rv18-6',
+    titulo: 'Prova Visual Real',
+    img: '/patches/rv18-grande-pacto.png',
+    texto: 'Teste publicado no mundo 3D: fonte monumental, lotes nobres maiores em Venor e dragao GLB visivel na praca inicial.',
+  },
   {
     id: 'rv18-5',
     titulo: 'Mapa Continental',
@@ -78,7 +84,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV18.5';
+  badge.textContent = 'PATCH RV18.6';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -105,11 +111,11 @@ export function criaPatchNotes() {
       url('/patches/rv18-grande-pacto.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:740px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.5</div>
-        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Mapa Continental</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.6</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Prova Visual Real</div>
         <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
-          Correcao direta no que estava errado: o mapa grande deixa de ser grid tecnico
-          e passa a representar o Pacto 01/30 como continente, com rotas, hunts e ilhas altas.
+          Correcao direta no ponto criticado: esta versao muda elementos visiveis
+          dentro da primeira praca de Venor, nao apenas documento, mapa ou imagem conceitual.
         </div>
       </div>
     </div>
@@ -117,15 +123,15 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que entrou na direcao do jogo</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          RV18.5 interrompeu a fila para corrigir outra quebra de promessa:
-          o mapa precisava vender mundo, escala e aventura, nao parecer ferramenta de debug.
+          RV18.6 interrompeu a fila para testar, de forma publica, se a estrutura atual
+          consegue receber uma mudanca visual real dentro do gameplay.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Continente:</b> mar, costa, massa de terra, biomas e relevo aparecem no mapa grande.</li>
-          <li><b>Ilhas altas:</b> Aurelia, Ilhas do Vento e Observatorio entram como camada aerea visivel.</li>
-          <li><b>Rotas:</b> estradas e veios magicos continuam funcionais e mais legiveis.</li>
-          <li><b>Hunts:</b> Pico do Dragao, Areias do Veio Seco, Brejo e Cinzas ganham leitura regional.</li>
-          <li><b>Offline:</b> cache sobe para venor-rv18-5-offline-v1.</li>
+          <li><b>Fonte:</b> a fonte central foi refeita maior, com dois niveis, coroa, gargulas e jatos laterais.</li>
+          <li><b>Casario:</b> quatro lotes da praca viraram mansoes/guildhouse maiores, com leitura de bairro nobre.</li>
+          <li><b>Dragao real:</b> o GLB de dragao aparece em Venor como vitrine na praca inicial.</li>
+          <li><b>Luz:</b> a primeira leitura do dia ficou mais clara para expor o visual sem esconder defeito no escuro.</li>
+          <li><b>Offline:</b> cache sobe para venor-rv18-6-offline-v1.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -157,7 +163,8 @@ export function criaPatchNotes() {
     <div style="padding:0 22px 18px;">
       <div style="border:1px solid rgba(160,140,255,.24);background:rgba(80,60,140,.18);border-radius:12px;padding:14px;color:#cfd2ff;line-height:1.55;font-size:13px;">
         <b>Contrato visual:</b> se a arte oficial mostra continente e ilhas flutuantes, o jogo precisa apontar para isso.
-        RV18.5 corrige a tela de mapa, mas o mundo 3D ainda sera atacado em blocos grandes de visual, escala e assets.
+        RV18.6 ainda nao transforma o jogo inteiro em nivel de concept art. Ele e uma prova publica no gameplay:
+        se a praca inicial nao mostrar mudanca real, o problema e tecnico/estrutural e deve ser assumido.
       </div>
     </div>
     <div style="padding:0 22px 22px;display:flex;gap:10px;justify-content:flex-end;">

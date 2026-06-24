@@ -86,13 +86,13 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV18.5 (v137)';
+const VERSAO = 'RV18.6 (v138)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
   titulo.innerHTML = 'VENOR'
     + '<div style="font-size:15px;letter-spacing:6px;color:#e8d9a0;margin-top:2px;">ERA DOS DRAGÕES</div>'
-    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">- PATCH 18.5 -</div>';
+    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">- PATCH 18.6 -</div>';
   titulo.style.cssText = 'position:fixed;top:7%;left:50%;transform:translateX(-50%);z-index:36;'
     + 'font:bold 54px Georgia,serif;letter-spacing:10px;color:#f4e9c8;text-align:center;'
     + 'text-shadow:0 2px 6px #000,0 0 28px rgba(217,165,34,.45);pointer-events:none;';
@@ -534,6 +534,40 @@ function instalaBrasaDragao(grupo, modelo, lord = false, escala = 1) {
   grupo.add(brasa);
   grupo.userData.fogoBoca = brasa;
 }
+let dragaoVitrineVenor = null;
+function instalaDragaoVitrineVenor(modeloBase) {
+  if (!modeloBase) return;
+  if (dragaoVitrineVenor) scene.remove(dragaoVitrineVenor);
+  const inst = cloneSkinned(modeloBase);
+  inst.scale.multiplyScalar(0.58);
+  inst.rotation.y = Math.PI * 0.92;
+  inst.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      o.frustumCulled = false;
+      o.raycast = () => {};
+      estilizaMalhaDragao(o, false, 0x22324a);
+    }
+  });
+  const g = new THREE.Group();
+  g.name = 'dragao-vitrine-venor-rv18-6';
+  g.position.set(-19.5, alturaTerreno(-19.5, 22.5) + 0.06, 22.5);
+  g.rotation.y = -Math.PI / 10;
+  g.add(inst);
+  instalaBrasaDragao(g, inst, false, 0.72);
+  scene.add(g);
+  registraDragaoVivo(inst);
+  dragaoVitrineVenor = g;
+  interativos.push({
+    x: g.position.x,
+    z: g.position.z,
+    raio: 6.2,
+    titulo: 'Dragao da Guildhouse',
+    acao: 'Observar o dragao',
+    msg: 'Este e um teste real de asset no jogo: dragao GLB dentro de Venor, visivel na primeira praca, substituindo o boneco decorativo antigo.',
+  });
+}
 // veste o modelo GLB no grupo do dragão (também usado no RESPAWN/Dragon Lord)
 function aplicaModeloDragao() {
   if (!modeloDragaoGLB) return;
@@ -568,6 +602,7 @@ new GLTFLoader().load('modelos/dragao.glb', (gltf) => {
   });
   modeloDragaoGLB = modelo;
   aplicaModeloDragao();
+  instalaDragaoVitrineVenor(modeloDragaoGLB);
   registraDragaoVivo(modelo); // cabeça/cauda ganham vida no loop
   if (gltf.animations && gltf.animations.length) {
     mixerDragao = new THREE.AnimationMixer(modelo);
@@ -2886,7 +2921,7 @@ function atualizaCeuRegiao() {
     if (novo) { ceu.material.map = novo; ceu.material.needsUpdate = true; }
   }
 }
-let tempoDia = 0.3; // começa de manhã
+let tempoDia = 0.38; // comeca em luz de leitura: a primeira praca precisa ser julgada clara
 let ehNoite = false;
 let avisoNoite = false; // lembrete da tocha (1× por noite)
 let noiteAnterior = false; // detecta a VIRADA do dia (eventos noturnos)
@@ -2897,11 +2932,11 @@ function aplicaDiaNoite(dt) {
   ehNoite = d < 0.28;
   // NOITE ESTILO OT (RV4.2): madrugada ESCURA de verdade — a tocha, os
   // lampiões e o luar viram a diferença entre andar e tropeçar
-  sun.intensity = 0.28 + d * 1.12;  // RV18.4: primeira vila legivel mesmo no entardecer
-  hemi.intensity = 0.38 + d * 0.55;
+  sun.intensity = 0.42 + d * 1.28;  // RV18.6: primeira vila legivel para auditoria visual
+  hemi.intensity = 0.48 + d * 0.62;
   // RV8.3: a EXPOSIÇÃO do tonemap também escurece à noite (antes ficava fixa
   // em 0.80 o tempo todo) — a "madrugada de verdade" agora bate com o grading.
-  renderer.toneMappingExposure = 0.86 + d * 0.12; // RV18.4: tira a praca do preto chapado
+  renderer.toneMappingExposure = 0.96 + d * 0.13; // RV18.6: tira a praca do preto chapado
   if (ceu.material.map) { // céu panorâmico: tinge do dia (branco) pra noite (azul-escuro)
     atualizaCeuRegiao(); // RV14.7: troca o panorama pela região (pântano/cinzas/vulcânico)
     ceu.material.color.setRGB(0.28 + d * 0.72, 0.32 + d * 0.68, 0.46 + d * 0.54);
@@ -4692,9 +4727,9 @@ function passo() {
   for (const nv of nuvens) { nv.position.x += dt * 2.2; if (nv.position.x > 190) nv.position.x = -190; }
   for (const gt of fonteGotas) {
     gt.userData.t += dt * gt.userData.vel; if (gt.userData.t > 1) gt.userData.t -= 1;
-    const t = gt.userData.t; const r = 0.2 + t * 2.6;
+    const t = gt.userData.t; const r = 0.3 + t * 3.7;
     gt.position.x = Math.cos(gt.userData.ang) * r; gt.position.z = Math.sin(gt.userData.ang) * r;
-    gt.position.y = 3.7 + Math.sin(t * Math.PI) * 0.9 - t * 2.4;
+    gt.position.y = 5.15 + Math.sin(t * Math.PI) * 1.1 - t * 3.35;
   }
   if (gato && !noEsgoto) {
     const uG = gato.userData;

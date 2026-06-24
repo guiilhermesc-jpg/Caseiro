@@ -1,7 +1,7 @@
 {
-  "id": "rv18-5-installed-map",
-  "version": "RV18.5",
-  "build": 137,
+  "id": "rv18-6-visual-proof",
+  "version": "RV18.6",
+  "build": 138,
   "target": "installed-first",
   "graphicsProfiles": [
     {

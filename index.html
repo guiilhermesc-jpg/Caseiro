@@ -111,7 +111,7 @@
           navigator.serviceWorker.register('/sw.js')
             .then(async () => {
               if (!('caches' in window)) return;
-              const cache = await caches.open('venor-rv18-5-offline-v1');
+              const cache = await caches.open('venor-rv18-6-offline-v1');
               const urls = new Set(['/', '/index.html', '/launcher.html', '/portal.html', '/ranking.html', '/personagem.html', '/baixar.html', '/patch-manifest.json', '/install-profile.json', '/manifest.webmanifest', '/icon.svg',
                 '/patches/rv17-1-calabouco-vivo.png',
                 '/patches/rv17-2-bichos-premium.png',
