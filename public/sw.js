@@ -1,8 +1,9 @@
-const CACHE_VERSION = 'venor-rv18-0-offline-v1';
+const CACHE_VERSION = 'venor-rv18-1-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/launcher.html',
+  '/portal.html',
   '/baixar.html',
   '/patch-manifest.json',
   '/manifest.webmanifest',

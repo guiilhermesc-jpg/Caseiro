@@ -1,8 +1,14 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv18-0-launcher-instalado';
+const PATCH_ID = 'rv18-1-portal-publico';
 
 const PATCHES = [
+  {
+    id: 'rv18-1',
+    titulo: 'Portal Publico',
+    img: '/patches/rv18-grande-pacto.png',
+    texto: 'Nasce o portal de Venor com noticias, personagens locais, mapa do pacto, bestiario base e links para launcher/jogo.',
+  },
   {
     id: 'rv18-0',
     titulo: 'Launcher Instalado',
@@ -48,7 +54,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV18.0';
+  badge.textContent = 'PATCH RV18.1';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -75,11 +81,11 @@ export function criaPatchNotes() {
       url('/patches/rv17-9-preparacao-rv18.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:740px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.0</div>
-        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Launcher Instalado</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.1</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Portal Publico</div>
         <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
-          O Patch 18 comeca pelo que sustenta escala: launcher instalavel, contas locais,
-          manifesto de patch, atualizacao de cache e entrada direta no mundo.
+          O Patch 18 ganha sua casa publica: noticias, personagens locais, mapa, bestiario base,
+          patch center e links para o app instalado.
         </div>
       </div>
     </div>
@@ -87,15 +93,14 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que entrou na direcao do jogo</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          RV18.0 transforma a base offline em produto instalado. O jogador pode abrir pelo launcher,
-          escolher conta, preparar o cache do patch e entrar no personagem. A conta em nuvem segue
-          dentro do jogo, usando nome + PIN no servidor Railway.
+          RV18.1 transforma o launcher em ecossistema. O jogador pode jogar, instalar, ler patches,
+          consultar personagens locais e acompanhar o Pacto 01/30 antes de entrar no mundo.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Launcher:</b> nova pagina /launcher.html vira a entrada do app instalado.</li>
-          <li><b>Contas:</b> lista saves locais, lembra nome/senha e entra direto no jogo.</li>
-          <li><b>Patch:</b> /patch-manifest.json registra versao, build, assets e proximos passos.</li>
-          <li><b>Offline:</b> cache sobe para venor-rv18-0-offline-v1.</li>
+          <li><b>Portal:</b> nova pagina /portal.html vira a vitrine publica do mundo.</li>
+          <li><b>Personagens:</b> lista personagens locais do aparelho.</li>
+          <li><b>Mapa:</b> apresenta o Pacto 01/30 e o caminho do ciclo 18.</li>
+          <li><b>Offline:</b> cache sobe para venor-rv18-1-offline-v1.</li>
           <li><b>Contrato visual:</b> imagens futuras continuam presas a sistemas reais.</li>
         </ul>
       </section>
@@ -107,6 +112,7 @@ export function criaPatchNotes() {
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
           Mascate: Terca, Quinta e Sabado.<br>
           Rotas: botao <b>ROTAS</b>. Bestiario: botao do dragao.<br>
+          Portal: <a href="/portal.html" style="color:#bff0a8;font-weight:800;">abrir portal de Venor</a><br>
           Launcher: <a href="/launcher.html" style="color:#bff0a8;font-weight:800;">abrir central instalada</a><br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>

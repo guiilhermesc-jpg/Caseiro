@@ -155,9 +155,10 @@
         <div>
           <div class="marca">VENOR</div>
           <div class="sub">ERA DOS DRAGOES</div>
-          <div class="version" id="versao">PATCH RV18.0</div>
+          <div class="version" id="versao">PATCH RV18.1</div>
           <div class="actions">
             <button class="primary" id="jogar">ENTRAR EM VENOR</button>
+            <button id="portal">PORTAL DE VENOR</button>
             <button id="instalar">INSTALAR APP</button>
             <button class="ghost" id="atualizar">ATUALIZAR PATCH</button>
           </div>
@@ -213,7 +214,7 @@
     </main>
 
     <script>
-      const CURRENT_CACHE = 'venor-rv18-0-offline-v1';
+      const CURRENT_CACHE = 'venor-rv18-1-offline-v1';
       const MANIFEST_URL = '/patch-manifest.json';
       const $ = (id) => document.getElementById(id);
       const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -342,7 +343,7 @@
         if (!('caches' in window)) return;
         const keys = await caches.keys();
         await Promise.all(keys.filter((k) => k !== CURRENT_CACHE).map((k) => caches.delete(k)));
-        setStatus('Caches antigos removidos. RV18.0 mantido.', 'ok');
+        setStatus('Caches antigos removidos. RV18.1 mantido.', 'ok');
         medeStorage();
       }
 
@@ -355,6 +356,7 @@
       }
 
       $('jogar').onclick = () => entrar(true);
+      $('portal').onclick = () => { location.href = '/portal.html'; };
       $('entrarConta').onclick = () => entrar(true);
       $('limparConta').onclick = () => { $('nome').value = ''; $('senha').value = ''; $('nome').focus(); };
       $('atualizar').onclick = atualizaCache;
@@ -374,7 +376,7 @@
       renderContas();
       carregaManifesto().then(() => {
         const instalado = localStorage.getItem('venor_patch_installed');
-        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.0 pronto neste aparelho.', 'ok');
+        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.1 pronto neste aparelho.', 'ok');
         else atualizaCache();
       });
       medeStorage();

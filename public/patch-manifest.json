@@ -1,16 +1,17 @@
 {
-  "id": "rv18-0-launcher-instalado",
-  "version": "RV18.0",
-  "build": 132,
-  "cache": "venor-rv18-0-offline-v1",
+  "id": "rv18-1-portal-publico",
+  "version": "RV18.1",
+  "build": 133,
+  "cache": "venor-rv18-1-offline-v1",
   "channel": "installed-first",
   "releasedAt": "2026-06-24",
-  "title": "Launcher Instalado",
-  "summary": "Primeiro ciclo do Patch 18: app instalado abre no launcher, com contas locais, central de patch, preparo offline e entrada direta em Venor.",
+  "title": "Portal Publico",
+  "summary": "O app instalado ganha portal estilo MMO: noticias, personagens locais, mapa, bestiario base, patch center e links para launcher/jogo.",
   "assets": [
     "/",
     "/index.html",
     "/launcher.html",
+    "/portal.html",
     "/baixar.html",
     "/patch-manifest.json",
     "/manifest.webmanifest",
@@ -35,6 +36,12 @@
   ],
   "updates": [
     {
+      "id": "rv18-1",
+      "title": "Portal publico",
+      "status": "entregue",
+      "body": "Noticias, personagens locais, mapa do Pacto 01/30, bestiario base e links para launcher/jogo."
+    },
+    {
       "id": "rv18-0",
       "title": "Launcher instalado",
       "status": "entregue",
@@ -54,8 +61,8 @@
     }
   ],
   "next": [
-    "RV18.1: portal publico com noticias, conta, personagens, mapa, rankings e bestiario.",
     "RV18.2: pipeline de pacote instalado pesado, medicao mobile e decisao Tauri/Capacitor.",
-    "RV18.3: patcher real com delta de assets e historico de builds."
+    "RV18.3: rankings e personagem publico com dados de nuvem.",
+    "RV18.4: patcher real com delta de assets e historico de builds."
   ]
 }
