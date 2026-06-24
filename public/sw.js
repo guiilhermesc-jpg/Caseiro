@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'venor-rv18-4-offline-v1';
+const CACHE_VERSION = 'venor-rv18-5-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',

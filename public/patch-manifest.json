@@ -1,12 +1,12 @@
 {
-  "id": "rv18-4-resgate-visual-praca",
-  "version": "RV18.4",
-  "build": 136,
-  "cache": "venor-rv18-4-offline-v1",
+  "id": "rv18-5-mapa-continental",
+  "version": "RV18.5",
+  "build": 137,
+  "cache": "venor-rv18-5-offline-v1",
   "channel": "installed-first",
   "releasedAt": "2026-06-24",
-  "title": "Resgate Visual da Praca",
-  "summary": "Patch corretivo no mundo jogavel: luz mais legivel, praca nobre, casario mais medieval, janelas quentes e calcamento menos escuro.",
+  "title": "Mapa Continental do Pacto 01/30",
+  "summary": "Patch corretivo no mapa grande: saiu o grid tecnico e entrou uma leitura continental com mar, biomas, rotas, hunts, cidades e ilhas flutuantes.",
   "assets": [
     "/",
     "/index.html",
@@ -38,6 +38,12 @@
     "/modelos/dragao2.glb"
   ],
   "updates": [
+    {
+      "id": "rv18-5",
+      "title": "Mapa continental do Pacto 01/30",
+      "status": "entregue",
+      "body": "O painel grande do mapa foi redesenhado como cartografia de continente: Venor, Thais, Venore, Noctaria, Pico do Dragao, Areias do Veio Seco e Aurelia nas nuvens agora aparecem como mundo, nao como debug."
+    },
     {
       "id": "rv18-4",
       "title": "Resgate visual da praca",
@@ -82,8 +88,8 @@
     }
   ],
   "next": [
-    "RV18.5: patcher real com delta de assets e historico de builds.",
-    "RV18.6: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado.",
-    "RV18.7: dados de nuvem no ranking com privacidade e opt-in."
+    "RV18.6: patcher real com delta de assets e historico de builds.",
+    "RV18.7: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado.",
+    "RV18.8: dados de nuvem no ranking com privacidade e opt-in."
   ]
 }

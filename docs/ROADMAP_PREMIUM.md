@@ -75,19 +75,20 @@ padrao para os proximos 29.
 21. RV18.2 entregue: pacote instalado premium, perfis graficos no launcher, motor lendo pixel ratio/sombras/bloom por perfil e auditoria de pacote.
 22. RV18.3 entregue: ranking local e ficha publica de personagem sem expor senha/PIN, preparada para nuvem futura.
 23. RV18.4 entregue: resgate visual da praca/cidade, com luz, neblina, calcamento, casario, janelas e praca nobre no mundo real.
-24. RV18.5: patcher real com delta de assets, historico de builds e reparo por categoria.
-25. RV19: escala local e rotas de jornada do Pacto 01/30.
-26. RV20: hunts por bioma e monstros profissionais.
-27. RV21: crescimento profundo dos dragoes e voo draconico com custo, estamina, zonas aereas e hunts de altitude.
-28. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
-29. RV23: profissoes, economia e contratos.
-30. RV24: guildas, grupos e expedicoes.
-31. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
-32. RV26: transporte, montarias e viagens raras.
-33. RV27: familia, conta e multiplayer social.
-34. RV28: QoL profissional e colecoes.
-35. RV29: polimento, performance e instalacao.
-36. RV30: fechamento do Pacto Continental 01/30.
+24. RV18.5 entregue: mapa continental do Pacto 01/30, trocando o grid tecnico por cartografia com mar, biomas, rotas, hunts, cidades e ilhas flutuantes.
+25. RV18.6: patcher real com delta de assets, historico de builds e reparo por categoria.
+26. RV19: escala local e rotas de jornada do Pacto 01/30.
+27. RV20: hunts por bioma e monstros profissionais.
+28. RV21: crescimento profundo dos dragoes e voo draconico com custo, estamina, zonas aereas e hunts de altitude.
+29. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
+30. RV23: profissoes, economia e contratos.
+31. RV24: guildas, grupos e expedicoes.
+32. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
+33. RV26: transporte, montarias e viagens raras.
+34. RV27: familia, conta e multiplayer social.
+35. RV28: QoL profissional e colecoes.
+36. RV29: polimento, performance e instalacao.
+37. RV30: fechamento do Pacto Continental 01/30.
 
 Documentos canonicos novos:
 - `docs/PLANO_30_CONTINENTES.md`

@@ -169,7 +169,7 @@
         <div>
           <div class="marca">VENOR</div>
           <div class="sub">ERA DOS DRAGOES</div>
-          <div class="version" id="versao">PATCH RV18.4</div>
+          <div class="version" id="versao">PATCH RV18.5</div>
           <div class="actions">
             <button class="primary" id="jogar">ENTRAR EM VENOR</button>
             <button id="portal">PORTAL DE VENOR</button>
@@ -236,7 +236,7 @@
     </main>
 
     <script>
-      const CURRENT_CACHE = 'venor-rv18-4-offline-v1';
+      const CURRENT_CACHE = 'venor-rv18-5-offline-v1';
       const MANIFEST_URL = '/patch-manifest.json';
       const $ = (id) => document.getElementById(id);
       const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -392,7 +392,7 @@
         if (!('caches' in window)) return;
         const keys = await caches.keys();
         await Promise.all(keys.filter((k) => k !== CURRENT_CACHE).map((k) => caches.delete(k)));
-        setStatus('Caches antigos removidos. RV18.4 mantido.', 'ok');
+        setStatus('Caches antigos removidos. RV18.5 mantido.', 'ok');
         medeStorage();
       }
 
@@ -426,7 +426,7 @@
       renderContas();
       carregaManifesto().then(() => {
         const instalado = localStorage.getItem('venor_patch_installed');
-        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.4 pronto neste aparelho.', 'ok');
+        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.5 pronto neste aparelho.', 'ok');
         else atualizaCache();
       });
       renderPerfisGraficos();
