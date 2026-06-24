@@ -169,10 +169,11 @@
         <div>
           <div class="marca">VENOR</div>
           <div class="sub">ERA DOS DRAGOES</div>
-          <div class="version" id="versao">PATCH RV18.2</div>
+          <div class="version" id="versao">PATCH RV18.3</div>
           <div class="actions">
             <button class="primary" id="jogar">ENTRAR EM VENOR</button>
             <button id="portal">PORTAL DE VENOR</button>
+            <button id="ranking">RANKING</button>
             <button id="instalar">INSTALAR APP</button>
             <button class="ghost" id="atualizar">ATUALIZAR PATCH</button>
           </div>
@@ -235,7 +236,7 @@
     </main>
 
     <script>
-      const CURRENT_CACHE = 'venor-rv18-2-offline-v1';
+      const CURRENT_CACHE = 'venor-rv18-3-offline-v1';
       const MANIFEST_URL = '/patch-manifest.json';
       const $ = (id) => document.getElementById(id);
       const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -375,7 +376,7 @@
         await registraSW().catch(() => {});
         if (!('caches' in window)) { setStatus('Cache indisponivel neste navegador.', 'warn'); return; }
         const manifest = patchManifest || await fetch(MANIFEST_URL).then((r) => r.json()).catch(() => null);
-        const assets = manifest?.assets || ['/', '/index.html', '/launcher.html', '/portal.html', '/baixar.html', '/patch-manifest.json', '/install-profile.json', '/manifest.webmanifest'];
+        const assets = manifest?.assets || ['/', '/index.html', '/launcher.html', '/portal.html', '/ranking.html', '/personagem.html', '/baixar.html', '/patch-manifest.json', '/install-profile.json', '/manifest.webmanifest'];
         const cacheName = manifest?.cache || CURRENT_CACHE;
         const cache = await caches.open(cacheName);
         let falhas = 0;
@@ -391,7 +392,7 @@
         if (!('caches' in window)) return;
         const keys = await caches.keys();
         await Promise.all(keys.filter((k) => k !== CURRENT_CACHE).map((k) => caches.delete(k)));
-        setStatus('Caches antigos removidos. RV18.2 mantido.', 'ok');
+        setStatus('Caches antigos removidos. RV18.3 mantido.', 'ok');
         medeStorage();
       }
 
@@ -405,6 +406,7 @@
 
       $('jogar').onclick = () => entrar(true);
       $('portal').onclick = () => { location.href = '/portal.html'; };
+      $('ranking').onclick = () => { location.href = '/ranking.html'; };
       $('entrarConta').onclick = () => entrar(true);
       $('limparConta').onclick = () => { $('nome').value = ''; $('senha').value = ''; $('nome').focus(); };
       $('atualizar').onclick = atualizaCache;
@@ -424,7 +426,7 @@
       renderContas();
       carregaManifesto().then(() => {
         const instalado = localStorage.getItem('venor_patch_installed');
-        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.2 pronto neste aparelho.', 'ok');
+        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.3 pronto neste aparelho.', 'ok');
         else atualizaCache();
       });
       renderPerfisGraficos();

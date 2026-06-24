@@ -1,8 +1,14 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv18-2-pacote-instalado-premium';
+const PATCH_ID = 'rv18-3-ranking-personagem';
 
 const PATCHES = [
+  {
+    id: 'rv18-3',
+    titulo: 'Ranking e Personagem Publico',
+    img: '/patches/rv17-7-bases-vivas.png',
+    texto: 'Ranking local e ficha publica nascem usando saves do aparelho, sem expor senha ou PIN.',
+  },
   {
     id: 'rv18-2',
     titulo: 'Pacote Instalado Premium',
@@ -60,7 +66,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV18.2';
+  badge.textContent = 'PATCH RV18.3';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -87,11 +93,11 @@ export function criaPatchNotes() {
       url('/patches/rv17-9-preparacao-rv18.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:740px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.2</div>
-        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Pacote Instalado Premium</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.3</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Ranking e Personagem Publico</div>
         <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
-          O Patch 18 ganha controle real de qualidade grafica: Mobile Estavel, Premium
-          e Ultra Instalado passam a afetar o motor 3D antes do mundo carregar.
+          Venor ganha seu primeiro hall de personagens: ranking local, ficha publica,
+          progresso, dragao, imoveis e links de portal.
         </div>
       </div>
     </div>
@@ -99,15 +105,15 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que entrou na direcao do jogo</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          RV18.2 transforma ambicao visual em sistema. O jogador escolhe o perfil no launcher
-          e o jogo aplica pixel ratio, sombras e bloom conforme o aparelho.
+          RV18.3 cria a primeira camada de comunidade. Hoje ela usa saves locais do aparelho;
+          no ciclo de nuvem, a mesma base vira ranking online com privacidade e opt-in.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Perfis:</b> Mobile Estavel, Premium e Ultra Instalado.</li>
-          <li><b>Motor:</b> pixel ratio, antialias, sombras e bloom deixam de ser fixos.</li>
-          <li><b>Instalacao:</b> /install-profile.json registra orcamento e alvo de pacote.</li>
-          <li><b>Offline:</b> cache sobe para venor-rv18-2-offline-v1.</li>
-          <li><b>Contrato visual:</b> qualidade alta sem abandonar controle de peso.</li>
+          <li><b>Ranking:</b> nova pagina /ranking.html lista personagens locais.</li>
+          <li><b>Ficha:</b> /personagem.html mostra nivel, ouro, dragao, progresso e equipamento.</li>
+          <li><b>Privacidade:</b> senha/PIN nunca aparecem na vitrine.</li>
+          <li><b>Offline:</b> cache sobe para venor-rv18-3-offline-v1.</li>
+          <li><b>Portal:</b> ranking entra como bloco publico do ecossistema instalado.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -119,6 +125,7 @@ export function criaPatchNotes() {
           Mascate: Terca, Quinta e Sabado.<br>
           Rotas: botao <b>ROTAS</b>. Bestiario: botao do dragao.<br>
           Perfil grafico: escolha no <a href="/launcher.html" style="color:#bff0a8;font-weight:800;">launcher</a> antes de entrar.<br>
+          Ranking: <a href="/ranking.html" style="color:#bff0a8;font-weight:800;">abrir hall de personagens</a><br>
           Portal: <a href="/portal.html" style="color:#bff0a8;font-weight:800;">abrir portal de Venor</a><br>
           Launcher: <a href="/launcher.html" style="color:#bff0a8;font-weight:800;">abrir central instalada</a><br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>

@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastao. Estado em **RV18.2 (v134)** no `main`, **nao publicado**.
+> Documento de passagem de bastao. Estado em **RV18.3 (v135)** no `main`, **nao publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.2 (v134)'`. **Suba a cada entrega.**
+- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.3 (v135)'`. **Suba a cada entrega.**
 
 ---
 
@@ -333,17 +333,28 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Documento da rodada: `docs/RV18_2_PACOTE_INSTALADO_PREMIUM.md`.
 - Nao publicar esta rodada sem novo OK literal do maestro.
 
+## 7.19 Estado novo do RV18.3 (Codex)
+
+- `src/main3d.js` subiu para **RV18.3 (v135)**.
+- Criados `public/ranking.html` e `public/personagem.html`.
+- Ranking le saves locais (`venor_conta_*`) e monta hall por nivel/XP/ouro sem expor senha/PIN.
+- Ficha publica mostra nivel, XP, ouro, posicao, dragao/pet, imoveis, quests, banco e equipamento.
+- `portal.html` e `launcher.html` ganharam links diretos para ranking.
+- `patch-manifest.json`, `sw.js`, `index.html`, `baixar.html` e `patchNotes.js` subiram para **RV18.3 / build 135 / venor-rv18-3-offline-v1**.
+- Documento da rodada: `docs/RV18_3_RANKING_PERSONAGEM.md`.
+- Nao publicar esta rodada sem novo OK literal do maestro.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV18.3 - Personagem publico/ranking** - publicar dados da nuvem com privacidade e ranking inicial.
-2. **RV18.4 - Patcher real** - delta de assets, historico de builds, botao reparar por grupo e registro de falhas.
-3. **RV18.5 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
-4. **RV18.6 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
-5. **RV18.7 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
+1. **RV18.4 - Patcher real** - delta de assets, historico de builds, botao reparar por grupo e registro de falhas.
+2. **RV18.5 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
+3. **RV18.6 - Ranking em nuvem com privacidade** - opt-in, perfil publico, endpoint seguro e cache local.
+4. **RV18.7 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
+5. **RV18.8 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
 7. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
 9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
 10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.

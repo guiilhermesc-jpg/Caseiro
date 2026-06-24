@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Ranking de Venor</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#100b14" />
+    <style>
+      :root { color-scheme: dark; --gold:#d9b25a; --gold2:#f4e9c8; --panel:rgba(12,16,22,.9); --line:rgba(232,217,160,.28); --muted:#b8c4cf; }
+      * { box-sizing: border-box; }
+      html, body { margin:0; min-height:100%; background:#06080d; color:#f4ead2; font-family:Arial,sans-serif; }
+      body {
+        background:
+          linear-gradient(180deg, rgba(5,7,12,.28), rgba(5,7,12,.96)),
+          url('/patches/rv17-7-bases-vivas.png') center/cover fixed no-repeat;
+      }
+      a { color:#bff0a8; font-weight:800; text-decoration:none; }
+      button {
+        border:1px solid rgba(232,217,160,.34);
+        background:linear-gradient(180deg,rgba(55,43,25,.98),rgba(24,19,15,.98));
+        color:var(--gold2); border-radius:8px; padding:10px 12px; font-weight:800; cursor:pointer;
+      }
+      button.primary { background:linear-gradient(180deg,#d9b25a,#ad7f2d); color:#261705; }
+      header { width:min(1180px,94vw); margin:0 auto; padding:28px 0 12px; }
+      .kicker { color:var(--gold); font:800 12px Georgia,serif; letter-spacing:4px; }
+      h1 { margin:8px 0; font:900 clamp(38px,8vw,78px)/.92 Georgia,serif; letter-spacing:6px; color:var(--gold2); text-shadow:0 5px 24px #000; }
+      p { color:var(--muted); line-height:1.58; }
+      nav { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+      main { width:min(1180px,94vw); margin:0 auto; padding:12px 0 34px; display:grid; grid-template-columns:1fr; gap:14px; }
+      .panel { border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:16px; box-shadow:0 18px 60px rgba(0,0,0,.34); backdrop-filter:blur(6px); }
+      .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+      .stat { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.045); border-radius:8px; padding:12px; }
+      .stat b { display:block; color:var(--gold); margin-bottom:5px; }
+      table { width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px; }
+      th, td { padding:12px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,.07); color:#d8e0e8; vertical-align:middle; }
+      th { color:var(--gold); font:800 12px Georgia,serif; letter-spacing:1px; background:rgba(255,255,255,.045); }
+      tr:hover td { background:rgba(217,178,90,.07); }
+      .muted { color:#91a0ad; font-size:12px; }
+      .empty { padding:22px; border:1px dashed rgba(232,217,160,.28); border-radius:10px; color:#b8c4cf; }
+      @media (max-width: 700px) {
+        th:nth-child(5), td:nth-child(5), th:nth-child(6), td:nth-child(6) { display:none; }
+        h1 { letter-spacing:4px; }
+        nav button { flex:1 1 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="kicker">HALL PUBLICO LOCAL</div>
+      <h1>RANKING DE VENOR</h1>
+      <p>Primeira vitrine de personagens. Hoje ela le os saves deste aparelho; no ciclo de nuvem, estes mesmos blocos viram ranking online com privacidade e permissao.</p>
+      <nav>
+        <button class="primary" onclick="location.href='/launcher.html'">ABRIR LAUNCHER</button>
+        <button onclick="location.href='/portal.html'">PORTAL</button>
+        <button onclick="location.href='/'">ENTRAR NO JOGO</button>
+      </nav>
+    </header>
+    <main>
+      <section class="panel">
+        <div class="grid" id="stats"></div>
+      </section>
+      <section class="panel">
+        <h2>Personagens</h2>
+        <div id="ranking"></div>
+      </section>
+    </main>
+    <script>
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+      const baseNome = (key) => key.replace('venor_conta_', '').split('#')[0] || 'conta';
+      const nivel = (d) => Number(d?.hud?.nivel || 1);
+      const xp = (d) => Number(d?.hud?.xp || 0);
+      const contaPublica = (key, d) => {
+        const imoveis = d?.imoveis ? Object.values(d.imoveis).filter(Boolean).length : 0;
+        const quests = d?.quests ? Object.values(d.quests).filter((q) => q && (q.concluida || q.feita || q.aceita)).length : 0;
+        const dragao = d?.dragaoComp ? `${d.dragaoComp.especie || d.dragaoComp.petTipo || 'dragao'} ${d.dragaoComp.estagio || ''}`.trim() : (d?.pet || 'sem companheiro');
+        return {
+          nome: baseNome(key),
+          nivel: nivel(d),
+          xp: xp(d),
+          ouro: Number(d?.ouro || 0) + Number(d?.bancoOuro || 0),
+          x: Math.round(d?.x || 0),
+          z: Math.round(d?.z || 0),
+          dragao,
+          imoveis,
+          quests,
+          protegida: key.includes('#'),
+        };
+      };
+      function lerContas() {
+        const out = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith('venor_conta_')) continue;
+          try { out.push(contaPublica(key, JSON.parse(localStorage.getItem(key) || '{}'))); } catch {}
+        }
+        return out.sort((a, b) => b.nivel - a.nivel || b.xp - a.xp || b.ouro - a.ouro || a.nome.localeCompare(b.nome));
+      }
+      const contas = lerContas();
+      const maxNivel = contas.reduce((m, c) => Math.max(m, c.nivel), 0);
+      const totalOuro = contas.reduce((m, c) => m + c.ouro, 0);
+      const totalQuests = contas.reduce((m, c) => m + c.quests, 0);
+      document.getElementById('stats').innerHTML = [
+        ['Personagens', contas.length],
+        ['Maior nivel', maxNivel || '-'],
+        ['Ouro registrado', totalOuro],
+        ['Quests vistas', totalQuests],
+      ].map(([a, b]) => `<div class="stat"><b>${esc(a)}</b><div>${esc(b)}</div></div>`).join('');
+      document.getElementById('ranking').innerHTML = contas.length ? `
+        <table>
+          <thead><tr><th>#</th><th>Nome</th><th>Nivel</th><th>Ouro</th><th>Dragao/Pet</th><th>Base</th><th></th></tr></thead>
+          <tbody>${contas.map((c, i) => `<tr>
+            <td>${i + 1}</td>
+            <td><b>${esc(c.nome)}</b><div class="muted">${c.protegida ? 'conta protegida' : 'conta local'}</div></td>
+            <td>${esc(c.nivel)}<div class="muted">${esc(c.xp)} XP</div></td>
+            <td>${esc(c.ouro)}</td>
+            <td>${esc(c.dragao)}</td>
+            <td>${esc(c.imoveis)} imovel(is)</td>
+            <td><button data-nome="${encodeURIComponent(c.nome)}">VER</button></td>
+          </tr>`).join('')}</tbody>
+        </table>` : '<div class="empty">Nenhum personagem local encontrado neste aparelho. Entre pelo launcher, crie um personagem e salve o jogo para aparecer aqui.</div>';
+      document.querySelectorAll('button[data-nome]').forEach((btn) => {
+        btn.onclick = () => { location.href = '/personagem.html?nome=' + btn.dataset.nome; };
+      });
+    </script>
+  </body>
+</html>
