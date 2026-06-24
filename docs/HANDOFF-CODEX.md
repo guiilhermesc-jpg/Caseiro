@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastao. Estado em **RV18.1 (v133)** no `main`, **nao publicado**.
+> Documento de passagem de bastao. Estado em **RV18.2 (v134)** no `main`, **nao publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.1 (v133)'`. **Suba a cada entrega.**
+- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.2 (v134)'`. **Suba a cada entrega.**
 
 ---
 
@@ -321,17 +321,29 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Documento da rodada: `docs/RV18_1_PORTAL_PUBLICO.md`.
 - Nao publicar esta rodada sem novo OK literal do maestro.
 
+## 7.18 Estado novo do RV18.2 (Codex)
+
+- `src/main3d.js` subiu para **RV18.2 (v134)**.
+- Criado `src/jogo/perfil-grafico.js` com perfis **Mobile Estavel**, **Premium** e **Ultra Instalado**.
+- O renderer agora aplica pixel ratio, antialias, sombras e bloom conforme `localStorage.venor_perfil_grafico`.
+- `public/launcher.html` ganhou painel **Grafico** para escolher o perfil antes de entrar.
+- Criado `public/install-profile.json` com orcamentos e plano Tauri/Capacitor/iOS.
+- Criado `scripts/auditar-pacote.mjs` e script `npm run audit:package`.
+- `patch-manifest.json`, `sw.js`, `index.html`, `baixar.html`, `portal.html` e `patchNotes.js` subiram para **RV18.2 / build 134 / venor-rv18-2-offline-v1**.
+- Documento da rodada: `docs/RV18_2_PACOTE_INSTALADO_PREMIUM.md`.
+- Nao publicar esta rodada sem novo OK literal do maestro.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV18.2 - Pacote instalado pesado** - medir mobile, decidir Tauri/Capacitor, separar assets pesados e planejar patcher real.
-2. **RV18.3 - Personagem publico/ranking** - publicar dados da nuvem com privacidade e ranking inicial.
-3. **RV18.4 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
-4. **RV18.5 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
-5. **RV18.6 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
+1. **RV18.3 - Personagem publico/ranking** - publicar dados da nuvem com privacidade e ranking inicial.
+2. **RV18.4 - Patcher real** - delta de assets, historico de builds, botao reparar por grupo e registro de falhas.
+3. **RV18.5 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
+4. **RV18.6 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
+5. **RV18.7 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
 7. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
 9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
 10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.

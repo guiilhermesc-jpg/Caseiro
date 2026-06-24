@@ -72,7 +72,7 @@ padrao para os proximos 29.
 18. RV17.6-RV17.9 entregue: contrato visual premium, bases vivas, hunts com reacao, pedra Pacto 18 e preparacao instalada/offline.
 19. RV18.0 entregue: launcher instalado, manifesto de patch, cache RV18, contas locais e entrada direta.
 20. RV18.1 entregue: portal publico com noticias, personagens locais, mapa do Pacto 01/30, bestiario base e links para launcher/jogo.
-21. RV18.2: pacote instalado pesado, medicao mobile e decisao Tauri/Capacitor.
+21. RV18.2 entregue: pacote instalado premium, perfis graficos no launcher, motor lendo pixel ratio/sombras/bloom por perfil e auditoria de pacote.
 22. RV18.3: personagem publico com dados de nuvem e ranking inicial.
 23. RV19: escala local e rotas de jornada do Pacto 01/30.
 24. RV20: hunts por bioma e monstros profissionais.

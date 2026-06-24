@@ -1,12 +1,12 @@
 {
-  "id": "rv18-1-portal-publico",
-  "version": "RV18.1",
-  "build": 133,
-  "cache": "venor-rv18-1-offline-v1",
+  "id": "rv18-2-pacote-instalado-premium",
+  "version": "RV18.2",
+  "build": 134,
+  "cache": "venor-rv18-2-offline-v1",
   "channel": "installed-first",
   "releasedAt": "2026-06-24",
-  "title": "Portal Publico",
-  "summary": "O app instalado ganha portal estilo MMO: noticias, personagens locais, mapa, bestiario base, patch center e links para launcher/jogo.",
+  "title": "Pacote Instalado Premium",
+  "summary": "O launcher ganha perfis graficos reais e o motor passa a aplicar pixel ratio, sombras e bloom conforme o aparelho.",
   "assets": [
     "/",
     "/index.html",
@@ -14,6 +14,7 @@
     "/portal.html",
     "/baixar.html",
     "/patch-manifest.json",
+    "/install-profile.json",
     "/manifest.webmanifest",
     "/icon.svg",
     "/patches/rv17-6-contrato-visual.png",
@@ -35,6 +36,12 @@
     "/modelos/dragao2.glb"
   ],
   "updates": [
+    {
+      "id": "rv18-2",
+      "title": "Perfis graficos",
+      "status": "entregue",
+      "body": "Mobile Estavel, Premium e Ultra Instalado agora ficam salvos no launcher e controlam o motor 3D."
+    },
     {
       "id": "rv18-1",
       "title": "Portal publico",
@@ -61,8 +68,8 @@
     }
   ],
   "next": [
-    "RV18.2: pipeline de pacote instalado pesado, medicao mobile e decisao Tauri/Capacitor.",
     "RV18.3: rankings e personagem publico com dados de nuvem.",
-    "RV18.4: patcher real com delta de assets e historico de builds."
+    "RV18.4: patcher real com delta de assets e historico de builds.",
+    "RV18.5: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado."
   ]
 }

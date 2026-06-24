@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'venor-rv18-1-offline-v1';
+const CACHE_VERSION = 'venor-rv18-2-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const CORE_ASSETS = [
   '/portal.html',
   '/baixar.html',
   '/patch-manifest.json',
+  '/install-profile.json',
   '/manifest.webmanifest',
   '/icon.svg',
   '/patches/rv17-1-calabouco-vivo.png',

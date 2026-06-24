@@ -14,6 +14,7 @@ import { criaSelecao } from './jogo/selecao.js';
 import { conectarRede } from './jogo/rede.js';
 import { criaMinimapa } from './jogo/minimapa.js';
 import { criaPatchNotes } from './jogo/patchNotes.js';
+import { lePerfilGrafico, antialiasAtivo, aplicaPerfilRenderer, bloomAtivo } from './jogo/perfil-grafico.js';
 import { criaQuadroJornadas, pontosJornadaParaMapa, rotasParaMapa } from './jogo/jornadas.js';
 import { criaCodice, PEDRAS_VEIO, TESSITURA, VEIOS_MAPA, RELIQUIAS } from './jogo/codice.js';
 import { criaBestiario } from './jogo/bestiario.js';
@@ -48,13 +49,14 @@ const container = document.getElementById('game');
 // celular/tablet → modo leve (sem sombras, menos luz, menos pixels) p/ fluidez
 const ehMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
   || (matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024);
+const perfilGrafico = lePerfilGrafico();
 
 // Se o navegador não conseguir iniciar o 3D (WebGL desligado / sem aceleração
 // de hardware), mostra um aviso claro em vez de tela preta e muda.
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({
-    antialias: !ehMobile,
+    antialias: antialiasAtivo(perfilGrafico, ehMobile),
     powerPreference: 'high-performance',
     precision: ehMobile ? 'mediump' : 'highp',
   });
@@ -73,9 +75,8 @@ try {
     + '</div></div>';
   throw e; // interrompe o resto da inicialização
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehMobile ? 1.08 : 1.5)); // RV12.1: PC cap 2->1.5 destrava
+const estadoGrafico = aplicaPerfilRenderer(renderer, perfilGrafico, ehMobile);
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = !ehMobile; // sombras só no PC (no celular pesa muito)
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // qualidade de imagem: tonemapping cinematográfico + cor correta
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -85,13 +86,13 @@ container.appendChild(renderer.domElement);
 defineRendererTexturas(renderer); // texturas IA sobem pra GPU no load (sem engasgo no 1º uso)
 // SELO DE VERSÃO na tela: acabou a dúvida de "atualizou ou não?" —
 // se o número daqui não bater com o do chat, é cache (Ctrl+Shift+R)
-const VERSAO = 'RV18.1 (v133)';
+const VERSAO = 'RV18.2 (v134)';
 { // TÍTULO do Patch 2 na tela de entrada (some quando o jogo começa)
   const titulo = document.createElement('div');
   titulo.id = 'tituloVenor';
   titulo.innerHTML = 'VENOR'
     + '<div style="font-size:15px;letter-spacing:6px;color:#e8d9a0;margin-top:2px;">ERA DOS DRAGÕES</div>'
-    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">- PATCH 18.1 -</div>';
+    + '<div style="font-size:11px;letter-spacing:2px;color:#9fb0c0;margin-top:6px;">- PATCH 18.2 -</div>';
   titulo.style.cssText = 'position:fixed;top:7%;left:50%;transform:translateX(-50%);z-index:36;'
     + 'font:bold 54px Georgia,serif;letter-spacing:10px;color:#f4e9c8;text-align:center;'
     + 'text-shadow:0 2px 6px #000,0 0 28px rgba(217,165,34,.45);pointer-events:none;';
@@ -103,6 +104,13 @@ const VERSAO = 'RV18.1 (v133)';
   selo.style.cssText = 'position:fixed;bottom:4px;left:6px;z-index:90;font:bold 11px Arial;'
     + 'color:rgba(255,255,255,.45);text-shadow:0 1px 2px #000;pointer-events:none;';
   document.body.appendChild(selo);
+}
+{
+  const seloGrafico = document.createElement('div');
+  seloGrafico.textContent = `GRAFICO: ${estadoGrafico.perfil.nome.toUpperCase()}`;
+  seloGrafico.style.cssText = 'position:fixed;bottom:18px;left:6px;z-index:90;font:bold 10px Arial;'
+    + 'color:rgba(217,178,90,.68);text-shadow:0 1px 2px #000;pointer-events:none;';
+  document.body.appendChild(seloGrafico);
 }
 const patchNotes = criaPatchNotes();
 renderer.domElement.addEventListener('webglcontextlost', (e) => {
@@ -148,11 +156,13 @@ let fatorDiaVisual = 0.82;
 // liga o bloom na cena + ILUMINAÇÃO DE AMBIENTE (IBL): metais, vidros e água
 // passam a refletir o entorno — o salto de "protótipo" pra "premium"
 const pcFraco = !ehMobile && ((navigator.hardwareConcurrency || 4) <= 4); // RV12.1: PC de poucos núcleos pula o grading
-if (!ehMobile) {
+if (bloomAtivo(perfilGrafico, ehMobile)) {
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   // Bloom contido: só emissores reais devem atravessar o threshold.
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.34, 0.85, 0.95)); // RV12.1: meia-res = ~1/4 do custo
+  const bloomEscala = perfilGrafico.id === 'ultra' ? 1 : 2;
+  const bloomForca = perfilGrafico.id === 'ultra' ? 0.42 : 0.34;
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / bloomEscala, window.innerHeight / bloomEscala), bloomForca, 0.85, 0.95)); // RV18.2: perfil grafico controla custo
   // COLOR GRADING CINEMATOGRÁFICO (PC) — receita das referências premium:
   // S-curve fílmica (contraste com pivô, clamp = NUNCA estoura branco),
   // saturação +12%, split-tone (sombras frias / altas levemente quentes),

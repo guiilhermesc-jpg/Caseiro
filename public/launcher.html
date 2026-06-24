@@ -134,6 +134,20 @@
       .preview div { max-width: 560px; text-shadow: 0 2px 12px #000; }
       .preview strong { display: block; color: var(--gold2); font: 800 26px Georgia, serif; }
       .small { font-size: 12px; color: #91a0ad; }
+      .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+      .profile {
+        text-align: left;
+        min-height: 82px;
+        background: rgba(255,255,255,.045);
+        border-color: rgba(232,217,160,.22);
+      }
+      .profile strong { display: block; color: var(--gold2); margin-bottom: 5px; }
+      .profile span { display: block; color: #9fb0c0; font-size: 11px; line-height: 1.35; }
+      .profile.active {
+        background: linear-gradient(180deg, rgba(217,178,90,.22), rgba(20,16,12,.96));
+        border-color: rgba(244,233,200,.7);
+        box-shadow: 0 0 0 1px rgba(217,178,90,.18) inset;
+      }
       @media (max-width: 900px) {
         main { grid-template-columns: 1fr; padding: 12px 0; }
         .brand { min-height: auto; }
@@ -155,7 +169,7 @@
         <div>
           <div class="marca">VENOR</div>
           <div class="sub">ERA DOS DRAGOES</div>
-          <div class="version" id="versao">PATCH RV18.1</div>
+          <div class="version" id="versao">PATCH RV18.2</div>
           <div class="actions">
             <button class="primary" id="jogar">ENTRAR EM VENOR</button>
             <button id="portal">PORTAL DE VENOR</button>
@@ -197,6 +211,13 @@
         </div>
 
         <div class="panel">
+          <h2>Grafico</h2>
+          <p>Escolha o perfil antes de entrar. Ele fica salvo neste aparelho e o motor aplica pixel ratio, sombras e bloom na inicializacao.</p>
+          <div class="profile-grid" id="perfisGraficos"></div>
+          <p class="small" id="perfilInfo">Perfil nao carregado.</p>
+        </div>
+
+        <div class="panel">
           <h2>Nuvem</h2>
           <p>O save em nuvem ja existe dentro do jogo: entre no personagem e use o botao de nuvem com nome + PIN.</p>
           <p class="small">Servidor configurado: venor-servidor-production.up.railway.app</p>
@@ -214,12 +235,17 @@
     </main>
 
     <script>
-      const CURRENT_CACHE = 'venor-rv18-1-offline-v1';
+      const CURRENT_CACHE = 'venor-rv18-2-offline-v1';
       const MANIFEST_URL = '/patch-manifest.json';
       const $ = (id) => document.getElementById(id);
       const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       let deferredInstall = null;
       let patchManifest = null;
+      const PERFIS_GRAFICOS = [
+        ['mobile', 'Mobile Estavel', 'Mais leve para celular fraco. Sem bloom/sombras dinamicas.'],
+        ['premium', 'Premium', 'Equilibrio recomendado para jogar bonito e estavel.'],
+        ['ultra', 'Ultra Instalado', 'Mais pixels, sombras e bloom. Use em aparelho forte.'],
+      ];
 
       window.addEventListener('beforeinstallprompt', (ev) => {
         ev.preventDefault();
@@ -238,6 +264,28 @@
 
       function contaLembrada() {
         try { return JSON.parse(localStorage.getItem('venor_login') || 'null'); } catch { return null; }
+      }
+
+      function perfilGraficoAtual() {
+        const id = localStorage.getItem('venor_perfil_grafico') || 'premium';
+        return PERFIS_GRAFICOS.some((p) => p[0] === id) ? id : 'premium';
+      }
+
+      function renderPerfisGraficos() {
+        const atual = perfilGraficoAtual();
+        $('perfisGraficos').innerHTML = PERFIS_GRAFICOS.map(([id, nome, resumo]) =>
+          `<button class="profile ${id === atual ? 'active' : ''}" data-id="${id}"><strong>${nome}</strong><span>${resumo}</span></button>`
+        ).join('');
+        const escolhido = PERFIS_GRAFICOS.find((p) => p[0] === atual) || PERFIS_GRAFICOS[1];
+        $('perfilInfo').textContent = `Perfil ativo: ${escolhido[1]}. Troque antes de entrar se o aparelho estiver pesado.`;
+        $('perfisGraficos').querySelectorAll('button[data-id]').forEach((btn) => {
+          btn.onclick = () => {
+            localStorage.setItem('venor_perfil_grafico', btn.dataset.id);
+            renderPerfisGraficos();
+            const p = PERFIS_GRAFICOS.find((item) => item[0] === btn.dataset.id);
+            setStatus(`Perfil grafico ${p?.[1] || btn.dataset.id} salvo.`, 'ok');
+          };
+        });
       }
 
       function contasLocais() {
@@ -327,7 +375,7 @@
         await registraSW().catch(() => {});
         if (!('caches' in window)) { setStatus('Cache indisponivel neste navegador.', 'warn'); return; }
         const manifest = patchManifest || await fetch(MANIFEST_URL).then((r) => r.json()).catch(() => null);
-        const assets = manifest?.assets || ['/', '/index.html', '/launcher.html', '/baixar.html', '/manifest.webmanifest'];
+        const assets = manifest?.assets || ['/', '/index.html', '/launcher.html', '/portal.html', '/baixar.html', '/patch-manifest.json', '/install-profile.json', '/manifest.webmanifest'];
         const cacheName = manifest?.cache || CURRENT_CACHE;
         const cache = await caches.open(cacheName);
         let falhas = 0;
@@ -343,7 +391,7 @@
         if (!('caches' in window)) return;
         const keys = await caches.keys();
         await Promise.all(keys.filter((k) => k !== CURRENT_CACHE).map((k) => caches.delete(k)));
-        setStatus('Caches antigos removidos. RV18.1 mantido.', 'ok');
+        setStatus('Caches antigos removidos. RV18.2 mantido.', 'ok');
         medeStorage();
       }
 
@@ -376,9 +424,10 @@
       renderContas();
       carregaManifesto().then(() => {
         const instalado = localStorage.getItem('venor_patch_installed');
-        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.1 pronto neste aparelho.', 'ok');
+        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.2 pronto neste aparelho.', 'ok');
         else atualizaCache();
       });
+      renderPerfisGraficos();
       medeStorage();
     </script>
   </body>
