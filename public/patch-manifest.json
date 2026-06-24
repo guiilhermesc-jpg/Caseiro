@@ -1,0 +1,61 @@
+{
+  "id": "rv18-0-launcher-instalado",
+  "version": "RV18.0",
+  "build": 132,
+  "cache": "venor-rv18-0-offline-v1",
+  "channel": "installed-first",
+  "releasedAt": "2026-06-24",
+  "title": "Launcher Instalado",
+  "summary": "Primeiro ciclo do Patch 18: app instalado abre no launcher, com contas locais, central de patch, preparo offline e entrada direta em Venor.",
+  "assets": [
+    "/",
+    "/index.html",
+    "/launcher.html",
+    "/baixar.html",
+    "/patch-manifest.json",
+    "/manifest.webmanifest",
+    "/icon.svg",
+    "/patches/rv17-6-contrato-visual.png",
+    "/patches/rv17-7-bases-vivas.png",
+    "/patches/rv17-8-hunts-reacao.png",
+    "/patches/rv17-9-preparacao-rv18.png",
+    "/patches/rv18-grande-pacto.png",
+    "/texturas/ceu.png",
+    "/texturas/grama.png",
+    "/texturas/pedra.png",
+    "/texturas/telha.png",
+    "/texturas/madeira.png",
+    "/texturas/terra.png",
+    "/texturas/rocha.png",
+    "/texturas/areia.png",
+    "/texturas/lava.png",
+    "/texturas/muralha.png",
+    "/modelos/dragao.glb",
+    "/modelos/dragao2.glb"
+  ],
+  "updates": [
+    {
+      "id": "rv18-0",
+      "title": "Launcher instalado",
+      "status": "entregue",
+      "body": "Manifesto de patch, cache offline, contas locais e entrada direta no jogo."
+    },
+    {
+      "id": "contas",
+      "title": "Contas locais e nuvem",
+      "status": "base",
+      "body": "O launcher lista saves locais. Dentro do jogo, o botao de nuvem continua usando nome + PIN no servidor Railway."
+    },
+    {
+      "id": "premium",
+      "title": "Contrato visual",
+      "status": "regra",
+      "body": "Imagem oficial so entra quando existe sistema, cena, mapa, interacao ou documento canonico correspondente."
+    }
+  ],
+  "next": [
+    "RV18.1: portal publico com noticias, conta, personagens, mapa, rankings e bestiario.",
+    "RV18.2: pipeline de pacote instalado pesado, medicao mobile e decisao Tauri/Capacitor.",
+    "RV18.3: patcher real com delta de assets e historico de builds."
+  ]
+}

@@ -65,10 +65,19 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   lembrarWrap.appendChild(lembrarChk);
   lembrarWrap.appendChild(document.createTextNode('Lembrar minha conta neste aparelho'));
   painel.appendChild(lembrarWrap);
+  let launcherLogin = null;
   try { // pré-preenche se já houver conta lembrada (volta direto ao seu herói)
     const sl = JSON.parse(localStorage.getItem('venor_login') || 'null');
     if (sl && sl.nome) { inp.value = sl.nome; inpSenha.value = sl.senha || ''; }
   } catch (e) {}
+  try {
+    launcherLogin = JSON.parse(sessionStorage.getItem('venor_launcher_login') || 'null');
+    if (launcherLogin && launcherLogin.nome) {
+      inp.value = launcherLogin.nome;
+      inpSenha.value = launcherLogin.senha || '';
+      lembrarChk.checked = launcherLogin.lembrar !== false;
+    }
+  } catch (e) { launcherLogin = null; }
 
   function escolha(label, opcoes, chave) {
     const wrap = document.createElement('div'); wrap.style.cssText = 'margin-bottom:14px;';
@@ -142,6 +151,12 @@ export function criaSelecao({ cores, aoMudarCor, aoEntrar }) {
   btn.addEventListener('pointerup', (e) => { e.preventDefault(); e.stopPropagation(); entrar(); });
   btn.addEventListener('click', (e) => { e.preventDefault(); entrar(); });
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') entrar(); });
+  if (launcherLogin && launcherLogin.autoEntrar) {
+    setTimeout(() => {
+      try { sessionStorage.removeItem('venor_launcher_login'); } catch (e) {}
+      entrar();
+    }, 180);
+  }
   painel.appendChild(btn);
 
   const dica = document.createElement('p');

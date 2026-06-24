@@ -1,6 +1,6 @@
 # HANDOFF — Venor (para continuar do Codex)
 
-> Documento de passagem de bastao. Estado em **RV17.9 (v131)** no `main`, **nao publicado**.
+> Documento de passagem de bastao. Estado em **RV18.0 (v132)** no `main`, **nao publicado**.
 > Leia isto inteiro antes de mexer. Tudo aqui é factual e verificado.
 
 ---
@@ -13,7 +13,7 @@ Jogo single-file-ish: o orquestrador é `src/main3d.js` (~4200 linhas). Conteúd
 
 - **Produção**: https://caseiro.pages.dev (Cloudflare Pages).
 - **Servidor de contas/multiplayer**: Railway (wss). O mundo local funciona offline; o MP é opcional.
-- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV17.9 (v131)'`. **Suba a cada entrega.**
+- **Versao atual**: constante `VERSAO` em `src/main3d.js` = `'RV18.0 (v132)'`. **Suba a cada entrega.**
 
 ---
 
@@ -299,16 +299,29 @@ imagens geradas por IA (que dá pra ver como imagem).
 - Docs criados: `RV17_6_CONTRATO_VISUAL.md`, `RV17_7_BASES_VIVAS.md`, `RV17_8_HUNTS_REACAO.md`, `RV17_9_PREPARACAO_RV18.md`, `PATCH18_GRANDE_PACTO.md`.
 - Regra mantida: `rv18-grande-pacto.png` e previa, nao promessa entregue.
 
+## 7.16 Estado novo do RV18.0 (Codex)
+
+- `src/main3d.js` subiu para **RV18.0 (v132)**.
+- `public/launcher.html` e a nova entrada do app instalado.
+- `public/patch-manifest.json` registra versao, build, cache, assets, updates e proximos passos.
+- `public/manifest.webmanifest` agora abre em `/launcher.html`.
+- Cache offline subiu para **venor-rv18-0-offline-v1**.
+- `src/jogo/selecao.js` recebe conta do launcher via `sessionStorage` e entra automaticamente.
+- `patchNotes.js`, `baixar.html`, `sw.js` e `index.html` foram conectados ao launcher.
+- Documento da rodada: `docs/RV18_0_LAUNCHER_INSTALADO.md`.
+- Nao houve deploy/push.
+
 ## 8. FILA DE TRABALHO (pendências, ordenadas) — continue daqui
 
 Da auditoria por workflow (4 domínios). Fórmulas/âncoras já levantadas; tudo de **baixo risco**, procedural.
 
 ### Fila canonica apos 2026-06-23
 
-1. **RV18 - Portal publico + instalavel premium** - noticias, contas, personagens, rankings, bestiario, mapa, patch notes e foco app instalado se o peso grafico exigir.
-2. **RV18.1 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
-3. **RV18.2 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
-4. **RV18.3 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
+1. **RV18.1 - Portal publico** - noticias, conta/personagens, rankings, mapa, bestiario, patch notes e biblioteca de lore.
+2. **RV18.2 - Pacote instalado pesado** - medir mobile, decidir Tauri/Capacitor, separar assets pesados e planejar patcher real.
+3. **RV18.3 - Preparacao de viagem** - transformar despensa/contratos em buffs, custo, cooldown e retorno real.
+4. **RV18.4 - Doma adulta e Draptor** - boss do Coracao, Sela Draconica, chance rara, preparo que aumenta chance e variante lendaria.
+5. **RV18.5 - Voo draconico controlado** - zonas aereas, stamina, pouso, ilhas altas e limite contra abuso.
 7. **RV19-RV30 - Fechamento do Pacto 01/30** - seguir `docs/PLANO_30_CONTINENTES.md`.
 9. **Dragao adulto e Draptor** - doma adulta, Sela Draconica, invasoes raras, versao lendaria e preparo que melhora chance.
 10. **QoL profissional** - examinar NPC/objeto, diario, bestiario, mapa, colecoes, magias por vocacao e grupo.

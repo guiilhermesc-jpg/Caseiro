@@ -1,8 +1,8 @@
 {
-  "name": "Venor",
+  "name": "Venor Launcher",
   "short_name": "Venor",
-  "description": "RPG autoral em mundo aberto: explore Venor, evolua, negocie e sobreviva.",
-  "start_url": "/",
+  "description": "RPG autoral em mundo aberto com launcher instalado, contas locais, patch center e modo offline.",
+  "start_url": "/launcher.html",
   "scope": "/",
   "display": "fullscreen",
   "orientation": "any",
@@ -18,7 +18,7 @@
       "sizes": "1536x1024",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Venor - Preparacao RV18"
+      "label": "Venor Launcher - Patch RV18"
     }
   ]
 }

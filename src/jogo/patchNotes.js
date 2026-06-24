@@ -1,8 +1,14 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv17-9-preparacao-rv18';
+const PATCH_ID = 'rv18-0-launcher-instalado';
 
 const PATCHES = [
+  {
+    id: 'rv18-0',
+    titulo: 'Launcher Instalado',
+    img: '/patches/rv17-9-preparacao-rv18.png',
+    texto: 'O app instalado agora abre em um launcher com contas locais, central de patch, atualizacao de cache e entrada direta em Venor.',
+  },
   {
     id: 'rv17-6',
     titulo: 'Contrato Visual',
@@ -42,7 +48,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV17.9';
+  badge.textContent = 'PATCH RV18.0';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -69,11 +75,11 @@ export function criaPatchNotes() {
       url('/patches/rv17-9-preparacao-rv18.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
       <div style="position:absolute;left:28px;bottom:24px;max-width:740px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV17.6 - RV17.9</div>
-        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Contrato Visual e Ponte RV18</div>
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.0</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Launcher Instalado</div>
         <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
-          Toda arte oficial agora nasce com regra: o jogo precisa ter equivalencia real. Esta rodada fecha
-          a identidade premium da RV17 e prepara o grande ciclo instalado/offline do Patch 18.
+          O Patch 18 comeca pelo que sustenta escala: launcher instalavel, contas locais,
+          manifesto de patch, atualizacao de cache e entrada direta no mundo.
         </div>
       </div>
     </div>
@@ -81,16 +87,16 @@ export function criaPatchNotes() {
       <section>
         <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que entrou na direcao do jogo</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          RV17.9 nao e so uma vitrine. Ela define o padrao para cidade, interiores, hunts, contratos,
-          moradias, dragao companheiro e preparacao de mundo grande. O Patch 18 so pode usar arte como
-          promessa quando os sistemas estiverem no mapa, na interface ou na documentacao canonica.
+          RV18.0 transforma a base offline em produto instalado. O jogador pode abrir pelo launcher,
+          escolher conta, preparar o cache do patch e entrar no personagem. A conta em nuvem segue
+          dentro do jogo, usando nome + PIN no servidor Railway.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>RV17.6:</b> contrato visual premium para impedir arte oficial que nao represente o jogo.</li>
-          <li><b>RV17.7:</b> bases, mansoes e guildhouses como eixo de economia, descanso e utilidade.</li>
-          <li><b>RV17.8:</b> hunts passam a ser avaliadas por leitura, reacao, escala e recompensa.</li>
-          <li><b>RV17.9:</b> pedra do Pacto 18 entra em Venor e registra a ponte para expansao instalada.</li>
-          <li><b>Patch 18:</b> imagem de expansao fica marcada como previa, nao como recurso entregue.</li>
+          <li><b>Launcher:</b> nova pagina /launcher.html vira a entrada do app instalado.</li>
+          <li><b>Contas:</b> lista saves locais, lembra nome/senha e entra direto no jogo.</li>
+          <li><b>Patch:</b> /patch-manifest.json registra versao, build, assets e proximos passos.</li>
+          <li><b>Offline:</b> cache sobe para venor-rv18-0-offline-v1.</li>
+          <li><b>Contrato visual:</b> imagens futuras continuam presas a sistemas reais.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -101,7 +107,7 @@ export function criaPatchNotes() {
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
           Mascate: Terca, Quinta e Sabado.<br>
           Rotas: botao <b>ROTAS</b>. Bestiario: botao do dragao.<br>
-          Procure a pedra <b>Pacto 18</b> perto do primeiro anel de Venor.<br>
+          Launcher: <a href="/launcher.html" style="color:#bff0a8;font-weight:800;">abrir central instalada</a><br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>
       </aside>
@@ -118,8 +124,8 @@ export function criaPatchNotes() {
     </div>
     <div style="padding:0 22px 18px;">
       <div style="border:1px solid rgba(160,140,255,.24);background:rgba(80,60,140,.18);border-radius:12px;padding:14px;color:#cfd2ff;line-height:1.55;font-size:13px;">
-        <b>Previa RV18:</b> a arte <b>Grande Pacto</b> mostra voo, ilhas altas e calabouco gigante como alvo do proximo ciclo.
-        Ela esta registrada como preparacao, nao como promessa entregue nesta versao.
+        <b>Previa do ciclo 18:</b> a arte <b>Grande Pacto</b> mostra voo, ilhas altas e calabouco gigante como alvo dos proximos blocos.
+        Nesta versao, a entrega real e o launcher instalado com manifesto de patch e preparo offline.
       </div>
     </div>
     <div style="padding:0 22px 22px;display:flex;gap:10px;justify-content:flex-end;">

@@ -1,8 +1,10 @@
-const CACHE_VERSION = 'venor-rv17-9-offline-v1';
+const CACHE_VERSION = 'venor-rv18-0-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
+  '/launcher.html',
   '/baixar.html',
+  '/patch-manifest.json',
   '/manifest.webmanifest',
   '/icon.svg',
   '/patches/rv17-1-calabouco-vivo.png',
@@ -46,6 +48,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -59,10 +65,12 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', copy));
+          caches.open(CACHE_VERSION).then((cache) => cache.put(url.pathname === '/' ? '/index.html' : url.pathname, copy));
           return res;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(url.pathname === '/' ? '/index.html' : url.pathname)
+          .then((cached) => cached || caches.match('/launcher.html'))
+          .then((cached) => cached || caches.match('/index.html')))
     );
     return;
   }
