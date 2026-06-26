@@ -97,15 +97,22 @@ Rodada de revisão (6 dimensões → verificação adversarial): 41 achados, 35 
 
 ---
 
+### 2026-06-21 (cont.) — Rede anti-regressão (#P4)
+- **+18 testes** blindando o núcleo recém-mexido: faixas de timelock (tiers/herança lançam fora de
+  1..65535 + borda 65535), ramos de taxa do `buildTiersPsbt` (perIn 120 normal vs 84 timelock) e
+  troco-poeira (<330 → sem troco), `decodeSilentPaymentAddress` (vetor mainnet + erros) e cadência/
+  escape do `lifeProofGoogleCalUrl`. (Falta só o teste de integração do `silentPaymentScan`.)
+
+---
+
 ## 🔜 Próximas etapas (backlog priorizado) — restante da varredura
 1. **Validar tiers on-chain (testnet)** pelo ensaio (tirar rótulo "experimental").
 2. **Registro pro IR com preço HISTÓRICO** por data (hoje usa preço de hoje) (#12).
-4. **PWA/SW:** doc 12 no cache + tirar `DIARIO` do build; fallback offline no fetch handler;
+3. **PWA/SW:** doc 12 no cache + tirar `DIARIO` do build; fallback offline no fetch handler;
    stale-while-revalidate nos docs; update do SW visível (#20–#24).
-5. **Testes (rede anti-regressão):** `silentPaymentScan`, ramos de `buildTiersPsbt`, faixas de
-   timelock, `decodeSilentPaymentAddress`, `lifeProofGoogleCalUrl` (#P4).
-6. **Handle legível BIP-353** — PENDENTE (domínio a definir; manter "Bússola").
-7. **Status de níveis no card "Vida Toda"** (hoje cobre o cofre simples).
+4. **Teste de integração `silentPaymentScan`** (reconstruir tx Esplora do `hex`, send→scan).
+5. **Handle legível BIP-353** — PENDENTE (domínio a definir; manter "Bússola").
+6. **Status de níveis no card "Vida Toda"** (hoje cobre o cofre simples).
 
 ## ✅ Entregue do backlog (limpeza recente)
 Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança (BTC/R$ + compartilhar) ·
