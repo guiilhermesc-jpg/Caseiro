@@ -111,6 +111,13 @@ const shMn = createTestnetWallet().mnemonic;
 const shares = await splitMnemonic(shMn, 5, 3);
 eq('shamir gera 5 partes', shares.length, 5);
 eq('shamir recompõe 3-de-5 == original', await combineMnemonic([shares[0], shares[2], shares[4]]), shMn);
+// digest de integridade: abaixo do limiar (2 de 3) agora FALHA em vez de devolver frase errada
+let shBelow = false; try { await combineMnemonic([shares[0], shares[1]]); } catch { shBelow = true; }
+eq('shamir: abaixo do limiar FALHA (não devolve frase errada)', shBelow, true);
+// parte corrompida também é detectada
+const bad = shares[2].slice(0, -2) + (shares[2].slice(-2) === 'ff' ? '00' : 'ff');
+let shCorrupt = false; try { await combineMnemonic([shares[0], bad, shares[4]]); } catch { shCorrupt = true; }
+eq('shamir: parte corrompida FALHA (digest não bate)', shCorrupt, true);
 
 /* Herança com timelock (cofre P2WSH): endereço + resgate (herdeiro+timelock) + normal (2-de-3) */
 const ihA = createMultisigCosigner(), ihB = createMultisigCosigner(), ihC = createMultisigCosigner(), ihH = createMultisigCosigner();

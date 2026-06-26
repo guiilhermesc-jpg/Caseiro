@@ -48,14 +48,25 @@ export async function splitMnemonic(mnemonic, total, threshold) {
   if (!validateMnemonic(m, wordlist)) throw new Error('Frase de recuperação inválida.');
   const t = Math.max(2, Math.min(10, total | 0));
   const k = Math.max(2, Math.min(t, threshold | 0));
-  const shares = await shamirSplit(mnemonicToEntropy(m, wordlist), t, k);
+  // Segredo dividido = entropia || digest(4 bytes de sha256(entropia)). O digest permite DETECTAR
+  // recomposição com partes insuficientes/corrompidas (o checksum BIP39 sozinho não detecta entropia errada).
+  const entropy = mnemonicToEntropy(m, wordlist);
+  const digest = sha256(entropy).slice(0, 4);
+  const secret = new Uint8Array(entropy.length + 4);
+  secret.set(entropy, 0); secret.set(digest, entropy.length);
+  const shares = await shamirSplit(secret, t, k);
   return shares.map(s => hex.encode(s));
 }
 export async function combineMnemonic(shareHexes) {
   const shares = shareHexes.map(s => hex.decode(String(s).trim()));
   if (shares.length < 2) throw new Error('Forneça pelo menos 2 partes.');
-  const ent = await shamirCombine(shares);
-  return entropyToMnemonic(ent, wordlist);
+  const secret = await shamirCombine(shares);
+  if (secret.length < 5) throw new Error('Partes inválidas (tamanho inesperado).');
+  const entropy = secret.slice(0, secret.length - 4), digest = secret.slice(secret.length - 4);
+  const check = sha256(entropy).slice(0, 4);
+  if (!digest.every((b, i) => b === check[i]))
+    throw new Error('Partes incompatíveis ou insuficientes — recuperação falhou. Use o número MÍNIMO de partes corretas (k).');
+  return entropyToMnemonic(entropy, wordlist);
 }
 
 const b58c = base58check(sha256);
@@ -570,9 +581,13 @@ export function silentPaymentSend({ mnemonic, accountXpub, utxos, toAddress, amo
   tx.addOutput({ script: spOut.script, amount: BigInt(amount) });
   const hasChange = change >= 294;
   if (hasChange) tx.addOutputAddress(addressAt(xpub, 1, changeIndex), BigInt(change), NET);
-  for (const p of inputPrivKeys) { try { tx.sign(p); } catch { /* entrada de outra chave */ } }
+  let signed = 0;
+  for (const p of inputPrivKeys) { try { signed += tx.sign(p); } catch { /* entrada de outra chave */ } }
+  if (signed < inputPrivKeys.length) throw new Error(`Não foi possível assinar ${inputPrivKeys.length - signed} entrada(s) — confira chain/index das UTXOs.`);
   tx.finalize();
-  return { hex: tx.hex, txid: tx.id, outputXonly: spOut.xonly, fee, totalIn, change: hasChange ? change : 0 };
+  const realFee = totalIn - amount - (hasChange ? change : 0); // taxa de fato paga (troco-poeira vira taxa)
+  return { hex: tx.hex, txid: tx.id, outputXonly: spOut.xonly, fee: realFee, totalIn, change: hasChange ? change : 0,
+    note: change > 0 && !hasChange ? 'Troco abaixo da poeira foi somado à taxa.' : '' };
 }
 
 /* Scanner de recebimentos SP: dados as chaves de visão (scan) + a spend pubkey, descobre quais

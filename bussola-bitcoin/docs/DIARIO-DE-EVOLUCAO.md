@@ -70,14 +70,38 @@ Isso abre uma sessão por dia que segue as regras do `CLAUDE.md` automaticamente
 - **Cache do auto-status:** o card "Vida Toda" guarda o status por ~2 min (sessionStorage); o botão
   força releitura. Menos peso na chain a cada visita.
 
+### 2026-06-21 — Varredura adversarial de bugs (workflow multiagente) + correções P0/P1
+Rodada de revisão (6 dimensões → verificação adversarial): 41 achados, 35 confirmados. **Corrigidos:**
+- **#1 (ALTA)** `combineMnemonic` devolvia frase **errada em silêncio** com partes insuficientes/
+  corrompidas → agora embute **digest (4 bytes sha256)** no segredo dividido e **falha** se não bater
+  (2 testes novos). *Quebra compat. com shares antigas — formato novo.*
+- **#2 (ALTA)** Silent Payments oferecia **"mainnet (sp1)"** com pipeline 100% testnet (risco de perder
+  BTC real) → opção **desabilitada** ("em breve").
+- **#3 (ALTA)** XSS via `javascript:`/aspas em links Markdown (IA/Book) → `safeHref()` só aceita
+  `https/mailto/bitcoin/#//` e escapa aspas.
+- **#9 (ALTA)** tip-height lido sem `r.ok` (NaN→0) podia **mentir no Interruptor** → helper
+  `fetchTipHeight()` que falha alto (5 pontos trocados).
+- **#10/#11** card "Vida Toda": `Wsh` em TDZ (auto-status quebrado no 1º load) → usa
+  `window.BussolaWallet`; chave de cache passou a incluir **todos** os guardiões + herdeiro.
+- **#13/#15** `silentPaymentSend`: reporta a **taxa real** + `note` de troco-poeira; **falha** se
+  alguma entrada não assinar.
+- **#4/#5** todos os 13 campos de **seed/frase** viraram `type=password`; campo de restauração é
+  **limpo** após uso. SW v36.
+
 ---
 
-## 🔜 Próximas etapas (backlog priorizado)
-1. **Validar tiers on-chain (testnet)** pelo ensaio — confirmar os 3 caminhos com tx reais antes
-   de tirar o rótulo "experimental". (Consenso/CSV/witness aninhado não dá pra unit-testar.)
-2. **Handle legível BIP-353** (`nome@dominio` via DNS). **PENDENTE:** domínio ainda não definido
-   — manter a marca "Bússola" (domínio compartilhado) como caminho quando decidir.
-3. **Status de níveis no card "Vida Toda"** (hoje o card cobre o cofre simples).
+## 🔜 Próximas etapas (backlog priorizado) — restante da varredura
+1. **Validar tiers on-chain (testnet)** pelo ensaio (tirar rótulo "experimental").
+2. **Cofre/backup — escopo de segredos:** restauração do Cofre valida shape/versão e **não**
+   sobrescreve `esplora`/`aikey` sem confirmar (#6); backup **não** deve incluir a chave da API por
+   padrão (#7); validar endpoint Esplora (esquema/host) no submit (#8).
+3. **Registro pro IR com preço HISTÓRICO** por data (hoje usa preço de hoje) (#12).
+4. **PWA/SW:** doc 12 no cache + tirar `DIARIO` do build; fallback offline no fetch handler;
+   stale-while-revalidate nos docs; update do SW visível (#20–#24).
+5. **Testes (rede anti-regressão):** `silentPaymentScan`, ramos de `buildTiersPsbt`, faixas de
+   timelock, `decodeSilentPaymentAddress`, `lifeProofGoogleCalUrl` (#P4).
+6. **Handle legível BIP-353** — PENDENTE (domínio a definir; manter "Bússola").
+7. **Status de níveis no card "Vida Toda"** (hoje cobre o cofre simples).
 
 ## ✅ Entregue do backlog (limpeza recente)
 Modo Herdeiro · Teste de Herança · "Você vai herdar isto" · Cobrança (BTC/R$ + compartilhar) ·
