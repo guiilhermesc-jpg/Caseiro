@@ -4,14 +4,19 @@
 
 /* =================== Markdown mínimo =================== */
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+/* Só permite esquemas seguros no href (bloqueia javascript:, data:, etc.) e escapa aspas. */
+function safeHref(u) {
+  const t = String(u).trim();
+  return /^(https?:|mailto:|bitcoin:|#|\/)/i.test(t) ? t.replace(/"/g, '%22') : '#';
+}
 function inline(s) {
   return esc(s)
     .replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => `<a href="${safeHref(url)}" target="_blank" rel="noopener">${text}</a>`)
     .replace(/(^|[\s(])((https?:\/\/)[^\s)]+)(?=$|[\s).,])/g,
-      '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+      (_, pre, url) => `${pre}<a href="${safeHref(url)}" target="_blank" rel="noopener">${url}</a>`);
 }
 function cells(line) {
   let t = line.trim();
@@ -632,6 +637,15 @@ const EXAMPLE_XPUB = 'xpub6Bqrcfo7nB1ywHwEvjikTNcd2jyTksXZLFkwJxUyeHJy8USaxusZpd
 const DEFAULT_ESPLORA = 'https://mempool.space/testnet/api';
 const ESPLORA_KEY = 'bussola.esplora.v1';
 function esploraBase() { try { return (localStorage.getItem(ESPLORA_KEY) || DEFAULT_ESPLORA).replace(/\/+$/, ''); } catch { return DEFAULT_ESPLORA; } }
+/* Altura do topo da chain, com ERRO em falha de rede/parse — nunca devolve 0 silencioso
+ * (tip=0 faria a contagem do Interruptor mentir e poderia bloquear a herança). */
+async function fetchTipHeight() {
+  const r = await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' });
+  if (!r.ok) throw new Error('explorer indisponível (tip height HTTP ' + r.status + ')');
+  const h = parseInt((await r.text()).trim(), 10);
+  if (!Number.isFinite(h) || h <= 0) throw new Error('altura da chain inválida');
+  return h;
+}
 
 function viewCarteira() {
   menuBtn.hidden = true;
@@ -667,7 +681,7 @@ function viewCarteira() {
         <div class="regactions"><button id="wgCreate" class="btn-ghost">🎲 Criar nova (testnet)</button></div>
         <form id="wgRestore" class="regform">
           <label style="grid-column:1/-1">Restaurar (12/24 palavras)
-            <input type="text" id="wgWords" placeholder="palavra1 palavra2 … (separadas por espaço)" autocomplete="off" spellcheck="false"></label>
+            <input type="password" id="wgWords" placeholder="palavra1 palavra2 … (separadas por espaço)" autocomplete="off" spellcheck="false"></label>
           <button type="submit">Restaurar</button>
         </form>
         <div id="wgOut"></div>
@@ -717,7 +731,7 @@ function viewCarteira() {
           <div class="banner warn">Faça este passo no <strong>aparelho offline</strong>. A seed só é usada aqui e some ao concluir.</div>
           <form id="agSign" class="regform">
             <label style="grid-column:1/-1">PSBT a assinar (cole ou 📷)<textarea id="agPsbtIn" rows="3" spellcheck="false"></textarea></label>
-            <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="text" id="agSeed" autocomplete="off" spellcheck="false"></label>
+            <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="password" id="agSeed" autocomplete="off" spellcheck="false"></label>
             <button type="submit">Assinar (offline)</button>
           </form>
           <div class="regactions"><button type="button" class="btn-ghost" id="agScanPsbt">📷 Escanear PSBT</button></div>
@@ -769,7 +783,7 @@ function viewCarteira() {
           <h3>4) Assinar (cada cosigner, offline)</h3>
           <form id="msSign" class="regform">
             <label style="grid-column:1/-1">PSBT (cole ou 📷)<textarea id="msPsbtIn" rows="3" spellcheck="false"></textarea></label>
-            <label style="grid-column:1/-1">Sua frase (cosigner)<input id="msSeed" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Sua frase (cosigner)<input type="password" id="msSeed" spellcheck="false" autocomplete="off"></label>
             <button type="submit">Assinar</button>
           </form>
           <div class="regactions"><button type="button" class="btn-ghost" id="msScan">📷 Escanear PSBT</button></div>
@@ -794,7 +808,7 @@ function viewCarteira() {
           <label style="grid-column:1/-1">Destino (sp1…/tsp1…)<input id="spsTo" spellcheck="false" autocomplete="off"></label>
           <label>Valor (sats)<input type="number" id="spsAmt" min="1" step="1"></label>
           <label>Taxa (sat/vB)<input type="number" id="spsFee" min="1" step="1" value="2"></label>
-          <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="spsSeed" spellcheck="false" autocomplete="off"></label>
+          <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="password" id="spsSeed" spellcheck="false" autocomplete="off"></label>
           <button type="submit">Pagar</button>
         </form>
         <div id="spsOut"></div>
@@ -842,7 +856,7 @@ function viewCarteira() {
           <h3>4) Assinar (guardião ou herdeiro, offline)</h3>
           <form id="ihSign" class="regform">
             <label style="grid-column:1/-1">PSBT (cole ou 📷)<textarea id="ihPsbtIn" rows="3" spellcheck="false"></textarea></label>
-            <label style="grid-column:1/-1">Sua frase<input id="ihSeed" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Sua frase<input type="password" id="ihSeed" spellcheck="false" autocomplete="off"></label>
             <button type="submit">Assinar</button>
           </form>
           <div class="regactions"><button type="button" class="btn-ghost" id="ihScan">📷 Escanear PSBT</button></div>
@@ -881,7 +895,7 @@ function viewCarteira() {
             <label>Timelock (blocos)<input type="number" id="ihhTL" min="1" max="65535" value="144"></label>
             <label>Taxa (sat/vB)<input type="number" id="ihhFee" min="1" step="1" value="2"></label>
             <label style="grid-column:1/-1">Para onde enviar — seu endereço (tb1…)<input id="ihhTo" spellcheck="false" autocomplete="off"></label>
-            <label style="grid-column:1/-1">Sua frase de herdeiro (12/24 palavras)<input id="ihhSeed" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Sua frase de herdeiro (12/24 palavras)<input type="password" id="ihhSeed" spellcheck="false" autocomplete="off"></label>
             <button type="submit">🕊️ Resgatar minha herança</button>
           </form>
           <div class="regactions"><button type="button" class="btn-ghost" id="ihhWatch">👁️ Só acompanhar (você vai herdar isto)</button></div>
@@ -920,8 +934,8 @@ function viewCarteira() {
               <option value="executor">Executor — sozinho após t1</option>
               <option value="heir">Herdeiros — sozinho após t2</option></select></label>
             <label>Taxa (sat/vB)<input type="number" id="tiFee" min="1" step="1" value="2"></label>
-            <label style="grid-column:1/-1">Frase 1 (executor/herdeiro, ou guardião 1)<input id="tiSeed1" spellcheck="false" autocomplete="off"></label>
-            <label style="grid-column:1/-1">Frase 2 (só no normal — guardião 2)<input id="tiSeed2" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Frase 1 (executor/herdeiro, ou guardião 1)<input type="password" id="tiSeed1" spellcheck="false" autocomplete="off"></label>
+            <label style="grid-column:1/-1">Frase 2 (só no normal — guardião 2)<input type="password" id="tiSeed2" spellcheck="false" autocomplete="off"></label>
             <button type="submit">Montar, assinar e transmitir</button>
           </form>
           <div id="tiOut"></div>
@@ -974,6 +988,7 @@ function viewCarteira() {
     if (!wallet) { wgOut.innerHTML = '<p class="muted">Núcleo da carteira não carregou. Recarregue a página.</p>'; return; }
     try {
       const w = wallet.restoreTestnetWallet(document.getElementById('wgWords').value);
+      document.getElementById('wgWords').value = ''; // higiene: nao deixa a seed no DOM
       wgOut.innerHTML = '<div class="banner ok">✅ Carteira restaurada. Veja os endereços abaixo.</div>';
       useAccount(w.accountXpub);
     } catch (err) { wgOut.innerHTML = `<p class="muted">${err.message}</p>`; }
@@ -1242,7 +1257,7 @@ function viewCarteira() {
         try {
           const u = await scanUtxosIh(cfg);
           if (!u.length) { box.innerHTML = '<div class="banner warn">Cofre vazio — envie fundos para <strong>ligar o interruptor</strong>. Enquanto houver saldo parado, o relógio da herança corre.</div>'; return; }
-          const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+          const tip = await fetchTipHeight();
           const st = wallet.inheritanceClaimStatus({ timelock: cfg.timelock, utxos: u, tipHeight: tip });
           const saldo = `<div class="sub muted">${BTC.format(st.totalSats / 1e8)} tBTC em ${st.items.length} UTXO(s) · timelock ${st.timelock} blocos</div>`;
           if (st.claimableAll) {
@@ -1333,7 +1348,7 @@ function viewCarteira() {
     try {
       const utxos = await scanUtxosIh(cfg);
       if (!utxos.length) { o.innerHTML = '<div class="banner ok">👁️ Cofre acompanhado. Ainda <strong>sem saldo</strong> — nada a herdar por enquanto.</div>'; return; }
-      const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+      const tip = await fetchTipHeight();
       const st = wallet.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
       const saldo = `<div class="sub muted">${BTC.format(st.totalSats / 1e8)} tBTC em ${st.items.length} UTXO(s)</div>`;
       if (st.claimableAll) {
@@ -1357,7 +1372,7 @@ function viewCarteira() {
     try {
       const utxos = await scanUtxosIh(cfg);
       if (!utxos.length) { o.innerHTML = '<div class="banner warn">Cofre vazio (sem saldo) — não há o que resgatar.</div>'; return; }
-      const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+      const tip = await fetchTipHeight();
       const st = wallet.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
       const saldo = `${BTC.format(st.totalSats / 1e8)} tBTC em ${st.items.length} UTXO(s)`;
       if (!st.claimableAll) {
@@ -1412,7 +1427,7 @@ function viewCarteira() {
         try {
           const u = await scanUtxosTi(cfg);
           if (!u.length) { box.innerHTML = '<div class="banner warn">Cofre vazio — envie fundos para ativar.</div>'; return; }
-          const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
+          const tip = await fetchTipHeight();
           const s1 = wallet.inheritanceClaimStatus({ timelock: cfg.t1, utxos: u, tipHeight: tip });
           const s2 = wallet.inheritanceClaimStatus({ timelock: cfg.t2, utxos: u, tipHeight: tip });
           box.innerHTML = `<div class="banner ok">Saldo: <strong>${BTC.format(s1.totalSats / 1e8)} tBTC</strong>.<br>Executor: ${s1.claimableAll ? '<strong>liberado ✓</strong>' : `faltam ${s1.remaining} blocos (~${s1.remainingDays}d)`} · Herdeiros: ${s2.claimableAll ? '<strong>liberado ✓</strong>' : `faltam ${s2.remaining} blocos (~${s2.remainingDays}d)`}</div>`;
@@ -1625,7 +1640,7 @@ function viewSoberania() {
         <div class="agstep">
           <h3>Dividir a frase</h3>
           <form id="shSplit" class="regform">
-            <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="shMn" autocomplete="off" spellcheck="false"></label>
+            <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="password" id="shMn" autocomplete="off" spellcheck="false"></label>
             <label>Total de partes (N)<input type="number" id="shN" min="2" max="10" value="5"></label>
             <label>Mínimo p/ recompor (k)<input type="number" id="shK" min="2" max="10" value="3"></label>
             <button type="submit">Gerar partes</button>
@@ -1649,8 +1664,8 @@ function viewSoberania() {
         <div class="banner ok">Ciclo SP completo aqui: <strong>gerar</strong> identidade → <strong>receber</strong> (verificar txid + salvar no painel)
         → <strong>gastar</strong> (varrer o saldo). Enviar a um sp1… está na aba Carteira. Tudo validado contra o vetor oficial do BIP-352.</div>
         <form id="spForm" class="regform">
-          <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input id="spMn" autocomplete="off" spellcheck="false"></label>
-          <label>Rede<select id="spNet"><option value="test">Testnet (tsp1)</option><option value="main">Mainnet (sp1)</option></select></label>
+          <label style="grid-column:1/-1">Sua frase (12/24 palavras)<input type="password" id="spMn" autocomplete="off" spellcheck="false"></label>
+          <label>Rede<select id="spNet"><option value="test">Testnet (tsp1)</option><option value="main" disabled>Mainnet (sp1) — em breve</option></select></label>
           <button type="submit">Gerar endereço SP</button>
         </form>
         <div id="spOut"></div>
@@ -1660,8 +1675,8 @@ function viewSoberania() {
           Varredura automática da chain exige um node indexado (roadmap) — aqui é por transação.</p>
           <form id="spScan" class="regform">
             <label style="grid-column:1/-1">txid da transação<input id="spTxid" spellcheck="false" autocomplete="off"></label>
-            <label style="grid-column:1/-1">Sua frase<input id="spScanMn" autocomplete="off" spellcheck="false"></label>
-            <label>Rede<select id="spScanNet"><option value="test">Testnet</option><option value="main">Mainnet</option></select></label>
+            <label style="grid-column:1/-1">Sua frase<input type="password" id="spScanMn" autocomplete="off" spellcheck="false"></label>
+            <label>Rede<select id="spScanNet"><option value="test">Testnet</option><option value="main" disabled>Mainnet — em breve</option></select></label>
             <button type="submit">Verificar</button>
           </form>
           <div id="spScanOut"></div>
@@ -1752,17 +1767,18 @@ function viewSoberania() {
       const CKEY = 'bussola.vida.status.cache.v1';
       const loadStatus = async (force) => {
         const out = document.getElementById('vcStatusOut'); if (!out) return;
-        const ck = (cofre.c[0] || '') + ':' + (cofre.t || 144);
+        const W = window.BussolaWallet; if (!W) return;
+        const ck = [cofre.c[0], cofre.c[1], cofre.c[2], cofre.h, (cofre.t || 144)].join(':');
         if (!force) { try { const c = JSON.parse(sessionStorage.getItem(CKEY) || 'null'); if (c && c.k === ck && Date.now() - c.at < 120000) { out.innerHTML = c.html + '<div class="muted small" style="opacity:.6">cache · toque em atualizar para reler</div>'; return; } } catch {} }
         out.innerHTML = '<p class="loading">Lendo a chain…</p>';
         try {
           const cfg = { cosignerXpubs: cofre.c, heirXpub: cofre.h, timelock: cofre.t || 144 };
-          const targets = [...Wsh.inheritanceAddresses({ ...cfg, count: 10, chain: 0 }), ...Wsh.inheritanceAddresses({ ...cfg, count: 5, chain: 1 })];
+          const targets = [...W.inheritanceAddresses({ ...cfg, count: 10, chain: 0 }), ...W.inheritanceAddresses({ ...cfg, count: 5, chain: 1 })];
           const utxos = [];
           await Promise.all(targets.map(async t => { try { const rr = await fetch(`${esploraBase()}/address/${t.address}/utxo`, { cache: 'no-store' }); if (!rr.ok) return; for (const u of await rr.json()) utxos.push({ valueSats: u.value, height: u.status?.block_height || 0 }); } catch {} }));
           if (!utxos.length) { out.innerHTML = '<p class="muted small">Cofre sem saldo — envie fundos para ligar o Interruptor.</p>'; return; }
-          const tip = parseInt(await (await fetch(`${esploraBase()}/blocks/tip/height`, { cache: 'no-store' })).text(), 10);
-          const st = Wsh.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
+          const tip = await fetchTipHeight();
+          const st = W.inheritanceClaimStatus({ timelock: cfg.timelock, utxos, tipHeight: tip });
           let html;
           if (st.claimableAll) { html = '<div class="banner warn">⚠️ Interruptor disparado — herança liberada. Se você está vivo, mova o cofre agora.</div>'; }
           else { const pct = Math.round(100 * (st.timelock - st.remaining) / st.timelock); html = `<div class="muted small">🫀 ${BTC.format(st.totalSats / 1e8)} tBTC · faltam <strong>${st.remaining} blocos (~${st.remainingDays}d)</strong></div><div class="lifebar" style="background:var(--line);border-radius:8px;height:8px;overflow:hidden;margin:6px 0"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c5cff,#b07bff)"></div></div>`; }
@@ -2003,7 +2019,7 @@ function viewSoberania() {
       const lo = document.getElementById('spLedgerOut');
       lo.innerHTML = `<form id="spLedgerForm" class="regform" style="margin-top:8px">
           <label style="grid-column:1/-1">Enviar tudo para (endereço testnet)<input id="slDest" spellcheck="false" autocomplete="off" placeholder="tb1q…"></label>
-          <label style="grid-column:1/-1">Sua frase<input id="slMn" autocomplete="off" spellcheck="false"></label>
+          <label style="grid-column:1/-1">Sua frase<input type="password" id="slMn" autocomplete="off" spellcheck="false"></label>
           <label>Taxa (sat/vB)<input type="number" id="slFee" min="1" step="1" value="2"></label>
           <button type="submit">Montar transação</button>
         </form><div id="slOut"></div>`;
@@ -2065,7 +2081,7 @@ function viewSoberania() {
               <p class="muted small">Varre <strong>todos</strong> os ${res.found.length} output(s) acima para um endereço só.</p>
               <form id="spSpend" class="regform">
                 <label style="grid-column:1/-1">Enviar tudo para (endereço testnet)<input id="spDest" spellcheck="false" autocomplete="off" placeholder="tb1q…"></label>
-                <label style="grid-column:1/-1">Sua frase<input id="spSpendMn" autocomplete="off" spellcheck="false"></label>
+                <label style="grid-column:1/-1">Sua frase<input type="password" id="spSpendMn" autocomplete="off" spellcheck="false"></label>
                 <label>Taxa (sat/vB)<input type="number" id="spFee" min="1" step="1" value="2"></label>
                 <button type="submit">Montar transação</button>
               </form><div id="spSpendOut"></div></div>`;
