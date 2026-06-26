@@ -286,6 +286,42 @@ eq('GCal: action TEMPLATE', gcal.includes('action=TEMPLATE'), true);
 eq('GCal: tem recorrência (RRULE)', gcal.includes('recur=RRULE'), true);
 eq('GCal: tem janela de datas', gcal.includes('dates=20260102T120000Z'), true);
 
+/* === Anti-regressão (varredura de bugs #P4): blindagem do núcleo === */
+{
+  // Faixas de timelock — devem LANÇAR fora de 1..65535 (cofre com fundos travados se regredir)
+  const a = createMultisigCosigner(), b = createMultisigCosigner(), c = createMultisigCosigner(), e = createMultisigCosigner(), h = createMultisigCosigner();
+  const cg = [a.accountXpub, b.accountXpub, c.accountXpub];
+  const thr = fn => { try { fn(); return false; } catch { return true; } };
+  eq('tiers: t1<1 lança', thr(() => tiersAddresses({ cosignerXpubs: cg, executorXpub: e.accountXpub, heirXpub: h.accountXpub, t1: 0, t2: 10, count: 1 })), true);
+  eq('tiers: t2>65535 lança', thr(() => tiersAddresses({ cosignerXpubs: cg, executorXpub: e.accountXpub, heirXpub: h.accountXpub, t1: 1, t2: 70000, count: 1 })), true);
+  eq('herança: timelock 0 lança', thr(() => inheritanceAddresses({ cosignerXpubs: cg, heirXpub: h.accountXpub, timelock: 0, count: 1 })), true);
+  eq('herança: timelock 70000 lança', thr(() => inheritanceAddresses({ cosignerXpubs: cg, heirXpub: h.accountXpub, timelock: 70000, count: 1 })), true);
+  eq('herança: timelock 65535 (borda) ok', /^tb1q/.test(inheritanceAddresses({ cosignerXpubs: cg, heirXpub: h.accountXpub, timelock: 65535, count: 1 })[0].address), true);
+
+  // buildTiersPsbt: ramos de taxa (perIn 120 normal vs 84 timelock) e troco-poeira (<330 => sem troco)
+  const u1 = [{ txid: '33'.repeat(32), vout: 0, chain: 0, index: 0, valueSats: 100000 }];
+  const dst = 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx';
+  const cfgT = { cosignerXpubs: cg, executorXpub: e.accountXpub, heirXpub: h.accountXpub, t1: 144, t2: 432 };
+  const bn = buildTiersPsbt({ ...cfgT, utxos: u1, toAddress: dst, amountSats: 90000, feeRate: 1, mode: 'normal' });
+  eq('tiers/fee normal (perIn 120): 217 sats', bn.fee, 217);
+  eq('tiers/fee normal: troco 9783', bn.change, 9783);
+  const be = buildTiersPsbt({ ...cfgT, utxos: u1, toAddress: dst, amountSats: 90000, feeRate: 1, mode: 'executor' });
+  eq('tiers/fee executor (perIn 84): 181 sats', be.fee, 181);
+  const bd = buildTiersPsbt({ ...cfgT, utxos: u1, toAddress: dst, amountSats: 99500, feeRate: 1, mode: 'normal' });
+  eq('tiers/troco-poeira (<330) => change 0', bd.change, 0);
+
+  // decodeSilentPaymentAddress: positivo (vetor mainnet) + ramos de erro
+  const dec = decodeSilentPaymentAddress('sp1qqgste7k9hx0qftg6qmwlkqtwuy6cycyavzmzj85c6qdfhjdpdjtdgqjuexzk6murw56suy3e0rd2cgqvycxttddwsvgxe2usfpxumr70xc9pkqwv');
+  eq('SP/decode: scanPub do vetor', dec.scanPub, '0220bcfac5b99e04ad1a06ddfb016ee13582609d60b6291e98d01a9bc9a16c96d4');
+  eq('SP/decode: spendPub do vetor', dec.spendPub, '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36');
+  eq('SP/decode: prefixo errado lança', thr(() => decodeSilentPaymentAddress('tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx')), true);
+  eq('SP/decode: lixo lança', thr(() => decodeSilentPaymentAddress('sp1qqzzzz')), true);
+
+  // lifeProofGoogleCalUrl: cadência derivada do timelock + escape do label
+  eq('GCal: timelock 4320 => INTERVAL 20', lifeProofGoogleCalUrl({ timelock: 4320 }).includes('INTERVAL%3D20'), true);
+  eq('GCal: escapa label "A & B"', lifeProofGoogleCalUrl({ timelock: 144, label: 'A & B' }).includes('text=A+%26+B'), true);
+}
+
 /* Gera uma xpub de CONTA testnet (m/84'/1'/0') determinística, para usar como exemplo na UI.
  * Só material PÚBLICO é exportado/impresso. */
 const seed = sha256('bussola exemplo testnet publico');
