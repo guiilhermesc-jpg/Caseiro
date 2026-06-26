@@ -256,6 +256,27 @@ export function criaDraptor(lendario = false) {
   return g;
 }
 
+function criaDragaoVariante(cor = 0x6fd06f, emissivo = 0x000000, escala = 0.16, lord = false) {
+  const d = criaDragao(0, 0, lord);
+  d.scale.setScalar(escala);
+  d.userData.baseScale = escala;
+  d.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    o.material = o.material.clone();
+    if (o.material.color) o.material.color.lerp(new THREE.Color(cor), 0.72);
+    if (o.material.emissive && emissivo) {
+      o.material.emissive.setHex(emissivo);
+      o.material.emissiveIntensity = Math.max(o.material.emissiveIntensity || 0, 0.35);
+    }
+  });
+  if (d.userData && d.userData.corpoMat && d.userData.corpoMat.color) {
+    d.userData.corpoMat = d.userData.corpoMat.clone();
+    d.userData.corpoMat.color.setHex(cor);
+    if (emissivo) { d.userData.corpoMat.emissive.setHex(emissivo); d.userData.corpoMat.emissiveIntensity = 0.35; }
+  }
+  return d;
+}
+
 export const PETS = {
   gato: criaGato, cachorro: criaCachorro, coelho: criaCoelho,
   lobo: () => criaLobo(0, 0),
@@ -264,7 +285,12 @@ export const PETS = {
   morcego: criaMorcegoGrande,
   draptor: () => criaDraptor(false),
   draptorLendario: () => criaDraptor(true),
-  dragaozinho: () => { const d = criaDragao(0, 0); d.scale.setScalar(0.16); return d; },
+  furiaDoDia: () => criaDragaoVariante(0xf0d878, 0xff9d2a, 0.18, false),
+  furiaDaNoite: () => criaDragaoVariante(0x2a2730, 0x5b4cff, 0.18, false),
+  dragaoPantano: () => criaDragaoVariante(0x3f7a4a, 0x36d06f, 0.17, false),
+  dragaoGelo: () => criaDragaoVariante(0x9fd7ff, 0x66cfff, 0.17, false),
+  dragaoVeia: () => criaDragaoVariante(0xc9a75a, 0x8e5cff, 0.19, true),
+  dragaozinho: () => { const d = criaDragao(0, 0); d.scale.setScalar(0.16); d.userData.baseScale = 0.16; return d; },
 };
 
 // segue o alvo (avatar) mantendo distância; anima patas e rabo

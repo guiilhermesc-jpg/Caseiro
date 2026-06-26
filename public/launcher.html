@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Venor Launcher</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#120a18" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --gold: #d9b25a;
+        --gold2: #f4e9c8;
+        --ink: #0b0d12;
+        --panel: rgba(14, 17, 23, .86);
+        --line: rgba(232, 217, 160, .28);
+        --muted: #b7c3cf;
+        --ok: #bff0a8;
+        --warn: #f0c08a;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: #080a10; color: #f4ead2; font-family: Arial, sans-serif; }
+      body { overflow-x: hidden; }
+      body {
+        min-height: 100vh;
+        background:
+          linear-gradient(90deg, rgba(5, 7, 12, .96), rgba(5, 7, 12, .72) 42%, rgba(5, 7, 12, .42)),
+          linear-gradient(180deg, rgba(5, 7, 12, .18), rgba(5, 7, 12, .92)),
+          url('/patches/rv17-9-preparacao-rv18.png') center/cover fixed no-repeat;
+      }
+      button, input { font: inherit; }
+      button {
+        border: 1px solid rgba(232, 217, 160, .34);
+        background: linear-gradient(180deg, rgba(55, 43, 25, .98), rgba(24, 19, 15, .98));
+        color: var(--gold2);
+        border-radius: 8px;
+        padding: 11px 14px;
+        cursor: pointer;
+        font-weight: 800;
+      }
+      button.primary {
+        background: linear-gradient(180deg, #d9b25a, #ad7f2d);
+        color: #261705;
+        border-color: rgba(255, 230, 160, .62);
+      }
+      button.ghost { background: rgba(10, 14, 20, .62); }
+      input {
+        width: 100%;
+        border: 1px solid rgba(232, 217, 160, .28);
+        background: rgba(5, 8, 12, .74);
+        color: #fff;
+        border-radius: 8px;
+        padding: 12px 13px;
+        outline: none;
+      }
+      input:focus { border-color: var(--gold); }
+      main {
+        width: min(1240px, 94vw);
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 22px 0;
+        display: grid;
+        grid-template-columns: minmax(310px, 420px) 1fr;
+        gap: 18px;
+        align-items: stretch;
+      }
+      .brand {
+        min-height: calc(100vh - 44px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 26px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(20, 17, 18, .92), rgba(7, 9, 13, .9));
+        box-shadow: 0 22px 80px rgba(0,0,0,.54);
+      }
+      .marca { font: 900 clamp(48px, 8vw, 86px)/.9 Georgia, serif; letter-spacing: 10px; color: var(--gold2); text-shadow: 0 4px 22px #000; }
+      .sub { margin-top: 12px; color: var(--gold); font: 800 12px/1.2 Georgia, serif; letter-spacing: 4px; }
+      .version { margin-top: 22px; display: inline-flex; width: fit-content; border: 1px solid rgba(232,217,160,.34); padding: 8px 10px; border-radius: 8px; color: #d7e0ec; background: rgba(0,0,0,.32); font-weight: 800; font-size: 12px; }
+      .actions { display: grid; gap: 9px; margin-top: 20px; }
+      .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; min-width: 0; }
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        backdrop-filter: blur(6px);
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 18px 60px rgba(0,0,0,.38);
+        min-width: 0;
+      }
+      .wide { grid-column: 1 / -1; }
+      h1, h2, h3, p { margin-top: 0; }
+      h2 { margin-bottom: 10px; color: var(--gold2); font: 800 20px Georgia, serif; }
+      h3 { margin-bottom: 8px; color: var(--gold); font: 800 15px Georgia, serif; }
+      p { color: var(--muted); line-height: 1.58; }
+      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; min-width: 0; }
+      .row > input { flex: 1 1 180px; min-width: 0; }
+      .status { color: var(--muted); font-size: 13px; line-height: 1.5; min-height: 20px; }
+      .ok { color: var(--ok); }
+      .warn { color: var(--warn); }
+      .accounts { display: grid; gap: 9px; margin-top: 10px; max-height: 248px; overflow: auto; padding-right: 3px; }
+      .account {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(255,255,255,.045);
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .account b { color: #fff; }
+      .meta { color: #91a0ad; font-size: 12px; margin-top: 4px; }
+      .patches { display: grid; gap: 9px; }
+      .patch {
+        border-left: 3px solid var(--gold);
+        padding: 8px 10px;
+        background: rgba(255,255,255,.045);
+        color: #d6dfd0;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+      .preview {
+        min-height: 260px;
+        border: 1px solid rgba(160,140,255,.22);
+        background:
+          linear-gradient(180deg, rgba(9, 11, 16, .08), rgba(9, 11, 16, .72)),
+          url('/patches/rv18-grande-pacto.png') center/cover no-repeat;
+        border-radius: 10px;
+        display: flex;
+        align-items: flex-end;
+        padding: 16px;
+      }
+      .preview div { max-width: 560px; text-shadow: 0 2px 12px #000; }
+      .preview strong { display: block; color: var(--gold2); font: 800 26px Georgia, serif; }
+      .small { font-size: 12px; color: #91a0ad; }
+      .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+      .profile {
+        text-align: left;
+        min-height: 82px;
+        background: rgba(255,255,255,.045);
+        border-color: rgba(232,217,160,.22);
+      }
+      .profile strong { display: block; color: var(--gold2); margin-bottom: 5px; }
+      .profile span { display: block; color: #9fb0c0; font-size: 11px; line-height: 1.35; }
+      .profile.active {
+        background: linear-gradient(180deg, rgba(217,178,90,.22), rgba(20,16,12,.96));
+        border-color: rgba(244,233,200,.7);
+        box-shadow: 0 0 0 1px rgba(217,178,90,.18) inset;
+      }
+      @media (max-width: 900px) {
+        main { grid-template-columns: 1fr; padding: 12px 0; }
+        .brand { min-height: auto; }
+        .grid { grid-template-columns: minmax(0, 1fr); }
+        .row button { flex: 1 1 150px; }
+      }
+      @media (max-width: 520px) {
+        main { width: calc(100vw - 36px); max-width: calc(100vw - 36px); }
+        .brand, .panel { width: 100%; max-width: 100%; padding: 16px; }
+        .marca { font-size: clamp(42px, 18vw, 64px); letter-spacing: 7px; }
+        .row > input, .row button { flex: 1 1 100%; width: 100%; }
+        .patch, p, .status, .meta { overflow-wrap: anywhere; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="brand">
+        <div>
+          <div class="marca">VENOR</div>
+          <div class="sub">ERA DOS DRAGOES</div>
+          <div class="version" id="versao">PATCH RV18.6</div>
+          <div class="actions">
+            <button class="primary" id="jogar">ENTRAR EM VENOR</button>
+            <button id="portal">PORTAL DE VENOR</button>
+            <button id="ranking">RANKING</button>
+            <button id="instalar">INSTALAR APP</button>
+            <button class="ghost" id="atualizar">ATUALIZAR PATCH</button>
+          </div>
+        </div>
+        <div class="status" id="estado">Preparando launcher...</div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Conta</h2>
+          <div class="row">
+            <input id="nome" maxlength="16" placeholder="Nome do heroi" autocomplete="username" />
+            <input id="senha" maxlength="24" type="password" placeholder="Senha local" autocomplete="current-password" />
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button class="primary" id="entrarConta">JOGAR COM ESTA CONTA</button>
+            <button class="ghost" id="limparConta">LIMPAR</button>
+          </div>
+          <div class="accounts" id="contas"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Patch</h2>
+          <div class="status" id="patchStatus">Lendo manifesto...</div>
+          <div class="patches" id="patches"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Instalacao</h2>
+          <p>O app instalado abre por este launcher. O jogo continua offline-first; o online entra como camada quando o servidor estiver ativo.</p>
+          <div class="row">
+            <button id="repararCache">REPARAR CACHE</button>
+            <button class="ghost" id="limparCache">LIMPAR CACHES ANTIGOS</button>
+          </div>
+          <p class="small" id="storage">Calculando armazenamento...</p>
+        </div>
+
+        <div class="panel">
+          <h2>Grafico</h2>
+          <p>Escolha o perfil antes de entrar. Ele fica salvo neste aparelho e o motor aplica pixel ratio, sombras e bloom na inicializacao.</p>
+          <div class="profile-grid" id="perfisGraficos"></div>
+          <p class="small" id="perfilInfo">Perfil nao carregado.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Nuvem</h2>
+          <p>O save em nuvem ja existe dentro do jogo: entre no personagem e use o botao de nuvem com nome + PIN.</p>
+          <p class="small">Servidor configurado: venor-servidor-production.up.railway.app</p>
+        </div>
+
+        <div class="panel wide">
+          <div class="preview">
+            <div>
+              <strong>Grande Pacto</strong>
+              <p>Previa visual do ciclo RV18: launcher, portal, instalacao premium, rotas altas, calabouco gigante e preparo para voo draconico.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const CURRENT_CACHE = 'venor-rv18-6-offline-v1';
+      const MANIFEST_URL = '/patch-manifest.json';
+      const $ = (id) => document.getElementById(id);
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      let deferredInstall = null;
+      let patchManifest = null;
+      const PERFIS_GRAFICOS = [
+        ['mobile', 'Mobile Estavel', 'Mais leve para celular fraco. Sem bloom/sombras dinamicas.'],
+        ['premium', 'Premium', 'Equilibrio recomendado para jogar bonito e estavel.'],
+        ['ultra', 'Ultra Instalado', 'Mais pixels, sombras e bloom. Use em aparelho forte.'],
+      ];
+
+      window.addEventListener('beforeinstallprompt', (ev) => {
+        ev.preventDefault();
+        deferredInstall = ev;
+        $('estado').innerHTML = '<span class="ok">Instalacao disponivel.</span>';
+      });
+
+      function setStatus(text, cls) {
+        $('estado').innerHTML = cls ? `<span class="${cls}">${text}</span>` : text;
+      }
+
+      function parseContaKey(key) {
+        const base = key.replace('venor_conta_', '');
+        return base.split('#')[0] || 'conta';
+      }
+
+      function contaLembrada() {
+        try { return JSON.parse(localStorage.getItem('venor_login') || 'null'); } catch { return null; }
+      }
+
+      function perfilGraficoAtual() {
+        const id = localStorage.getItem('venor_perfil_grafico') || 'premium';
+        return PERFIS_GRAFICOS.some((p) => p[0] === id) ? id : 'premium';
+      }
+
+      function renderPerfisGraficos() {
+        const atual = perfilGraficoAtual();
+        $('perfisGraficos').innerHTML = PERFIS_GRAFICOS.map(([id, nome, resumo]) =>
+          `<button class="profile ${id === atual ? 'active' : ''}" data-id="${id}"><strong>${nome}</strong><span>${resumo}</span></button>`
+        ).join('');
+        const escolhido = PERFIS_GRAFICOS.find((p) => p[0] === atual) || PERFIS_GRAFICOS[1];
+        $('perfilInfo').textContent = `Perfil ativo: ${escolhido[1]}. Troque antes de entrar se o aparelho estiver pesado.`;
+        $('perfisGraficos').querySelectorAll('button[data-id]').forEach((btn) => {
+          btn.onclick = () => {
+            localStorage.setItem('venor_perfil_grafico', btn.dataset.id);
+            renderPerfisGraficos();
+            const p = PERFIS_GRAFICOS.find((item) => item[0] === btn.dataset.id);
+            setStatus(`Perfil grafico ${p?.[1] || btn.dataset.id} salvo.`, 'ok');
+          };
+        });
+      }
+
+      function contasLocais() {
+        const out = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith('venor_conta_')) continue;
+          let d = {};
+          try { d = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+          out.push({
+            key,
+            nome: parseContaKey(key),
+            protegida: key.includes('#'),
+            nivel: d.hud?.nivel || 1,
+            ouro: d.ouro || 0,
+            x: Math.round(d.x || 0),
+            z: Math.round(d.z || 0),
+            dragao: d.dragaoComp?.estagio || d.dragaoComp?.fase || 'companheiro'
+          });
+        }
+        return out.sort((a, b) => a.nome.localeCompare(b.nome));
+      }
+
+      function renderContas() {
+        const box = $('contas');
+        const contas = contasLocais();
+        const lembrada = contaLembrada();
+        if (lembrada?.nome) {
+          $('nome').value = lembrada.nome;
+          $('senha').value = lembrada.senha || '';
+        }
+        if (!contas.length) {
+          box.innerHTML = '<div class="small">Nenhuma conta local neste aparelho ainda.</div>';
+          return;
+        }
+        box.innerHTML = contas.map((c, i) => `
+          <div class="account">
+            <div>
+              <b>${esc(c.nome)}</b>
+              <div class="meta">Nivel ${esc(c.nivel)} · ${esc(c.ouro)} ouro · ${esc(c.dragao)} · ${esc(c.x)}, ${esc(c.z)}${c.protegida ? ' · senha' : ''}</div>
+            </div>
+            <button data-i="${i}">USAR</button>
+          </div>`).join('');
+        box.querySelectorAll('button').forEach((btn) => {
+          btn.onclick = () => {
+            const c = contas[Number(btn.dataset.i)];
+            const lembrada = contaLembrada();
+            $('nome').value = c.nome;
+            $('senha').value = lembrada && lembrada.nome?.toLowerCase() === c.nome.toLowerCase() ? (lembrada.senha || '') : '';
+            $('senha').focus();
+          };
+        });
+      }
+
+      function entrar(auto = true) {
+        const nome = ($('nome').value || 'Viajante').trim().slice(0, 16);
+        const senha = ($('senha').value || '').trim();
+        localStorage.setItem('venor_login', JSON.stringify({ nome, senha }));
+        sessionStorage.setItem('venor_launcher_login', JSON.stringify({ nome, senha, lembrar: true, autoEntrar: auto }));
+        location.href = '/index.html?play=1';
+      }
+
+      async function carregaManifesto() {
+        try {
+          const r = await fetch(MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
+          patchManifest = await r.json();
+          $('versao').textContent = `PATCH ${patchManifest.version} · BUILD ${patchManifest.build}`;
+          $('patchStatus').innerHTML = `<span class="ok">${patchManifest.title}</span><br>${patchManifest.summary}`;
+          $('patches').innerHTML = (patchManifest.updates || []).map((p) =>
+            `<div class="patch"><b>${p.title}</b> · ${p.status}<br><span class="small">${p.body}</span></div>`
+          ).join('');
+        } catch (e) {
+          $('patchStatus').innerHTML = '<span class="warn">Manifesto indisponivel. O launcher segue com o cache local.</span>';
+        }
+      }
+
+      async function registraSW() {
+        if (!('serviceWorker' in navigator)) return null;
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        await reg.update().catch(() => {});
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        return reg;
+      }
+
+      async function atualizaCache() {
+        setStatus('Atualizando assets do patch...', 'warn');
+        await registraSW().catch(() => {});
+        if (!('caches' in window)) { setStatus('Cache indisponivel neste navegador.', 'warn'); return; }
+        const manifest = patchManifest || await fetch(MANIFEST_URL).then((r) => r.json()).catch(() => null);
+        const assets = manifest?.assets || ['/', '/index.html', '/launcher.html', '/portal.html', '/ranking.html', '/personagem.html', '/baixar.html', '/patch-manifest.json', '/install-profile.json', '/manifest.webmanifest'];
+        const cacheName = manifest?.cache || CURRENT_CACHE;
+        const cache = await caches.open(cacheName);
+        let falhas = 0;
+        await Promise.all(assets.map((url) =>
+          cache.add(new Request(url, { cache: 'reload' })).catch(() => { falhas++; })
+        ));
+        try { if (manifest?.id) localStorage.setItem('venor_patch_installed', manifest.id); } catch {}
+        setStatus(falhas ? `Patch preparado com ${falhas} assets pendentes.` : 'Patch pronto para jogar offline.', falhas ? 'warn' : 'ok');
+        medeStorage();
+      }
+
+      async function limpaCachesAntigos() {
+        if (!('caches' in window)) return;
+        const keys = await caches.keys();
+        await Promise.all(keys.filter((k) => k !== CURRENT_CACHE).map((k) => caches.delete(k)));
+        setStatus('Caches antigos removidos. RV18.6 mantido.', 'ok');
+        medeStorage();
+      }
+
+      async function medeStorage() {
+        if (!navigator.storage?.estimate) return;
+        const e = await navigator.storage.estimate();
+        const usado = Math.round((e.usage || 0) / 1024 / 1024);
+        const quota = Math.round((e.quota || 0) / 1024 / 1024);
+        $('storage').textContent = quota ? `Armazenamento do app: ${usado} MB usados de ${quota} MB disponiveis.` : `Armazenamento do app: ${usado} MB usados.`;
+      }
+
+      $('jogar').onclick = () => entrar(true);
+      $('portal').onclick = () => { location.href = '/portal.html'; };
+      $('ranking').onclick = () => { location.href = '/ranking.html'; };
+      $('entrarConta').onclick = () => entrar(true);
+      $('limparConta').onclick = () => { $('nome').value = ''; $('senha').value = ''; $('nome').focus(); };
+      $('atualizar').onclick = atualizaCache;
+      $('repararCache').onclick = atualizaCache;
+      $('limparCache').onclick = limpaCachesAntigos;
+      $('instalar').onclick = async () => {
+        if (deferredInstall) {
+          deferredInstall.prompt();
+          await deferredInstall.userChoice.catch(() => {});
+          deferredInstall = null;
+          return;
+        }
+        setStatus('No celular, use o menu do navegador para instalar o app.', 'warn');
+      };
+      document.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') entrar(true); });
+
+      renderContas();
+      carregaManifesto().then(() => {
+        const instalado = localStorage.getItem('venor_patch_installed');
+        if (patchManifest?.id && instalado === patchManifest.id) setStatus('Patch RV18.6 pronto neste aparelho.', 'ok');
+        else atualizaCache();
+      });
+      renderPerfisGraficos();
+      medeStorage();
+    </script>
+  </body>
+</html>

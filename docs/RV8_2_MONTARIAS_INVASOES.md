@@ -29,7 +29,7 @@ a primeira montaria realmente aspiracional do jogo.
 
 4. **Quest da Sela Draconica**
    - quest `A Sela do Draptor`;
-   - NPC: Hela;
+   - NPC: Helyra;
    - requisito: quest `A Lua Partida` concluida;
    - nivel minimo: 14;
    - pede `Coracao de Obsidiana`;
@@ -53,7 +53,7 @@ a primeira montaria realmente aspiracional do jogo.
 3. Ao anoitecer, cidade e pontos de viagem ficam visivelmente acesos.
 4. Carrocas abrem dialogo e teleportam cobrando moedas.
 5. Coruja e morcego aparecem como domaveis raros em seus habitats.
-6. Quest da Hela aparece apenas depois de `A Lua Partida`.
+6. Quest da Helyra aparece apenas depois de `A Lua Partida`.
 7. Invasao do Draptor aparece aleatoriamente e pode ser forcada pelo ciclo do jogo.
 8. Draptor derrotado nao respawna como bicho comum; nova aparicao vem de nova invasao.
 9. Service worker usa cache `venor-rv82-offline-v1` para atualizar o pacote offline.

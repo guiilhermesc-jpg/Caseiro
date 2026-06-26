@@ -1,0 +1,101 @@
+{
+  "id": "rv18-6-prova-visual-real",
+  "version": "RV18.6",
+  "build": 138,
+  "cache": "venor-rv18-6-offline-v1",
+  "channel": "installed-first",
+  "releasedAt": "2026-06-24",
+  "title": "Prova Visual Real de Venor",
+  "summary": "Patch corretivo no gameplay inicial: fonte central refeita em escala maior, lotes nobres na praca, dragao GLB visivel em Venor e luz inicial mais clara para auditoria.",
+  "assets": [
+    "/",
+    "/index.html",
+    "/launcher.html",
+    "/portal.html",
+    "/ranking.html",
+    "/personagem.html",
+    "/baixar.html",
+    "/patch-manifest.json",
+    "/install-profile.json",
+    "/manifest.webmanifest",
+    "/icon.svg",
+    "/patches/rv17-6-contrato-visual.png",
+    "/patches/rv17-7-bases-vivas.png",
+    "/patches/rv17-8-hunts-reacao.png",
+    "/patches/rv17-9-preparacao-rv18.png",
+    "/patches/rv18-grande-pacto.png",
+    "/texturas/ceu.png",
+    "/texturas/grama.png",
+    "/texturas/pedra.png",
+    "/texturas/telha.png",
+    "/texturas/madeira.png",
+    "/texturas/terra.png",
+    "/texturas/rocha.png",
+    "/texturas/areia.png",
+    "/texturas/lava.png",
+    "/texturas/muralha.png",
+    "/modelos/dragao.glb",
+    "/modelos/dragao2.glb"
+  ],
+  "updates": [
+    {
+      "id": "rv18-6",
+      "title": "Prova visual real em Venor",
+      "status": "entregue para auditoria",
+      "body": "A primeira praca recebeu mudancas reais no 3D: fonte monumental, quatro lotes nobres maiores, remocao do dragao decorativo procedural da praca e dragao GLB como vitrine visivel perto da Guildhouse."
+    },
+    {
+      "id": "rv18-5",
+      "title": "Mapa continental do Pacto 01/30",
+      "status": "entregue",
+      "body": "O painel grande do mapa foi redesenhado como cartografia de continente: Venor, Thais, Venore, Noctaria, Pico do Dragao, Areias do Veio Seco e Aurelia nas nuvens agora aparecem como mundo, nao como debug."
+    },
+    {
+      "id": "rv18-4",
+      "title": "Resgate visual da praca",
+      "status": "entregue",
+      "body": "Iluminacao, neblina, ruas, praca, casas e janelas foram corrigidas para aproximar o jogo real da direcao premium."
+    },
+    {
+      "id": "rv18-3",
+      "title": "Ranking local",
+      "status": "entregue",
+      "body": "Ranking e ficha publica leem saves locais sem expor senha/PIN e preparam o futuro ranking em nuvem."
+    },
+    {
+      "id": "rv18-2",
+      "title": "Perfis graficos",
+      "status": "entregue",
+      "body": "Mobile Estavel, Premium e Ultra Instalado agora ficam salvos no launcher e controlam o motor 3D."
+    },
+    {
+      "id": "rv18-1",
+      "title": "Portal publico",
+      "status": "entregue",
+      "body": "Noticias, personagens locais, mapa do Pacto 01/30, bestiario base e links para launcher/jogo."
+    },
+    {
+      "id": "rv18-0",
+      "title": "Launcher instalado",
+      "status": "entregue",
+      "body": "Manifesto de patch, cache offline, contas locais e entrada direta no jogo."
+    },
+    {
+      "id": "contas",
+      "title": "Contas locais e nuvem",
+      "status": "base",
+      "body": "O launcher lista saves locais. Dentro do jogo, o botao de nuvem continua usando nome + PIN no servidor Railway."
+    },
+    {
+      "id": "premium",
+      "title": "Contrato visual",
+      "status": "regra",
+      "body": "Imagem oficial so entra quando existe sistema, cena, mapa, interacao ou documento canonico correspondente."
+    }
+  ],
+  "next": [
+    "RV18.7: continuar a auditoria visual por blocos: casas restantes, ruas, grama, fonte em outras cidades e dragao companheiro.",
+    "RV18.8: patcher real com delta de assets e historico de builds.",
+    "RV18.9: decisoes de empacotamento Tauri/Capacitor com build assinado em ambiente controlado."
+  ]
+}

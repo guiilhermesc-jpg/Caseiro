@@ -1,6 +1,75 @@
 import { mascateHoje } from './calendario.js';
 
-const PATCH_ID = 'rv8-pacto-da-semana';
+const PATCH_ID = 'rv18-6-prova-visual-real';
+
+const PATCHES = [
+  {
+    id: 'rv18-6',
+    titulo: 'Prova Visual Real',
+    img: '/patches/rv18-grande-pacto.png',
+    texto: 'Teste publicado no mundo 3D: fonte monumental, lotes nobres maiores em Venor e dragao GLB visivel na praca inicial.',
+  },
+  {
+    id: 'rv18-5',
+    titulo: 'Mapa Continental',
+    img: '/patches/rv18-grande-pacto.png',
+    texto: 'O mapa grande vira cartografia do Pacto 01/30: continente, mar, biomas, rotas, hunts, cidades e ilhas flutuantes.',
+  },
+  {
+    id: 'rv18-4',
+    titulo: 'Resgate Visual da Praca',
+    img: '/patches/rv17-6-contrato-visual.png',
+    texto: 'Luz, neblina, calcamento, praca, casas e janelas foram corrigidos dentro do mundo jogavel.',
+  },
+  {
+    id: 'rv18-3',
+    titulo: 'Ranking e Personagem Publico',
+    img: '/patches/rv17-7-bases-vivas.png',
+    texto: 'Ranking local e ficha publica nascem usando saves do aparelho, sem expor senha ou PIN.',
+  },
+  {
+    id: 'rv18-2',
+    titulo: 'Pacote Instalado Premium',
+    img: '/patches/rv18-grande-pacto.png',
+    texto: 'O launcher agora salva perfil grafico e o motor aplica pixel ratio, sombras e bloom conforme o aparelho.',
+  },
+  {
+    id: 'rv18-1',
+    titulo: 'Portal Publico',
+    img: '/patches/rv18-grande-pacto.png',
+    texto: 'Nasce o portal de Venor com noticias, personagens locais, mapa do pacto, bestiario base e links para launcher/jogo.',
+  },
+  {
+    id: 'rv18-0',
+    titulo: 'Launcher Instalado',
+    img: '/patches/rv17-9-preparacao-rv18.png',
+    texto: 'O app instalado agora abre em um launcher com contas locais, central de patch, atualizacao de cache e entrada direta em Venor.',
+  },
+  {
+    id: 'rv17-6',
+    titulo: 'Contrato Visual',
+    img: '/patches/rv17-6-contrato-visual.png',
+    texto: 'Venor noturna virou meta oficial de paridade: mural, loja, lampioes, fonte, rua molhada, dragoes e vida urbana precisam existir no mundo.',
+  },
+  {
+    id: 'rv17-7',
+    titulo: 'Bases Vivas',
+    img: '/patches/rv17-7-bases-vivas.png',
+    texto: 'Mansoes e guildhouses agora sao tratadas como bases: depot, banco, lixo, cama, contratos e descanso magico do dragao.',
+  },
+  {
+    id: 'rv17-8',
+    titulo: 'Hunts com Reacao',
+    img: '/patches/rv17-8-hunts-reacao.png',
+    texto: 'Hunts passam a exigir leitura: tamanho real dos bichos, impacto, telegraph no chao, loot e captura futura precisam ser claros.',
+  },
+  {
+    id: 'rv17-9',
+    titulo: 'Preparacao RV18',
+    img: '/patches/rv17-9-preparacao-rv18.png',
+    texto: 'O proximo ciclo fica marcado no mapa com rotas altas, portal, caravanas, quadro de contratos e uma pedra interativa do Pacto 18.',
+  },
+];
 
 function css(el, value) {
   el.style.cssText = value;
@@ -15,7 +84,7 @@ export function criaPatchNotes() {
     + 'background:linear-gradient(180deg,rgba(51,38,20,.94),rgba(20,16,12,.94));color:#f4e9c8;'
     + 'border-radius:10px;padding:10px 12px;font:700 12px Georgia,serif;letter-spacing:.7px;'
     + 'box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:none;');
-  badge.textContent = 'PATCH RV8';
+  badge.textContent = 'PATCH RV18.6';
   document.body.appendChild(badge);
 
   const offline = css(document.createElement('div'),
@@ -30,37 +99,39 @@ export function criaPatchNotes() {
 
   const overlay = css(document.createElement('div'),
     'position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;'
-    + 'background:rgba(4,8,12,.72);font-family:Arial,sans-serif;color:#f4ead2;padding:18px;');
+    + 'background:rgba(4,8,12,.74);font-family:Arial,sans-serif;color:#f4ead2;padding:18px;');
   const card = css(document.createElement('div'),
-    'width:min(980px,94vw);max-height:88vh;overflow:auto;border:1px solid rgba(232,217,160,.38);'
-    + 'background:linear-gradient(180deg,rgba(25,22,17,.97),rgba(12,15,18,.98));border-radius:14px;'
+    'width:min(1180px,94vw);max-height:90vh;overflow:auto;border:1px solid rgba(232,217,160,.38);'
+    + 'background:linear-gradient(180deg,rgba(25,22,17,.98),rgba(12,15,18,.99));border-radius:14px;'
     + 'box-shadow:0 18px 70px rgba(0,0,0,.68);');
+
   card.innerHTML = `
-    <div style="height:300px;background:
-      linear-gradient(90deg,rgba(5,8,10,.88),rgba(5,8,10,.28),rgba(5,8,10,.08)),
-      url('/patches/rv8-pacto-da-semana.png') center/cover no-repeat;
+    <div style="height:380px;background:
+      linear-gradient(90deg,rgba(5,8,10,.96),rgba(5,8,10,.44),rgba(5,8,10,.08)),
+      url('/patches/rv18-grande-pacto.png') center/cover no-repeat;
       border-radius:14px 14px 0 0;position:relative;">
-      <div style="position:absolute;left:28px;bottom:24px;max-width:520px;">
-        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV8</div>
-        <div style="font:800 40px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Pacto da Semana</div>
-        <div style="margin-top:10px;color:#c8d3df;font-size:14px;line-height:1.55;">
-          Offline instalavel, mascate semanal, economia mais calculada e uma nova disciplina de qualidade.
+      <div style="position:absolute;left:28px;bottom:24px;max-width:740px;">
+        <div style="font:700 12px Georgia,serif;letter-spacing:4px;color:#e8d9a0;">PATCH RV18.6</div>
+        <div style="font:800 42px Georgia,serif;line-height:.95;text-shadow:0 4px 18px #000;">Prova Visual Real</div>
+        <div style="margin-top:10px;color:#d7e0ec;font-size:14px;line-height:1.55;text-shadow:0 2px 10px #000;">
+          Correcao direta no ponto criticado: esta versao muda elementos visiveis
+          dentro da primeira praca de Venor, nao apenas documento, mapa ou imagem conceitual.
         </div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:18px;padding:22px;">
+    <div style="display:grid;grid-template-columns:1.08fr .92fr;gap:18px;padding:22px;">
       <section>
-        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">Direcao do patch</h2>
+        <h2 style="margin:0 0 10px;font:700 20px Georgia,serif;color:#f4e9c8;">O que entrou na direcao do jogo</h2>
         <p style="margin:0 0 14px;color:#b7c3cf;line-height:1.65;">
-          Venor deixa de ser apenas um mapa bonito e passa a ganhar regras de mundo: calendario,
-          escassez, rotina de vendedor e instalacao offline. O objetivo e construir dificuldade justa,
-          onde preparacao e coordenacao importam.
+          RV18.6 interrompeu a fila para testar, de forma publica, se a estrutura atual
+          consegue receber uma mudanca visual real dentro do gameplay.
         </p>
         <ul style="margin:0;padding-left:18px;color:#d6dfd0;line-height:1.8;">
-          <li><b>Offline-first:</b> depois do primeiro carregamento, o jogo abre mesmo sem internet.</li>
-          <li><b>Mascate raro:</b> Ze das Rotas aparece so em dias especificos.</li>
-          <li><b>Economia previsivel:</b> pequenos modificadores semanais criam janela de compra e venda.</li>
-          <li><b>Processo premium:</b> cada patch tem selo, arte, escopo, build e checklist.</li>
+          <li><b>Fonte:</b> a fonte central foi refeita maior, com dois niveis, coroa, gargulas e jatos laterais.</li>
+          <li><b>Casario:</b> quatro lotes da praca viraram mansoes/guildhouse maiores, com leitura de bairro nobre.</li>
+          <li><b>Dragao real:</b> o GLB de dragao aparece em Venor como vitrine na praca inicial.</li>
+          <li><b>Luz:</b> a primeira leitura do dia ficou mais clara para expor o visual sem esconder defeito no escuro.</li>
+          <li><b>Offline:</b> cache sobe para venor-rv18-6-offline-v1.</li>
         </ul>
       </section>
       <aside style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
@@ -70,14 +141,36 @@ export function criaPatchNotes() {
         </p>
         <div style="font-size:12px;color:#91a0ad;line-height:1.55;">
           Mascate: Terca, Quinta e Sabado.<br>
-          Online multiplayer continua opcional: o mundo local deve funcionar sozinho primeiro.<br>
+          Rotas: botao <b>ROTAS</b>. Bestiario: botao do dragao.<br>
+          Perfil grafico: escolha no <a href="/launcher.html" style="color:#bff0a8;font-weight:800;">launcher</a> antes de entrar.<br>
+          Ranking: <a href="/ranking.html" style="color:#bff0a8;font-weight:800;">abrir hall de personagens</a><br>
+          Portal: <a href="/portal.html" style="color:#bff0a8;font-weight:800;">abrir portal de Venor</a><br>
+          Launcher: <a href="/launcher.html" style="color:#bff0a8;font-weight:800;">abrir central instalada</a><br>
           <a href="/baixar.html" style="color:#bff0a8;font-weight:800;">Como instalar e jogar offline</a>
         </div>
       </aside>
     </div>
+    <div style="padding:0 22px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+      ${PATCHES.map((p) => `
+        <article style="border:1px solid rgba(232,217,160,.18);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.045);">
+          <div style="height:124px;background:url('${p.img}') center/cover no-repeat;"></div>
+          <div style="padding:12px;">
+            <div style="font:800 14px Georgia,serif;color:#f4e9c8;margin-bottom:5px;">${p.id.toUpperCase()} - ${p.titulo}</div>
+            <div style="font-size:12px;color:#b7c3cf;line-height:1.45;">${p.texto}</div>
+          </div>
+        </article>`).join('')}
+    </div>
+    <div style="padding:0 22px 18px;">
+      <div style="border:1px solid rgba(160,140,255,.24);background:rgba(80,60,140,.18);border-radius:12px;padding:14px;color:#cfd2ff;line-height:1.55;font-size:13px;">
+        <b>Contrato visual:</b> se a arte oficial mostra continente e ilhas flutuantes, o jogo precisa apontar para isso.
+        RV18.6 ainda nao transforma o jogo inteiro em nivel de concept art. Ele e uma prova publica no gameplay:
+        se a praca inicial nao mostrar mudanca real, o problema e tecnico/estrutural e deve ser assumido.
+      </div>
+    </div>
     <div style="padding:0 22px 22px;display:flex;gap:10px;justify-content:flex-end;">
       <button id="patch-fechar" style="border:0;border-radius:10px;background:#3a7a4a;color:#fff;font-weight:800;padding:12px 18px;cursor:pointer;">ENTRAR</button>
     </div>`;
+
   overlay.appendChild(card);
   document.body.appendChild(overlay);
 

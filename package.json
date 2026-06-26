@@ -6,8 +6,11 @@
   "description": "Projeto Sirene - drama de sobrevivencia civil em guerra moderna (prototipo)",
   "scripts": {
     "dev": "vite",
+    "dev:app": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
+    "preview:app": "vite preview --host 0.0.0.0",
+    "audit:package": "node scripts/auditar-pacote.mjs",
     "gerar-arte": "node --env-file-if-exists=.env scripts/gerar-arte.mjs",
     "sync-sprites": "node scripts/gerar-arte.mjs --sync-only"
   },

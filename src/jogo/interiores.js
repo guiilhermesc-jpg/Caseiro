@@ -180,6 +180,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   // estado/animação da porta (lerp suave no loop via animaProps)
   const angAberto = 1.45 * ((frente === 'sul' || frente === 'leste') ? 1 : -1);
   const animPorta = { mesh: dobr, porta: true, alvo: angAberto }; // porta começa ABERTA (entrada livre)
+  const flickers = []; // RV15.5: lamparina/lareira piscam (interior vivo)
 
   const mad = mat(0x6e4a2a), tecido = mat(0x9a4a4a);
   if (opts.forja) {
@@ -276,6 +277,7 @@ export function criaCasaInterior(x, z, opts = {}) {
     const luzL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8),
       new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffaa3a, emissiveIntensity: 0.95 }));
     luzL.position.y = 0.3; lamparina.add(luzL);
+    flickers.push({ atualiza: (dt, t) => { luzL.material.emissiveIntensity = 0.95 * (0.78 + Math.sin(t * 9) * 0.18 + Math.sin(t * 23) * 0.07); } });
     g.add(lamparina);
     [[-0.9], [0.9]].forEach(([oz]) => {
       const cad = new THREE.Group();
@@ -287,7 +289,8 @@ export function criaCasaInterior(x, z, opts = {}) {
     const lar = new THREE.Group();
     lar.add(meshBox(1.6, 1.6, 0.6, mat(0x8a8276), 0, 0.8, 0));
     lar.add(meshBox(1.0, 0.9, 0.3, mat(0x201510), 0, 0.55, 0.2));
-    lar.add(meshBox(0.6, 0.4, 0.2, mat(0xff7a2a), 0, 0.4, 0.3)); // fogo
+    const fogoLar = meshBox(0.6, 0.4, 0.2, mat(0xff7a2a), 0, 0.4, 0.3); lar.add(fogoLar); // fogo
+    flickers.push({ atualiza: (dt, t) => { fogoLar.scale.set(0.9 + Math.cos(t * 11) * 0.12, 0.8 + Math.sin(t * 13) * 0.22, 1); } });
     lar.position.set(hx - 1.0, 0, hz - 0.6); g.add(lar);
     // tapete
     const tapete = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 1.8), mat(0x7a3a3a));
@@ -318,7 +321,7 @@ export function criaCasaInterior(x, z, opts = {}) {
   const box = { minX: x - hx + 0.5, maxX: x + hx - 0.5, minZ: z - hz + 0.5, maxZ: z + hz - 0.5 };
   return {
     grupo: g, colisores,
-    animados: [animPorta],
+    animados: [animPorta, ...flickers],
     casa: { roof: telhado, box, portaAnim: animPorta, angAberto, px: dpx, pz: dpz, portaCol, aberta: true }, // nasce ABERTA
   };
 }
@@ -326,6 +329,399 @@ export function criaCasaInterior(x, z, opts = {}) {
 function meshBox(w, h, d, material, x, y, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m;
+}
+
+function placaCanvas(texto, cor = '#f2dfb5', fundo = '#4a2f1c') {
+  const cnv = document.createElement('canvas');
+  cnv.width = 512; cnv.height = 128;
+  const ctx = cnv.getContext('2d');
+  ctx.fillStyle = fundo; ctx.fillRect(0, 0, cnv.width, cnv.height);
+  ctx.strokeStyle = '#d9b36a'; ctx.lineWidth = 8; ctx.strokeRect(10, 10, 492, 108);
+  ctx.fillStyle = cor; ctx.font = 'bold 34px Georgia,serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(texto, 256, 66);
+  return new THREE.CanvasTexture(cnv);
+}
+
+function criaTapete(w, d, x, y, z, cor = 0x7a2630) {
+  const tapete = new THREE.Mesh(new THREE.BoxGeometry(w, 0.055, d), mat(cor, 0.9));
+  tapete.position.set(x, y + 0.13, z);
+  tapete.receiveShadow = true;
+  return tapete;
+}
+
+function criaBauGrande(x, y, z, cor = 0x6e4a2a) {
+  const g = new THREE.Group();
+  const madeira = mat(cor, 0.85);
+  const metal = new THREE.MeshStandardMaterial({ color: 0xb8a15f, metalness: 0.75, roughness: 0.32 });
+  g.add(meshBox(2.0, 0.9, 1.1, madeira, 0, 0.45, 0));
+  g.add(meshBox(2.1, 0.14, 1.18, metal, 0, 0.98, 0));
+  g.add(meshBox(0.16, 0.95, 1.18, metal, -0.72, 0.5, 0));
+  g.add(meshBox(0.16, 0.95, 1.18, metal, 0.72, 0.5, 0));
+  const fech = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.12), metal);
+  fech.position.set(0, 0.55, 0.62); g.add(fech);
+  g.position.set(x, y, z);
+  return g;
+}
+
+function criaBiblioteca(larg, y, z, lado = -1) {
+  const g = new THREE.Group();
+  const mad = mat(0x5f4027, 0.92);
+  const papel = [0xb99052, 0x9c3a36, 0x2f5f75, 0x4f7a44, 0x6f4a8a];
+  const x = lado * (larg / 2 - 1.0);
+  for (let k = 0; k < 3; k++) {
+    const pr = new THREE.Group();
+    pr.add(meshBox(0.55, 3.0, 3.5, mad, 0, 1.5, 0));
+    for (let i = 0; i < 12; i++) {
+      const livro = meshBox(0.16, 0.58 + (i % 3) * 0.08, 0.12, mat(papel[i % papel.length], 0.8), 0, 0.7 + Math.floor(i / 4) * 0.78, -1.35 + (i % 4) * 0.82);
+      pr.add(livro);
+    }
+    pr.position.set(x, y, z - 4.2 + k * 4.2);
+    pr.rotation.y = lado < 0 ? Math.PI / 2 : -Math.PI / 2;
+    g.add(pr);
+  }
+  return g;
+}
+
+function criaMesaConselho(y, guilda = false) {
+  const g = new THREE.Group();
+  const mad = mat(0x654326, 0.88);
+  g.add(meshBox(guilda ? 10.5 : 5.5, 0.34, guilda ? 2.5 : 2.0, mad, 0, 1.08, 0));
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+    g.add(meshBox(0.22, 1.05, 0.22, mad, sx * (guilda ? 4.7 : 2.35), 0.55, sz * (guilda ? 0.95 : 0.72)));
+  });
+  const mapa = new THREE.Mesh(new THREE.PlaneGeometry(guilda ? 7.2 : 3.6, guilda ? 1.45 : 1.0), new THREE.MeshBasicMaterial({ map: placaCanvas(guilda ? 'ROTAS E HUNTS' : 'CONTRATOS DA CASA'), transparent: false }));
+  mapa.position.set(0, 1.28, 0.02);
+  mapa.rotation.x = -Math.PI / 2;
+  g.add(mapa);
+  const cera = new THREE.MeshStandardMaterial({ color: 0xf0ead8, roughness: 0.8 });
+  const chama = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff8a22, emissiveIntensity: 0.95, roughness: 0.35 });
+  [-1, 1].forEach((sx) => {
+    const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.45, 8), cera);
+    vela.position.set(sx * (guilda ? 4.5 : 2.1), 1.52, 0.72); g.add(vela);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), chama);
+    fl.position.set(sx * (guilda ? 4.5 : 2.1), 1.82, 0.72); g.add(fl);
+  });
+  g.position.y = y;
+  return g;
+}
+
+function criaCandelabro(y, guilda = false) {
+  const g = new THREE.Group();
+  const metal = new THREE.MeshStandardMaterial({ color: 0x3a2b1c, metalness: 0.65, roughness: 0.35 });
+  const chama = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff8a22, emissiveIntensity: 1.15, roughness: 0.3 });
+  const animados = [];
+  const altura = guilda ? 7.2 : 6.0;
+  const raio = guilda ? 2.9 : 2.1;
+  const corrente = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 1.6, 6), metal);
+  corrente.position.set(0, y + altura + 0.8, 0); g.add(corrente);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.055, 8, 34), metal);
+  aro.position.set(0, y + altura, 0); aro.rotation.x = Math.PI / 2; g.add(aro);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const x = Math.cos(a) * raio, z = Math.sin(a) * raio;
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, raio, 6), metal);
+    braco.position.set(x / 2, y + altura, z / 2);
+    braco.rotation.z = Math.PI / 2;
+    braco.rotation.y = -a;
+    g.add(braco);
+    const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.48, 8), mat(0xf0ead8, 0.8));
+    vela.position.set(x, y + altura + 0.28, z); g.add(vela);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 6), chama.clone());
+    fl.position.set(x, y + altura + 0.62, z); g.add(fl);
+    animados.push({ chama: fl, chamaMat: fl.material, fase: Math.random() * 6 });
+  }
+  const luz = new THREE.PointLight(0xffbf6a, guilda ? 1.35 : 1.0, guilda ? 38 : 28, 2);
+  luz.position.set(0, y + altura, 0);
+  g.add(luz);
+  return { grupo: g, animados };
+}
+
+function criaGaleriaSuperior(larg, prof, y, guilda = false) {
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2;
+  const madeira = mat(0x5d3b23, 0.9), pedra = mat(0x8d8576, 1), ouro = mat(0xd9a522, 0.55);
+  const matBase = guilda ? pedra : madeira;
+  const yy = y + (guilda ? 5.45 : 4.85);
+  const pisoFundo = meshBox(larg - 5.0, 0.26, 2.0, matBase, 0, yy, -hz + 2.2);
+  const pisoE = meshBox(2.0, 0.26, prof - 8.0, matBase, -hx + 2.2, yy, 0.7);
+  const pisoD = meshBox(2.0, 0.26, prof - 8.0, matBase, hx - 2.2, yy, 0.7);
+  g.add(pisoFundo, pisoE, pisoD);
+  const addRailing = (x0, z0, w, eixo = 'x') => {
+    const corr = meshBox(eixo === 'x' ? w : 0.12, 0.12, eixo === 'x' ? 0.12 : w, ouro, x0, yy + 0.8, z0);
+    g.add(corr);
+    const n = Math.max(3, Math.floor(w / 1.3));
+    for (let i = 0; i < n; i++) {
+      const t = -w / 2 + (i + 0.5) * (w / n);
+      g.add(meshBox(0.08, 0.78, 0.08, ouro, x0 + (eixo === 'x' ? t : 0), yy + 0.42, z0 + (eixo === 'x' ? 0 : t)));
+    }
+  };
+  addRailing(0, -hz + 3.25, larg - 6.5, 'x');
+  addRailing(-hx + 3.25, 0.7, prof - 8.8, 'z');
+  addRailing(hx - 3.25, 0.7, prof - 8.8, 'z');
+  for (let i = 0; i < 9; i++) {
+    const deg = meshBox(3.2, 0.22, 1.0, madeira, -hx + 5.0 + i * 0.72, y + 0.26 + i * 0.42, hz - 7.0 - i * 0.9);
+    deg.rotation.y = 0.08;
+    g.add(deg);
+  }
+  return g;
+}
+
+function criaDecoracaoParede(larg, prof, y, guilda = false) {
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2;
+  const cores = guilda ? [0x203e78, 0x7a2630, 0x202a44] : [0x7a2630, 0x295f50, 0x67407c];
+  [-8, 0, 8].forEach((x, i) => {
+    const pano = new THREE.Mesh(new THREE.PlaneGeometry(2.2, guilda ? 4.2 : 3.2, 2, 4), new THREE.MeshStandardMaterial({ color: cores[i % cores.length], roughness: 0.92, side: THREE.DoubleSide }));
+    pano.position.set(x, y + (guilda ? 5.1 : 4.55), -hz + 0.04);
+    g.add(pano);
+    const sig = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), mat(0xd9a522, 0.55));
+    sig.position.set(x, y + (guilda ? 5.4 : 4.75), -hz + 0.18); g.add(sig);
+  });
+  [-1, 1].forEach((s) => {
+    const quadro = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.0), new THREE.MeshBasicMaterial({ map: placaCanvas(s < 0 ? 'MAPA DE VENOR' : 'LINHAGENS'), transparent: false }));
+    quadro.position.set(s * (hx - 0.06), y + 3.9, -2.0);
+    quadro.rotation.y = s < 0 ? Math.PI / 2 : -Math.PI / 2;
+    g.add(quadro);
+  });
+  const feixeMat = new THREE.MeshBasicMaterial({ color: 0xffd89a, transparent: true, opacity: guilda ? 0.13 : 0.16, depthWrite: false, side: THREE.DoubleSide });
+  const feixe = new THREE.Mesh(new THREE.PlaneGeometry(5.8, guilda ? 7.6 : 6.2), feixeMat);
+  feixe.position.set(0, y + (guilda ? 3.8 : 3.2), hz - 0.35);
+  feixe.rotation.x = -0.18;
+  g.add(feixe);
+  return g;
+}
+
+function criaPlantasInteriores(larg, prof, y, guilda = false) {
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2;
+  const vasoMat = mat(0x6b4129, 0.9), folhaMat = mat(guilda ? 0x2e6845 : 0x3f7a4a, 1);
+  [[-hx + 4, hz - 3.5], [hx - 4, hz - 3.5], [-hx + 4, -hz + 4.2], [hx - 4, -hz + 4.2]].forEach(([x, z], i) => {
+    const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.52, 0.8, 8), vasoMat);
+    vaso.position.set(x, y + 0.4, z); g.add(vaso);
+    for (let k = 0; k < 5; k++) {
+      const folha = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.0 + (k % 2) * 0.28, 5), folhaMat);
+      folha.position.set(x + Math.cos(k * 1.25) * 0.18, y + 1.05, z + Math.sin(k * 1.25) * 0.18);
+      folha.rotation.z = Math.cos(k + i) * 0.28;
+      folha.rotation.x = Math.sin(k) * 0.18;
+      g.add(folha);
+    }
+  });
+  return g;
+}
+
+function criaInteriorImovelBase(opts = {}) {
+  const { id = 'imovel', nome = 'Imovel', y = -120, guilda = false, larg = guilda ? 44 : 34, prof = guilda ? 32 : 28 } = opts;
+  const g = new THREE.Group();
+  const hx = larg / 2, hz = prof / 2, alt = guilda ? 8.8 : 7.2, t = 0.5, porta = guilda ? 7.0 : 5.5;
+  const colisores = [], animados = [], interativos = [];
+  const parede = guilda ? mat(0xb9b2a4, 1) : mat(0xd7c7a5, 1);
+  const madeira = mat(0x604027, 0.9);
+  const pedra = mat(0x8d8576, 1);
+  const metal = new THREE.MeshStandardMaterial({ color: 0x333840, metalness: 0.65, roughness: 0.38 });
+  const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.72, roughness: 0.32, emissive: 0x241500, emissiveIntensity: 0.22 });
+
+  const chaoMat = guilda ? new THREE.MeshStandardMaterial({ color: 0x7d776c, roughness: 1 }) : new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 1 });
+  aplicaTexturaReal(chaoMat, guilda ? 'pedra' : 'madeira', guilda ? 5 : 3, guilda ? 2.4 : 2, true, true);
+  const chao = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.12, prof), chaoMat);
+  chao.position.set(0, y + 0.06, 0); chao.receiveShadow = true; g.add(chao);
+
+  function col(cx, cz, w, d) {
+    colisores.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }
+  function muro(cx, cz, w, d, material = parede) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, alt, d), material);
+    m.position.set(cx, y + alt / 2, cz); m.castShadow = m.receiveShadow = true; g.add(m);
+    col(cx, cz, w, d);
+  }
+  muro(0, -hz, larg, t);
+  muro(-hx, 0, t, prof);
+  muro(hx, 0, t, prof);
+  const seg = (larg - porta) / 2;
+  muro(-(porta / 2 + seg / 2), hz, seg, t);
+  muro(porta / 2 + seg / 2, hz, seg, t);
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(porta, alt - 3.4, t), parede);
+  verga.position.set(0, y + alt - (alt - 3.4) / 2, hz); g.add(verga);
+
+  [-hx + 2.2, hx - 2.2].forEach((x) => {
+    [-hz + 2.2, hz - 2.2].forEach((z) => {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.48, alt - 0.6, 12), guilda ? pedra : madeira);
+      c.position.set(x, y + (alt - 0.6) / 2, z); c.castShadow = true; g.add(c);
+    });
+  });
+  g.add(criaTapete(guilda ? 5.0 : 3.6, prof - 5.6, 0, y, 0, guilda ? 0x263f6f : 0x7a2630));
+  const titulo = new THREE.Mesh(new THREE.PlaneGeometry(guilda ? 7.0 : 5.0, 1.2), new THREE.MeshBasicMaterial({ map: placaCanvas(nome.toUpperCase()), transparent: false }));
+  titulo.position.set(0, y + alt - 1.25, hz - 0.08);
+  titulo.rotation.y = Math.PI;
+  g.add(titulo);
+  const cand = criaCandelabro(y, guilda);
+  g.add(cand.grupo);
+  cand.animados.forEach((a) => animados.push(a));
+  g.add(criaGaleriaSuperior(larg, prof, y, guilda));
+  g.add(criaDecoracaoParede(larg, prof, y, guilda));
+  g.add(criaPlantasInteriores(larg, prof, y, guilda));
+
+  if (!guilda) {
+    muro(-hx + 10.5, -2.0, t, prof - 9.0, madeira);
+    muro(hx - 10.5, -2.0, t, prof - 9.0, madeira);
+    muro(0, -hz + 8.8, larg - 13.0, t, madeira);
+  } else {
+    muro(-hx + 12.5, -5.0, t, prof - 11.0, pedra);
+    muro(hx - 12.5, -5.0, t, prof - 11.0, pedra);
+    muro(0, -hz + 10.5, larg - 15.0, t, pedra);
+  }
+
+  const mesa = criaMesaConselho(y, guilda);
+  mesa.position.z = guilda ? 1.8 : 1.2;
+  g.add(mesa);
+  col(0, mesa.position.z, guilda ? 11.0 : 6.0, guilda ? 3.0 : 2.4);
+  const colunasCadeiras = guilda ? [-5, -3, -1, 1, 3, 5] : [-2.4, 0, 2.4];
+  colunasCadeiras.forEach((x) => [-1, 1].forEach((s) => {
+    const cad = new THREE.Group();
+    cad.add(meshBox(0.72, 0.16, 0.72, madeira, 0, y + 0.6, 0));
+    cad.add(meshBox(0.72, 0.82, 0.12, madeira, 0, y + 1.0, s * 0.3));
+    cad.position.set(x, 0, mesa.position.z + s * (guilda ? 2.0 : 1.55));
+    cad.rotation.y = s > 0 ? Math.PI : 0;
+    g.add(cad);
+  }));
+
+  g.add(criaBiblioteca(larg, y, !guilda ? -2.0 : -4.0, -1));
+  if (guilda) {
+    for (let i = 0; i < 6; i++) {
+      const rack = new THREE.Group();
+      rack.position.set(hx - 5.2, y, -9 + i * 2.4);
+      rack.add(meshBox(0.24, 2.6, 0.16, madeira, 0, 1.3, 0));
+      const lam = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.48, 5), metal);
+      lam.position.set(0, 2.95, 0); rack.add(lam);
+      const esc = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.46, 0.12, 6), ouro);
+      esc.position.set(-0.35, 1.45, 0.12); esc.rotation.z = Math.PI / 2; rack.add(esc);
+      g.add(rack);
+    }
+  } else {
+    const cama = new THREE.Group(); cama.position.set(hx - 5.4, y, -7.3);
+    cama.add(meshBox(5.2, 0.65, 3.2, madeira, 0, 0.35, 0));
+    cama.add(meshBox(5.0, 0.22, 3.0, mat(0x8f2f3a), 0, 0.78, 0));
+    cama.add(meshBox(1.5, 0.25, 2.6, mat(0xf0ead8, 0.8), 1.6, 0.94, 0));
+    g.add(cama); col(hx - 5.4, -7.3, 5.6, 3.6);
+  }
+
+  const bau = criaBauGrande(-hx + 5.0, y, hz - 5.8, guilda ? 0x4a3424 : 0x6e4a2a);
+  g.add(bau); col(-hx + 5.0, hz - 5.8, 2.2, 1.4);
+  for (let i = 0; i < 9; i++) {
+    const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 10), ouro);
+    moeda.position.set(-hx + 4.35 + (i % 3) * 0.33, y + 1.05 + Math.floor(i / 3) * 0.035, hz - 5.95 + Math.floor(i / 3) * 0.22);
+    moeda.rotation.x = Math.PI / 2;
+    moeda.rotation.z = i * 0.4;
+    g.add(moeda);
+  }
+  const banco = new THREE.Group(); banco.position.set(-hx + 9.0, y, hz - 5.6);
+  banco.add(meshBox(2.4, 1.1, 1.1, pedra, 0, 0.55, 0));
+  banco.add(meshBox(1.3, 1.0, 0.2, ouro, 0, 1.42, 0.0));
+  g.add(banco); col(-hx + 9.0, hz - 5.6, 2.6, 1.4);
+  const lixeira = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.46, 0.85, 8), metal);
+  lixeira.position.set(hx - 4.3, y + 0.43, hz - 5.8); g.add(lixeira); col(hx - 4.3, hz - 5.8, 1.0, 1.0);
+
+  // RV17.3: a casa precisa parecer uma base jogavel, nao um quarto vazio.
+  // Mesa de contratos, cartografia e provisoes fazem o interior representar
+  // as decisoes reais: guardar, planejar rota, renovar aluguel e descansar.
+  const mesaContratos = new THREE.Group();
+  mesaContratos.position.set(guilda ? -hx + 10.5 : -hx + 8.2, y, -hz + 5.3);
+  mesaContratos.add(meshBox(guilda ? 4.8 : 3.6, 0.22, guilda ? 2.2 : 1.7, madeira, 0, 0.92, 0));
+  [[-1.7, -0.72], [1.7, -0.72], [-1.7, 0.72], [1.7, 0.72]].forEach(([px, pz]) => mesaContratos.add(meshBox(0.16, 0.92, 0.16, madeira, px, 0.46, pz)));
+  const mapaMesa = new THREE.Mesh(new THREE.BoxGeometry(guilda ? 3.8 : 2.7, 0.045, guilda ? 1.45 : 1.05), mat(0xd9c79a, 0.86));
+  mapaMesa.position.set(0, 1.065, 0); mesaContratos.add(mapaMesa);
+  for (let i = 0; i < 5; i++) {
+    const ficha = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.035, 0.62), mat(i % 2 ? 0xe8d9a8 : 0xc8b07a, 0.9));
+    ficha.position.set(-1.25 + i * 0.58, 1.11 + i * 0.006, 0.38 - (i % 2) * 0.76);
+    ficha.rotation.y = -0.35 + i * 0.18;
+    mesaContratos.add(ficha);
+  }
+  const compasso = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.025, 6, 18), ouro);
+  compasso.position.set(guilda ? 1.72 : 1.18, 1.15, -0.42);
+  compasso.rotation.x = Math.PI / 2;
+  mesaContratos.add(compasso);
+  g.add(mesaContratos); col(mesaContratos.position.x, mesaContratos.position.z, guilda ? 5.4 : 4.2, guilda ? 2.8 : 2.2);
+
+  const quadroContrato = new THREE.Mesh(new THREE.PlaneGeometry(guilda ? 5.8 : 4.4, guilda ? 2.2 : 1.7),
+    new THREE.MeshBasicMaterial({ map: placaCanvas(guilda ? 'CONSELHO' : 'CONTRATOS'), transparent: false }));
+  quadroContrato.position.set(guilda ? -hx + 0.07 : -hx + 0.07, y + (guilda ? 4.6 : 3.9), -hz + 8.4);
+  quadroContrato.rotation.y = Math.PI / 2;
+  g.add(quadroContrato);
+
+  const provisoes = new THREE.Group();
+  provisoes.position.set(hx - 8.4, y, guilda ? -hz + 6.1 : -hz + 5.1);
+  provisoes.add(meshBox(3.4, 0.95, 0.45, madeira, 0, 0.48, 0));
+  provisoes.add(meshBox(3.4, 0.14, 1.45, madeira, 0, 1.05, 0));
+  [-1.1, 0, 1.1].forEach((px, i) => {
+    const pote = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.62, 8), i === 1 ? metal : mat(0x8a5a35, 0.9));
+    pote.position.set(px, 1.42, -0.08); provisoes.add(pote);
+    const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 8), ouro);
+    tampa.position.set(px, 1.77, -0.08); provisoes.add(tampa);
+  });
+  g.add(provisoes); col(provisoes.position.x, provisoes.position.z, 3.8, 1.7);
+
+  const ninho = new THREE.Group(); ninho.position.set(guilda ? 0 : hx - 5.0, y, guilda ? -hz + 5.2 : -hz + 5.8);
+  const ninhoMat = mat(guilda ? 0x4a3a2a : 0x6a4a2a, 1);
+  for (let i = 0; i < 10; i++) {
+    const galho = meshBox(guilda ? 4.2 : 3.0, 0.18, 0.2, ninhoMat, 0, 0.22 + i * 0.015, 0);
+    galho.rotation.y = i * 0.62;
+    ninho.add(galho);
+  }
+  const cristal = new THREE.Mesh(new THREE.OctahedronGeometry(guilda ? 0.58 : 0.42, 0), new THREE.MeshStandardMaterial({ color: 0xffd16a, emissive: 0xff8a22, emissiveIntensity: 0.75, roughness: 0.25 }));
+  cristal.position.y = guilda ? 0.92 : 0.72; ninho.add(cristal);
+  const luzNinho = new THREE.PointLight(0xffa34a, guilda ? 1.15 : 0.72, guilda ? 18 : 12, 2);
+  luzNinho.position.set(0, guilda ? 1.15 : 0.9, 0);
+  ninho.add(luzNinho);
+  animados.push({ mesh: cristal, gira: 0.65, pulsa: cristal.material, fase: Math.random() * 6 });
+  g.add(ninho); col(ninho.position.x, ninho.position.z, guilda ? 5.0 : 3.8, guilda ? 4.2 : 3.2);
+
+  const trofeusZ = -hz + 0.35;
+  [-6, -3, 0, 3, 6].forEach((x, i) => {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.22), madeira);
+    base.position.set(x, y + 2.6, trofeusZ); g.add(base);
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.7, 6), i % 2 ? ouro : metal);
+    horn.position.set(x, y + 3.25, trofeusZ + 0.1); horn.rotation.x = Math.PI; g.add(horn);
+  });
+
+  const luzMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xff9a2a, emissiveIntensity: 0.9, roughness: 0.35 });
+  [[-hx + 2.4, hz - 2.4], [hx - 2.4, hz - 2.4], [-hx + 2.4, -hz + 2.4], [hx - 2.4, -hz + 2.4]].forEach(([lx, lz], i) => {
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), luzMat);
+    lamp.position.set(lx, y + 3.2, lz); g.add(lamp);
+    animados.push({ chama: lamp, chamaMat: luzMat, fase: Math.random() * 6 + i });
+  });
+
+  const spawn = { x: 0, z: hz - 4.0 };
+  const exit = { x: 0, z: hz - 2.0 };
+  interativos.push({ kind: 'sair', x: exit.x, z: exit.z, y, raio: 3.4, titulo: `Porta de ${nome}`, acao: 'Sair para a superficie' });
+  interativos.push({ kind: 'depot', x: -hx + 5.0, z: hz - 5.8, y, raio: 2.6, titulo: 'Deposito do imovel', acao: 'Abrir deposito' });
+  interativos.push({ kind: 'banco', x: -hx + 9.0, z: hz - 5.6, y, raio: 2.6, titulo: 'Banco do imovel', acao: 'Abrir banco' });
+  interativos.push({ kind: 'lixo', x: hx - 4.3, z: hz - 5.8, y, raio: 2.4, titulo: 'Lixeira do imovel', acao: 'Descartar itens baratos' });
+  interativos.push({ kind: 'quadroImovel', x: mesaContratos.position.x, z: mesaContratos.position.z, y, raio: 3.1, titulo: guilda ? 'Mesa de estrategia' : 'Mesa de contratos', acao: guilda ? 'Rever rotas e contratos' : 'Ver contrato do imovel' });
+  interativos.push({ kind: 'despensa', x: provisoes.position.x, z: provisoes.position.z, y, raio: 2.6, titulo: 'Despensa da base', acao: 'Conferir provisoes' });
+  interativos.push({ kind: 'dormir', x: guilda ? 0 : hx - 5.0, z: guilda ? -hz + 5.2 : -7.3, y, raio: guilda ? 4.0 : 3.0, titulo: guilda ? 'Berco draconico' : 'Cama da mansao', acao: 'Descansar e treinar dragao' });
+  if (guilda) interativos.push({ kind: 'guilda', x: 0, z: 2.0, y, raio: 4.0, titulo: 'Mesa de Conselho', acao: 'Rever plano da guilda' });
+
+  return {
+    id,
+    nome,
+    tipo: 'imovel',
+    grupo: g,
+    colisores,
+    bounds: { minX: -hx + 1.0, maxX: hx - 1.0, minZ: -hz + 1.0, maxZ: hz - 1.0 },
+    acessos: [],
+    saidas: [],
+    y,
+    spawn,
+    interativos,
+    animados,
+  };
+}
+
+export function criaMansaoInterior(opts = {}) {
+  return criaInteriorImovelBase({ ...opts, guilda: false });
+}
+
+export function criaGuildHouseInterior(opts = {}) {
+  return criaInteriorImovelBase({ ...opts, guilda: true });
 }
 
 // =============================================================
@@ -519,9 +915,9 @@ export function criaTemploSagrado(x, z) {
   const ch = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.22), ouroM); ch.position.set(0, alt + 9.5, -hz + 2.4); roof.add(ch);
   g.add(roof);
 
-  // marcador ⛪ flutuante
+  // marcador 🏛️ flutuante
   const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
-  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('⛪', 64, 70);
+  const cx2 = cnv.getContext('2d'); cx2.font = '90px Arial'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.fillText('🏛️', 64, 70);
   const marc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthTest: false }));
   marc.scale.set(2.6, 2.6, 1); marc.position.y = alt + 11; marc.renderOrder = 997; g.add(marc);
 
@@ -530,6 +926,6 @@ export function criaTemploSagrado(x, z) {
     grupo: g, colisores,
     animados: [{ mesh: cristal, pulsa: cristalMat, gira: 0.8, fase: 0 }],
     casa: { roof, box, px: x, pz: z + hz, aberta: true }, // sem porta: o templo é sempre aberto
-    interativo: { x, z: z - hz + 4, raio: 4.2, titulo: '⛪ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
+    interativo: { x, z: z - hz + 4, raio: 4.2, titulo: '🏛️ Altar Sagrado', acao: 'Orar 🙏', msg: 'Uma paz profunda toma conta de você. É aqui que os caídos renascem.' },
   };
 }

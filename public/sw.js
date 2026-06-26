@@ -1,11 +1,26 @@
-const CACHE_VERSION = 'venor-rv82-offline-v1';
+const CACHE_VERSION = 'venor-rv18-6-offline-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
+  '/launcher.html',
+  '/portal.html',
+  '/ranking.html',
+  '/personagem.html',
   '/baixar.html',
+  '/patch-manifest.json',
+  '/install-profile.json',
   '/manifest.webmanifest',
   '/icon.svg',
-  '/patches/rv8-pacto-da-semana.png',
+  '/patches/rv17-1-calabouco-vivo.png',
+  '/patches/rv17-2-bichos-premium.png',
+  '/patches/rv17-3-interiores-realidade.png',
+  '/patches/rv17-4-rotas-continente.png',
+  '/patches/rv17-5-moradias-economia.png',
+  '/patches/rv17-6-contrato-visual.png',
+  '/patches/rv17-7-bases-vivas.png',
+  '/patches/rv17-8-hunts-reacao.png',
+  '/patches/rv17-9-preparacao-rv18.png',
+  '/patches/rv18-grande-pacto.png',
   '/texturas/ceu.png',
   '/texturas/grama.png',
   '/texturas/pedra.png',
@@ -37,6 +52,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -50,10 +69,12 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', copy));
+          caches.open(CACHE_VERSION).then((cache) => cache.put(url.pathname === '/' ? '/index.html' : url.pathname, copy));
           return res;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(url.pathname === '/' ? '/index.html' : url.pathname)
+          .then((cached) => cached || caches.match('/launcher.html'))
+          .then((cached) => cached || caches.match('/index.html')))
     );
     return;
   }

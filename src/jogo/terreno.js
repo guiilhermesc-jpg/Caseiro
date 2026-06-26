@@ -7,6 +7,7 @@
 //  borda suave; a Montanha do Dragão tem perfil próprio no main3d.
 // =============================================================
 
+import { esc } from './escala.js'; // RV12.4: escala global do mundo (fundação)
 // retângulos planos [minX, minZ, maxX, maxZ]
 const RETS = [
   [-92, -80, 92, 80],        // Venore (grade + casas entráveis + arredores)
@@ -30,7 +31,7 @@ const RETS = [
   [-780, -74, -692, 18],     // Santuario da Lua Partida / Fenda
   [470, -470, 720, -150],    // AS AREIAS DO VEIO SECO (deserto sudeste, RV10.7)
   [548, -150, 574, -72],     // Estrada do Mormaço (corredor Thais → deserto)
-];
+].map((r) => [esc(r[0]), esc(r[1]), esc(r[2]), esc(r[3])]); // escala global (1.0 = idêntico)
 // círculos planos [cx, cz, raio]
 const CIRCS = [
   [-95, -55, 27], [100, 95, 29], [-105, 70, 25], [-75, -110, 26], // lagos
@@ -39,10 +40,10 @@ const CIRCS = [
   [40, 330, 46],    // Covil do Dragão
   [110, 300, 58],   // Montanha do Dragão (perfil próprio em alturaTerreno)
   [-742, -30, 42],  // arena sombria da Lua Partida
-];
+].map((c) => [esc(c[0]), esc(c[1]), c[2]]); // centro escala, RAIO não (cidade não cresce, só afasta)
 // o relevo morre suavemente nas bordas do mundo (a malha do chão cobre
 // exatamente esta região; fora dela o plano-horizonte é raso)
-export const REGIAO = { minX: -900, maxX: 830, minZ: -490, maxZ: 490 };
+export const REGIAO = { minX: esc(-900), maxX: esc(830), minZ: esc(-490), maxZ: esc(490) };
 
 const BORDA = 18; // metros de rampa entre o plano e a colina
 

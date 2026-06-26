@@ -113,7 +113,7 @@ export function criaAvatar(cores = {}) {
   const capa = aplicaOutfit(g, tipo, C);
 
   // tronco e capa entram nas partes: respiração no idle + capa que balança
-  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, cabeca, capa };
+  g.userData.partes = { bracoEsq, bracoDir, pernaEsq, pernaDir, tronco: torso, troncoMatBase: torso.material, cabeca, capa };
   return g;
 }
 
@@ -130,6 +130,29 @@ function criaCapa(cor, h = 1.7) {
 
 // OUTFIT por modelo — aparece no corpo (Tibia-like). Devolve a CAPA (ou null)
 // pra animaAvatar dar o balanço de pano. RV3.0: detalhes de DRAGÃO por classe.
+function criaCajado(corOrbe = 0x9a6aff, corMadeira = 0x5a3a1a) {
+  const g = new THREE.Group();
+  g.position.set(0.74, 1.18, 0.24);
+  g.rotation.z = -0.12;
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 2.35, 7), mat(corMadeira, 0.92));
+  haste.position.y = 0.62; haste.castShadow = true; g.add(haste);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.025, 6, 18), metal(0xb88a32));
+  aro.position.y = 1.86; aro.rotation.x = Math.PI / 2; g.add(aro);
+  const orbe = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10),
+    new THREE.MeshStandardMaterial({ color: corOrbe, emissive: corOrbe, emissiveIntensity: 0.85, roughness: 0.25, metalness: 0.05 }));
+  orbe.position.y = 1.94; g.add(orbe);
+  return g;
+}
+
+function adicionaBordasRobe(g, cor = 0xd9a522, frenteZ = 0.56) {
+  [-0.34, 0.34].forEach((ox) => {
+    const tira = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.18, 0.055), mat(cor, 0.42));
+    tira.position.set(ox, 1.05, frenteZ); g.add(tira);
+  });
+  const barra = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.08, 0.06), mat(cor, 0.42));
+  barra.position.set(0, 0.32, frenteZ); g.add(barra);
+}
+
 function aplicaOutfit(g, tipo, C) {
   let capa = null;
   // CINTO + fivela (todos os modelos) — quebra o "bloco" do torso
@@ -155,16 +178,25 @@ function aplicaOutfit(g, tipo, C) {
     presa.position.set(0, 1.82, 0.34); presa.rotation.x = Math.PI; g.add(presa);
     capa = criaCapa(0x2f3d28, 1.5); g.add(capa); // capa de mata do caçador
   } else if (tipo === 'mago') {
-    const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.74, 0.08, 14), mat(0x342a66)); aba.position.y = 3.12; g.add(aba);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.48, 1.2, 14), mat(0x342a66)); cone.position.y = 3.74; cone.castShadow = true; g.add(cone);
-    const estrela = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mat(0xffe27a, 0.3)); estrela.position.set(0, 3.5, 0.42); g.add(estrela);
-    const manto = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.0, 1.7, 12), mat(C.casaco)); manto.position.y = 0.85; manto.castShadow = true; g.add(manto);
+    const capuz = new THREE.Mesh(RBox(0.98, 0.56, 0.92), mat(0x2f235f));
+    capuz.position.y = 2.92; capuz.castShadow = true; g.add(capuz);
+    const abertura = new THREE.Mesh(RBox(0.55, 0.34, 0.08), mat(0x17111f));
+    abertura.position.set(0, 2.64, 0.47); g.add(abertura);
+    const manto = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 1.05, 1.75, 18), mat(C.casaco));
+    manto.position.y = 0.84; manto.castShadow = true; manto.receiveShadow = true; g.add(manto);
+    adicionaBordasRobe(g, 0xd9a522, 0.57);
+    [-0.42, 0.42].forEach((ox) => {
+      const om = new THREE.Mesh(RBox(0.34, 0.24, 0.58), mat(0x241a4a));
+      om.position.set(ox, 2.06, 0.03); om.castShadow = true; g.add(om);
+    });
     capa = criaCapa(0x241a4a, 1.8); g.add(capa);
     // RV3.0: runa de dragão brilhando na capa do mago
-    const runa = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8),
-      new THREE.MeshStandardMaterial({ color: 0x9a6aff, emissive: 0x6a3aff, emissiveIntensity: 0.7, roughness: 0.3 }));
+    const runa = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0x9a6aff, emissive: 0x6a3aff, emissiveIntensity: 0.9, roughness: 0.25 }));
     runa.position.set(0, -0.7, -0.08); capa.add(runa); // filha da capa → balança junto
-    const gola = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.32, 0.62), mat(0x241a4a)); gola.position.y = 2.06; g.add(gola);
+    const broche = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), metal(0xd9a522));
+    broche.position.set(0, 2.08, 0.36); g.add(broche);
+    g.add(criaCajado(0x9a6aff, 0x4a3018));
   } else if (tipo === 'paladino') {
     // PALADINO (RV5.1): atirador de elite — couro leve, bandoleira, aljava
     // farta e manto curto de campo. Faixa na testa (visão livre pra mirar).
@@ -200,7 +232,9 @@ function aplicaOutfit(g, tipo, C) {
       const borda = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.06), mat(0xd9a522, 0.4));
       borda.position.set(ox, 0.4, 0.55); g.add(borda);
     });
+    adicionaBordasRobe(g, 0xa783ff, 0.58);
     capa = criaCapa(0x241a4a, 1.8); g.add(capa);
+    g.add(criaCajado(0xb48cff, 0x352247));
   } else if (tipo === 'druida') {
     // DRUIDA (RV5.1): túnica de musgo, cinto de corda, coroa de folhas e
     // bolsa de ervas — a floresta anda com ele.
@@ -219,6 +253,8 @@ function aplicaOutfit(g, tipo, C) {
       const tufo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), matVerdeFolha);
       tufo.position.set(ox, 2.16, 0); g.add(tufo);
     });
+    adicionaBordasRobe(g, 0x9ab86a, 0.55);
+    g.add(criaCajado(0x89e06a, 0x5a4326));
     capa = criaCapa(0x39512f, 1.4); g.add(capa);
   } else if (tipo === 'cavaleiro') {
     capa = criaCapa(0x8a1a1a, 1.7); g.add(capa);

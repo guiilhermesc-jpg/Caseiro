@@ -3,13 +3,13 @@
 //  Praça central + marcos + casas diversas alinhadas + adereços.
 // =============================================================
 import * as THREE from 'three';
-import { mat, criaPredio, criaMarco, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
+import { mat, criaPredio, criaMarco, criaMuralha, criaPortaoCidade, criaPinheiro, criaArbusto, criaFonte, criaBanco, criaPoste, criaMoinho, criaFarol, criaMercado, criaMansao, criaGuildHouse, texturaPedra, aplicaTexturaReal, desloca } from './construcoes.js';
 import { criaBarril, criaCaixa, criaPoco, criaBarraca, criaEstatua, criaCanteiro, criaBandeira, criaBau, criaCristal } from './props.js';
 import { criaLago, criaRiacho, criaPonte, criaJunco, criaSalgueiro, criaArvore, criaArvoreGrande, criaNenufar, criaPedra, criaCogumelo, criaFlorAlta, criaMontanha, criaEstrada, criaPlaca, criaFogueira, criaCarroca, criaCais, criaArvoreMorta, criaRuinas, criaCovilDragao, criaRio, criaPonteDePedra, criaTorreVigia, criaCemiterio, criaPantano, criaFazenda, criaMarcoDistancia, criaCoqueiro, criaCachoeira, criaCranioDragao } from './natureza.js';
 import { criaCasaInterior, criaTemploSagrado, criaHospitalInterior } from './interiores.js';
 import { criaThais } from './thais.js';
 import { alturaColinas, REGIAO } from './terreno.js';
-import { texPBR } from './texturas.js'; // normal map do chão (RV11.5)
+import { texPBR, matPBR } from './texturas.js'; // normal map do chão (RV11.5)
 import { criaVegetacaoInstanciada } from './vegetacao.js';
 
 // textura procedural de grama (granulado de tons de verde) — dá vida ao chão
@@ -41,7 +41,7 @@ function texturaGrama(rep = 60) {
 
 export function criaCidade() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xc9d9e6, 250, 760); // neblina com mais profundidade e menos branco estourado
+  scene.fog = new THREE.Fog(0xd6cbb4, 320, 920); // RV18.4: ar mais quente e distante na vila
 
   // céu em gradiente (claro)
   const skyMat = new THREE.ShaderMaterial({
@@ -59,16 +59,17 @@ export function criaCidade() {
     ceu.material = new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false });
   }, undefined, () => {});
 
-  const hemi = new THREE.HemisphereLight(0xc4dcf2, 0x5d6a44, 0.86);
+  const hemi = new THREE.HemisphereLight(0xf5e5c8, 0x6c7551, 1.06);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xffe3b8, 1.42); // sol dourado com leitura mais cinematográfica
+  scene.add(new THREE.AmbientLight(0xffead0, 0.22));
+  const sun = new THREE.DirectionalLight(0xffd39a, 1.72); // RV18.4: luz dourada mais presente
   sun.position.set(70, 100, 50);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048); // sombras mais nítidas (só pesa no PC; mobile não usa sombra)
+  sun.shadow.mapSize.set(1536, 1536); // RV12.1: 1536 destrava (era 2048) sem perda visível
   const d = 100;
   sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
   sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
-  sun.shadow.camera.near = 1; sun.shadow.camera.far = 420;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 260; // RV12.1: alcance menor = mais leve
   sun.shadow.bias = -0.00018;
   sun.shadow.normalBias = 0.035;
   scene.add(sun);
@@ -124,6 +125,22 @@ export function criaCidade() {
   // plano-horizonte raso (some na neblina, levemente abaixo pra não brigar)
   const grama = new THREE.Mesh(new THREE.PlaneGeometry(4200, 4200), gramaMat);
   grama.rotation.x = -Math.PI / 2; grama.position.y = -0.06; grama.receiveShadow = true; scene.add(grama);
+  // RV13.3: CHÃO PRÓPRIO POR REGIÃO — cada lugar com sua cara (não genérico).
+  // Planos texturizados (IA) sobre a zona plana de cada região, em y=0.02:
+  // acima da grama-base (−0.06), abaixo do calçamento das cidades (~0.06).
+  [
+    ['chao_pantano', -330, -30, 200, 250],   // Venore: brejo escuro
+    ['chao_thais', 567, -2, 165, 158],        // Thais: árido mediterrâneo
+    ['chao_cinzas', -619, -29, 158, 118],     // Noctaria: cinzas
+    ['chao_cinzas', -740, -30, 96, 96],       // Santuário da Lua Partida
+    ['chao_vulcanico', 110, 300, 124, 124],   // Montanha do Dragão: vulcânico
+    ['chao_floresta', -146, -66, 96, 86],     // Floresta/Ninho das Aranhas (oeste)
+  ].forEach(([tex, cx, cz, w, d]) => {
+    const m = new THREE.MeshStandardMaterial({ color: 0x8a8a7a, roughness: 1 });
+    aplicaTexturaReal(m, tex, Math.round(w / 16), Math.round(d / 16), false);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m);
+    p.rotation.x = -Math.PI / 2; p.position.set(cx, 0.02, cz); p.receiveShadow = true; scene.add(p);
+  });
   // === RELEVO: colinas procedurais (estilo pack premium) ===
   // malha segmentada cujos vértices seguem alturaColinas() — a MESMA função
   // que a física usa no main3d: cidades/estrada/praia/água ficam PLANAS.
@@ -194,11 +211,11 @@ export function criaCidade() {
     if (Math.hypot(px + 742, pz + 30) < 46) return true;         // Santuário da Lua Partida
     return false;
   }
-  const N_MATO = 700, dummyM = new THREE.Object3D(); // 2× mais denso (refs premium) — seguem 2 draw calls
+  const N_MATO = 520, dummyM = new THREE.Object3D(); // RV16.5: menos cartaz, mais capim 3D instanciado abaixo
   const mato1 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   const mato2 = new THREE.InstancedMesh(matoGeo, matoMat, N_MATO);
   let mi = 0;
-  for (let tent = 0; tent < 16000 && mi < N_MATO; tent++) {
+  for (let tent = 0; tent < 24000 && mi < N_MATO; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz)) continue;
     dummyM.position.set(px, alturaColinas(px, pz), pz); // tufos assentam na colina
@@ -216,13 +233,18 @@ export function criaCidade() {
   // ruas em GRADE — agora CALÇADAS de pedra (textura), quase no nível do chão
   function matRua(rx, rz) {
     const t = texturaPedra(1); t.repeat.set(rx, rz);
-    const m = new THREE.MeshStandardMaterial({ map: t, color: 0x9a9a98, roughness: 1 });
-    aplicaTexturaReal(m, 'pedra', rx, rz); // calçamento REAL quando carregar
+    const m = new THREE.MeshStandardMaterial({ map: t, color: 0xd2c3aa, roughness: 0.92 });
+    aplicaTexturaReal(m, 'pedra', rx, rz, false, true); // calçamento REAL + relevo
     return m;
   }
-  const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x655f57, roughness: 1, flatShading: true });
-  const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x423d38, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false });
-  const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x24211f, roughness: 0.9, metalness: 0.05 });
+  const guiaRuaMat = new THREE.MeshStandardMaterial({ color: 0x8a7b63, roughness: 0.96, flatShading: true });
+  const juntaRuaMat = new THREE.MeshStandardMaterial({ color: 0x3a3028, roughness: 1, transparent: true, opacity: 0.42, depthWrite: false });
+  const ralinhoMat = new THREE.MeshStandardMaterial({ color: 0x151414, roughness: 0.72, metalness: 0.42 });
+  const raloAroMat = new THREE.MeshStandardMaterial({ color: 0x4a4540, roughness: 0.62, metalness: 0.48, flatShading: true });
+  const raloGradeMat = new THREE.MeshStandardMaterial({ color: 0x1f2224, roughness: 0.52, metalness: 0.7 });
+  const raloUmidoMat = new THREE.MeshStandardMaterial({ color: 0x203c34, transparent: true, opacity: 0.34, roughness: 0.38, metalness: 0.18, depthWrite: false });
+  const vaporRuaAnimados = [];
+  const vaporRuaMat = new THREE.MeshStandardMaterial({ color: 0xd9e4df, transparent: true, opacity: 0.24, roughness: 1, depthWrite: false });
   function detalhaRua(cx, cz, w, d, y = 0.095) {
     const horizontal = w >= d;
     const guiaGeo = horizontal ? new THREE.BoxGeometry(w, 0.04, 0.28) : new THREE.BoxGeometry(0.28, 0.04, d);
@@ -253,25 +275,77 @@ export function criaCidade() {
 
     const ralos = Math.max(2, Math.min(10, Math.floor(len / 28)));
     const ralosMesh = new THREE.InstancedMesh(
-      horizontal ? new THREE.BoxGeometry(0.78, 0.035, 0.22) : new THREE.BoxGeometry(0.22, 0.035, 0.78),
+      horizontal ? new THREE.BoxGeometry(1.16, 0.035, 0.52) : new THREE.BoxGeometry(0.52, 0.035, 1.16),
       ralinhoMat,
       ralos
     );
+    const raloUmidoGeo = new THREE.CircleGeometry(0.56, 12);
+    raloUmidoGeo.rotateX(-Math.PI / 2);
+    const raloUmido = new THREE.InstancedMesh(raloUmidoGeo, raloUmidoMat, ralos);
+    const moldLonga = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(1.24, 0.044, 0.055) : new THREE.BoxGeometry(0.055, 0.044, 1.24),
+      raloAroMat,
+      ralos * 2
+    );
+    const moldCurta = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(0.055, 0.044, 0.58) : new THREE.BoxGeometry(0.58, 0.044, 0.055),
+      raloAroMat,
+      ralos * 2
+    );
+    const gradeRalo = new THREE.InstancedMesh(
+      horizontal ? new THREE.BoxGeometry(0.055, 0.052, 0.42) : new THREE.BoxGeometry(0.42, 0.052, 0.055),
+      raloGradeMat,
+      ralos * 5
+    );
+    let imLonga = 0, imCurta = 0, imGrade = 0;
     for (let i = 0; i < ralos; i++) {
       const t = (i + 0.5) / ralos;
       const lado = i % 2 ? 1 : -1;
-      dRua.position.set(
-        horizontal ? cx - w / 2 + w * t : cx + lado * (w / 2 - 0.55),
-        y + 0.038,
-        horizontal ? cz + lado * (d / 2 - 0.55) : cz - d / 2 + d * t
-      );
+      const rx = horizontal ? cx - w / 2 + w * t : cx + lado * (w / 2 - 0.55);
+      const rz = horizontal ? cz + lado * (d / 2 - 0.55) : cz - d / 2 + d * t;
+      dRua.position.set(rx, y + 0.036, rz);
       dRua.rotation.set(0, 0, 0);
       dRua.scale.set(1, 1, 1);
       dRua.updateMatrix();
       ralosMesh.setMatrixAt(i, dRua.matrix);
+      dRua.position.set(rx, y + 0.019, rz);
+      dRua.scale.set(horizontal ? 1.35 : 0.78, 1, horizontal ? 0.78 : 1.35);
+      dRua.updateMatrix();
+      raloUmido.setMatrixAt(i, dRua.matrix);
+      dRua.scale.set(1, 1, 1);
+
+      const offLong = horizontal ? [0, 0.28] : [0.28, 0];
+      [-1, 1].forEach((s) => {
+        dRua.position.set(rx + offLong[0] * s, y + 0.066, rz + offLong[1] * s);
+        dRua.rotation.set(0, 0, 0); dRua.scale.set(1, 1, 1); dRua.updateMatrix();
+        moldLonga.setMatrixAt(imLonga++, dRua.matrix);
+      });
+      const offCurto = horizontal ? [0.62, 0] : [0, 0.62];
+      [-1, 1].forEach((s) => {
+        dRua.position.set(rx + offCurto[0] * s, y + 0.067, rz + offCurto[1] * s);
+        dRua.rotation.set(0, 0, 0); dRua.scale.set(1, 1, 1); dRua.updateMatrix();
+        moldCurta.setMatrixAt(imCurta++, dRua.matrix);
+      });
+      for (let b = -2; b <= 2; b++) {
+        dRua.position.set(rx + (horizontal ? b * 0.18 : 0), y + 0.073, rz + (horizontal ? 0 : b * 0.18));
+        dRua.rotation.set(0, 0, 0); dRua.scale.set(1, 1, 1); dRua.updateMatrix();
+        gradeRalo.setMatrixAt(imGrade++, dRua.matrix);
+      }
+      if (i % 3 === 0) {
+        const fumaca = [];
+        for (let p = 0; p < 4; p++) {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(0.18 + p * 0.05, 7, 5), vaporRuaMat);
+          puff.position.set(rx, y + 0.18, rz); scene.add(puff); fumaca.push(puff);
+        }
+        vaporRuaAnimados.push({ fumaca, baseY: y + 0.18, baseX: rx, baseZ: rz, fase: Math.random() * 6 });
+      }
     }
     ralosMesh.receiveShadow = true;
     scene.add(ralosMesh);
+    raloUmido.receiveShadow = true; scene.add(raloUmido);
+    moldLonga.receiveShadow = true; scene.add(moldLonga);
+    moldCurta.receiveShadow = true; scene.add(moldCurta);
+    gradeRalo.receiveShadow = true; scene.add(gradeRalo);
   }
   const ruaMatH = matRua(34, 1.6), ruaMatV = matRua(1.6, 34);
   const faixaH = (z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(180, 0.1, 8), ruaMatH); m.position.set(0, 0.02, z); m.receiveShadow = true; scene.add(m); detalhaRua(0, z, 180, 8); };
@@ -279,12 +353,14 @@ export function criaCidade() {
   const ruas = [-48, -16, 16, 48];
   ruas.forEach((c) => { faixaH(c); faixaV(c); });
 
-  const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), roughness: 1 }); // calçamento das praças
-  aplicaTexturaReal(pisoMat, 'pedra', 7, 7);
+  const pisoMat = new THREE.MeshStandardMaterial({ map: texturaPedra(7), color: 0xd0c1aa, roughness: 0.92 }); // calcamento das pracas
+  aplicaTexturaReal(pisoMat, 'piso_castelo', 5, 5, false, true); // RV14.8: lajões de castelo na praça (spawn premium)
   const praca = new THREE.Mesh(new THREE.BoxGeometry(30, 0.1, 30), pisoMat);
   praca.position.y = 0.03; praca.receiveShadow = true; scene.add(praca);
+  adicionaAcabamentoUrbano();
 
   const obstaculos = [], solidos = [], aguas = [], postes = [], nuvens = [], fonteGotas = [], animados = [], interativos = [], casas = [], lagos = [];
+  vaporRuaAnimados.forEach((a) => animados.push(a));
   const add = (res) => {
     // o que nasce "no chão" (y=0) assenta na colina local (zonas planas = +0)
     if (res.grupo.position.y === 0) res.grupo.position.y = alturaColinas(res.grupo.position.x, res.grupo.position.z);
@@ -301,12 +377,315 @@ export function criaCidade() {
   };
   // === VEGETAÇÃO INSTANCIADA: coleta as posições e desenha tudo em ~9 draw
   // calls (vegetacao.js) — antes eram ~900 meshes de árvore/pinheiro/pedra
+  function adicionaAcabamentoUrbano() {
+    const dummy = new THREE.Object3D();
+    const matTerra = matPBR(0x5f4a32, { tipo: 'terra', repeat: 1, rough: 1, relevo: 0.35 });
+    const matMusgo = new THREE.MeshStandardMaterial({ color: 0x3e5d37, roughness: 1, flatShading: true });
+    const matFissura = new THREE.MeshStandardMaterial({ color: 0x2f2a26, roughness: 1 });
+    const matSeixo = new THREE.MeshStandardMaterial({ color: 0x7f786d, roughness: 1, flatShading: true });
+    const manchas = [], musgos = [], fissuras = [], seixos = [];
+    const addFaixa = (cx, cz, w, d, n, y = 0.092) => {
+      for (let i = 0; i < n; i++) {
+        const px = cx + (Math.random() - 0.5) * w;
+        const pz = cz + (Math.random() - 0.5) * d;
+        manchas.push([px, pz, y, 0.38 + Math.random() * 0.8, 0.18 + Math.random() * 0.45, Math.random() * Math.PI]);
+        if (i % 2 === 0) musgos.push([px + (Math.random() - 0.5) * 1.4, pz + (Math.random() - 0.5) * 1.4, y + 0.006, 0.24 + Math.random() * 0.45]);
+        if (i % 3 === 0) fissuras.push([px, pz, y + 0.012, 0.8 + Math.random() * 2.4, Math.random() * Math.PI]);
+        if (i % 4 === 0) seixos.push([px + (Math.random() - 0.5) * 0.8, pz + (Math.random() - 0.5) * 0.8, y + 0.04, 0.16 + Math.random() * 0.18]);
+      }
+    };
+    [-48, -16, 16, 48].forEach((c) => { addFaixa(0, c, 172, 8, 20); addFaixa(c, 0, 8, 172, 20); });
+    [[0, 0, 30, 30, 34], [-320, -30, 54, 40, 44], [560, 0, 44, 36, 28], [-620, -34, 48, 38, 28], [0, -95, 34, 26, 24]]
+      .forEach(([cx, cz, w, d, n]) => addFaixa(cx, cz, w, d, n, 0.102));
+
+    const geoMancha = new THREE.CircleGeometry(1, 12);
+    const imMancha = new THREE.InstancedMesh(geoMancha, matTerra, manchas.length);
+    manchas.forEach(([px, pz, y, sx, sz, r], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(-Math.PI / 2, 0, r);
+      dummy.scale.set(sx, sz, 1);
+      dummy.updateMatrix();
+      imMancha.setMatrixAt(i, dummy.matrix);
+    });
+    imMancha.receiveShadow = true; scene.add(imMancha);
+
+    const geoMusgo = new THREE.IcosahedronGeometry(1, 0);
+    const imMusgo = new THREE.InstancedMesh(geoMusgo, matMusgo, musgos.length);
+    musgos.forEach(([px, pz, y, s], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(0, Math.random() * Math.PI, 0);
+      dummy.scale.set(s, 0.045, s * 0.55);
+      dummy.updateMatrix();
+      imMusgo.setMatrixAt(i, dummy.matrix);
+    });
+    imMusgo.receiveShadow = true; scene.add(imMusgo);
+
+    const geoFissura = new THREE.BoxGeometry(1, 0.012, 0.045);
+    const imFissura = new THREE.InstancedMesh(geoFissura, matFissura, fissuras.length);
+    fissuras.forEach(([px, pz, y, len, r], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(0, r, 0);
+      dummy.scale.set(len, 1, 1);
+      dummy.updateMatrix();
+      imFissura.setMatrixAt(i, dummy.matrix);
+    });
+    scene.add(imFissura);
+
+    const geoSeixo = desloca(new THREE.IcosahedronGeometry(0.22, 0), 0.06);
+    const imSeixo = new THREE.InstancedMesh(geoSeixo, matSeixo, seixos.length);
+    seixos.forEach(([px, pz, y, s], i) => {
+      dummy.position.set(px, y, pz);
+      dummy.rotation.set(Math.random() * 0.2, Math.random() * Math.PI, Math.random() * 0.2);
+      dummy.scale.set(s * 1.35, s * 0.42, s);
+      dummy.updateMatrix();
+      imSeixo.setMatrixAt(i, dummy.matrix);
+    });
+    imSeixo.castShadow = true; imSeixo.receiveShadow = true; scene.add(imSeixo);
+  }
+
   const VEG = { arvores: [], pinheiros: [], pedras: [] };
   const arvG = (x, z, s = 1) => VEG.arvores.push([x, z, s]);
   const pinh = (x, z) => VEG.pinheiros.push([x, z]);
   const pedr = (x, z, s = 1) => VEG.pedras.push([x, z, s]);
 
+  function criaEscadariaCenica(x, z, rot = 0, w = 13, degraus = 5) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const pedra = matPBR(0x8d8576, { tipo: 'pedra', repeat: 1.3, rough: 1, relevo: 0.55 });
+    const musgo = new THREE.MeshStandardMaterial({ color: 0x3b5d36, roughness: 1, flatShading: true });
+    const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.62, roughness: 0.36, emissive: 0x241500, emissiveIntensity: 0.18 });
+    for (let i = 0; i < degraus; i++) {
+      const d = new THREE.Mesh(new THREE.BoxGeometry(w - i * 0.42, 0.16 + i * 0.035, 0.88), pedra);
+      d.position.set(0, 0.08 + i * 0.035, i * 0.72);
+      d.castShadow = d.receiveShadow = true;
+      g.add(d);
+      if (i % 2 === 0) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry((w - i) * 0.24, 0.025, 0.55), musgo);
+        m.position.set((i % 4 ? -1 : 1) * (w * 0.22), 0.18 + i * 0.036, i * 0.72 + 0.06);
+        m.rotation.y = (i % 4 ? -0.08 : 0.1);
+        g.add(m);
+      }
+    }
+    [-1, 1].forEach((s) => {
+      const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 1.2, 8), pedra);
+      pilar.position.set(s * (w / 2 - 0.55), 0.6, degraus * 0.72 + 0.25);
+      pilar.castShadow = pilar.receiveShadow = true;
+      g.add(pilar);
+      const topo = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), ouro);
+      topo.position.set(s * (w / 2 - 0.55), 1.36, degraus * 0.72 + 0.25);
+      topo.castShadow = true;
+      g.add(topo);
+    });
+    return { grupo: g };
+  }
+
+  function criaVasoNobre(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const ceramica = matPBR(0x8a5a37, { tipo: 'terra', repeat: 0.8, rough: 0.92, relevo: 0.35 });
+    const folhaMat = new THREE.MeshStandardMaterial({ color: 0x3f6f38, roughness: 1, flatShading: true });
+    const florMat = new THREE.MeshStandardMaterial({ color: 0xe8d16a, roughness: 0.75, emissive: 0x2a1800, emissiveIntensity: 0.08 });
+    const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.34, 0.75, 10), ceramica);
+    corpo.position.y = 0.38; corpo.castShadow = corpo.receiveShadow = true; g.add(corpo);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const folha = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22 + (i % 2) * 0.05, 0), folhaMat);
+      folha.position.set(Math.cos(a) * 0.34, 0.88 + (i % 3) * 0.09, Math.sin(a) * 0.34);
+      folha.scale.set(1.1, 0.55, 0.75);
+      folha.rotation.y = a;
+      folha.castShadow = true;
+      g.add(folha);
+    }
+    const flor = new THREE.Mesh(new THREE.SphereGeometry(0.13, 7, 6), florMat);
+    flor.position.y = 1.22; g.add(flor);
+    return { grupo: g, colisores: [{ minX: x - 0.45, maxX: x + 0.45, minZ: z - 0.45, maxZ: z + 0.45 }] };
+  }
+
+  function criaMesaMercante(x, z, rot = 0, cor = 0x334f7a) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const madeira = matPBR(0x6b4a2a, { tipo: 'madeira', repeat: 1.1, rough: 0.88, relevo: 0.45 });
+    const tecido = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.96, side: THREE.DoubleSide });
+    const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.58, roughness: 0.34, emissive: 0x2a1600, emissiveIntensity: 0.2 });
+    const tampo = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.18, 1.35), madeira);
+    tampo.position.y = 0.92; tampo.castShadow = tampo.receiveShadow = true; g.add(tampo);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(3.15, 0.045, 1.5), tecido);
+    pano.position.y = 1.04; g.add(pano);
+    [-1.25, 1.25].forEach((px) => [-0.48, 0.48].forEach((pz) => {
+      const pe = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.82, 0.13), madeira);
+      pe.position.set(px, 0.48, pz); pe.castShadow = true; g.add(pe);
+    }));
+    for (let i = 0; i < 5; i++) {
+      const pacote = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.28, 0.36), mat([0x9a7a45, 0x5a6f3a, 0x7a3a42][i % 3], 0.8));
+      pacote.position.set(-1.0 + i * 0.5, 1.25, (i % 2 ? -0.28 : 0.25));
+      pacote.rotation.y = (i - 2) * 0.08;
+      pacote.castShadow = true;
+      g.add(pacote);
+    }
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), ouro);
+    lamp.position.set(1.18, 1.34, 0.42); g.add(lamp);
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 1.6, maxX: x + 1.6, minZ: z - 0.8, maxZ: z + 0.8 }],
+      animados: [{ mesh: lamp, pulsa: ouro, gira: 0.35, fase: Math.random() * 6 }],
+    };
+  }
+
   // praça: fonte central + bancos + postes nas esquinas
+  function criaMuralContratosRua(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const madeira = matPBR(0x5f3d24, { tipo: 'madeira', repeat: 1.2, rough: 0.86, relevo: 0.48 });
+    const papel = new THREE.MeshStandardMaterial({ color: 0xd8c49a, roughness: 0.92 });
+    const luzMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffa83a, emissiveIntensity: 1.05, roughness: 0.34 });
+    [-1.45, 1.45].forEach((px) => {
+      const poste = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.75, 0.18), madeira);
+      poste.position.set(px, 1.36, 0); poste.castShadow = true; g.add(poste);
+    });
+    const tab = new THREE.Mesh(new THREE.BoxGeometry(3.45, 2.1, 0.16), madeira);
+    tab.position.set(0, 1.85, 0); tab.castShadow = tab.receiveShadow = true; g.add(tab);
+    const topo = new THREE.Mesh(new THREE.BoxGeometry(3.75, 0.18, 0.28), madeira);
+    topo.position.set(0, 2.98, 0); topo.castShadow = true; g.add(topo);
+    for (let i = 0; i < 12; i++) {
+      const aviso = new THREE.Mesh(new THREE.BoxGeometry(0.55 + (i % 3) * 0.08, 0.36 + (i % 2) * 0.08, 0.035), papel);
+      aviso.position.set(-1.13 + (i % 4) * 0.75, 2.35 - Math.floor(i / 4) * 0.52, 0.105);
+      aviso.rotation.z = -0.08 + (i % 5) * 0.04; g.add(aviso);
+    }
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), luzMat);
+    lamp.position.set(1.72, 2.82, 0.26); g.add(lamp);
+    const luz = new THREE.PointLight(0xffb85a, 0.45, 10, 2);
+    luz.position.set(x, 2.82, z); scene.add(luz); postes.push({ luz, lumMat: luzMat });
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 1.9, maxX: x + 1.9, minZ: z - 0.35, maxZ: z + 0.35 }],
+      animados: [{ mesh: lamp, pulsa: luzMat, gira: 0.2, fase: Math.random() * 6 }],
+      interativo: { x, z, raio: 3.3, titulo: 'Mural de Contratos de Venor', acao: 'Ler contratos', msg: 'O mural registra alugueis, viagens, hunts celestes e avisos da Guilda. Arte oficial precisa virar sistema jogavel.' },
+    };
+  }
+
+  function criaLojaAbertaNoturna(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const madeira = matPBR(0x6b4a2a, { tipo: 'madeira', repeat: 1.1, rough: 0.84, relevo: 0.45 });
+    const pedra = matPBR(0x766f64, { tipo: 'pedra', repeat: 1.0, rough: 0.95, relevo: 0.45 });
+    const tecido = new THREE.MeshStandardMaterial({ color: 0x162747, roughness: 0.95, side: THREE.DoubleSide });
+    const luzMat = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffa83a, emissiveIntensity: 1.05, roughness: 0.34 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.35, 2.1), pedra);
+    base.position.y = 0.18; base.castShadow = base.receiveShadow = true; g.add(base);
+    const balcao = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.9, 0.55), madeira);
+    balcao.position.set(0, 0.82, 0.58); balcao.castShadow = balcao.receiveShadow = true; g.add(balcao);
+    const fundo = new THREE.Mesh(new THREE.BoxGeometry(5.3, 2.8, 0.32), madeira);
+    fundo.position.set(0, 1.65, -0.78); fundo.castShadow = fundo.receiveShadow = true; g.add(fundo);
+    const toldo = new THREE.Mesh(new THREE.BoxGeometry(5.7, 0.14, 2.0), tecido);
+    toldo.position.set(0, 3.15, 0.1); toldo.rotation.x = -0.16; toldo.castShadow = true; g.add(toldo);
+    [-1.65, 0, 1.65].forEach((px) => {
+      const prateleira = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.2), pedra);
+      prateleira.position.set(px, 1.78, -0.55); g.add(prateleira);
+      for (let i = 0; i < 3; i++) {
+        const frasco = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.32, 7), mat([0x6fb0ff, 0xd96aff, 0xffd36a][i], 0.45));
+        frasco.position.set(px - 0.3 + i * 0.3, 2.02, -0.45); g.add(frasco);
+      }
+    });
+    for (let i = 0; i < 7; i++) {
+      const item = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.28), mat([0x9a7a45, 0x5a6f3a, 0x7a3a42][i % 3], 0.8));
+      item.position.set(-1.9 + i * 0.63, 1.36, 0.62); item.rotation.y = -0.25 + i * 0.08; item.castShadow = true; g.add(item);
+    }
+    [-2.2, 2.2].forEach((px) => {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), luzMat);
+      lamp.position.set(px, 2.62, 0.72); g.add(lamp);
+      const luz = new THREE.PointLight(0xffb85a, 0.52, 12, 2);
+      luz.position.set(x + Math.cos(rot) * px + Math.sin(rot) * 0.72, 2.62, z - Math.sin(rot) * px + Math.cos(rot) * 0.72);
+      scene.add(luz); postes.push({ luz, lumMat: luzMat });
+      animados.push({ mesh: lamp, pulsa: luzMat, gira: 0.16, fase: Math.random() * 6 });
+    });
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 2.8, maxX: x + 2.8, minZ: z - 1.25, maxZ: z + 1.25 }],
+      interativo: { x, z, raio: 3.6, titulo: 'Loja Noturna de Venor', acao: 'Examinar vitrine', msg: 'Frascos, mapas e contratos ficam iluminados ao anoitecer. Venor precisa parecer habitada de perto.' },
+    };
+  }
+
+  function criaDragaoDescansandoDecorativo(x, z, rot = 0) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    const escama = new THREE.MeshStandardMaterial({ color: 0x253549, roughness: 0.72, metalness: 0.06, emissive: 0x08111f, emissiveIntensity: 0.18, flatShading: true });
+    const crista = new THREE.MeshStandardMaterial({ color: 0x9c7a45, roughness: 0.42, metalness: 0.38, emissive: 0x221500, emissiveIntensity: 0.2, flatShading: true });
+    const asaMat = new THREE.MeshStandardMaterial({ color: 0x202638, roughness: 0.8, side: THREE.DoubleSide, flatShading: true });
+    const olhoMat = new THREE.MeshStandardMaterial({ color: 0xffc45a, emissive: 0xff7a22, emissiveIntensity: 0.9, roughness: 0.35 });
+    const corpo = new THREE.Mesh(new THREE.DodecahedronGeometry(1.25, 0), escama);
+    corpo.position.y = 0.86; corpo.scale.set(1.8, 0.75, 0.95); corpo.castShadow = corpo.receiveShadow = true; g.add(corpo);
+    const cabeca = new THREE.Mesh(new THREE.DodecahedronGeometry(0.62, 0), escama);
+    cabeca.position.set(-2.08, 0.74, 0.1); cabeca.scale.set(1.15, 0.7, 0.82); g.add(cabeca);
+    [-0.18, 0.18].forEach((oz) => {
+      const olho = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), olhoMat);
+      olho.position.set(-2.55, 0.86, oz); g.add(olho);
+    });
+    for (let i = 0; i < 8; i++) {
+      const cauda = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42 - i * 0.026, 0), escama);
+      cauda.position.set(1.35 + i * 0.36, 0.66 - i * 0.025, Math.sin(i * 0.75) * 0.28);
+      cauda.scale.set(1.08, 0.55, 0.58); cauda.castShadow = true; g.add(cauda);
+    }
+    [-1, 1].forEach((ld) => {
+      const asa = new THREE.Mesh(new THREE.BufferGeometry(), asaMat);
+      asa.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+        0, 0, 0, 1.55, 0.22 * ld, -0.95 * ld, 0.75, -0.28 * ld, -2.05 * ld,
+        0, 0, 0, 0.75, -0.28 * ld, -2.05 * ld, -0.35, -0.18 * ld, -1.18 * ld,
+      ]), 3));
+      asa.geometry.computeVertexNormals(); asa.position.set(-0.15, 1.12, 0.18 * ld); asa.rotation.y = -0.15 * ld; g.add(asa);
+    });
+    for (let i = 0; i < 9; i++) {
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 5), crista);
+      c.position.set(-1.75 + i * 0.38, 1.33 - Math.abs(i - 4) * 0.035, 0); c.rotation.x = Math.PI; g.add(c);
+    }
+    const tapete = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.055, 28), new THREE.MeshStandardMaterial({ color: 0x5a2020, roughness: 0.92 }));
+    tapete.position.y = 0.035; tapete.scale.z = 0.62; tapete.receiveShadow = true; g.add(tapete);
+    return {
+      grupo: g,
+      colisores: [{ minX: x - 3.0, maxX: x + 3.0, minZ: z - 2.0, maxZ: z + 2.0 }],
+      animados: [{ mesh: corpo, flutua: true, baseY: 0.86, fase: Math.random() * 6 }],
+      interativo: { x, z, raio: 4.2, titulo: 'Dragao descansando', acao: 'Observar dragao', msg: 'O dragao descansa na rua porque moradias, guildas e dragoes agora fazem parte da vida de Venor.' },
+    };
+  }
+
+  function criaPracaNobre() {
+    const g = new THREE.Group();
+    const pedraClara = matPBR(0xc5b79f, { tipo: 'pedra', repeat: 2.2, rough: 0.92, relevo: 0.52 });
+    const pedraEscura = matPBR(0x756a5d, { tipo: 'pedra', repeat: 1.6, rough: 0.96, relevo: 0.6 });
+    const terra = new THREE.MeshStandardMaterial({ color: 0x473327, roughness: 1 });
+    const folha = new THREE.MeshStandardMaterial({ color: 0x426b36, roughness: 1, flatShading: true });
+    const ouro = new THREE.MeshStandardMaterial({ color: 0xd9b25a, emissive: 0x8a4b12, emissiveIntensity: 0.45, roughness: 0.55, metalness: 0.15 });
+    const addBox = (w, h, d, m, x, y, z, ry = 0) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+      mesh.position.set(x, y, z); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh);
+      return mesh;
+    };
+    addBox(33.2, 0.22, 0.54, pedraEscura, 0, 0.18, 15.46);
+    addBox(33.2, 0.22, 0.54, pedraEscura, 0, 0.18, -15.46);
+    addBox(0.54, 0.22, 33.2, pedraEscura, 15.46, 0.18, 0);
+    addBox(0.54, 0.22, 33.2, pedraEscura, -15.46, 0.18, 0);
+    [[-7.6, -7.6], [7.6, -7.6], [-7.6, 7.6], [7.6, 7.6]].forEach(([x, z], idx) => {
+      addBox(4.4, 0.18, 1.25, terra, x, 0.16, z, idx % 2 ? 0.18 : -0.18);
+      for (let i = 0; i < 8; i++) {
+        const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22 + (i % 3) * 0.04, 0), folha);
+        b.scale.set(1.35, 0.5, 0.9);
+        b.position.set(x - 1.55 + i * 0.44, 0.42, z + Math.sin(i) * 0.18);
+        b.rotation.y = i * 0.6;
+        b.castShadow = true;
+        g.add(b);
+        if (i % 2 === 0) {
+          const fl = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 5), mat([0xe8e0c6, 0xd95d7a, 0xcfa84a, 0x9f86d9][(i + idx) % 4], 0.7));
+          fl.position.set(b.position.x, 0.67, b.position.z + 0.08);
+          g.add(fl);
+        }
+      }
+    });
+    [[-11.8, -11.8], [11.8, -11.8], [-11.8, 11.8], [11.8, 11.8]].forEach(([x, z]) => {
+      addBox(0.22, 1.25, 0.22, pedraClara, x, 0.76, z);
+      const chama = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), ouro);
+      chama.position.set(x, 1.55, z);
+      g.add(chama);
+      const luz = new THREE.PointLight(0xffb45c, 0.42, 10, 2);
+      luz.position.set(x, 1.55, z);
+      g.add(luz);
+    });
+    return { grupo: g };
+  }
+
+  add(criaPracaNobre());
   add(criaFonte(0, 0));
   // Bancos nos cantos da praca: o corredor central fica livre para templo,
   // hospital, escola e delegacia, principalmente no joystick do celular.
@@ -314,6 +693,31 @@ export function criaCidade() {
   add(criaBanco(9, 8, -Math.PI / 2));
   add(criaBanco(-9, -8, Math.PI / 2));
   add(criaBanco(9, -8, -Math.PI / 2));
+  add(criaEscadariaCenica(0, -23, 0, 15.5, 5));
+  add(criaEscadariaCenica(0, 20.5, Math.PI, 13.5, 4));
+  [[-18, -10, 0], [18, -10, 0.1], [-18, 10, -0.1], [18, 10, 0]]
+    .forEach(([x, z, r]) => add(criaVasoNobre(x, z, r)));
+  [[-17.5, -16, 0.18, 0x334f7a], [17.5, 15.5, -0.2, 0x7a3f30], [-15.5, 17.5, Math.PI / 2, 0x3f6b46]]
+    .forEach(([x, z, r, c]) => add(criaMesaMercante(x, z, r, c)));
+  add(criaMuralContratosRua(-24, -19, Math.PI / 7));
+  add(criaLojaAbertaNoturna(24, -19, -Math.PI / 7));
+  // O dragao de vitrine agora vem do GLB em main3d.js. O placeholder
+  // procedural saiu daqui porque mantinha a praca com leitura de prototipo.
+  add(criaBau(15.5, 22.5, -0.35));
+  add(criaCaixa(18.5, 23.5, 0.75, 0.25));
+  add(criaBarril(19.8, 21.6));
+  const cristalPacto18 = criaCristal(-21.5, 23.5);
+  cristalPacto18.interativo = {
+    x: -21.5,
+    z: 23.5,
+    raio: 3.4,
+    titulo: 'Pacto 18',
+    acao: 'Ler o pacto',
+    msg: 'A pedra registra o proximo ciclo: instalacao premium, rotas altas, primeiro grande calabouco e preparo real para voo draconico.',
+  };
+  add(cristalPacto18);
+  [[-23, -7, 0x6a2ab0], [23, -7, 0xb8902a], [-23, 7, 0x2a5a9c], [23, 7, 0x9c2a2a]]
+    .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
 
   // marcos (virados PARA a praça)
   const marcos = [
@@ -329,8 +733,8 @@ export function criaCidade() {
   add(criaHospitalInterior(32, 0));
 
   // casas diversas, ALINHADAS em ângulo reto (colisão correta) e viradas pro centro
-  const cores = [0xd8c4a0, 0xc8a86a, 0xa8bcae, 0xd0a0a0, 0xb0b8c0, 0xe0d0a0, 0x9ab0a4, 0xcaa890];
-  const telhados = [0x8a4632, 0x6a4a6a, 0x55636f, 0x7a3a2a, 0x4a5666, 0x6b4a2a];
+  const cores = [0xe7d7b8, 0xd9c29a, 0xcbb995, 0xc7b7a0, 0xc9c2ad, 0xddc6a3, 0xb9c4b2, 0xcfad88];
+  const telhados = [0x9b4630, 0x7d3427, 0x68656f, 0x5c5368, 0x8b5a2b, 0x74402f];
   const rnd = (a, b) => a + Math.random() * (b - a);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const snap = (ang) => Math.round(ang / (Math.PI / 2)) * (Math.PI / 2); // alinha a 0/90/180/270
@@ -341,38 +745,59 @@ export function criaCidade() {
     [32, 64], [-32, 64], [32, -64], [-32, -64],
     [64, 64], [-64, 64], [64, -64], [-64, -64],
   ];
-  lotes.forEach(([x, z]) => add(criaPredio({
-    x, z, larg: rnd(8, 13), prof: rnd(8, 12), alt: rnd(6, 11),
-    cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
-  })));
+  // RV14.1: estilos premium variados — enxaimel (Tudor), reboco e pedra, com
+  // telhados de telha/ardósia/palha, pra a vila parecer um vilarejo de verdade.
+  const ESTILO_PAREDE = ['madeira_viga', 'reboco', 'madeira_viga', 'reboco', 'pedra_castelo'];
+  const ESTILO_TELHA = ['telha', 'ardosia', 'telha', 'telha', 'telha'];
+  const lotesNobres = {
+    '32,32': { tipo: 'mansao', nome: 'Mansao do Conselho', rot: Math.PI, cor: 0xd8c39a, corTelhado: 0x5d354f, estiloParede: 'madeira_viga', estiloTelhado: 'ardosia' },
+    '-32,32': { tipo: 'guilda', nome: 'Guildhouse da Veia', rot: Math.PI, cor: 0xc7b48e, corTelhado: 0x253f65 },
+    '32,-32': { tipo: 'mansao', nome: 'Casa Alta do Dragoeiro', rot: 0, cor: 0xcab98e, corTelhado: 0x703528, estiloParede: 'pedra_castelo', estiloTelhado: 'telha' },
+    '-32,-32': { tipo: 'mansao', nome: 'Mansao das Lanternas', rot: 0, cor: 0xd4c0a0, corTelhado: 0x394c5a, estiloParede: 'madeira_viga', estiloTelhado: 'ardosia' },
+  };
+  lotes.forEach(([x, z], i) => {
+    const nobre = lotesNobres[`${x},${z}`];
+    if (nobre) {
+      const res = nobre.tipo === 'guilda'
+        ? criaGuildHouse(x, z, { rot: nobre.rot, cor: nobre.cor, corTelhado: nobre.corTelhado })
+        : criaMansao(x, z, { rot: nobre.rot, cor: nobre.cor, corTelhado: nobre.corTelhado, estiloParede: nobre.estiloParede, estiloTelhado: nobre.estiloTelhado, luxo: 2 });
+      add(res);
+      const placaZ = z > 0 ? z - 12.5 : z + 12.5;
+      add(criaPlaca(x, placaZ, nobre.nome, z > 0 ? Math.PI : 0));
+      return;
+    }
+    add(criaPredio({
+      x, z, larg: rnd(13.5, 18.5), prof: rnd(11.5, 15.5), alt: rnd(10.5, 15.5),
+      cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-x, -z)),
+      estiloParede: ESTILO_PAREDE[i % ESTILO_PAREDE.length],
+      estiloTelhado: ESTILO_TELHA[i % ESTILO_TELHA.length],
+    }));
+  });
+  // RV14.5: o Vilarejo de Venor vira CASTELO MURADO — muralha de pedra com
+  // ameias, torres nas quinas e PORTÕES (leste p/ Thais, oeste e sul).
+  add(criaMuralha(0, 0, { HX: 90, HZ: 90, ALT: 9, gw: 15, portoes: ['leste', 'oeste', 'sul'], corTorre: 0x6a4a8a }));
   // RV5.4: dois lotes que eram decorativos viraram casas ENTRÁVEIS de verdade
   add(criaCasaInterior(64, 0, { frente: 'oeste', cor: 0xe0d0a0, corTelhado: 0x7a3a2a }));
   add(criaCasaInterior(0, 64, { frente: 'sul', cor: 0x9ab0a4, corTelhado: 0x4a5666 }));
+  // RV16.0: imóveis aspiracionais no entorno do vilarejo. Casas pequenas
+  // continuam existindo; mansões viram objetivo econômico, como em RPG antigo.
+  add(criaMansao(112, 58, { rot: -Math.PI / 2, cor: 0xd6c29a, corTelhado: 0x6a4a6a, luxo: 1 }));
+  add(criaPlaca(101, 57, 'Mansao da Ponte', -Math.PI / 2));
+  add(criaMansao(-112, 58, { rot: Math.PI / 2, cor: 0xc9b78e, corTelhado: 0x4a5666, luxo: 1 }));
+  add(criaPlaca(-101, 57, 'Mansao dos Fundadores', Math.PI / 2));
 
   // === PORTÕES DO VILAREJO (RV5.4): paliçada de madeira com tabuleta nas
   // 3 entradas — a vila ganha rosto (e quem chega sabe onde chegou)
   function portaoVila(px, pz, rotY, nome) {
-    const gP = new THREE.Group(); gP.position.set(px, 0, pz); gP.rotation.y = rotY;
-    const madP = mat(0x6e4a2a, 1);
-    [-5, 5].forEach((ox) => {
-      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 7.5, 8), madP);
-      poste.position.set(ox, 3.75, 0); poste.castShadow = true; gP.add(poste);
-      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.8, 8), madP);
-      ponta.position.set(ox, 7.9, 0); gP.add(ponta);
-    });
-    const travessa = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.7, 0.7), madP);
-    travessa.position.y = 6.6; travessa.castShadow = true; gP.add(travessa);
-    const cnvP = document.createElement('canvas'); cnvP.width = 256; cnvP.height = 64;
-    const cp = cnvP.getContext('2d');
-    cp.fillStyle = '#7a5a32'; cp.fillRect(0, 0, 256, 64);
-    cp.fillStyle = '#f0e8d0'; cp.font = 'bold 26px Arial'; cp.textAlign = 'center'; cp.textBaseline = 'middle';
-    cp.fillText(nome, 128, 34);
-    const tab = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.1, 0.18),
-      new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cnvP), roughness: 0.9 }));
-    tab.position.y = 5.6; gP.add(tab);
-    scene.add(gP); solidos.push(gP);
-    const lados = Math.abs(Math.sin(rotY)) > 0.5 ? [[0, -5], [0, 5]] : [[-5, 0], [5, 0]];
-    lados.forEach(([ox, oz]) => obstaculos.push({ minX: px + ox - 0.7, maxX: px + ox + 0.7, minZ: pz + oz - 0.7, maxZ: pz + oz + 0.7 }));
+    add(criaPortaoCidade(px, pz, {
+      rot: rotY,
+      nome,
+      largura: 15.5,
+      altura: 11.5,
+      corPedra: 0xbdb5a6,
+      corTelhado: 0x6a4a8a,
+      corBandeira: 0x7a2f4c,
+    }));
   }
   portaoVila(72, 0, Math.PI / 2, 'VILAREJO DE VENOR');      // leste (estrada de Thais)
   portaoVila(-86, -30, Math.PI / 2, 'VILAREJO DE VENOR');   // oeste (estrada de Venore)
@@ -416,11 +841,11 @@ export function criaCidade() {
   add(criaCasaInterior(78, 24, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x8a4632 }));
   add(criaCasaInterior(-78, 24, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x4a5666 }));
   // LOJAS estilo Tibia (cada NPC com sua finalidade — runas, arco & flecha, forja)
-  add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldra
-  add(criaPlaca(-26, 14, 'Runas — Eldra', Math.PI / 2));
-  add(criaBarraca(22, -12, 0, 0x2a8a4a));               // banca de ARCO & FLECHA do Falk
+  add(criaBarraca(-22, 14, 0, 0x6a2ab0));               // banca de RUNAS da Eldrith
+  add(criaPlaca(-26, 14, 'Runas — Eldrith', Math.PI / 2));
+  add(criaBarraca(22, -12, 0, 0x2a8a4a));               // banca de ARCO & FLECHA do Falric
   add(criaPlaca(26, -12, 'Arco & Flecha', -Math.PI / 2));
-  add(criaPlaca(-21, 11, 'Forja — Armas', Math.PI / 2)); // armas com Bram, o ferreiro
+  add(criaPlaca(-21, 11, 'Forja — Armas', Math.PI / 2)); // armas com Brannor, o ferreiro
 
   // placas de rua (estilo Tibia)
   add(criaPlaca(20, 6, 'Rua do Mercado', -Math.PI / 2));
@@ -678,9 +1103,9 @@ export function criaCidade() {
   add(criaPlaca(506, -7, 'Bem-vindo a Thais'));   // logo após o portão
   // casas ENTRÁVEIS dentro de Thais (porta aberta, telhado some) — 4 no total
   add(criaCasaInterior(548, -18, { frente: 'norte', cor: 0xd2c19a, corTelhado: 0xc0653a }));
-  // LOJA DE POÇÕES da Yara — primeira loja com INTERIOR de verdade em Thais
+  // LOJA DE POÇÕES da Ysolde — primeira loja com INTERIOR de verdade em Thais
   add(criaCasaInterior(572, -18, { frente: 'norte', cor: 0xcab98e, corTelhado: 0x2f8d80, loja: true }));
-  add(criaPlaca(576, -12, 'Poções — Yara', Math.PI));
+  add(criaPlaca(576, -12, 'Poções — Ysolde', Math.PI));
   // (528,0 bloqueava a rota portão→chafariz; ao lado colide com o casario —
   // posição calculada livre: sul da via, porta pro norte voltada pra rua)
   add(criaCasaInterior(524, -14, { frente: 'norte', cor: 0xd8c8a4, corTelhado: 0x9a4a3a }));
@@ -744,13 +1169,17 @@ export function criaCidade() {
   // === MONTANHA DO DRAGÃO (escalável!) — rampa cônica até o platô do topo,
   // onde o dragão vive. A subida usa alturaTerreno() no main3d (mesmo perfil).
   const MD = { x: 110, z: 300, r: 46, topo: 12, h: 34 }; // platô largo (dragão GRANDE mora lá)
-  const rochaMat = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 1 });
-  aplicaTexturaReal(rochaMat, 'rocha', 7, 3); // rocha REAL na encosta
-  const morro = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo, MD.r, MD.h, 28), rochaMat);
+  const rochaMat = new THREE.MeshStandardMaterial({ color: 0x8d877c, roughness: 1 });
+  aplicaTexturaReal(rochaMat, 'montanha', 9, 5, false); // RV12.2: textura montanha (rocha+neve) real
+  const morro = new THREE.Mesh(desloca(new THREE.CylinderGeometry(MD.topo, MD.r * 1.05, MD.h, 24, 5), MD.r * 0.06), rochaMat);
   morro.position.set(MD.x, MD.h / 2, MD.z); morro.castShadow = morro.receiveShadow = true;
   scene.add(morro); solidos.push(morro);
   const plato = new THREE.Mesh(new THREE.CylinderGeometry(MD.topo + 0.8, MD.topo + 0.8, 0.5, 20), mat(0x55514a, 1));
   plato.position.set(MD.x, MD.h + 0.2, MD.z); scene.add(plato);
+  // RV12.2: NEVE na encosta alta (faixa) — sem cobrir o platô do dragão
+  const neveMD = new THREE.Mesh(desloca(new THREE.CylinderGeometry(MD.topo + 1.5, MD.topo + 11, MD.h * 0.26, 24, 2, true), 1.2),
+    new THREE.MeshStandardMaterial({ color: 0xeef4f8, roughness: 0.82, side: THREE.DoubleSide }));
+  neveMD.position.set(MD.x, MD.h * 0.78, MD.z); neveMD.castShadow = true; scene.add(neveMD);
   // poças de LAVA no platô (pisar QUEIMA — campos tratados no main3d)
   const lavaMat2 = new THREE.MeshStandardMaterial({ color: 0xff5a1a, emissive: 0xff3a00, emissiveIntensity: 0.9, roughness: 0.6 });
   aplicaTexturaReal(lavaMat2, 'lava', 2, 2, true); // lava REAL incandescente
@@ -921,12 +1350,12 @@ export function criaCidade() {
     add(criaCasaInterior(-376, -16, { frente: 'sul', cor: 0xb0b8c0, corTelhado: 0x55636f }));
     // LOJA ARCANA DA ILDA (RV4.3): runas atendidas em interior de verdade
     add(criaCasaInterior(-340, -12, { frente: 'leste', cor: 0xc7b394, corTelhado: 0x6a4a8a, loja: true }));
-    add(criaPlaca(-334, -7, 'Runas — Ilda', -Math.PI / 2));
+    add(criaPlaca(-334, -7, 'Runas — Ilyndra', -Math.PI / 2));
     // casas ENTRÁVEIS + a LOJA DA ALQUIMISTA (interior de loja de verdade)
     add(criaCasaInterior(-392, -16, { frente: 'leste', cor: 0xc8a86a, corTelhado: 0x55636f }));
     add(criaCasaInterior(-272, -16, { frente: 'sul', cor: 0xa8bcae, corTelhado: 0x6a4a6a }));
     add(criaCasaInterior(-284, -44, { frente: 'norte', cor: 0xd0a0a0, corTelhado: 0x8a4632, loja: true }));
-    add(criaPlaca(-280, -38, 'Alquimia — Berta', Math.PI));
+    add(criaPlaca(-280, -38, 'Alquimia — Berthya', Math.PI));
 
     // === PORTO DE VENORE (lagoa + cais; pesca!) ===
     add(criaLago(-330, -92, 14));
@@ -937,10 +1366,10 @@ export function criaCidade() {
 
     // === FORJA DO GROM (RV4.2): oficina entrável com bigorna e forno aceso
     add(criaCasaInterior(-308, -50, { frente: 'norte', cor: 0x9a9282, corTelhado: 0x3a4656, forja: true }));
-    add(criaPlaca(-303, -44, 'Forja — Grom', Math.PI));
+    add(criaPlaca(-303, -44, 'Forja — Gromar', Math.PI));
     // === ARMADURAS DA TESSA (RV4.2): loja entrável no Largo das Guildas
     add(criaCasaInterior(-290, 22, { frente: 'oeste', cor: 0xb0a890, corTelhado: 0x55636f, loja: true }));
-    add(criaPlaca(-296, 27, 'Armaduras — Tessa', Math.PI / 2));
+    add(criaPlaca(-296, 27, 'Armaduras — Thessara', Math.PI / 2));
 
     // === VIDA DE PRAÇA: barracas, poço, bancos, canteiros, bandeiras, postes
     add(criaBarraca(-330, -38, 0.2, 0xb23a3a));
@@ -961,25 +1390,23 @@ export function criaCidade() {
 
     // ====== RV4.1 — VENORE IMPONENTE (a capital cresce de verdade) ======
     // PORTÃO MONUMENTAL na entrada da estrada (2 torres + arco passável)
-    {
-      const pedraPort = mat(0xb9a486, 1);
-      [[-240, -39.5], [-240, -20.5]].forEach(([tx, tz]) => {
-        const torre = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 13, 10), pedraPort);
-        torre.position.set(tx, 6.5, tz); torre.castShadow = torre.receiveShadow = true; scene.add(torre);
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(2.8, 4.2, 10), mat(0x2f8d80, 1));
-        cone.position.set(tx, 15.1, tz); cone.castShadow = true; scene.add(cone);
-        obstaculos.push({ minX: tx - 2.2, maxX: tx + 2.2, minZ: tz - 2.2, maxZ: tz + 2.2 });
-      });
-      const arcoP = new THREE.Mesh(new THREE.BoxGeometry(3, 3.4, 17), pedraPort);
-      arcoP.position.set(-240, 9.2, -30); arcoP.castShadow = true; scene.add(arcoP); // passa POR BAIXO
-      add(criaBandeira(-244, -42, 0xd9a522)); add(criaBandeira(-244, -18, 0x9c2a2a));
-    }
+    add(criaPortaoCidade(-240, -30, {
+      rot: Math.PI / 2,
+      nome: 'VENORE',
+      largura: 18,
+      altura: 13.5,
+      corPedra: 0xb9a486,
+      corTelhado: 0x2f8d80,
+      corBandeira: 0xd9a522,
+      estiloPedra: 'pedra_castelo',
+      estiloTelhado: 'ardosia',
+    }));
 
     // === DISTRITO NORTE: Largo das Guildas + Catedral + casario ===
     const largoG = new THREE.Mesh(new THREE.BoxGeometry(22, 0.12, 16), pisoMat);
     largoG.position.set(-320, 0.03, 18); largoG.receiveShadow = true; scene.add(largoG);
     add(criaEstatua(-326, 18)); // herói fundador no Largo
-    add(criaPredio({ x: -320, z: 36, larg: 16, prof: 13, alt: 12, cor: 0xcab98e, corTelhado: 0x6a4a6a, rot: Math.PI })); // SALÃO DAS GUILDAS
+    add(criaGuildHouse(-320, 36, { rot: Math.PI, cor: 0xcab98e, corTelhado: 0x6a4a6a })); // SALÃO DAS GUILDAS
     add(criaPlaca(-312, 27, 'Salão das Guildas', Math.PI));
     add(criaMarco('igreja', { x: -390, z: 16, rot: Math.PI / 2 })); // CATEDRAL DE VENORE (campanário + sino)
     add(criaPlaca(-380, 8, 'Catedral de Venore', Math.PI / 2));
@@ -996,10 +1423,16 @@ export function criaCidade() {
       add(criaPlaca(-394, 30, 'Catacumbas — desça se ousar', Math.PI / 2));
     }
     [[-340, 24], [-340, 52], [-300, 46], [-264, 56], [-376, 40], [-376, 64], [-396, 46]]
-      .forEach(([x, z]) => add(criaPredio({
+      .forEach(([x, z], i) => add(criaPredio({
         x, z, larg: rnd(10, 14), prof: rnd(9, 12), alt: rnd(8, 12),
         cor: pick(cores), corTelhado: pick(telhados), rot: snap(Math.atan2(-(x - CVX), -(z - 18))),
+        // Venore é capital de PEDRA (cidade-castelo): pedra + ardósia, com alguns enxaiméis
+        estiloParede: i % 3 === 0 ? 'madeira_viga' : 'pedra_castelo', estiloTelhado: 'ardosia',
       })));
+    add(criaMansao(-360, 78, { rot: Math.PI, cor: 0xbfae86, corTelhado: 0x315f58, estiloParede: 'pedra_castelo', estiloTelhado: 'ardosia', luxo: 2 }));
+    add(criaPlaca(-352, 68, 'Solar do Canal', Math.PI));
+    add(criaMansao(-260, 76, { rot: Math.PI, cor: 0xd1bd94, corTelhado: 0x6b3e30, estiloParede: 'madeira_viga', estiloTelhado: 'telha', luxo: 2 }));
+    add(criaPlaca(-268, 66, 'Casa Alta do Mercado', Math.PI));
     add(criaCasaInterior(-296, 64, { frente: 'sul', cor: 0xd8c4a0, corTelhado: 0x4a5666 }));
     add(criaCasaInterior(-272, 28, { frente: 'oeste', cor: 0xcaa890, corTelhado: 0x6a4a6a })); // RV5.4
     [[-330, 10], [-310, 26], [-352, 64], [-300, 64]].forEach(([x, z]) => add(criaPoste(x, z)));
@@ -1042,6 +1475,14 @@ export function criaCidade() {
 
     // ====== RV4.5 — ACABAMENTO URBANO (Patch 1) ======
     add(criaFonte(-320, -30)); // chafariz do Grande Mercado (água viva e gotas na praça)
+    add(criaEscadariaCenica(-320, -66, 0, 18, 6));
+    add(criaEscadariaCenica(-320, 8, Math.PI, 15, 4));
+    [[-342, -30, 0], [-298, -30, 0], [-320, -66, 0.1], [-320, 8, -0.1]]
+      .forEach(([x, z, r]) => add(criaVasoNobre(x, z, r)));
+    [[-340, -18, -0.25, 0x243f74], [-300, -42, 0.3, 0x7a3f30], [-338, -46, Math.PI / 2, 0x4d6f3f]]
+      .forEach(([x, z, r, c]) => add(criaMesaMercante(x, z, r, c)));
+    [[-344, -8, 0x243f74], [-296, -8, 0x7a1f1f], [-344, -52, 0x2a8a4a], [-296, -52, 0xd9a522]]
+      .forEach(([x, z, c]) => add(criaBandeira(x, z, c)));
     // ruas secundárias pavimentadas ligando os distritos
     const ruaN = new THREE.Mesh(new THREE.BoxGeometry(96, 0.1, 6), matRua(18, 1.2));
     ruaN.position.set(-352, 0.02, 18); ruaN.receiveShadow = true; scene.add(ruaN); // Largo ↔ Catedral
@@ -1207,7 +1648,7 @@ export function criaCidade() {
   // CAPIM 3D (RV4.0): tufos SÓLIDOS misturados aos cartazes de mato —
   // profundidade real no chão do mundo inteiro (3 draw calls)
   VEG.capim = [];
-  for (let tent = 0; tent < 20000 && VEG.capim.length < 260; tent++) {
+  for (let tent = 0; tent < 28000 && VEG.capim.length < 540; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.capim.push([px, pz, 0.8 + Math.random() * 1.0]);
@@ -1220,7 +1661,7 @@ export function criaCidade() {
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.flores.push([px, pz, 0.85 + Math.random() * 0.7]);
   }
-  for (let tent = 0; tent < 18000 && VEG.seixos.length < 170; tent++) {
+  for (let tent = 0; tent < 22000 && VEG.seixos.length < 260; tent++) {
     const px = randX(), pz = randZ();
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.seixos.push([px, pz, 0.2 + Math.random() * 0.18]);
@@ -1252,14 +1693,14 @@ export function criaCidade() {
     [380, 16, 34, 22], [470, -14, 28, 20], [-520, -28, 58, 24], [-720, -38, 54, 28],
     [120, 42, 46, 34], [315, 48, 58, 34], [-110, 92, 44, 32],
   ];
-  for (let tent = 0; tent < 14000 && VEG.terraChao.length < 280; tent++) {
+  for (let tent = 0; tent < 18000 && VEG.terraChao.length < 420; tent++) {
     const zt = zonasTerra[Math.floor(Math.random() * zonasTerra.length)];
     const px = zt[0] + (Math.random() - 0.5) * zt[2] * 2;
     const pz = zt[1] + (Math.random() - 0.5) * zt[3] * 2;
     if (bloqueiaVegetacao(px, pz)) continue;
     VEG.terraChao.push([px, pz, 0.55 + Math.random() * 0.8]);
   }
-  for (let tent = 0; tent < 26000 && VEG.capimRasteiro.length < 760; tent++) {
+  for (let tent = 0; tent < 34000 && VEG.capimRasteiro.length < 1280; tent++) {
     const px = randX(), pz = randZ();
     if (!emCampoAberto(px, pz)) continue;
     VEG.capimRasteiro.push([px, pz, 0.7 + Math.random() * 0.9]);
@@ -1278,7 +1719,7 @@ export function criaCidade() {
     const bx = ax + Math.cos(a) * rr, bz = az + Math.sin(a) * rr;
     if (!bloqueiaVegetacao(bx, bz)) VEG.arbustosAltos.push([bx, bz, 0.75 + Math.random() * 0.75]);
   });
-  for (let tent = 0; tent < 30000 && VEG.capimAlto.length < 340; tent++) {
+  for (let tent = 0; tent < 36000 && VEG.capimAlto.length < 520; tent++) {
     const px = randX(), pz = randZ();
     if (!emCampoAberto(px, pz) || emFloresta(px, pz) || emPantano(px, pz)) continue;
     if (Math.random() < 0.35 && Math.abs(pz) < 24 && px > 60 && px < 520) continue;

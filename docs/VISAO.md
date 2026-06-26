@@ -174,6 +174,6 @@ errado da história.
 - **15/06/2026** - RV8.0 / v56: **Pacto da Semana**. Patch de reorganizacao premium:
   PWA/offline-first (`manifest.webmanifest`, `sw.js`, `/baixar.html`), arte oficial em
   `public/patches/rv8-pacto-da-semana.png`, tela de patch dentro do jogo, status online/offline,
-  calendario semanal de Venor e **Ze das Rotas** aparecendo somente terca/quinta/sabado.
+  calendario semanal de Venor e **Zareth das Rotas** aparecendo somente terca/quinta/sabado.
   Vendas passam por pequeno modificador semanal de escassez. Criados `docs/PATCH_RV8.md`
   e `docs/ASSETS.md` para manter cronograma, licencas e processo sob controle.

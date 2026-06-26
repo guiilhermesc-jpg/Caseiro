@@ -9,6 +9,7 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. PC com Tauri: instalador Windows, depois macOS/Linux, com auto-update.
 4. iOS por TestFlight/App Store: evitar promessa de IPA solto; seguir fluxo oficial da Apple.
 5. Pipeline de versoes: selo do jogo, changelog, pagina de download e checagem de bundle publicado.
+6. Decisao RV17/RV18: se a qualidade grafica exigir pacote pesado, o alvo principal vira instalado; navegador fica como preview/dev.
 
 ## Pilar 2 - Visual premium
 
@@ -17,8 +18,14 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. Materiais por bioma: grama, terra, pedra, areia, pantano, cinzas, lava e interiores com linguagem propria.
 4. Agua e clima: reflexo controlado, espuma, chuva, neblina local, vento em vegetacao e ciclo dia/noite mais dramatico.
 5. Direcao de camera/UX visual: leitura forte de personagem, combate claro, perigo no solo e mapa sem poluicao.
+6. Criacao nova so entra com funcao: monstro, roupa, item, GIF/animacao, montaria e NPC precisam nascer com uso jogavel, idle/impacto quando aplicavel e validacao.
 
 ## Pilar 3 - Mundo 30x com densidade
+
+O "30x" agora tem regra formal: o mundo completo sera composto por **30 Pactos Continentais**.
+Venor e Arredores sao o **Pacto Continental 01/30**, com fechamento previsto na RV30. O objetivo
+nao e abrir 30 mapas cedo; e construir o primeiro pacto com densidade suficiente para servir de
+padrao para os proximos 29.
 
 1. Regioes conectadas por rotas reais: cidades, vilarejos, fazendas, ruinas, cavernas, pantanos e montanhas.
 2. Cada regiao precisa ter funcao: lojas, quest, risco, coleta, inimigos, passagem ou historia.
@@ -41,6 +48,7 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 3. Performance sempre junto da arte: instancing, merge, textura pre-carregada e testes mobile.
 4. Assets externos so com licenca segura; Tibia, Albion, Pokemon e Zelda entram como referencia de qualidade e mecanica, nao como copia.
 5. A cada 5 rodadas: rodada so de bugfix, jogabilidade e performance.
+6. NPCs, racas e faccoes entram na biblia antes de virarem conteudo jogavel.
 
 ## Rodadas premium recentes e proximas
 
@@ -56,3 +64,33 @@ Objetivo: evoluir o projeto de prototipo jogavel para RPG online autoral com esc
 10. RV8.4: casas reais, posse persistente, bau privado, decoracao e permissao de familia/grupo.
 11. RV8.5: interiores premium e padrao de entrada/saida em casas, lojas e templos.
 12. RV8.6: rework visual de criaturas principais com modelos/animacoes melhores e licenca documentada.
+13. RV16.8 entregue: Lore Operacional - NPCs renomeados, biblia de NPCs, compatibilidade de economia e gate premium.
+14. RV16.9 entregue: Mago Viajante, manto raro conquistavel e proporcao premium dos dragoes.
+15. RV17 entregue: A Grande Onda - Aurelia expandida, arquipelago celeste, primeiro calabouco grande, Sentinelas/Golems/Wyverns, armas de cla e quests de altura.
+16. RV17.1 entregue: Calabouco Vivo - arte oficial nova, braseiros, altar de armas, bau unico, bestiario celeste e recompensa ligada ao voo futuro.
+17. RV17.2-RV17.5 entregue: bichos premium, interiores como realidade, contratos de viagem e moradias/economia com aluguel real.
+18. RV17.6-RV17.9 entregue: contrato visual premium, bases vivas, hunts com reacao, pedra Pacto 18 e preparacao instalada/offline.
+19. RV18.0 entregue: launcher instalado, manifesto de patch, cache RV18, contas locais e entrada direta.
+20. RV18.1 entregue: portal publico com noticias, personagens locais, mapa do Pacto 01/30, bestiario base e links para launcher/jogo.
+21. RV18.2 entregue: pacote instalado premium, perfis graficos no launcher, motor lendo pixel ratio/sombras/bloom por perfil e auditoria de pacote.
+22. RV18.3 entregue: ranking local e ficha publica de personagem sem expor senha/PIN, preparada para nuvem futura.
+23. RV18.4 entregue: resgate visual da praca/cidade, com luz, neblina, calcamento, casario, janelas e praca nobre no mundo real.
+24. RV18.5 entregue: mapa continental do Pacto 01/30, trocando o grid tecnico por cartografia com mar, biomas, rotas, hunts, cidades e ilhas flutuantes.
+25. RV18.6: patcher real com delta de assets, historico de builds e reparo por categoria.
+26. RV19: escala local e rotas de jornada do Pacto 01/30.
+27. RV20: hunts por bioma e monstros profissionais.
+28. RV21: crescimento profundo dos dragoes e voo draconico com custo, estamina, zonas aereas e hunts de altitude.
+29. RV22: racas mortais e faccoes - orcs, anoes, paladinos, bruxos/feiticeiros e druidas com arquitetura, reputacao e economia.
+30. RV23: profissoes, economia e contratos.
+31. RV24: guildas, grupos e expedicoes.
+32. RV25: era antiga dos dragoes, guerra da Veia, maquinas e anomalias externas em blocos grandes.
+33. RV26: transporte, montarias e viagens raras.
+34. RV27: familia, conta e multiplayer social.
+35. RV28: QoL profissional e colecoes.
+36. RV29: polimento, performance e instalacao.
+37. RV30: fechamento do Pacto Continental 01/30.
+
+Documentos canonicos novos:
+- `docs/PLANO_30_CONTINENTES.md`
+- `docs/BIBLIA_SISTEMAS_MMO_PROFISSIONAL.md`
+- `docs/BIBLIA_MONSTROS_DRAGOES.md`

@@ -9,6 +9,30 @@ para o jogo.
 - `public/patches/rv8-pacto-da-semana.png`
   - origem: gerado via skill `imagegen` em 15/06/2026.
   - uso: arte oficial do Patch RV8, tela de patch e pagina de instalacao.
+- `public/patches/rv16-1-portoes-continente.png`
+  - origem: gerado via skill `imagegen` em 22/06/2026.
+  - uso: arte oficial do Patch RV16.1, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-2-bichos-presenca.png`
+  - origem: gerado via skill `imagegen` em 23/06/2026.
+  - uso: arte oficial do Patch RV16.2, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-3-interiores-prestigio.png`
+  - origem: gerado via skill `imagegen` em 23/06/2026.
+  - uso: arte oficial do Patch RV16.3, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-4-luz-detalhe.png`
+  - origem: gerado via skill `imagegen` em 23/06/2026.
+  - uso: arte oficial do Patch RV16.4, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-5-cidade-profissional.png`
+  - origem: gerado via skill `imagegen` em 23/06/2026.
+  - uso: arte oficial do Patch RV16.5, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-6-praca-jogavel.png`
+  - origem: derivado da arte aprovada do Patch RV16.5 em 23/06/2026, mantido como contrato visual do RV16.6.
+  - uso: arte oficial do Patch RV16.6, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-7-identidade-premium.png`
+  - origem: derivado da arte aprovada de praca/cidade em 23/06/2026; usado como contrato visual enquanto a repaginacao sistemica avanca.
+  - uso: arte oficial do Patch RV16.7, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
+- `public/patches/rv16-8-lore-operacional.png`
+  - origem: copia versionada da arte aprovada de praca/cidade em 23/06/2026; usada porque RV16.8 e um patch de base/lore/processo e nao deve prometer imagem nova sem sistema visual correspondente.
+  - uso: arte oficial do Patch RV16.8, tela de patch, manifesto PWA, pagina de instalacao e cache offline.
 
 ## Assets existentes
 

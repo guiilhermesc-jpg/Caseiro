@@ -17,10 +17,21 @@ export function criaBarril(x, z) {
   const g = new THREE.Group(); g.position.set(x, 0, z);
   const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.4, 1.1, 12), MAD_PBR);
   corpo.position.y = 0.55; corpo.castShadow = true; corpo.receiveShadow = true; g.add(corpo);
+  const tampaMat = mat(0x4a2e18, 0.85);
+  const tampaCima = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.055, 12), tampaMat);
+  tampaCima.position.y = 1.13; tampaCima.castShadow = true; g.add(tampaCima);
+  const tampaBaixo = tampaCima.clone(); tampaBaixo.position.y = 0.02; g.add(tampaBaixo);
   [0.15, 0.55, 0.95].forEach((y) => {
     const aro = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.04, 6, 16), mat(0x30343a));
     aro.position.y = y; aro.rotation.x = Math.PI / 2; g.add(aro);
   });
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const friso = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.92, 0.035), mat(0x3a2413, 0.9));
+    friso.position.set(Math.cos(a) * 0.42, 0.57, Math.sin(a) * 0.42);
+    friso.rotation.y = -a;
+    g.add(friso);
+  }
   return { grupo: g, colisores: [{ minX: x - 0.5, maxX: x + 0.5, minZ: z - 0.5, maxZ: z + 0.5 }] };
 }
 
@@ -35,6 +46,17 @@ export function criaCaixa(x, z, s = 0.9, rot = Math.random() * 0.6) {
     f.position.set(0, s * 0.78, pz); g.add(f);
     const f2 = f.clone(); f2.position.y = s * 0.2; g.add(f2);
   });
+  [e, -e].forEach((pz) => {
+    [-0.34, 0.34].forEach((ang) => {
+      const diag = new THREE.Mesh(new THREE.BoxGeometry(0.09, s * 1.18, 0.065), rip);
+      diag.position.set(0, s * 0.52, pz);
+      diag.rotation.z = ang;
+      g.add(diag);
+    });
+  });
+  const selo = new THREE.Mesh(new THREE.BoxGeometry(s * 0.34, s * 0.22, 0.025), mat(0xd0b06a, 0.55));
+  selo.position.set(0, s * 0.58, e + 0.018);
+  g.add(selo);
   return { grupo: g, colisores: [{ minX: x - s / 2 - 0.1, maxX: x + s / 2 + 0.1, minZ: z - s / 2 - 0.1, maxZ: z + s / 2 + 0.1 }] };
 }
 
@@ -147,6 +169,7 @@ export function criaBau(x, z, rot = 0) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
   const mad = mat(0x6b3f1f);
   const ouro = new THREE.MeshStandardMaterial({ color: 0xd9a522, metalness: 0.8, roughness: 0.3 });
+  const ferro = new THREE.MeshStandardMaterial({ color: 0x2d3034, metalness: 0.7, roughness: 0.38 });
   const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.8), mad);
   corpo.position.y = 0.35; corpo.castShadow = true; g.add(corpo);
   const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 12, 1, false, 0, Math.PI), mad);
@@ -155,6 +178,18 @@ export function criaBau(x, z, rot = 0) {
     const c = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.75, 0.82), ouro);
     c.position.set(px, 0.4, 0); g.add(c);
   });
+  [[-0.55, -0.35], [0.55, -0.35], [-0.55, 0.35], [0.55, 0.35]].forEach(([px, pz]) => {
+    const canto = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.18, 0.16), ferro);
+    canto.position.set(px, 0.72, pz);
+    canto.castShadow = true;
+    g.add(canto);
+  });
+  for (let i = 0; i < 9; i++) {
+    const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.028, 10), ouro);
+    moeda.position.set(-0.42 + (i % 5) * 0.19, 0.9 + Math.floor(i / 5) * 0.035, -0.12 + (i % 2) * 0.18);
+    moeda.rotation.z = i * 0.4;
+    g.add(moeda);
+  }
   const gemaMat = new THREE.MeshStandardMaterial({ color: 0xffe27a, emissive: 0xffc83a, emissiveIntensity: 0.7, roughness: 0.3 });
   const gema = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), gemaMat);
   gema.position.set(0, 0.45, 0.42); g.add(gema);
@@ -193,7 +228,21 @@ export function animaProps(animados, dt, tempo) {
     if (a.giraZ) a.mesh.rotation.z += dt * a.giraZ; // pás de moinho
     if (a.flutua) a.mesh.position.y = a.baseY + Math.sin(tempo * 2 + a.fase) * 0.12;
     if (a.pulsa) a.pulsa.emissiveIntensity = 0.55 + Math.sin(tempo * 3 + a.fase) * 0.35;
-    if (a.balanca) a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.25;
+    if (a.balanca) { // RV15.1: pano tremula ao vento (não só gira)
+      a.mesh.rotation.y = Math.sin(tempo * 1.5 + a.fase) * 0.22;
+      a.mesh.rotation.z = Math.sin(tempo * 3.1 + a.fase) * 0.08;
+      a.mesh.scale.x = 1 + Math.sin(tempo * 4 + a.fase) * 0.05;
+    }
+    if (a.sway) { // vento sutil em grupos orgânicos (árvores/arbustos)
+      const amp = a.amp || 0.025;
+      a.mesh.rotation.z = Math.sin(tempo * (a.vel || 0.85) + a.fase) * amp;
+      a.mesh.rotation.x = Math.cos(tempo * (a.vel || 0.85) * 0.72 + a.fase) * amp * 0.55;
+    }
+    if (a.chama) { // chama de poste/tocha tremeluzindo
+      const f = 0.85 + Math.sin(tempo * 12 + a.fase) * 0.15;
+      a.chama.scale.set(1 + Math.sin(tempo * 9 + a.fase) * 0.12, f, 1 + Math.cos(tempo * 10 + a.fase) * 0.12);
+      if (a.chamaMat) a.chamaMat.emissiveIntensity = 0.9 + Math.sin(tempo * 14 + a.fase) * 0.35;
+    }
     if (a.porta) a.mesh.rotation.y += (a.alvo - a.mesh.rotation.y) * Math.min(1, dt * 8); // abre/fecha suave
     if (a.fumaca) { // RV4.6: novelos de fumaça subindo da chaminé (loop infinito)
       for (let i = 0; i < a.fumaca.length; i++) {
@@ -201,6 +250,7 @@ export function animaProps(animados, dt, tempo) {
         const t = (tempo * 0.22 + a.fase + i * 0.34) % 1;
         p.position.y = a.baseY + t * 3.4;
         p.position.x = a.baseX + Math.sin(tempo * 0.8 + i) * 0.25 * t; // deriva no vento
+        if (a.baseZ != null) p.position.z = a.baseZ + Math.cos(tempo * 0.65 + i + a.fase) * 0.18 * t;
         p.scale.setScalar(0.5 + t * 1.3); // cresce e "dissolve" ao subir
       }
     }

@@ -1,0 +1,46 @@
+{
+  "id": "rv18-6-visual-proof",
+  "version": "RV18.6",
+  "build": 138,
+  "target": "installed-first",
+  "graphicsProfiles": [
+    {
+      "id": "mobile",
+      "name": "Mobile Estavel",
+      "goal": "fluidez em celulares fracos",
+      "pixelRatioMobile": 0.95,
+      "pixelRatioDesktop": 1.05,
+      "dynamicShadows": false,
+      "bloom": false
+    },
+    {
+      "id": "premium",
+      "name": "Premium",
+      "goal": "perfil recomendado",
+      "pixelRatioMobile": 1.08,
+      "pixelRatioDesktop": 1.5,
+      "dynamicShadows": "desktop",
+      "bloom": "desktop"
+    },
+    {
+      "id": "ultra",
+      "name": "Ultra Instalado",
+      "goal": "imagem alta para aparelho forte",
+      "pixelRatioMobile": 1.2,
+      "pixelRatioDesktop": 1.75,
+      "dynamicShadows": true,
+      "bloom": true
+    }
+  ],
+  "packagePlan": {
+    "android": "Capacitor segue como candidato para APK/AAB quando o bundle passar do limite confortavel de navegador.",
+    "desktop": "Tauri segue como candidato para launcher Windows com auto-update.",
+    "ios": "PWA instalado agora; TestFlight/App Store quando login, contas e patcher estiverem maduros."
+  },
+  "budgets": {
+    "webPreviewInitialJsGzipMb": 0.45,
+    "installedCoreAssetsMb": 80,
+    "installedHighQualityAssetsMb": 300,
+    "note": "O navegador continua preview jogavel; o alvo premium pesado sera app instalado."
+  }
+}

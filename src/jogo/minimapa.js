@@ -80,18 +80,23 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
   const legenda = document.createElement('div');
   legenda.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px 16px;color:#b9c6d8;font-size:12px;line-height:1.35;';
   legenda.innerHTML = '<span>▲ você</span><span>◎ destino</span><span>■ cidade/construção</span><span>⚒️/💰 lojas</span><span>texto dourado = região</span>';
+  titulo.innerHTML = '<b style="font-size:16px;">Mapa Continental - Pacto 01/30</b>'
+    + '<span style="display:block;font-size:12px;color:#aeb9c8;margin-top:2px;">Venor, rotas, hunts e ilhas flutuantes; clique para marcar destino; Esc fecha</span>';
+  mapa.style.cssText = 'width:100%;height:auto;max-height:72vh;aspect-ratio:980/640;background:#152b38;'
+    + 'border:1px solid #6b5a3a;border-radius:6px;cursor:crosshair;touch-action:none;';
+  legenda.innerHTML = '<span>triangulo = voce</span><span>circulo = destino</span><span>quadrado = cidade/base</span><span>linha dourada = rota</span><span>ilha clara = zona aerea</span><span>texto dourado = regiao/hunt</span>';
   painel.appendChild(topo); painel.appendChild(mapa); painel.appendChild(legenda);
   overlay.appendChild(painel); document.body.appendChild(overlay);
   const mctx = mapa.getContext('2d');
 
   function mostra() { cnv.style.display = 'block'; botoes.forEach((b) => { b.style.display = 'flex'; }); }
   function esconde() { cnv.style.display = 'none'; botoes.forEach((b) => { b.style.display = 'none'; }); fechaMapa(); }
-  function abreMapa() { overlay.style.display = 'flex'; desenhaMapaGrande(); }
+  function abreMapa() { overlay.style.display = 'flex'; desenhaMapaGrandePremium(); }
   function fechaMapa() { overlay.style.display = 'none'; }
   function toggleMapa() { overlay.style.display === 'none' ? abreMapa() : fechaMapa(); }
   function limpaDestino(silencioso = false) {
     destino = null;
-    desenhaMapaGrande();
+    desenhaMapaGrandePremium();
     if (onLimpar) onLimpar(silencioso);
   }
 
@@ -242,6 +247,324 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
     if (ultimoAvatar) setaMapa(sxM(ultimoAvatar.position.x), syM(ultimoAvatar.position.z), ultimoAvatar.rotation.y);
   }
 
+  function desenhaMapaGrandePremium() {
+    const W = MAP_W, H = MAP_H;
+    const mundoW = mundo.maxX - mundo.minX;
+    const mundoH = mundo.maxZ - mundo.minZ;
+    const px = (x) => sxM(x);
+    const py = (z) => syM(z);
+    const continente = [
+      [-890, -255], [-830, -390], [-650, -450], [-475, -382], [-305, -438],
+      [-120, -360], [80, -430], [260, -384], [455, -430], [690, -318],
+      [815, -118], [802, 78], [710, 224], [760, 406], [570, 468],
+      [338, 436], [136, 492], [-82, 414], [-270, 462], [-436, 322],
+      [-640, 264], [-816, 92], [-878, -86],
+    ];
+
+    const pathMundo = (pts) => {
+      mctx.beginPath();
+      pts.forEach(([x, z], i) => { i ? mctx.lineTo(px(x), py(z)) : mctx.moveTo(px(x), py(z)); });
+      mctx.closePath();
+    };
+
+    const poligonoMundo = (pts, fill, stroke = 'rgba(38,25,12,.75)', lw = 2) => {
+      pathMundo(pts);
+      mctx.fillStyle = fill; mctx.fill();
+      mctx.lineWidth = lw; mctx.strokeStyle = stroke; mctx.stroke();
+    };
+
+    const elipseMundo = (x, z, rx, rz, fill, stroke = null, lw = 1) => {
+      mctx.beginPath();
+      mctx.ellipse(px(x), py(z), rx / mundoW * W, rz / mundoH * H, 0, 0, Math.PI * 2);
+      mctx.fillStyle = fill; mctx.fill();
+      if (stroke) { mctx.lineWidth = lw; mctx.strokeStyle = stroke; mctx.stroke(); }
+    };
+
+    const linhaMundo = (pts, stroke, lw, sombra = null) => {
+      mctx.save();
+      if (sombra) { mctx.shadowColor = sombra; mctx.shadowBlur = 9; }
+      mctx.strokeStyle = stroke; mctx.lineWidth = lw; mctx.lineCap = 'round'; mctx.lineJoin = 'round';
+      mctx.beginPath();
+      pts.forEach(([x, z], i) => { i ? mctx.lineTo(px(x), py(z)) : mctx.moveTo(px(x), py(z)); });
+      mctx.stroke();
+      mctx.restore();
+    };
+
+    const etiqueta = (txt, x, y, opt = {}) => {
+      const tam = opt.tam || 12;
+      const font = opt.font || 'Georgia,serif';
+      const cor = opt.cor || '#f5ddb0';
+      const maxW = opt.maxW || 170;
+      mctx.save();
+      mctx.font = `${opt.bold === false ? '' : 'bold '}${tam}px ${font}`;
+      mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+      const w = Math.min(maxW, mctx.measureText(txt).width + 14);
+      const h = tam + 9;
+      mctx.fillStyle = opt.fundo || 'rgba(31,23,15,.76)';
+      mctx.strokeStyle = opt.borda || 'rgba(231,196,118,.42)';
+      mctx.lineWidth = 1;
+      mctx.fillRect(x - w / 2, y - h / 2, w, h);
+      mctx.strokeRect(x - w / 2, y - h / 2, w, h);
+      mctx.shadowColor = 'rgba(0,0,0,.75)'; mctx.shadowBlur = 5;
+      mctx.fillStyle = cor; mctx.fillText(txt, x, y + 0.5);
+      mctx.restore();
+    };
+
+    const etiquetaMundo = (txt, x, z, opt = {}) => etiqueta(txt, px(x), py(z), opt);
+
+    const montanha = (x, z, s = 1, neve = false, cor = '#6f6d61') => {
+      const X = px(x), Y = py(z), b = 18 * s, h = 32 * s;
+      mctx.beginPath();
+      mctx.moveTo(X - b, Y + h * 0.38);
+      mctx.lineTo(X, Y - h);
+      mctx.lineTo(X + b, Y + h * 0.38);
+      mctx.closePath();
+      mctx.fillStyle = cor; mctx.fill();
+      mctx.strokeStyle = 'rgba(34,24,16,.55)'; mctx.lineWidth = 1.2; mctx.stroke();
+      if (neve) {
+        mctx.beginPath();
+        mctx.moveTo(X - b * 0.32, Y - h * 0.35);
+        mctx.lineTo(X, Y - h);
+        mctx.lineTo(X + b * 0.34, Y - h * 0.35);
+        mctx.closePath();
+        mctx.fillStyle = 'rgba(230,238,235,.86)'; mctx.fill();
+      }
+    };
+
+    const floresta = (x, z, r, cor = '#244b31') => {
+      const X = px(x), Y = py(z), rr = r / mundoW * W;
+      for (let i = 0; i < 34; i++) {
+        const a = i * 2.399;
+        const d = rr * (0.18 + ((i * 37) % 100) / 130);
+        const tx = X + Math.cos(a) * d * 1.35;
+        const ty = Y + Math.sin(a) * d * 0.72;
+        mctx.beginPath();
+        mctx.moveTo(tx, ty - 7);
+        mctx.lineTo(tx - 5, ty + 5);
+        mctx.lineTo(tx + 5, ty + 5);
+        mctx.closePath();
+        mctx.fillStyle = i % 3 ? cor : '#315f3a';
+        mctx.fill();
+      }
+    };
+
+    const ilhaFlutuante = (x, y, w, h, nome, detalhe) => {
+      mctx.save();
+      mctx.shadowColor = 'rgba(120,170,255,.55)'; mctx.shadowBlur = 18;
+      const grad = mctx.createLinearGradient(x, y - h / 2, x, y + h / 2);
+      grad.addColorStop(0, '#e4d5a8'); grad.addColorStop(0.55, '#91815b'); grad.addColorStop(1, '#493821');
+      mctx.beginPath();
+      mctx.ellipse(x, y, w / 2, h / 2, -0.08, 0, Math.PI * 2);
+      mctx.fillStyle = grad; mctx.fill();
+      mctx.strokeStyle = 'rgba(255,239,190,.62)'; mctx.lineWidth = 1.5; mctx.stroke();
+      mctx.shadowBlur = 0;
+      mctx.beginPath();
+      mctx.moveTo(x - w * 0.28, y + h * 0.28);
+      mctx.lineTo(x - w * 0.06, y + h * 0.86);
+      mctx.lineTo(x + w * 0.14, y + h * 0.24);
+      mctx.closePath();
+      mctx.fillStyle = '#4a3520'; mctx.fill();
+      mctx.strokeStyle = 'rgba(16,12,9,.7)'; mctx.stroke();
+      mctx.strokeStyle = 'rgba(159,207,255,.45)'; mctx.lineWidth = 1;
+      for (let i = -1; i <= 1; i++) {
+        mctx.beginPath(); mctx.moveTo(x + i * w * 0.16, y + h * 0.34); mctx.lineTo(x + i * w * 0.13, y + h * 1.28); mctx.stroke();
+      }
+      mctx.fillStyle = '#343029';
+      mctx.fillRect(x - 14, y - h * 0.38, 28, 20);
+      mctx.fillRect(x - 4, y - h * 0.72, 8, 34);
+      etiqueta(nome, x, y - h * 0.82, { tam: 11, maxW: 150, cor: '#f8edc5', fundo: 'rgba(20,24,35,.78)' });
+      if (detalhe) etiqueta(detalhe, x, y + h * 0.74, { tam: 10, bold: false, maxW: 170, cor: '#c7dcff', fundo: 'rgba(20,24,35,.58)', borda: 'rgba(130,170,255,.28)' });
+      mctx.restore();
+    };
+
+    mctx.clearRect(0, 0, W, H);
+    const mar = mctx.createLinearGradient(0, 0, W, H);
+    mar.addColorStop(0, '#102b3a');
+    mar.addColorStop(0.42, '#1f5160');
+    mar.addColorStop(0.75, '#14364d');
+    mar.addColorStop(1, '#0b1b2a');
+    mctx.fillStyle = mar; mctx.fillRect(0, 0, W, H);
+
+    for (let i = 0; i < 160; i++) {
+      const x = (i * 73) % W;
+      const y = (i * 149) % H;
+      const a = 0.035 + ((i * 19) % 40) / 900;
+      mctx.fillStyle = `rgba(229,216,172,${a})`;
+      mctx.fillRect(x, y, 1 + (i % 3), 1);
+    }
+
+    // mares e margens: duas sombras deixam a costa menos "debug" e mais mapa pintado.
+    pathMundo(continente);
+    mctx.save();
+    mctx.shadowColor = 'rgba(248,223,159,.36)'; mctx.shadowBlur = 14;
+    mctx.strokeStyle = 'rgba(242,214,148,.62)'; mctx.lineWidth = 6; mctx.stroke();
+    mctx.restore();
+    const terra = mctx.createLinearGradient(0, 70, W, H - 40);
+    terra.addColorStop(0, '#776b43');
+    terra.addColorStop(0.28, '#3f6b3f');
+    terra.addColorStop(0.55, '#8a7444');
+    terra.addColorStop(0.76, '#b89459');
+    terra.addColorStop(1, '#5e4632');
+    poligonoMundo(continente, terra, 'rgba(44,27,12,.84)', 2.4);
+
+    mctx.save();
+    pathMundo(continente);
+    mctx.clip();
+    elipseMundo(-520, -70, 250, 210, 'rgba(25,79,43,.56)');
+    elipseMundo(-350, -12, 180, 110, 'rgba(35,87,61,.42)');
+    elipseMundo(70, 5, 260, 155, 'rgba(99,133,70,.38)');
+    elipseMundo(575, 246, 280, 230, 'rgba(210,165,83,.48)');
+    elipseMundo(118, 310, 210, 160, 'rgba(102,54,32,.42)');
+    elipseMundo(-666, -290, 240, 150, 'rgba(186,205,207,.38)');
+    elipseMundo(530, -210, 240, 120, 'rgba(76,70,62,.34)');
+    mctx.restore();
+
+    // Relevo, florestas e marcos de escala.
+    floresta(-500, -80, 150, '#244f31');
+    floresta(-365, 88, 110, '#315934');
+    floresta(-52, -58, 120, '#395f35');
+    for (let i = 0; i < 9; i++) montanha(-720 + i * 38, -332 + (i % 2) * 20, 0.9 + (i % 3) * 0.12, true, '#6b7c82');
+    for (let i = 0; i < 8; i++) montanha(70 + i * 34, 266 + (i % 2) * 18, 1.05, false, '#754633');
+    for (let i = 0; i < 7; i++) montanha(472 + i * 34, -246 + (i % 2) * 16, 0.85, false, '#5e5852');
+    linhaMundo([[-260, 22], [-380, 112], [-520, 168], [-710, 120]], 'rgba(88,164,182,.58)', 3.2);
+    linhaMundo([[40, -160], [140, -72], [185, 10], [130, 72], [36, 110]], 'rgba(78,154,178,.55)', 3);
+    linhaMundo([[510, 180], [650, 245], [765, 324]], 'rgba(236,203,124,.44)', 2.2);
+
+    // Camada das ilhas aereas: visivel no mapa, mesmo sendo altitude e nao solo plano.
+    mctx.save();
+    const ceu = mctx.createLinearGradient(470, 16, 940, 200);
+    ceu.addColorStop(0, 'rgba(95,130,190,.08)');
+    ceu.addColorStop(1, 'rgba(149,114,215,.16)');
+    mctx.fillStyle = ceu;
+    mctx.fillRect(438, 24, 500, 190);
+    mctx.strokeStyle = 'rgba(178,207,255,.22)';
+    mctx.strokeRect(438, 24, 500, 190);
+    ilhaFlutuante(574, 88, 132, 48, 'AURELIA', 'cidade nas nuvens');
+    ilhaFlutuante(735, 126, 116, 42, 'ILHAS DO VENTO', 'rota de voo');
+    ilhaFlutuante(872, 78, 86, 34, 'OBSERVATORIO', 'nivel alto');
+    mctx.restore();
+
+    // Rotas do jogo, agora com cara de estrada/cartografia.
+    for (const r of rotas) {
+      const lw = Math.max(2.6, (r.w || 8) * W / mundoW);
+      linhaMundo([[r.x1, r.z1], [r.x2, r.z2]], 'rgba(47,32,20,.76)', lw + 2.6);
+      linhaMundo([[r.x1, r.z1], [r.x2, r.z2]], 'rgba(219,176,91,.78)', lw);
+    }
+
+    // Malha de referencia bem discreta: orienta sem virar planilha verde.
+    mctx.strokeStyle = 'rgba(234,210,151,.09)'; mctx.lineWidth = 1;
+    for (let gx = Math.ceil(mundo.minX / 200) * 200; gx <= mundo.maxX; gx += 200) {
+      const x = px(gx); mctx.beginPath(); mctx.moveTo(x, 0); mctx.lineTo(x, H); mctx.stroke();
+    }
+    for (let gz = Math.ceil(mundo.minZ / 200) * 200; gz <= mundo.maxZ; gz += 200) {
+      const y = py(gz); mctx.beginPath(); mctx.moveTo(0, y); mctx.lineTo(W, y); mctx.stroke();
+    }
+
+    // Veios magicos e pedras seguem funcionais, mas viram glifos de mapa.
+    for (const v of veios) {
+      if (!v.sentido || (v.segredo && !v.revelado) || !v.pts || v.pts.length < 2) continue;
+      const hx = corHex(v.cor);
+      linhaMundo(v.pts, hx, 2.8, hx);
+    }
+    for (const p of pedrasVeio) {
+      if (p.segredo && !p.revelado && !p.sentido) continue;
+      const X = px(p.x), Y = py(p.z); const hx = corHex(p.cor);
+      mctx.save();
+      if (p.sentido) { mctx.shadowColor = hx; mctx.shadowBlur = 12; }
+      mctx.beginPath(); mctx.arc(X, Y, 6.2, 0, Math.PI * 2);
+      mctx.fillStyle = p.sentido ? hx : 'rgba(150,145,128,.86)';
+      mctx.fill();
+      mctx.shadowBlur = 0;
+      mctx.lineWidth = 1.6; mctx.strokeStyle = '#140d07'; mctx.stroke();
+      mctx.restore();
+    }
+
+    // Bases construidas: apenas massas relevantes, sem transformar o mapa em debug de colisao.
+    for (const o of obstaculos) {
+      const x = px(o.minX), y = py(o.minZ);
+      const w = (o.maxX - o.minX) / mundoW * W;
+      const h = (o.maxZ - o.minZ) / mundoH * H;
+      if (w * h < 22 || w < 2.2 || h < 2.2) continue;
+      mctx.fillStyle = 'rgba(32,27,22,.34)';
+      mctx.strokeStyle = 'rgba(226,188,111,.16)';
+      mctx.lineWidth = 1;
+      mctx.fillRect(x, y, w, h);
+      mctx.strokeRect(x, y, w, h);
+    }
+
+    for (const m of marcos) {
+      const x = px(m.x), y = py(m.z);
+      mctx.fillStyle = MARCO_COR[m.tipo] || '#e8eef7';
+      mctx.fillRect(x - 5, y - 5, 10, 10);
+      mctx.strokeStyle = 'rgba(19,12,6,.8)'; mctx.lineWidth = 1.2; mctx.strokeRect(x - 5, y - 5, 10, 10);
+    }
+
+    mctx.font = '16px Arial'; mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+    for (const L of lojas) {
+      const x = px(L.x), y = py(L.z);
+      mctx.fillStyle = 'rgba(20,14,9,.72)';
+      mctx.beginPath(); mctx.arc(x, y, 12, 0, Math.PI * 2); mctx.fill();
+      mctx.fillStyle = '#f4e9c8';
+      mctx.fillText(L.icone, x, y + 1);
+    }
+
+    const canon = [
+      ['VENOR', 0, 0, 18], ['VENORE', -330, -30, 15], ['NOCTARIA', -660, -30, 15],
+      ['THAIS', 565, 0, 15], ['PICO DO DRAGAO', 110, 300, 13],
+      ['ERMO DAS CINZAS', -650, -30, 12], ['AREIAS DO VEIO SECO', 610, 258, 12],
+      ['BREJO PROFUNDO', -305, -18, 12], ['COSTA DO FAROL', -10, -220, 12],
+      ['AURELIA ACIMA DAS NUVENS', 590, -392, 12],
+    ];
+    for (const [nome, x, z, tam] of canon) etiquetaMundo(nome, x, z, { tam, maxW: 210, cor: tam >= 15 ? '#ffe9b8' : '#e6d195' });
+
+    const usados = [];
+    for (const L of lugares) {
+      const x = px(L.x), y = py(L.z);
+      if (x < 22 || x > W - 22 || y < 20 || y > H - 20) continue;
+      let colide = false;
+      for (const u of usados) if (Math.hypot(u.x - x, u.y - y) < 34) { colide = true; break; }
+      if (colide) continue;
+      usados.push({ x, y });
+      etiqueta(L.nome, x, y, { tam: 11, maxW: 128, cor: '#f5ddb0', fundo: 'rgba(38,27,14,.66)' });
+    }
+
+    // Moldura, rosa dos ventos e assinatura do patch.
+    mctx.save();
+    mctx.strokeStyle = 'rgba(226,187,111,.78)'; mctx.lineWidth = 3; mctx.strokeRect(8, 8, W - 16, H - 16);
+    mctx.strokeStyle = 'rgba(58,37,17,.8)'; mctx.lineWidth = 1; mctx.strokeRect(15, 15, W - 30, H - 30);
+    const cxR = W - 84, cyR = H - 74;
+    mctx.translate(cxR, cyR);
+    mctx.strokeStyle = 'rgba(239,211,143,.58)'; mctx.fillStyle = 'rgba(239,211,143,.8)';
+    mctx.beginPath(); mctx.arc(0, 0, 30, 0, Math.PI * 2); mctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      mctx.beginPath(); mctx.moveTo(Math.cos(a) * 8, Math.sin(a) * 8); mctx.lineTo(Math.cos(a) * (i % 2 ? 22 : 30), Math.sin(a) * (i % 2 ? 22 : 30)); mctx.stroke();
+    }
+    mctx.font = 'bold 11px Georgia,serif'; mctx.textAlign = 'center'; mctx.fillText('N', 0, -39);
+    mctx.restore();
+    etiqueta('PACTO 01/30 - VENOR E ARREDORES', 182, 35, { tam: 13, maxW: 280, cor: '#ffe9b8', fundo: 'rgba(28,20,13,.78)' });
+
+    if (destino) {
+      const x = px(destino.x), y = py(destino.z);
+      mctx.save();
+      mctx.shadowColor = '#ffdf5a'; mctx.shadowBlur = 10;
+      mctx.beginPath(); mctx.arc(x, y, 10, 0, Math.PI * 2);
+      mctx.strokeStyle = '#ffdf5a'; mctx.lineWidth = 3; mctx.stroke();
+      mctx.beginPath(); mctx.moveTo(x - 14, y); mctx.lineTo(x + 14, y); mctx.moveTo(x, y - 14); mctx.lineTo(x, y + 14); mctx.stroke();
+      mctx.restore();
+      etiqueta(destino.nome, x, y - 21, { tam: 12, cor: '#ffdf5a', maxW: 170, fundo: 'rgba(33,25,12,.86)' });
+    }
+    if (ultimosOutros) {
+      for (const [, o] of ultimosOutros) {
+        const p = o.grupo.position;
+        mctx.beginPath(); mctx.arc(px(p.x), py(p.z), 5.2, 0, Math.PI * 2);
+        mctx.fillStyle = corHex(o.cor ?? 0xffffff); mctx.fill();
+        mctx.strokeStyle = '#111'; mctx.stroke();
+      }
+    }
+    if (ultimoAvatar) setaMapa(px(ultimoAvatar.position.x), py(ultimoAvatar.position.z), ultimoAvatar.rotation.y);
+  }
+
   function atualiza(avatar, outros) {
     ultimoAvatar = avatar; ultimosOutros = outros || null;
     const ax = avatar.position.x, az = avatar.position.z;
@@ -339,7 +662,7 @@ export function criaMinimapa({ obstaculos = [], ruas = [], marcos = [], lugares 
 
     // VOCÊ (sempre no centro)
     setaCentro(avatar.rotation.y);
-    if (overlay.style.display !== 'none') desenhaMapaGrande();
+    if (overlay.style.display !== 'none') desenhaMapaGrandePremium();
   }
 
   return { atualiza, mostra, esconde, zoom, abreMapa, fechaMapa, toggleMapa, limpaDestino, el: cnv };

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Portal de Venor</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#120a18" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --gold: #d9b25a;
+        --gold2: #f4e9c8;
+        --line: rgba(232,217,160,.26);
+        --panel: rgba(12,16,22,.88);
+        --muted: #b8c4cf;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: #070a10; color: #f4ead2; font-family: Arial, sans-serif; }
+      body {
+        background:
+          linear-gradient(180deg, rgba(5,7,12,.26), rgba(5,7,12,.96)),
+          url('/patches/rv18-grande-pacto.png') center/cover fixed no-repeat;
+      }
+      a { color: #bff0a8; font-weight: 800; text-decoration: none; }
+      button {
+        border: 1px solid rgba(232,217,160,.34);
+        background: linear-gradient(180deg, rgba(55,43,25,.98), rgba(24,19,15,.98));
+        color: var(--gold2);
+        border-radius: 8px;
+        padding: 10px 13px;
+        cursor: pointer;
+        font-weight: 800;
+      }
+      button.primary { background: linear-gradient(180deg, #d9b25a, #ad7f2d); color: #261705; }
+      header {
+        min-height: 48vh;
+        display: flex;
+        align-items: flex-end;
+        border-bottom: 1px solid var(--line);
+      }
+      .hero {
+        width: min(1180px, 94vw);
+        margin: 0 auto;
+        padding: 30px 0;
+      }
+      .kicker { color: var(--gold); font: 800 12px Georgia, serif; letter-spacing: 4px; }
+      h1 { margin: 8px 0 8px; color: var(--gold2); font: 900 clamp(42px, 9vw, 92px)/.92 Georgia, serif; letter-spacing: 7px; text-shadow: 0 5px 24px #000; }
+      .hero p { max-width: 720px; color: #d7e0ec; font-size: 16px; line-height: 1.65; text-shadow: 0 2px 12px #000; }
+      nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+      main {
+        width: min(1180px, 94vw);
+        margin: 0 auto;
+        padding: 18px 0 36px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+        gap: 16px;
+      }
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 16px;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 18px 60px rgba(0,0,0,.32);
+        min-width: 0;
+      }
+      .wide { grid-column: 1 / -1; }
+      h2 { margin: 0 0 10px; color: var(--gold2); font: 800 22px Georgia, serif; }
+      h3 { margin: 0 0 6px; color: var(--gold); font: 800 15px Georgia, serif; }
+      p { color: var(--muted); line-height: 1.58; }
+      .news { display: grid; gap: 10px; }
+      .card {
+        border-left: 3px solid var(--gold);
+        background: rgba(255,255,255,.045);
+        padding: 11px 12px;
+        line-height: 1.5;
+      }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+      .stat { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 12px; }
+      .muted { color: #91a0ad; font-size: 12px; }
+      .accounts { display: grid; gap: 9px; max-height: 360px; overflow: auto; }
+      .account { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 10px; }
+      .map {
+        min-height: 260px;
+        background:
+          linear-gradient(180deg, rgba(9,11,16,.18), rgba(9,11,16,.78)),
+          url('/patches/rv17-4-rotas-continente.png') center/cover no-repeat;
+        border: 1px solid rgba(232,217,160,.22);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: flex-end;
+      }
+      .map div { max-width: 640px; text-shadow: 0 2px 12px #000; }
+      .pill { display: inline-block; margin: 3px 5px 3px 0; padding: 6px 8px; border-radius: 99px; border: 1px solid rgba(232,217,160,.22); background: rgba(0,0,0,.24); color: #d7e0ec; font-size: 12px; font-weight: 800; }
+      @media (max-width: 900px) {
+        main { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 520px) {
+        h1 { letter-spacing: 4px; }
+        nav button { width: 100%; }
+        .account { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <section class="hero">
+        <div class="kicker">PORTAL OFICIAL DO PACTO 01/30</div>
+        <h1>VENOR</h1>
+        <p>Noticias, patches, personagens locais, bestiario, mapa e cronograma do mundo. O portal nasce dentro do app instalado para virar, aos poucos, a casa publica do jogo.</p>
+        <nav>
+          <button class="primary" onclick="location.href='/launcher.html'">ABRIR LAUNCHER</button>
+          <button onclick="location.href='/ranking.html'">RANKING</button>
+          <button onclick="location.href='/'">ENTRAR NO JOGO</button>
+          <button onclick="location.href='/baixar.html'">INSTALAR</button>
+        </nav>
+      </section>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Noticias</h2>
+        <div class="news" id="news"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Conta Local</h2>
+        <p>Estes personagens existem neste aparelho. A conta em nuvem continua dentro do jogo por nome + PIN.</p>
+        <div class="accounts" id="accounts"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Estado do Mundo</h2>
+        <div class="grid">
+          <div class="stat"><h3>Patch atual</h3><div id="patchAtual" class="muted">Carregando...</div></div>
+          <div class="stat"><h3>Pacto</h3><div class="muted">Venor e Arredores: 01/30</div></div>
+          <div class="stat"><h3>Modo</h3><div class="muted">Instalado primeiro, online opcional</div></div>
+          <div class="stat"><h3>Proxima meta</h3><div class="muted">RV18.6: patcher real e delta de assets</div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Bestiario Base</h2>
+        <span class="pill">Dragoes</span>
+        <span class="pill">Wyverns</span>
+        <span class="pill">Golems</span>
+        <span class="pill">Sentinelas</span>
+        <span class="pill">Orcs</span>
+        <span class="pill">Ciclopes</span>
+        <span class="pill">Pantano</span>
+        <span class="pill">Ruinas</span>
+        <p class="muted">O bestiario completo com filtros, drops e ranking fica para os proximos blocos.</p>
+      </section>
+
+      <section class="panel wide">
+        <h2>Mapa do Pacto</h2>
+        <div class="map">
+          <div>
+            <h3>Venor e Arredores</h3>
+            <p>Primeira regiao do continente: cidade, rotas, guildhouses, hunts, calaboucos, montanhas, pantanos, Aurelia e as ilhas altas do ciclo 18.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const news = [
+        ['RV18.6 - Prova Visual Real', 'Teste publico no gameplay inicial: fonte monumental, lotes nobres maiores na praca, dragao GLB em Venor e luz inicial mais clara para auditoria visual.'],
+        ['RV18.5 - Mapa Continental', 'O mapa grande deixou de ser grid tecnico e agora mostra o Pacto 01/30 como continente: mar, biomas, rotas, hunts, cidades e ilhas flutuantes.'],
+        ['RV18.4 - Resgate Visual da Praca', 'Luz, neblina, calcamento, praca, casas e janelas foram corrigidos dentro do mundo jogavel.'],
+        ['RV18.3 - Ranking e Personagem Publico', 'Ranking local e ficha publica nascem usando saves do aparelho, sem expor senha ou PIN.'],
+        ['RV18.2 - Pacote Instalado Premium', 'Perfis graficos Mobile, Premium e Ultra passam a controlar pixel ratio, sombras e bloom do motor 3D.'],
+        ['RV18.1 - Portal Publico', 'O portal nasce com noticias, personagens locais, mapa, bestiario base e links para launcher/jogo.'],
+        ['RV18.0 - Launcher Instalado', 'App instalado, manifesto de patch, cache offline RV18, contas locais e entrada direta em Venor.'],
+        ['Contrato Visual Premium', 'Toda imagem oficial precisa corresponder a sistema, mapa, item, NPC, quest ou documento canonico.'],
+      ];
+      document.getElementById('news').innerHTML = news.map(([t, b]) => `<article class="card"><h3>${esc(t)}</h3><div class="muted">${esc(b)}</div></article>`).join('');
+
+      function parseContaKey(key) {
+        return key.replace('venor_conta_', '').split('#')[0] || 'conta';
+      }
+      function contasLocais() {
+        const out = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith('venor_conta_')) continue;
+          let d = {};
+          try { d = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+          out.push({ key, nome: parseContaKey(key), nivel: d.hud?.nivel || 1, ouro: d.ouro || 0, x: Math.round(d.x || 0), z: Math.round(d.z || 0), protegida: key.includes('#') });
+        }
+        return out.sort((a, b) => b.nivel - a.nivel || a.nome.localeCompare(b.nome));
+      }
+      const accounts = contasLocais();
+      const accountBox = document.getElementById('accounts');
+      accountBox.innerHTML = accounts.length
+        ? accounts.map((c, i) => `<div class="account"><div><b>${esc(c.nome)}</b><div class="muted">Nivel ${esc(c.nivel)} · ${esc(c.ouro)} ouro · ${esc(c.x)}, ${esc(c.z)}${c.protegida ? ' · senha local' : ''}</div></div><button data-i="${i}">USAR</button></div>`).join('')
+        : '<p class="muted">Nenhum personagem local encontrado neste aparelho.</p>';
+      accountBox.querySelectorAll('button[data-i]').forEach((btn) => {
+        btn.onclick = () => {
+          const c = accounts[Number(btn.dataset.i)];
+          if (!c) return;
+          localStorage.setItem('venor_login', JSON.stringify({ nome: c.nome, senha: '' }));
+          location.href = '/launcher.html';
+        };
+      });
+
+      fetch('/patch-manifest.json', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((m) => { document.getElementById('patchAtual').textContent = `${m.version} · build ${m.build} · ${m.title}`; })
+        .catch(() => { document.getElementById('patchAtual').textContent = 'Manifesto indisponivel'; });
+    </script>
+  </body>
+</html>

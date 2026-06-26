@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Personagem de Venor</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#100b14" />
+    <style>
+      :root { color-scheme:dark; --gold:#d9b25a; --gold2:#f4e9c8; --panel:rgba(12,16,22,.9); --line:rgba(232,217,160,.28); --muted:#b8c4cf; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; background:#06080d; color:#f4ead2; font-family:Arial,sans-serif; }
+      body {
+        background:
+          linear-gradient(180deg, rgba(5,7,12,.32), rgba(5,7,12,.97)),
+          url('/patches/rv16-9-mago-viajante.png') center/cover fixed no-repeat;
+      }
+      a { color:#bff0a8; font-weight:800; text-decoration:none; }
+      button {
+        border:1px solid rgba(232,217,160,.34);
+        background:linear-gradient(180deg,rgba(55,43,25,.98),rgba(24,19,15,.98));
+        color:var(--gold2); border-radius:8px; padding:10px 12px; font-weight:800; cursor:pointer;
+      }
+      button.primary { background:linear-gradient(180deg,#d9b25a,#ad7f2d); color:#261705; }
+      main { width:min(1080px,94vw); margin:0 auto; padding:28px 0 36px; }
+      .hero { min-height:38vh; display:flex; flex-direction:column; justify-content:flex-end; padding:20px 0; }
+      .kicker { color:var(--gold); font:800 12px Georgia,serif; letter-spacing:4px; }
+      h1 { margin:8px 0; font:900 clamp(38px,8vw,82px)/.92 Georgia,serif; letter-spacing:6px; color:var(--gold2); text-shadow:0 5px 24px #000; }
+      h2 { margin:0 0 10px; color:var(--gold2); font:800 22px Georgia,serif; }
+      h3 { margin:0 0 6px; color:var(--gold); font:800 15px Georgia,serif; }
+      p { color:var(--muted); line-height:1.58; }
+      nav { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+      .grid { display:grid; grid-template-columns:1.05fr .95fr; gap:14px; }
+      .panel { border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:16px; box-shadow:0 18px 60px rgba(0,0,0,.34); backdrop-filter:blur(6px); min-width:0; }
+      .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+      .stat { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.045); border-radius:8px; padding:12px; }
+      .stat b { display:block; color:var(--gold); margin-bottom:5px; }
+      .list { display:grid; gap:8px; }
+      .row { display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid rgba(255,255,255,.07); padding:9px 0; color:#d8e0e8; }
+      .muted { color:#91a0ad; font-size:12px; }
+      .empty { padding:22px; border:1px dashed rgba(232,217,160,.28); border-radius:10px; color:#b8c4cf; }
+      @media (max-width: 850px) { .grid { grid-template-columns:1fr; } h1 { letter-spacing:4px; } nav button { flex:1 1 100%; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="kicker">FICHA PUBLICA LOCAL</div>
+        <h1 id="nome">PERSONAGEM</h1>
+        <p id="sub">Carregando ficha do aparelho...</p>
+        <nav>
+          <button class="primary" onclick="location.href='/ranking.html'">VOLTAR AO RANKING</button>
+          <button onclick="location.href='/launcher.html'">ABRIR LAUNCHER</button>
+          <button onclick="location.href='/portal.html'">PORTAL</button>
+        </nav>
+      </section>
+      <section id="conteudo"></section>
+    </main>
+    <script>
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+      const baseNome = (key) => key.replace('venor_conta_', '').split('#')[0] || 'conta';
+      const alvo = (new URLSearchParams(location.search).get('nome') || '').trim().toLowerCase();
+      function achaConta() {
+        const matches = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith('venor_conta_')) continue;
+          if (alvo && baseNome(key).toLowerCase() !== alvo) continue;
+          try { matches.push({ key, nome: baseNome(key), dados: JSON.parse(localStorage.getItem(key) || '{}') }); } catch {}
+        }
+        return matches.sort((a, b) => Number(b.dados?.hud?.nivel || 1) - Number(a.dados?.hud?.nivel || 1))[0] || null;
+      }
+      const conta = achaConta();
+      if (!conta) {
+        document.getElementById('sub').textContent = 'Nenhum personagem local encontrado com este nome.';
+        document.getElementById('conteudo').innerHTML = '<div class="panel empty">Abra o ranking ou entre no jogo para criar/salvar um personagem.</div>';
+      } else {
+        const d = conta.dados || {};
+        const hud = d.hud || {};
+        const dragao = d.dragaoComp || null;
+        const imoveis = d.imoveis ? Object.entries(d.imoveis).filter(([, v]) => v) : [];
+        const quests = d.quests ? Object.values(d.quests).filter((q) => q && (q.concluida || q.feita || q.aceita)).length : 0;
+        const equip = Array.isArray(d.equip) ? d.equip : [];
+        const mochila = Array.isArray(d.mochila) ? d.mochila : [];
+        document.title = `${conta.nome} - Venor`;
+        document.getElementById('nome').textContent = conta.nome.toUpperCase();
+        document.getElementById('sub').textContent = `Nivel ${hud.nivel || 1} - ${hud.xp || 0} XP - ${conta.key.includes('#') ? 'conta protegida' : 'conta local'}`;
+        const dragaoTexto = dragao ? `${dragao.especie || dragao.petTipo || 'dragao'} ${dragao.estagio || ''}`.trim() : (d.pet || 'sem companheiro');
+        document.getElementById('conteudo').innerHTML = `
+          <div class="grid">
+            <section class="panel">
+              <h2>Resumo</h2>
+              <div class="stats">
+                <div class="stat"><b>Nivel</b><div>${esc(hud.nivel || 1)}</div></div>
+                <div class="stat"><b>XP</b><div>${esc(hud.xp || 0)}</div></div>
+                <div class="stat"><b>Ouro total</b><div>${esc(Number(d.ouro || 0) + Number(d.bancoOuro || 0))}</div></div>
+                <div class="stat"><b>Posicao</b><div>${esc(Math.round(d.x || 0))}, ${esc(Math.round(d.z || 0))}</div></div>
+              </div>
+              <h2 style="margin-top:18px;">Dragao / Pet</h2>
+              <div class="list">
+                <div class="row"><span>Companheiro</span><b>${esc(dragaoTexto)}</b></div>
+                <div class="row"><span>Afinidade</span><b>${esc(dragao?.afinidade ?? '-')}</b></div>
+                <div class="row"><span>XP do dragao</span><b>${esc(dragao?.xp ?? '-')}</b></div>
+              </div>
+            </section>
+            <section class="panel">
+              <h2>Progresso</h2>
+              <div class="list">
+                <div class="row"><span>Quests registradas</span><b>${esc(quests)}</b></div>
+                <div class="row"><span>Imoveis</span><b>${esc(imoveis.length)}</b></div>
+                <div class="row"><span>Guilda</span><b>${d.guilda ? 'membro' : 'sem guilda'}</b></div>
+                <div class="row"><span>Banco</span><b>${esc(d.bancoOuro || 0)} ouro</b></div>
+              </div>
+              <h2 style="margin-top:18px;">Equipamento</h2>
+              <div class="list">
+                ${equip.length ? equip.map((it) => `<div class="row"><span>${esc(it.slot || 'item')}</span><b>${esc(it.nome || 'Item')}</b></div>`).join('') : '<div class="muted">Nenhum equipamento salvo.</div>'}
+              </div>
+              <h2 style="margin-top:18px;">Mochila</h2>
+              <p class="muted">${esc(mochila.length)} item(ns) registrados localmente.</p>
+            </section>
+          </div>`;
+      }
+    </script>
+  </body>
+</html>
