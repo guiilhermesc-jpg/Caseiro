@@ -955,8 +955,14 @@ function viewCarteira() {
   cxUrl.value = esploraBase();
   document.getElementById('cxForm').addEventListener('submit', e => {
     e.preventDefault();
-    try { localStorage.setItem(ESPLORA_KEY, cxUrl.value.trim() || DEFAULT_ESPLORA); } catch {}
-    document.getElementById('cxOut').innerHTML = '<div class="banner ok">Conexão salva. Saldos/UTXOs usarão este endpoint.</div>';
+    const out = document.getElementById('cxOut'), raw = cxUrl.value.trim();
+    if (!raw) { try { localStorage.removeItem(ESPLORA_KEY); } catch {} cxUrl.value = DEFAULT_ESPLORA; out.innerHTML = '<div class="banner ok">Voltou ao padrão (mempool.space testnet).</div>'; return; }
+    let u; try { u = new URL(raw); } catch { out.innerHTML = '<p class="muted">URL inválida. Use https://… (ou http://localhost…).</p>'; return; }
+    const localHost = u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname.endsWith('.onion');
+    if (!(u.protocol === 'https:' || (u.protocol === 'http:' && localHost))) { out.innerHTML = '<p class="muted">Use <strong>https://</strong> (http só em localhost/.onion) — não exponha seus endereços em texto puro.</p>'; return; }
+    try { localStorage.setItem(ESPLORA_KEY, raw); } catch {}
+    const aviso = /testnet|signet|localhost|127\.0\.0\.1|\.onion/i.test(raw) ? '' : ' <strong>Atenção:</strong> o host não parece testnet — confira a rede antes de usar.';
+    out.innerHTML = `<div class="banner ok">Conexão salva. Saldos/UTXOs usarão este endpoint.${aviso}</div>`;
   });
   document.getElementById('cxReset').addEventListener('click', () => {
     try { localStorage.removeItem(ESPLORA_KEY); } catch {}
@@ -1586,7 +1592,7 @@ async function decryptJSON(blob, pass) {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64u.dec(blob.iv) }, key, b64u.dec(blob.data));
   return JSON.parse(new TextDecoder().decode(pt));
 }
-function collectAppData() { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('bussola.')) o[k] = localStorage.getItem(k); } return o; }
+function collectAppData() { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('bussola.') && k !== 'bussola.aikey.v1') o[k] = localStorage.getItem(k); } return o; }
 
 function viewSoberania() {
   menuBtn.hidden = true;
@@ -1842,9 +1848,17 @@ function viewSoberania() {
     try {
       const blob = JSON.parse(await file.text());
       const data = await decryptJSON(blob, pass);
-      Object.entries(data).forEach(([k, v]) => { if (k.startsWith('bussola.')) localStorage.setItem(k, v); });
-      o.innerHTML = '<div class="banner ok">✅ Backup restaurado. Recarregando…</div>';
-      setTimeout(() => location.reload(), 900);
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('formato inválido');
+      const SENSIVEIS = ['bussola.esplora.v1', 'bussola.aikey.v1']; // não sobrescrever sem confirmar
+      let restored = 0; const pulados = [];
+      for (const [k, v] of Object.entries(data)) {
+        if (!k.startsWith('bussola.') || typeof v !== 'string') continue;
+        const atual = localStorage.getItem(k);
+        if (SENSIVEIS.includes(k) && atual !== null && atual !== v && !confirm(`O backup quer sobrescrever uma configuração sensível:\n${k}\nPermitir? (Cancelar mantém a atual)`)) { pulados.push(k); continue; }
+        localStorage.setItem(k, v); restored++;
+      }
+      o.innerHTML = `<div class="banner ok">✅ ${restored} item(ns) restaurado(s)${pulados.length ? ` · ${pulados.length} sensível(is) mantido(s)` : ''}. Recarregando…</div>`;
+      setTimeout(() => location.reload(), 1200);
     } catch (err) { o.innerHTML = `<p class="muted">Não consegui restaurar (senha errada ou arquivo inválido).</p>`; }
     finally { e.target.value = ''; }
   });

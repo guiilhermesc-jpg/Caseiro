@@ -88,14 +88,18 @@ Rodada de revisão (6 dimensões → verificação adversarial): 41 achados, 35 
 - **#4/#5** todos os 13 campos de **seed/frase** viraram `type=password`; campo de restauração é
   **limpo** após uso. SW v36.
 
+### 2026-06-21 (cont.) — Endurecimento de segredos no backup/conexão
+- **#7** backup do Cofre **não inclui mais** a chave da API (Anthropic) por padrão.
+- **#6** restauração do Cofre **valida o formato** e **não sobrescreve** config sensível
+  (`esplora`/`aikey`) sem **confirmação**; reporta quantos itens entraram/foram mantidos.
+- **#8** endpoint Esplora **validado** (só `https://`, ou `http://` em localhost/.onion) e **avisa**
+  quando o host não parece testnet. SW v37.
+
 ---
 
 ## 🔜 Próximas etapas (backlog priorizado) — restante da varredura
 1. **Validar tiers on-chain (testnet)** pelo ensaio (tirar rótulo "experimental").
-2. **Cofre/backup — escopo de segredos:** restauração do Cofre valida shape/versão e **não**
-   sobrescreve `esplora`/`aikey` sem confirmar (#6); backup **não** deve incluir a chave da API por
-   padrão (#7); validar endpoint Esplora (esquema/host) no submit (#8).
-3. **Registro pro IR com preço HISTÓRICO** por data (hoje usa preço de hoje) (#12).
+2. **Registro pro IR com preço HISTÓRICO** por data (hoje usa preço de hoje) (#12).
 4. **PWA/SW:** doc 12 no cache + tirar `DIARIO` do build; fallback offline no fetch handler;
    stale-while-revalidate nos docs; update do SW visível (#20–#24).
 5. **Testes (rede anti-regressão):** `silentPaymentScan`, ramos de `buildTiersPsbt`, faixas de
